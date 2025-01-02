@@ -46,7 +46,6 @@ namespace Neatoo
         public bool IsChild { get; protected set; }
         protected List<I> DeletedList { get; } = new List<I>();
 
-
         protected virtual void MarkAsChild()
         {
             IsChild = true;

@@ -17,7 +17,6 @@ namespace Neatoo.Autofac
 
         }
 
-
         public IServiceScope BeginNewScope(object tag = null)
         {
             return new ServiceScope(scope.BeginLifetimeScope(tag));
@@ -33,7 +32,7 @@ namespace Neatoo.Autofac
             return scope.Resolve(t);
         }
 
-        public bool TryResolve<T>(out T result)
+        public bool TryResolve<T>(out T result) where T : class
         {
             return scope.TryResolve<T>(out result);
         }

@@ -4,6 +4,7 @@ using Neatoo.UnitTest.Objects;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ObjectPortal
 {
@@ -21,9 +22,10 @@ namespace Neatoo.UnitTest.ObjectPortal
         public bool CreateCalled { get; set; } = false;
 
         [Create]
-        private void Create()
+        private async Task Create()
         {
             CreateCalled = true;
+            await Task.CompletedTask;
         }
 
         [Create]

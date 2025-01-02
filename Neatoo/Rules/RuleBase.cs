@@ -105,7 +105,7 @@ namespace Neatoo.Rules
 
         protected object ReadProperty(T target, string propertyName)
         {
-            return ReadPropertyValue(target, propertyName).Value;
+            return ReadPropertyValue(target, propertyName)?.Value;
         }
 
         protected P ReadProperty<P>(T target, IRegisteredProperty<P> registeredProperty)

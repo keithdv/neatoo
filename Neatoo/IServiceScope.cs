@@ -9,7 +9,7 @@ namespace Neatoo
 
         object Resolve(Type t);
 
-        bool TryResolve<T>(out T result);
+        bool TryResolve<T>(out T result) where T : class;
 
         bool TryResolve(Type T, out object result);
 

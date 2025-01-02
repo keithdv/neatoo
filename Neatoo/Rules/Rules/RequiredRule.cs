@@ -10,9 +10,10 @@ namespace Neatoo.Rules.Rules
 
     }
 
-    public class RequiredRule : RuleBase<IBase>, IRequiredRule
-    {
+    public delegate IRequiredRule CreateRequiredRule(string name);
 
+    internal class RequiredRule : RuleBase<IBase>, IRequiredRule
+    {
         public RequiredRule(string propertyName) : base(propertyName) { }
         public RequiredRule(IRegisteredProperty registeredProperty) : base(registeredProperty) { }
 

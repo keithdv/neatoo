@@ -33,7 +33,7 @@ namespace Neatoo.Netwonsoft.Json
             return scope.Resolve(t);
         }
 
-        public bool TryResolve<T>(out T result)
+        public bool TryResolve<T>(out T result) where T : class
         {
             return scope.TryResolve<T>(out result);
         }

@@ -12,6 +12,7 @@ using System.Linq;
 using Autofac.Builder;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Neatoo.Autofac
 {
@@ -58,7 +59,11 @@ namespace Neatoo.Autofac
             builder.RegisterGeneric(typeof(RuleManager<>)).As(typeof(IRuleManager<>)).AsSelf();
             builder.RegisterType<RuleResultList>().As<IRuleResultList>();
             builder.RegisterType<RequiredRule>().As<IRequiredRule>();
-            builder.RegisterType<AttributeToRule>().As<IAttributeToRule>().SingleInstance(); // SingleInstance is save as long as it only resolves Func<>s
+            builder.RegisterType<AttributeToRule>().As<IAttributeToRule>().SingleInstance(); // SingleInstance is safe as long as it only resolves Func<>s
+            builder.Register<CreateRequiredRule>(cc =>
+            {
+                return (string propertyName) => new RequiredRule(propertyName);
+            });
 
             builder.RegisterGeneric(typeof(RegisteredProperty<>)).As(typeof(IRegisteredProperty<>));
             builder.Register<CreateRegisteredProperty>(cc =>

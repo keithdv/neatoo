@@ -19,7 +19,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.ComponentModel.Annotations" Version="4.5.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Neatoo.Autofac</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>

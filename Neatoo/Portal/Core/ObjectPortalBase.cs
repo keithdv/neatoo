@@ -22,9 +22,11 @@ namespace Neatoo.Portal.Core
             Scope = scope;
 
             // To find the static method this needs to be the concrete type
-            var concreteType = scope.ConcreteType<T>() ?? throw new Exception($"Type {typeof(T).FullName} is not registered");
-            OperationManager = (IPortalOperationManager)scope.Resolve(typeof(IPortalOperationManager<>).MakeGenericType(concreteType));
-
+            var concreteType = scope.ConcreteType<T>(); // TODO:  ?? throw new Exception($"Type {typeof(T).FullName} is not registered");
+            if (concreteType != null)
+            {
+                OperationManager = (IPortalOperationManager)scope.Resolve(typeof(IPortalOperationManager<>).MakeGenericType(concreteType));
+            }
         }
 
     }
