@@ -106,6 +106,7 @@ namespace Neatoo
                 }
                 if (IsBusy)
                 {
+                    // TODO await this.WaitForRules(); ??
                     throw new Exception("Object is busy and cannot be saved.");
                 }
             }

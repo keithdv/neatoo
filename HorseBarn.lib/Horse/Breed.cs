@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HorseBarn.lib
+namespace HorseBarn.lib.Horse
 {
-    public interface ILightHorse : IHorse
+    public enum Breed
     {
+        Thoroughbred, Mustang, QuarterHorse,
+        Clydesdale, Shire
     }
 }

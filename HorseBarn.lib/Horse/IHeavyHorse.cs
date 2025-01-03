@@ -1,13 +1,12 @@
-﻿using Neatoo;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HorseBarn.lib
+namespace HorseBarn.lib.Horse
 {
-    public interface IHorseList : IEditListBase<IHorse>
+    public interface IHeavyHorse : IHorse
     {
     }
 }

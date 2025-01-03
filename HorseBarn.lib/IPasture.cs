@@ -1,4 +1,5 @@
 ﻿
+using HorseBarn.lib.Horse;
 using Neatoo;
 
 namespace HorseBarn.lib
@@ -7,7 +8,9 @@ namespace HorseBarn.lib
     {
         Guid? Id { get; }
         string Name { get; set; }
+        internal IHorseList HorseList { get; }
+        public IEnumerable<IHorse> Horses { get; }
+        internal void RemoveHorse(IHorse horse);
 
-        IHorseList Horses { get; }
     }
 }

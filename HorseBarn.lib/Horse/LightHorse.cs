@@ -7,23 +7,26 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HorseBarn.lib
+namespace HorseBarn.lib.Horse
 {
+
     internal class LightHorse : Horse<LightHorse>, ILightHorse
     {
-        public LightHorse(IEditBaseServices<LightHorse> services, CreateRequiredRule createRequiredRule) : base(services, createRequiredRule)
+        public LightHorse(IEditBaseServices<LightHorse> services) : base(services)
         {
         }
+
+        public double TopSpeed { get => Getter<double>(); set => Setter(value); }
 
         [CreateChild]
         private void createChild(Breed breed)
         {
             if (!Horse<HeavyHorse>.IsLightHorse(breed))
             {
-                throw new Exception($"Incorred Breed: {breed.ToString()}");
+                throw new Exception($"Incorrect Breed: {breed.ToString()}");
             }
 
-            this.Breed = breed;
+            Breed = breed;
         }
     }
 }

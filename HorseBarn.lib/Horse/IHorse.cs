@@ -1,7 +1,6 @@
-﻿
-using Neatoo;
+﻿using Neatoo;
 
-namespace HorseBarn.lib
+namespace HorseBarn.lib.Horse
 {
     public interface IHorse : IEditBase
     {

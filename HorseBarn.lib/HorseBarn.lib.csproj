@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Neatoo\Neatoo.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Rules\" />
+  </ItemGroup>
+
 </Project>

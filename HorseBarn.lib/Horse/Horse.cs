@@ -3,24 +3,27 @@ using Neatoo.Portal;
 using Neatoo.Rules.Rules;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HorseBarn.lib
+namespace HorseBarn.lib.Horse
 {
-    public class Horse<H> : EditBase<H>, IHorse
-        where H: Horse<H>
+    // TODO : Abstract causes portal methods (ex [CreateChild]) to not be recognized by PortalOperationManager
+    internal class Horse<H> : EditBase<H>, IHorse
+        where H : Horse<H>
     {
-        public Horse(IEditBaseServices<H> services, CreateRequiredRule createRequiredRule) : base(services)
+        public Horse(IEditBaseServices<H> services) : base(services)
         {
-            RuleManager.AddRule(createRequiredRule(nameof(Name)));
         }
 
         public Guid? Id { get => Getter<Guid?>(); private set => Setter(value); }
 
+        [Required]
         public string Name { get => Getter<string>(); set => Setter(value); }
 
+        [Required]
         public Breed Breed { get => Getter<Breed>(); protected set => Setter(value); }
 
         private static IEnumerable<Breed> LightHorses = [Breed.QuarterHorse, Breed.Thoroughbred, Breed.Mustang];

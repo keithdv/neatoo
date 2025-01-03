@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HorseBarn.lib
+namespace HorseBarn.lib.Horse
 {
-    public interface IHeavyHorse : IHorse
+    public interface ILightHorse : IHorse
     {
+        double TopSpeed { get; set; }
     }
 }

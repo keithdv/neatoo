@@ -7,23 +7,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HorseBarn.lib
+namespace HorseBarn.lib.Horse
 {
     internal class HeavyHorse : Horse<HeavyHorse>, IHeavyHorse
     {
-        public HeavyHorse(IEditBaseServices<HeavyHorse> services, CreateRequiredRule createRequiredRule) : base(services, createRequiredRule)
+        public HeavyHorse(IEditBaseServices<HeavyHorse> services) : base(services)
         {
         }
 
         [CreateChild]
         private void createChild(Breed breed)
         {
-            if (!Horse<HeavyHorse>.IsHeavyHorse(breed))
+            if (!IsHeavyHorse(breed))
             {
-                throw new Exception($"Incorred Breed: {breed.ToString()}");
+                throw new Exception($"Incorrect Breed: {breed.ToString()}");
             }
 
-            this.Breed = breed;
+            Breed = breed;
         }
     }
 }

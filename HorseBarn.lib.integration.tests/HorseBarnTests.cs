@@ -1,4 +1,6 @@
 ﻿using Autofac;
+using HorseBarn.lib.Cart;
+using HorseBarn.lib.Horse;
 using Neatoo.Portal;
 
 namespace HorseBarn.lib.integration.tests
@@ -27,23 +29,50 @@ namespace HorseBarn.lib.integration.tests
         {
             var horseBarn = await portal.Create();
 
-            var horse = await horseBarn.AddNewHorse(Breed.Clydesdale);
+            horseBarn.Pasture.Name = "Pasture";
+
+            var heavyHorse = (IHeavyHorse) await horseBarn.AddNewHorse(Breed.Clydesdale);
 
             Assert.IsFalse(horseBarn.IsValid);
 
-            horse.Name = "Heavy Horse A";
+            heavyHorse.Name = "Heavy Horse A";
 
-            Assert.IsInstanceOfType<IHeavyHorse>(horse);
+            Assert.IsInstanceOfType<IHeavyHorse>(heavyHorse);
 
-            horse = await horseBarn.AddNewHorse(Breed.Thoroughbred);
+            var lightHorse = (ILightHorse) await horseBarn.AddNewHorse(Breed.Thoroughbred);
 
-            horse.Name = "Light Horse B";
+            lightHorse.Name = "Light Horse B";
 
-            Assert.IsInstanceOfType<ILightHorse>(horse);
-
+            Assert.IsInstanceOfType<ILightHorse>(lightHorse);
 
             Assert.IsTrue(horseBarn.IsValid);
 
+            var racingChariot = await horseBarn.AddRacingCart();
+
+            var wagon = await horseBarn.AddWagon();
+
+            Assert.IsFalse(horseBarn.IsValid);
+
+            racingChariot.Name = "Racing Chariot";
+            wagon.Name = "Wagon";
+
+            Assert.IsTrue(horseBarn.IsValid);
+
+            wagon.NumberOfHorses = 2;
+
+            // Key: Cannot add an ILightHorse to the wagon 
+            // No validation, no if statements
+            await horseBarn.MoveHorseToCart(heavyHorse, wagon);
+
+            Assert.IsFalse(horseBarn.IsValid);
+
+            heavyHorse = (IHeavyHorse) await horseBarn.AddNewHorse(Breed.Clydesdale);
+
+            heavyHorse.Name = "Heavy Horse B";
+
+            await horseBarn.MoveHorseToCart(heavyHorse, wagon);
+
+            Assert.IsTrue(horseBarn.IsValid);
         }
     }
 }
