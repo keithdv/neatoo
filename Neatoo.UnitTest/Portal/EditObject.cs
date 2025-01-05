@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Portal;
+using Neatoo.UnitTest.EditBaseTests;
 using Neatoo.UnitTest.Objects;
 using System;
 
@@ -10,6 +11,7 @@ namespace Neatoo.UnitTest.ObjectPortal
 
         public EditObject(IEditBaseServices<EditObject> baseServices) : base(baseServices)
         {
+
         }
 
         private IRegisteredProperty<Guid?> IDProperty => GetRegisteredProperty<Guid?>(nameof(ID));
@@ -18,6 +20,31 @@ namespace Neatoo.UnitTest.ObjectPortal
         public int IntCriteria { get => Getter<int>(); set => Setter(value); }
 
         public bool CreateCalled { get; set; } = false;
+
+        void IEditObject.MarkAsChild()
+        {
+            this.MarkAsChild();
+        }
+
+        void IEditObject.MarkDeleted()
+        {
+            this.MarkDeleted();
+        }
+
+        void IEditObject.MarkNew()
+        {
+            this.MarkNew();
+        }
+
+        void IEditObject.MarkOld()
+        {
+            this.MarkOld();
+        }
+
+        void IEditObject.MarkUnmodified()
+        {
+            this.MarkUnmodified();
+        }
 
         [Create]
         private void Create()

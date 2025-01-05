@@ -15,6 +15,16 @@ namespace Neatoo.UnitTest.EditBaseTests
 
         List<int> InitiallyNull { get; set; }
         List<int> InitiallyDefined { get; set; }
+        void MarkAsChild();
+
+        void MarkNew();
+
+        void MarkOld();
+
+        void MarkUnmodified();
+
+        void MarkDeleted();
+
     }
 
     public class EditPerson : PersonEditBase<EditPerson>, IEditPerson
@@ -32,6 +42,29 @@ namespace Neatoo.UnitTest.EditBaseTests
 
         public IEditPerson Child { get => Getter<IEditPerson>(); set => Setter(value); }
 
+        void IEditPerson.MarkAsChild()
+        {
+            this.MarkAsChild();
+        }
+        
+        void IEditPerson.MarkDeleted()
+        {
+            this.MarkDeleted();
+        }
 
+        void IEditPerson.MarkNew()
+        {
+            this.MarkNew();
+        }
+
+        void IEditPerson.MarkOld()
+        {
+            this.MarkOld();
+        }
+
+        void IEditPerson.MarkUnmodified()
+        {
+            this.MarkUnmodified();
+        }
     }
 }

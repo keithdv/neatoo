@@ -25,12 +25,10 @@ namespace HorseBarn.lib.integration.tests
         }
 
         [TestMethod]
-        public async Task HorseBarn_Create()
+        public async Task HorseBarn_FullRun()
         {
             var horseBarn = await portal.Create();
-
-            horseBarn.Pasture.Name = "Pasture";
-
+            
             var heavyHorse = (IHeavyHorse) await horseBarn.AddNewHorse(Breed.Clydesdale);
 
             Assert.IsFalse(horseBarn.IsValid);
@@ -73,6 +71,78 @@ namespace HorseBarn.lib.integration.tests
             await horseBarn.MoveHorseToCart(heavyHorse, wagon);
 
             Assert.IsTrue(horseBarn.IsValid);
+        }
+
+        [TestMethod]
+        public async Task HorseBarn_Create()
+        {
+            var horseBarn = await portal.Create();
+
+            Assert.IsNotNull(horseBarn.Pasture);
+            Assert.IsNotNull(horseBarn.Carts);
+        }
+
+        [TestMethod]
+        public async Task HorseBarn_AddRacingCart()
+        {
+            var horseBarn = await portal.Create();
+            var racingChariot = await horseBarn.AddRacingCart();
+
+            Assert.IsNotNull(racingChariot);
+            Assert.IsTrue(horseBarn.Carts.Contains(racingChariot));
+        }
+
+        [TestMethod]
+        public async Task HorseBarn_AddWagon()
+        {
+            var horseBarn = await portal.Create();
+            var wagon = await horseBarn.AddWagon();
+
+            Assert.IsNotNull(wagon);
+            Assert.IsTrue(horseBarn.Carts.Contains(wagon));
+        }
+
+        [TestMethod]
+        public async Task HorseBarn_AddNewHorse_LightHorse()
+        {
+            var horseBarn = await portal.Create();
+            var lightHorse = await horseBarn.AddNewHorse(Breed.Thoroughbred);
+
+            Assert.IsNotNull(lightHorse);
+            Assert.IsInstanceOfType<ILightHorse>(lightHorse);
+            Assert.IsTrue(horseBarn.Pasture.Horses.Contains(lightHorse));
+        }
+
+        [TestMethod]
+        public async Task HorseBarn_AddNewHorse_HeavyHorse()
+        {
+            var horseBarn = await portal.Create();
+            var heavyHorse = await horseBarn.AddNewHorse(Breed.Clydesdale);
+
+            Assert.IsNotNull(heavyHorse);
+            Assert.IsInstanceOfType<IHeavyHorse>(heavyHorse);
+            Assert.IsTrue(horseBarn.Pasture.Horses.Contains(heavyHorse));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(Exception))]
+        public async Task HorseBarn_AddNewHorse_InvalidBreed()
+        {
+            var horseBarn = await portal.Create();
+            await horseBarn.AddNewHorse((Breed)999); // Invalid breed
+        }
+
+        [TestMethod]
+        public async Task HorseBarn_MoveHorseToCart()
+        {
+            var horseBarn = await portal.Create();
+            var heavyHorse = (IHeavyHorse)await horseBarn.AddNewHorse(Breed.Clydesdale);
+            var wagon = await horseBarn.AddWagon();
+
+            await horseBarn.MoveHorseToCart(heavyHorse, wagon);
+
+            Assert.IsFalse(horseBarn.Pasture.Horses.Contains(heavyHorse));
+            Assert.IsTrue(wagon.Horses.Contains(heavyHorse));
         }
     }
 }

@@ -28,13 +28,27 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate = scope.Resolve<IValidateObject>();
             child = scope.Resolve<IValidateObject>();
             validate.Child = child;
+            validate.PropertyChanged += Validate_PropertyChanged; 
         }
 
+
+
+
+
         [TestCleanup]
-        public void TestCleanup()
+        public async Task TestCleanup()
         {
+            await validate.WaitForRules();
             Assert.IsFalse(validate.IsBusy);
             Assert.IsFalse(validate.IsSelfBusy);
+            validate.PropertyChanged -= Validate_PropertyChanged;
+            scope.Dispose();
+        }
+
+        private List<string> propertyChangedCalls = new List<string>();
+        private void Validate_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            propertyChangedCalls.Add(e.PropertyName);
         }
 
         [TestMethod]
@@ -128,7 +142,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         }
 
         [TestMethod]
-        public void ValidateBase_Rule_IsValid_False_Fixed()
+        public async Task ValidateBase_Rule_IsValid_False_Fixed()
         {
             validate.Title = "Mr.";
             validate.FirstName = "Error";
@@ -138,8 +152,11 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
             validate.FirstName = "John";
 
+            await validate.WaitForRules();
+
             Assert.IsTrue(validate.IsValid);
             Assert.IsNull(validate.RuleResultList[nameof(validate.FirstName)]);
+            Assert.IsTrue(propertyChangedCalls.Contains(nameof(validate.IsValid)));
 
         }
 

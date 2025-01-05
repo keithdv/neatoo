@@ -19,7 +19,7 @@ namespace Neatoo
     public interface IReadOnlyListBase<I> : IBase, INeatooObject, IPortalTarget, INotifyCollectionChanged, INotifyPropertyChanged, IReadOnlyCollection<I>, IReadOnlyList<I>
         where I : IBase
     {
-        new int Count { get; }
+        
     }
 
 
@@ -28,10 +28,13 @@ namespace Neatoo
 
     }
 
-    public interface IListBase<I> : IBase, INeatooObject, IPortalTarget, INotifyCollectionChanged, INotifyPropertyChanged, IEnumerable<I>, ICollection<I>, IList<I>
+    public interface IListBase<I> : IReadOnlyListBase<I>, IEnumerable<I>, ICollection<I>, IList<I>
+        where I : IBase
     {
         Task<I> CreateAdd();
         Task<I> CreateAdd(params object[] criteria);
+
+        new int Count { get; }
     }
 
     public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, IPortalTarget, IRegisteredPropertyAccess, ISetParent
@@ -54,6 +57,16 @@ namespace Neatoo
         void ISetParent.SetParent(IBase parent)
         {
             Parent = parent;
+        }
+
+        Task IPortalTarget.PostPortalConstruct()
+        {
+            return this.PostPortalConstruct();
+        }
+
+        protected virtual Task PostPortalConstruct()
+        {
+            return Task.CompletedTask;
         }
 
         protected IRegisteredProperty<PV> GetRegisteredProperty<PV>(string name)

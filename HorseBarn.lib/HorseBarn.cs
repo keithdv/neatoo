@@ -28,8 +28,10 @@ namespace HorseBarn.lib
         public IPasture Pasture { get => Getter<IPasture>(); private set => Setter(value); }
         public ICartList Carts {  get => Getter<ICartList>(); private set => Setter(value); }
 
+        IReadOnlyListBase<ICart> IHorseBarn.Carts => this.Carts;
+
         [Create]
-        private async Task Create(ISendReceivePortalChild<IPasture> pasturePortal, ISendReceivePortalChild<ICartList> cartListPortal)
+        public async Task Create(ISendReceivePortalChild<IPasture> pasturePortal, ISendReceivePortalChild<ICartList> cartListPortal)
         {
             this.Pasture = await pasturePortal.CreateChild();
             this.Carts = await cartListPortal.CreateChild();

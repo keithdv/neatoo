@@ -29,6 +29,11 @@ namespace Neatoo
         public IEditPropertyValueManager<T> EditPropertyValueManager { get; }
         public ISendReceivePortal<T> SendReceivePortal { get; }
 
+        public EditBaseServices(ISendReceivePortal<T> sendReceivePortal) : base(){
+            EditPropertyValueManager = new EditPropertyValueManager<T>(RegisteredPropertyManager, new DefaultFactory(), new ValuesDiffer());
+            SendReceivePortal = sendReceivePortal;  
+        }
+
         public EditBaseServices(IEditPropertyValueManager<T> registeredPropertyValueManager, IRegisteredPropertyManager<T> registeredPropertyManager, IRuleManager<T> ruleManager, ISendReceivePortal<T> sendReceivePortal)
             : base(registeredPropertyValueManager, registeredPropertyManager, ruleManager)
         {

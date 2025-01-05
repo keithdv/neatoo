@@ -19,7 +19,7 @@ namespace HorseBarn.lib.Horse
         public double TopSpeed { get => Getter<double>(); set => Setter(value); }
 
         [CreateChild]
-        private void createChild(Breed breed)
+        public void createChild(Breed breed)
         {
             if (!Horse<HeavyHorse>.IsLightHorse(breed))
             {

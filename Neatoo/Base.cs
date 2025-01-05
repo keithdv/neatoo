@@ -100,6 +100,16 @@ namespace Neatoo
             StartAllActions();
         }
 
+        Task IPortalTarget.PostPortalConstruct()
+        {
+            return this.PostPortalConstruct();
+        }
+
+        protected virtual Task PostPortalConstruct()
+        {
+            return Task.CompletedTask;
+        }
+
         P IRegisteredPropertyAccess.ReadProperty<P>(IRegisteredProperty<P> registeredProperty)
         {
             return PropertyValueManager.ReadProperty(registeredProperty);
@@ -124,6 +134,8 @@ namespace Neatoo
         {
             return PropertyValueManager.ReadProperty(registeredProperty);
         }
+
+
     }
 
 }

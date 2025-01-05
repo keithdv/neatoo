@@ -17,5 +17,15 @@ namespace Neatoo.UnitTest.ObjectPortal
         bool UpdateChildCalled { get; set; }
         bool InsertCalled { get; set; }
         bool InsertChildCalled { get; set; }
+
+        void MarkAsChild();
+
+        void MarkNew();
+
+        void MarkOld();
+
+        void MarkUnmodified();
+
+        void MarkDeleted();
     }
 }

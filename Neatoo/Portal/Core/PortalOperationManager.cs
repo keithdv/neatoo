@@ -16,6 +16,7 @@ namespace Neatoo.Portal.Core
         // TODO (?) make these depedencies that can be set to single instance??
         protected static IDictionary<PortalOperation, List<MethodInfo>> RegisteredOperations { get; } = new ConcurrentDictionary<PortalOperation, List<MethodInfo>>();
         protected static bool IsRegistered { get; set; }
+        protected static object lockIsRegistered = new object();
 
         private IServiceScope Scope { get; }
 
@@ -35,20 +36,23 @@ namespace Neatoo.Portal.Core
 
         protected virtual void RegisterPortalOperations()
         {
-            if (!IsRegistered)
+            lock (lockIsRegistered)
             {
-                var methods = typeof(T).GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)
-                    .Where(m => m.GetCustomAttributes<PortalOperationAttributeAttribute>() != null);
-
-                foreach (var m in methods)
+                if (!IsRegistered)
                 {
-                    var attributes = m.GetCustomAttributes<PortalOperationAttributeAttribute>();
-                    foreach (var o in attributes)
+                    var methods = typeof(T).GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)
+                        .Where(m => m.GetCustomAttributes<PortalOperationAttributeAttribute>() != null);
+
+                    foreach (var m in methods)
                     {
-                        RegisterOperation(o.Operation, m);
+                        var attributes = m.GetCustomAttributes<PortalOperationAttributeAttribute>();
+                        foreach (var o in attributes)
+                        {
+                            RegisterOperation(o.Operation, m);
+                        }
                     }
+                    IsRegistered = true;
                 }
-                IsRegistered = true;
             }
         }
 

@@ -27,7 +27,7 @@ namespace HorseBarn.lib.Cart
             // Static method so you don't accidentally reference the instance properties and get an error
             ruleManager.AddRule(c =>
             {
-                if (c.NumberOfHorses != 0 && c.NumberOfHorses != c.HorseList.Count)
+                if (c.HorseList.Count != 0 && c.NumberOfHorses != c.HorseList.Count)
                 {
                     return RuleResult.PropertyError(nameof(NumberOfHorses), $"There are {c.HorseList.Count} but there need to be {c.NumberOfHorses}");
                 }
@@ -40,13 +40,14 @@ namespace HorseBarn.lib.Cart
         [Required]
         public string Name { get => Getter<string>(); set => Setter(value); }
 
-        public int NumberOfHorses { get => Getter<int>(); set => Setter(value); }
+        [Required]
+        public int? NumberOfHorses { get => Getter<int>(); set => Setter(value); }
 
         public IHorseList<H> HorseList { get => Getter<IHorseList<H>>(); private set => Setter(value); }
 
         internal IEnumerable<IHorse> Horses => HorseList.Cast<IHorse>();
 
-        IEnumerable<IHorse> ICart.Horses => throw new NotImplementedException();
+        IEnumerable<IHorse> ICart.Horses => Horses;
 
         [CreateChild]
         public async void CreateChild(ISendReceivePortalChild<IHorseList<H>> horsePortal)

@@ -1,6 +1,7 @@
 ﻿using Neatoo.Attributes;
 using Neatoo.Core;
 using Neatoo.Rules;
+using Neatoo.Rules.Rules;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,13 +15,13 @@ using System.Threading.Tasks;
 
 namespace Neatoo
 {
-    public interface IValidateBase : IBase, IValidateMetaProperties
+
+    public interface IValidateBase : IBase, IValidateMetaProperties, INotifyPropertyChanged
     {
         Task WaitForRules();
         Task CheckAllRules(CancellationToken token = new CancellationToken());
         Task CheckAllSelfRules(CancellationToken token = new CancellationToken());
         IRuleResultReadOnlyList RuleResultList { get; }
-
         IEnumerable<string> BrokenRuleMessages { get; }
     }
 
@@ -63,9 +64,10 @@ namespace Neatoo
 
         protected virtual void SetProperty<P>(string propertyName, P value)
         {
-            if(PropertyValueManager.SetProperty(GetRegisteredProperty<P>(propertyName), value))
+            if (PropertyValueManager.SetProperty(GetRegisteredProperty<P>(propertyName), value))
             {
                 PropertyHasChanged(propertyName);
+                CheckRules(propertyName);
             }
         }
 
@@ -79,12 +81,20 @@ namespace Neatoo
         protected void PropertyHasChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            CheckRules(propertyName);
         }
 
         protected virtual void CheckRules(string propertyName)
         {
-            RuleManager.CheckRulesForProperty(propertyName);
+            var isValid = IsValid;
+
+            RuleManager.CheckRulesForProperty(propertyName)
+                .ContinueWith(t =>
+            {
+                if (isValid != IsValid)
+                {
+                    PropertyHasChanged(nameof(IsValid));
+                }
+            });
         }
 
         public virtual Task WaitForRules()
@@ -124,4 +134,15 @@ namespace Neatoo
         }
 
     }
+}
+
+
+
+[Serializable]
+public class AddRulesNotDefinedException<T> : Exception
+{
+    public AddRulesNotDefinedException() : base($"AddRules not defined for {typeof(T).Name}") { }
+    public AddRulesNotDefinedException(string message) : base(message) { }
+    public AddRulesNotDefinedException(string message, Exception inner) : base(message, inner) { }
+
 }

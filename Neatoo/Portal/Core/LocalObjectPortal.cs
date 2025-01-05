@@ -168,6 +168,7 @@ namespace Neatoo.Portal.Core
         {
             var target = Scope.Resolve<T>();
             await CallOperationMethod(target, operation, throwException);
+            await target.PostPortalConstruct();
             return target;
         }
 
@@ -187,6 +188,7 @@ namespace Neatoo.Portal.Core
         {
             var target = Scope.Resolve<T>();
             await CallOperationMethod(target, operation, criteria, criteriaTypes);
+            await target.PostPortalConstruct();
             return target;
         }
 

@@ -57,6 +57,13 @@ namespace Neatoo.Rules
 
         protected bool TransferredResults = false;
         public bool IsBusy => isRunningRules;
+
+        public RuleManager(IRegisteredPropertyManager<T> registeredPropertyManager)
+        {
+            Results = new RuleResultList();
+            AddAttributeRules(new AttributeToRule(rp => new RequiredRule(rp)), registeredPropertyManager);
+        }
+
         public RuleManager(IRuleResultList results, IAttributeToRule attributeToRule, IRegisteredPropertyManager<T> registeredPropertyManager)
         {
             Results = results;
@@ -167,7 +174,7 @@ namespace Neatoo.Rules
 
         public bool IsValid
         {
-            get { return !Results.Values.Where(r => r.IsError).Any(); }
+            get { return !IsBusy && !Results.Values.Where(r => r.IsError).Any(); }
         }
 
         [PortalDataMember]
@@ -187,12 +194,13 @@ namespace Neatoo.Rules
             Results.OverrideResult = RuleResult.PropertyError(typeof(T).FullName, message);
         }
 
-        public Task WaitForRules { get; private set; } = Task.CompletedTask;
+        public Task WaitForRules => waitForRulesSource?.Task ?? Task.CompletedTask;
 
         private TaskCompletionSource<object> waitForRulesSource;
         private CancellationTokenSource cancellationTokenSource;
 
         private bool isRunningRules = false;
+        private object isRunningRulesLock = new object();
 
         public void CheckRulesQueue(bool isRecursiveCall = false)
         {
@@ -213,7 +221,6 @@ namespace Neatoo.Rules
                     isRunningRules = true;
                     cancellationTokenSource = new CancellationTokenSource();
                     waitForRulesSource = new TaskCompletionSource<object>();
-                    WaitForRules = waitForRulesSource.Task;
                 }
             }
 
@@ -236,36 +243,39 @@ namespace Neatoo.Rules
                 }
             }
 
-            if (OverrideResult == null && !isRunningRules || isRecursiveCall)
+            lock (isRunningRulesLock)
             {
-                Start();
-                var token = cancellationTokenSource.Token; // Local stack copy important
-
-                while (ruleQueue.TryDequeue(out var ruleIndex))
+                if (OverrideResult == null && !isRunningRules || isRecursiveCall)
                 {
+                    Start();
+                    var token = cancellationTokenSource.Token; // Local stack copy important
 
-                    // System.Diagnostics.Debug.WriteLine($"Dequeue {propertyName}");
-
-                    var ruleManagerTask = RunRule(Rules[ruleIndex], token);
-
-                    if (!ruleManagerTask.IsCompleted)
+                    while (ruleQueue.TryDequeue(out var ruleIndex))
                     {
-                        // Really important
-                        // If there there is not an asyncronous fork all of the async methods will run synchronously
-                        // Which is great! Because we are likely within a property change
-                        // However, if there was an asyncronous fork we need to handle it's completion
-                        // In WPF there's an executable so this will continue "hands off"
-                        // In request response the WaitForRules needs to be awaited!
-                        ruleManagerTask.ContinueWith(x =>
+
+                        // System.Diagnostics.Debug.WriteLine($"Dequeue {propertyName}");
+
+                        var ruleManagerTask = RunRule(Rules[ruleIndex], token);
+
+                        if (!ruleManagerTask.IsCompleted)
                         {
-                            CheckRulesQueue(true);
-                        });
+                            // Really important
+                            // If there there is not an asyncronous fork all of the async methods will run synchronously
+                            // Which is great! Because we are likely within a property change
+                            // However, if there was an asyncronous fork we need to handle it's completion
+                            // WPF is an executable so this will continue "hands off"
+                            // In request response the WaitForRules needs to be awaited!
+                            ruleManagerTask.ContinueWith(x =>
+                            {
+                                CheckRulesQueue(true);
+                            });
 
-                        return; // Let the ContinueWith call CheckRulesQueue again
+                            return; // Let the ContinueWith call CheckRulesQueue again
+                        }
                     }
-                }
 
-                Stop();
+                    Stop();
+                }
             }
         }
 

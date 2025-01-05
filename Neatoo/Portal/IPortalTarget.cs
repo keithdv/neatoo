@@ -10,25 +10,19 @@ namespace Neatoo.Portal
     {
         Task<IDisposable> StopAllActions();
         void StartAllActions();
+        internal Task PostPortalConstruct();
     }
 
-    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IPortalEditTarget : IPortalTarget
     {
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        void MarkAsChild();
+        internal void MarkAsChild();
 
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        void MarkNew();
+        internal void MarkNew();
 
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        void MarkOld();
+        internal void MarkOld();
 
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        void MarkUnmodified();
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        void MarkDeleted();
+        internal void MarkUnmodified();
 
+        internal void MarkDeleted();
     }
-
 }

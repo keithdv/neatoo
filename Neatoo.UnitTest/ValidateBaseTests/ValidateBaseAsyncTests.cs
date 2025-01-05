@@ -4,6 +4,7 @@ using Neatoo.Rules;
 using Neatoo.UnitTest.PersonObjects;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,6 +32,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate = scope.Resolve<IValidateAsyncObject>();
             child = scope.Resolve<IValidateAsyncObject>();
             validate.Child = child;
+            validate.PropertyChanged += Validate_PropertyChanged;   
         }
 
         [TestCleanup]
@@ -38,6 +40,13 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         {
             Assert.IsFalse(validate.IsBusy);
             Assert.IsFalse(validate.IsSelfBusy);
+            validate.PropertyChanged -= Validate_PropertyChanged;
+        }
+
+        private List<string> propertyChanged = new List<string>();
+        private void Validate_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            propertyChanged.Add(e.PropertyName);
         }
 
         [TestMethod]
@@ -155,7 +164,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
             Assert.IsTrue(validate.IsValid);
             Assert.IsNull(validate.RuleResultList[nameof(validate.FirstName)]);
-
+            Assert.IsTrue(propertyChanged.Contains(nameof(validate.IsValid)));
         }
 
 

@@ -24,6 +24,7 @@ namespace Neatoo.Core
         //void LoadProperty(IRegisteredProperty registeredProperty, object newValue);
         IPropertyValue ReadProperty(string propertyName);
         IPropertyValue ReadProperty(IRegisteredProperty registeredProperty);
+
     }
 
 
@@ -33,7 +34,7 @@ namespace Neatoo.Core
     /// <typeparam name="T"></typeparam>
     public interface IPropertyValueManager<T> : IPropertyValueManager
     {
-
+        internal IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
     }
 
     public interface IPropertyValue
@@ -90,14 +91,18 @@ namespace Neatoo.Core
         protected T Target { get; set; }
 
         protected IFactory Factory { get; }
-        protected readonly IRegisteredPropertyManager<T> registeredPropertyManager;
+
+        IRegisteredPropertyManager<T> IPropertyValueManager<T>.RegisteredPropertyManager => RegisteredPropertyManager;
+
+        protected readonly IRegisteredPropertyManager<T> RegisteredPropertyManager;
+
 
         [PortalDataMember]
         protected IDictionary<uint, P> fieldData = new ConcurrentDictionary<uint, P>();
 
         public PropertyValueManagerBase(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory)
         {
-            this.registeredPropertyManager = registeredPropertyManager;
+            this.RegisteredPropertyManager = registeredPropertyManager;
             Factory = factory;
         }
 
@@ -105,7 +110,7 @@ namespace Neatoo.Core
 
         public IRegisteredProperty<PV> GetRegisteredProperty<PV>(string name)
         {
-            return registeredPropertyManager.GetRegisteredProperty<PV>(name);
+            return RegisteredPropertyManager.GetRegisteredProperty<PV>(name);
         }
 
         void ISetTarget.SetTarget(IBase target)
@@ -151,7 +156,7 @@ namespace Neatoo.Core
 
         public virtual IPropertyValue ReadProperty(string propertyName)
         {
-            return ReadProperty(registeredPropertyManager.GetRegisteredProperty(propertyName));
+            return ReadProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
         }
 
         public virtual IPropertyValue ReadProperty(IRegisteredProperty registeredProperty)

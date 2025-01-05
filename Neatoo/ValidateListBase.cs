@@ -18,6 +18,7 @@ namespace Neatoo
     }
 
     public interface IValidateListBase<I> : IListBase<I>, IValidateBase, IValidateMetaProperties
+        where I : IValidateBase
     {
 
     }
