@@ -26,7 +26,7 @@ namespace Neatoo.Portal.Core
         public PortalOperationManager(IServiceScope scope)
         {
 #if DEBUG
-            if (typeof(T).IsInterface) { throw new Exception($"PortalOperationManager should be service type not interface. {typeof(T).FullName}"); }
+            if (typeof(T).IsInterface) { throw new Exception($"PortalOperationManager should be service type not an interface. {typeof(T).FullName}"); }
 #endif
             RegisterPortalOperations();
             Scope = scope;

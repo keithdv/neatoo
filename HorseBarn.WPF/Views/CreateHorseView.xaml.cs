@@ -15,11 +15,11 @@ using System.Windows.Shapes;
 namespace HorseBarn.WPF.Views
 {
     /// <summary>
-    /// Interaction logic for HorseBarnView.xaml
+    /// Interaction logic for CreateHorse.xaml
     /// </summary>
-    public partial class HorseBarnView : Window
+    public partial class CreateHorseView : Window
     {
-        public HorseBarnView()
+        public CreateHorseView()
         {
             InitializeComponent();
         }

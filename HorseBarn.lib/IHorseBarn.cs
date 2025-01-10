@@ -8,9 +8,10 @@ namespace HorseBarn.lib
     {
         IPasture Pasture { get; }
         IReadOnlyListBase<ICart> Carts { get; }
-        Task<IHorse> AddNewHorse(Breed breed);
-        Task<IRacingChariot> AddRacingCart();
+        Task<IHorse> AddNewHorse(IHorseCriteria horseCriteria);
+        Task<IRacingChariot> AddRacingChariot();
         Task<IWagon> AddWagon();
-        Task MoveHorseToCart<H>(H horse, ICart<H> cart) where H : IHorse;
+        Task MoveHorseToCart(IHorse horse, ICart cart);
+        Task MoveHorseToPasture(IHorse horse);
     }
 }

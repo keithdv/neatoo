@@ -213,5 +213,31 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsFalse(child.IsValid);
             Assert.IsFalse(child.IsSelfValid);
         }
+
+        [TestMethod]
+        public async Task ValidateBaseAsync_AsyncRuleThrowsException()
+        {
+            validate.ThrowException = "Throw";
+            await Assert.ThrowsExceptionAsync<AggregateException>(validate.WaitForRules);
+            Assert.IsFalse(validate.IsValid);
+            Assert.IsTrue(validate.RuleResultList[nameof(validate.ThrowException)].IsError);
+        }
+
+        [TestMethod]
+        public async Task ValidateBaseAsync_RecursiveRuleAsync()
+        {
+            validate.ShortName = "Recursive";
+            await validate.WaitForRules();
+            Assert.AreEqual("Recursive change", validate.ShortName);
+        }
+
+        [TestMethod]
+        public async Task ValidateBaseAsync_RecursiveRule_Invalid()
+        {
+            // This will cause the ShortNameRule to fail
+            validate.ShortName = "Recursive Error";
+            await validate.WaitForRules();
+            Assert.IsFalse(validate.IsValid);
+        }
     }
 }

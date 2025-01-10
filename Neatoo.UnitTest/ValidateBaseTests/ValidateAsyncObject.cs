@@ -11,24 +11,31 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     {
         IValidateAsyncObject Child { get; set; }
         int RuleRunCount { get; }
+        string ThrowException { get; set; }
     }
 
-    public class ValidateAsyncObject : PersonValidateBase<ValidateAsyncObject>, IValidateAsyncObject
+    internal class ValidateAsyncObject : PersonValidateBase<ValidateAsyncObject>, IValidateAsyncObject
     {
         public IShortNameAsyncRule<ValidateAsyncObject> ShortNameRule { get; }
         public IFullNameAsyncRule<ValidateAsyncObject> FullNameRule { get; }
 
         public ValidateAsyncObject(IValidateBaseServices<ValidateAsyncObject> services,
             IShortNameAsyncRule<ValidateAsyncObject> shortNameRule,
-            IFullNameAsyncRule<ValidateAsyncObject> fullNameRule
+            IFullNameAsyncRule<ValidateAsyncObject> fullNameRule,
+            IAsyncRuleThrowsException asyncRuleThrowsException,
+            IRecursiveAsyncRule recursiveAsyncRule
             ) : base(services)
         {
-            RuleManager.AddRules(shortNameRule, fullNameRule);
+            RuleManager.AddRules(shortNameRule, fullNameRule, recursiveAsyncRule);
             ShortNameRule = shortNameRule;
             FullNameRule = fullNameRule;
+            // TODO : Can add a rule that's not the correct type, Handle?
+            RuleManager.AddRule(asyncRuleThrowsException);
         }
 
         public IValidateAsyncObject Child { get { return Getter<IValidateAsyncObject>(); } set { Setter(value); } }
+
+        public string ThrowException { get => Getter<string>(); set => Setter(value); }
 
         [Fetch]
         [FetchChild]

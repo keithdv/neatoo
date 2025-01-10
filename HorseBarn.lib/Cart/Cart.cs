@@ -5,6 +5,7 @@ using Neatoo.Rules;
 using Neatoo.Rules.Rules;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -22,17 +23,34 @@ namespace HorseBarn.lib.Cart
             AddRules(this.RuleManager);
         }
 
+        event NotifyCollectionChangedEventHandler? INotifyCollectionChanged.CollectionChanged
+        {
+            add
+            {
+                HorseList.CollectionChanged += value;
+            }
+
+            remove
+            {
+                HorseList.CollectionChanged -= value;
+            }
+        }
+
         private static void AddRules(IRuleManager<C> ruleManager)
         {
             // Static method so you don't accidentally reference the instance properties and get an error
             ruleManager.AddRule(c =>
             {
-                if (c.HorseList.Count != 0 && c.NumberOfHorses != c.HorseList.Count)
+                if(c.HorseList.Count > c.NumberOfHorses)
+                {
+                    c.NumberOfHorses = c.HorseList.Count;
+                }
+                else if (c.HorseList.Count != 0 && c.NumberOfHorses != c.HorseList.Count)
                 {
                     return RuleResult.PropertyError(nameof(NumberOfHorses), $"There are {c.HorseList.Count} but there need to be {c.NumberOfHorses}");
                 }
                 return RuleResult.Empty();
-            }, nameof(NumberOfHorses));
+            }, nameof(NumberOfHorses), nameof(HorseList));
         }
 
         public Guid? Id { get => Getter<Guid?>(); private set => Setter(value); }
@@ -41,24 +59,41 @@ namespace HorseBarn.lib.Cart
         public string Name { get => Getter<string>(); set => Setter(value); }
 
         [Required]
-        public int? NumberOfHorses { get => Getter<int>(); set => Setter(value); }
+        public int NumberOfHorses { get => Getter<int>(); set => Setter(value); }
 
         public IHorseList<H> HorseList { get => Getter<IHorseList<H>>(); private set => Setter(value); }
 
         internal IEnumerable<IHorse> Horses => HorseList.Cast<IHorse>();
 
-        IEnumerable<IHorse> ICart.Horses => Horses;
+        IEnumerable<IHorse> ICart.Horses => HorseList;
+
+        protected override Task PostPortalConstruct()
+        {
+            HorseList.CollectionChanged += (s, e) => CheckRules(nameof(HorseList));
+            return base.PostPortalConstruct();
+        }
 
         [CreateChild]
         public async void CreateChild(ISendReceivePortalChild<IHorseList<H>> horsePortal)
         {
             this.HorseList = await horsePortal.CreateChild();
-            await this.CheckAllRules();
+            await this.CheckAllSelfRules();
         }
 
         public void RemoveHorse(IHorse horse)
         {
             HorseList.RemoveHorse(horse);
+        }
+
+        public void AddHorse(IHorse horse)
+        {
+            if(horse is H h)
+            {
+                HorseList.Add(h);
+            } else
+            {
+                throw new ArgumentException($"Horse {horse.GetType().FullName} is not of type {typeof(H).FullName}");
+            }
         }
     }
 }

@@ -17,6 +17,8 @@ namespace Neatoo.Rules
         IReadOnlyDictionary<string, string> PropertyErrorMessages { get; }
 
         IReadOnlyList<string> TriggerProperties { get; set; }
+
+        Exception Exception { get; }
     }
 
     [PortalDataContract]
@@ -29,6 +31,8 @@ namespace Neatoo.Rules
 
         public bool IsError { get { return PropertyErrorMessages.Any(); } }
 
+        public Exception Exception { get; private set; }
+
         [PortalDataMember]
         public IReadOnlyList<string> TriggerProperties { get; set; }
 
@@ -37,10 +41,17 @@ namespace Neatoo.Rules
             return new RuleResult();
         }
 
-        public static RuleResult PropertyError(string propertyName, string message)
+
+       
+        public static RuleResult PropertyError(string propertyName, string message, Exception exception = null)
         {
+            // TODO - Make a DI Delegate so that a custom RuleResult can be created
+
             var result = new RuleResult();
+            // TODO - Bad logic?
+            // I don't like the approac: create then AddPropertyError to be a clear approach to multiple errors
             result.PropertyErrorMessages.Add(propertyName, message);
+            result.Exception = exception;
             return result;
         }
 
@@ -53,7 +64,6 @@ namespace Neatoo.Rules
         public void OnSerializing(StreamingContext context)
         {
             // Readonly list cannot be serialized
-
             TriggerProperties = TriggerProperties?.ToList();
         }
 

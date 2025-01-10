@@ -16,14 +16,15 @@ namespace HorseBarn.lib.Horse
         }
 
         [CreateChild]
-        private void createChild(Breed breed)
+        public void createChild(IHorseCriteria horseCriteria)
         {
-            if (!IsHeavyHorse(breed))
+
+            if (!IsHeavyHorse(horseCriteria.Breed))
             {
-                throw new Exception($"Incorrect Breed: {breed.ToString()}");
+                throw new Exception($"Incorrect Breed: {horseCriteria.Breed.ToString()}");
             }
 
-            Breed = breed;
+            Create(horseCriteria);
         }
     }
 }

@@ -179,6 +179,8 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsFalse(Child.IsSelfValid);
         }
 
+
+
         [TestMethod]
         public async Task Validate_RunSelfRules()
         {

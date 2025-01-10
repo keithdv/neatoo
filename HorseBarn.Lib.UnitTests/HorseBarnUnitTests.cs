@@ -58,7 +58,7 @@ namespace HorseBarn.lib.UnitTests
 
             mockRacingChariotPortal.Setup(p => p.CreateChild()).ReturnsAsync(mockRacingChariot.Object);
 
-            var racingChariot = await horseBarn.AddRacingCart();
+            var racingChariot = await horseBarn.AddRacingChariot();
 
             Assert.AreEqual(mockRacingChariot.Object, racingChariot);
             mockCartListPortal.Verify(c => c.CreateChild(), Times.Once);
@@ -81,10 +81,12 @@ namespace HorseBarn.lib.UnitTests
         public async Task HorseBarn_AddNewHorse_LightHorse()
         {
             var mockLightHorse = new Mock<ILightHorse>();
+            var criteria = Mock.Of<IHorseCriteria>();
+            criteria.Breed = Breed.Thoroughbred;
 
             mockLightHorsePortal.Setup(p => p.CreateChild(It.IsAny<Breed>())).ReturnsAsync(mockLightHorse.Object);
 
-            var lightHorse = await horseBarn.AddNewHorse(Breed.Thoroughbred);
+            var lightHorse = await horseBarn.AddNewHorse(criteria);
 
             Assert.AreEqual(mockLightHorse.Object, lightHorse);
             mockLightHorse.Verify(h => h.CheckAllRules(CancellationToken.None), Times.Once);
@@ -95,9 +97,9 @@ namespace HorseBarn.lib.UnitTests
         {
             var mockHeavyHorse = new Mock<IHeavyHorse>();
 
-            mockHeavyHorsePortal.Setup(p => p.CreateChild(It.IsAny<Breed>())).ReturnsAsync(mockHeavyHorse.Object);
+            mockHeavyHorsePortal.Setup(p => p.CreateChild(It.IsAny<IHorseCriteria>())).ReturnsAsync(mockHeavyHorse.Object);
 
-            var heavyHorse = await horseBarn.AddNewHorse(Breed.Clydesdale);
+            var heavyHorse = await horseBarn.AddNewHorse(Mock.Of<IHorseCriteria>());
 
             Assert.AreEqual(mockHeavyHorse.Object, heavyHorse);
             mockHeavyHorse.Verify(h => h.CheckAllRules(CancellationToken.None), Times.Once);
@@ -107,7 +109,11 @@ namespace HorseBarn.lib.UnitTests
         [ExpectedException(typeof(Exception))]
         public async Task HorseBarn_AddNewHorse_InvalidBreed()
         {
-            await horseBarn.AddNewHorse((Breed)999); // Invalid breed
+            var criteria = Mock.Of<IHorseCriteria>();
+            criteria.Breed = (Breed) 999;
+
+            await horseBarn.AddNewHorse(criteria); // Invalid breed
+
         }
 
         [TestMethod]

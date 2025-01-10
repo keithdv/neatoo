@@ -37,7 +37,7 @@ namespace HorseBarn.lib
             this.Carts = await cartListPortal.CreateChild();
         }
 
-        public async Task<IRacingChariot> AddRacingCart()
+        public async Task<IRacingChariot> AddRacingChariot()
         {
             var newCart = await racingChariotPortal.CreateChild();
             this.Carts.Add(newCart);
@@ -51,21 +51,21 @@ namespace HorseBarn.lib
             return newCart;
         }
 
-        public async Task<IHorse> AddNewHorse(Breed breed)
+        public async Task<IHorse> AddNewHorse(IHorseCriteria horseCriteria)
         {
             IHorse horse;
 
-            if (Horse<LightHorse>.IsLightHorse(breed))
+            if (Horse<LightHorse>.IsLightHorse(horseCriteria.Breed))
             {
-                horse = await lightHorsePortal.CreateChild(breed);
+                horse = await lightHorsePortal.CreateChild(horseCriteria);
             }
-            else if (Horse<HeavyHorse>.IsHeavyHorse(breed))
+            else if (Horse<HeavyHorse>.IsHeavyHorse(horseCriteria.Breed))
             {
-                horse = await heavyHorsePortal.CreateChild(breed);
+                horse = await heavyHorsePortal.CreateChild(horseCriteria);
             }
             else
             {
-                throw new Exception($"Cannot create child horse for breed {breed}");
+                throw new Exception($"Cannot create child horse for breed {horseCriteria.Breed}");
             }
 
             await horse.CheckAllRules();
@@ -73,14 +73,26 @@ namespace HorseBarn.lib
             return horse;
         }
 
-        public async Task MoveHorseToCart<H>(H horse, ICart<H> cart) where H : IHorse
+        public async Task MoveHorseToCart(IHorse horse, ICart cart)
         {
             Pasture.RemoveHorse(horse);
             Carts.RemoveHorse(horse);
 
-            cart.HorseList.Add(horse);
+            cart.AddHorse(horse);
 
-            await cart.CheckAllRules(); // TODO: This should be automatic
+            await CheckAllRules(); // TODO: This should be automatic
+        }
+
+        public async Task MoveHorseToPasture(IHorse horse)
+        {
+            Carts.RemoveHorse(horse);
+
+            if (!Pasture.HorseList.Contains(horse))
+            {
+                Pasture.HorseList.Add(horse);
+            }
+
+            await CheckAllRules(); // TODO: This should be automatic
         }
     }
 }

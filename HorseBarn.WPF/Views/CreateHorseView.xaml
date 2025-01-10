@@ -1,0 +1,30 @@
+﻿<Window x:Class="HorseBarn.WPF.Views.CreateHorseView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:HorseBarn.WPF.Views"
+        xmlns:horse="clr-namespace:HorseBarn.lib.Horse;assembly=HorseBarn.lib"
+        xmlns:conv="clr-namespace:HorseBarn.WPF.Converters"
+        mc:Ignorable="d"
+        Title="Create Horse" Height="450" Width="800" SizeToContent="Width">
+    <Window.Resources>
+        <conv:DateTimeDateOnlyConverter x:Key="DateTimeDateOnlyConverter"/>
+    </Window.Resources>
+    <Grid>
+        <StackPanel>
+            <TextBlock Text="Horse Criteria" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Name:"/>
+            <TextBox Text="{Binding HorseCriteria.Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Breed:"/>
+            <ComboBox ItemsSource="{Binding Breeds}" SelectedItem="{Binding HorseCriteria.Breed, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+            <TextBlock Text="BirthDay:"/>
+            <DatePicker SelectedDate="{Binding HorseCriteria.BirthDay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource DateTimeDateOnlyConverter}}" Margin="0,0,0,10"/>
+            <Button x:Name="create" IsEnabled="{Binding HorseCriteria.IsValid}">Create</Button>
+            <Button x:Name="cancel">Cancel</Button>
+        </StackPanel>
+    </Grid>
+</Window>

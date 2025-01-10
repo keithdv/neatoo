@@ -60,5 +60,11 @@ namespace HorseBarn.lib.Horse
             return HeavyHorses.Contains(breed);
         }
 
+        protected void Create(IHorseCriteria horseCriteria)
+        {
+            this.Breed = horseCriteria.Breed;
+            this.BirthDate = horseCriteria.BirthDay;
+            this.Name = horseCriteria.Name;
+        }
     }
 }

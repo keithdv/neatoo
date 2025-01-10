@@ -15,7 +15,7 @@ namespace Neatoo.Rules
         /// Must be unique for every rule across all types
         /// </summary>
         uint UniqueIndex { get; }
-        IReadOnlyList<string> TriggerProperties { get; }
+        IReadOnlyList<string> TriggerProperties { get; } 
 
     }
 
@@ -60,6 +60,12 @@ namespace Neatoo.Rules
 
         public AsyncRuleBase(params IRegisteredProperty[] triggerProperties) : this(triggerProperties.Select(t => t.Name).AsEnumerable()) { }
 
+        /// <summary>
+        /// Define the properties without using nameof()
+        /// Much more involved and complicated
+        /// I don't know that I am going to support this long term. 
+        /// </summary>
+        /// <param name="triggerProperties"></param>
         public AsyncRuleBase(IEnumerable<IRegisteredProperty> triggerProperties) : this()
         {
             TriggerProperties.AddRange(triggerProperties.Select(t => t.Name));
@@ -81,12 +87,6 @@ namespace Neatoo.Rules
             return target as IRegisteredPropertyAccess ?? throw new Exception("Target must inherit from Base<> to use ReadPropertyValue method");
         }
 
-        /// <summary>
-        /// Allows rule to get the meta properties (IsValid, IsModified)
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="propertyName"></param>
-        /// <returns></returns>
         protected IPropertyValue ReadPropertyValue(T target, IRegisteredProperty registeredProperty)
         {
             return ToPropertyAccessor(target).ReadPropertyValue(registeredProperty);
@@ -118,6 +118,13 @@ namespace Neatoo.Rules
             ToPropertyAccessor(target).SetProperty(registeredProperty, value);
         }
 
+        /// <summary>
+        /// Write a property without re-runnning any rules
+        /// </summary>
+        /// <typeparam name="P"></typeparam>
+        /// <param name="target"></param>
+        /// <param name="registeredProperty"></param>
+        /// <param name="value"></param>
         protected void LoadProperty<P>(T target, IRegisteredProperty<P> registeredProperty, P value)
         {
             ToPropertyAccessor(target).LoadProperty(registeredProperty, value);

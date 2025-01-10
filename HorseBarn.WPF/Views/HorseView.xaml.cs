@@ -10,16 +10,17 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace HorseBarn.WPF.Views
 {
     /// <summary>
-    /// Interaction logic for HorseBarnView.xaml
+    /// Interaction logic for HorseView.xaml
     /// </summary>
-    public partial class HorseBarnView : Window
+    public partial class HorseView : UserControl
     {
-        public HorseBarnView()
+        public HorseView()
         {
             InitializeComponent();
         }

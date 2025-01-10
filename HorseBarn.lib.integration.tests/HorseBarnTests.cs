@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using HorseBarn.lib.Cart;
 using HorseBarn.lib.Horse;
+using Moq;
 using Neatoo.Portal;
 
 namespace HorseBarn.lib.integration.tests
@@ -29,23 +30,28 @@ namespace HorseBarn.lib.integration.tests
         {
             var horseBarn = await portal.Create();
             
-            var heavyHorse = (IHeavyHorse) await horseBarn.AddNewHorse(Breed.Clydesdale);
+            var criteria = Mock.Of<IHorseCriteria>();
+
+            criteria.Name = "Heavy Horse A";
+            criteria.Breed = Breed.Clydesdale;
+            criteria.BirthDay = DateOnly.FromDateTime(DateTime.Now);
+
+            var heavyHorse = (IHeavyHorse) await horseBarn.AddNewHorse(criteria);
 
             Assert.IsFalse(horseBarn.IsValid);
 
-            heavyHorse.Name = "Heavy Horse A";
-
             Assert.IsInstanceOfType<IHeavyHorse>(heavyHorse);
 
-            var lightHorse = (ILightHorse) await horseBarn.AddNewHorse(Breed.Thoroughbred);
+            criteria.Name = "Light Horse B"; 
+            criteria.Breed = Breed.Thoroughbred;
 
-            lightHorse.Name = "Light Horse B";
+            var lightHorse = (ILightHorse) await horseBarn.AddNewHorse(criteria);
 
             Assert.IsInstanceOfType<ILightHorse>(lightHorse);
 
             Assert.IsTrue(horseBarn.IsValid);
 
-            var racingChariot = await horseBarn.AddRacingCart();
+            var racingChariot = await horseBarn.AddRacingChariot();
 
             var wagon = await horseBarn.AddWagon();
 
@@ -64,9 +70,10 @@ namespace HorseBarn.lib.integration.tests
 
             Assert.IsFalse(horseBarn.IsValid);
 
-            heavyHorse = (IHeavyHorse) await horseBarn.AddNewHorse(Breed.Clydesdale);
+            criteria.Name = "Heavy Horse B";
+            criteria.Breed = Breed.Clydesdale;
 
-            heavyHorse.Name = "Heavy Horse B";
+            heavyHorse = (IHeavyHorse) await horseBarn.AddNewHorse(criteria);
 
             await horseBarn.MoveHorseToCart(heavyHorse, wagon);
 
@@ -86,7 +93,7 @@ namespace HorseBarn.lib.integration.tests
         public async Task HorseBarn_AddRacingCart()
         {
             var horseBarn = await portal.Create();
-            var racingChariot = await horseBarn.AddRacingCart();
+            var racingChariot = await horseBarn.AddRacingChariot();
 
             Assert.IsNotNull(racingChariot);
             Assert.IsTrue(horseBarn.Carts.Contains(racingChariot));
@@ -106,7 +113,9 @@ namespace HorseBarn.lib.integration.tests
         public async Task HorseBarn_AddNewHorse_LightHorse()
         {
             var horseBarn = await portal.Create();
-            var lightHorse = await horseBarn.AddNewHorse(Breed.Thoroughbred);
+            var criteria = Mock.Of<IHorseCriteria>();
+            criteria.Breed = Breed.Thoroughbred;
+            var lightHorse = await horseBarn.AddNewHorse(criteria);
 
             Assert.IsNotNull(lightHorse);
             Assert.IsInstanceOfType<ILightHorse>(lightHorse);
@@ -117,7 +126,9 @@ namespace HorseBarn.lib.integration.tests
         public async Task HorseBarn_AddNewHorse_HeavyHorse()
         {
             var horseBarn = await portal.Create();
-            var heavyHorse = await horseBarn.AddNewHorse(Breed.Clydesdale);
+            var criteria = Mock.Of<IHorseCriteria>();
+            criteria.Breed = Breed.Clydesdale;
+            var heavyHorse = await horseBarn.AddNewHorse(criteria);
 
             Assert.IsNotNull(heavyHorse);
             Assert.IsInstanceOfType<IHeavyHorse>(heavyHorse);
@@ -129,14 +140,18 @@ namespace HorseBarn.lib.integration.tests
         public async Task HorseBarn_AddNewHorse_InvalidBreed()
         {
             var horseBarn = await portal.Create();
-            await horseBarn.AddNewHorse((Breed)999); // Invalid breed
+            var criteria = Mock.Of<IHorseCriteria>();
+            criteria.Breed = (Breed)999; // Invalid breed
+            await horseBarn.AddNewHorse(criteria); // Invalid breed
         }
 
         [TestMethod]
         public async Task HorseBarn_MoveHorseToCart()
         {
             var horseBarn = await portal.Create();
-            var heavyHorse = (IHeavyHorse)await horseBarn.AddNewHorse(Breed.Clydesdale);
+            var criteria = Mock.Of<IHorseCriteria>();
+            criteria.Breed = Breed.Clydesdale;
+            var heavyHorse = (IHeavyHorse)await horseBarn.AddNewHorse(criteria);
             var wagon = await horseBarn.AddWagon();
 
             await horseBarn.MoveHorseToCart(heavyHorse, wagon);

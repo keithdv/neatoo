@@ -1,6 +1,7 @@
 ﻿
 using HorseBarn.lib.Horse;
 using Neatoo;
+using System.Collections.Specialized;
 
 namespace HorseBarn.lib
 {
@@ -8,6 +9,7 @@ namespace HorseBarn.lib
     {
         internal IHorseList HorseList { get; }
         public IReadOnlyListBase<IHorse> Horses { get; }
+
         internal void RemoveHorse(IHorse horse);
     }
 }

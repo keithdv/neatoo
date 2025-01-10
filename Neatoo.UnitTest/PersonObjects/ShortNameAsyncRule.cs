@@ -1,5 +1,6 @@
 ﻿using Neatoo.Rules;
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,6 +11,8 @@ namespace Neatoo.UnitTest.PersonObjects
     public class ShortNameAsyncRule<T> : AsyncRuleBase<T>, IShortNameAsyncRule<T>
         where T : IPersonBase
     {
+
+        private Guid UniqueId = Guid.NewGuid();
 
         public ShortNameAsyncRule() : base()
         {
@@ -24,6 +27,8 @@ namespace Neatoo.UnitTest.PersonObjects
             RunCount++;
 
             await Task.Delay(10, token);
+
+            Console.WriteLine($"ShortNameAsyncRule: {UniqueId.ToString()} {target.FirstName} {target.LastName}");
 
             // System.Diagnostics.Debug.WriteLine($"ShortNameAsyncRule {target.FirstName} {target.LastName}");
 

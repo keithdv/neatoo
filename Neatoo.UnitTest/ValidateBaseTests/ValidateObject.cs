@@ -15,17 +15,18 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         void TestMarkInvalid(string message);
     }
 
-    public class ValidateObject : PersonValidateBase<ValidateObject>, IValidateObject
+    internal class ValidateObject : PersonValidateBase<ValidateObject>, IValidateObject
     {
         public IShortNameRule<ValidateObject> ShortNameRule { get; }
         public IFullNameRule<ValidateObject> FullNameRule { get; }
 
         public ValidateObject(IValidateBaseServices<ValidateObject> services,
             IShortNameRule<ValidateObject> shortNameRule,
-            IFullNameRule<ValidateObject> fullNameRule
+            IFullNameRule<ValidateObject> fullNameRule,
+            IRecursiveRule recursiveRule
             ) : base(services)
         {
-            RuleManager.AddRules(shortNameRule, fullNameRule);
+            RuleManager.AddRules(shortNameRule, fullNameRule, recursiveRule);
             ShortNameRule = shortNameRule;
             FullNameRule = fullNameRule;
         }

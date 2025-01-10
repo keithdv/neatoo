@@ -80,6 +80,9 @@ namespace HorseBarn.WPF
         protected virtual void ConfigureContainer(ContainerBuilder builder)
         {
             builder.RegisterType<HorseBarnViewModel>();
+            builder.RegisterType<CreateHorseViewModel>();
+            builder.RegisterType<CartViewModel>();
+            builder.RegisterType<HorseViewModel>();
 
             builder.RegisterModule(new NeatooCoreModule(Portal.Local));
             builder.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));

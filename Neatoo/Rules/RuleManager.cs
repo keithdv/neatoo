@@ -4,17 +4,19 @@ using Neatoo.Rules.Rules;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Neatoo.Rules
 {
 
 
-    public interface IRuleManager
+    public interface IRuleManager // TODO : INotifyPropertyChanged
     {
 
         bool IsValid { get; }
@@ -44,6 +46,11 @@ namespace Neatoo.Rules
 
     }
 
+    public interface INotifiedOfPropertyChanged
+    {
+        void HandlePropertyChange(string propertyName, object source);
+    }
+
     [PortalDataContract]
     public class RuleManager<T> : IRuleManager<T>, ISetTarget
     {
@@ -57,6 +64,7 @@ namespace Neatoo.Rules
 
         protected bool TransferredResults = false;
         public bool IsBusy => isRunningRules;
+        public bool IsValid => !IsBusy && !Results.Values.Where(r => r.IsError).Any();
 
         public RuleManager(IRegisteredPropertyManager<T> registeredPropertyManager)
         {
@@ -106,7 +114,6 @@ namespace Neatoo.Rules
         /// <param name="rule"></param>
         public void AddRule(IRule rule)
         {
-            // TODO - Only allow Rule Types to be added - not instances
             Rules.Add(rule.UniqueIndex, rule ?? throw new ArgumentNullException(nameof(rule)));
         }
 
@@ -117,8 +124,9 @@ namespace Neatoo.Rules
             return rule;
         }
 
-        public Task CheckRulesForProperty(string propertyName)
+        public async Task CheckRulesForProperty(string propertyName)
         {
+
             if (OverrideResult == null)
             {
                 if (TransferredResults)
@@ -143,18 +151,21 @@ namespace Neatoo.Rules
 
                 CheckRulesQueue();
 
-                return WaitForRules;
+                await WaitForRules;
             }
             else
             {
-                return Task.CompletedTask;
+                await Task.CompletedTask;
             }
         }
 
-        public Task CheckAllRules(CancellationToken token = new CancellationToken())
+        public async Task CheckAllRules(CancellationToken token = new CancellationToken())
         {
+
             if (OverrideResult == null)
             {
+                var isValidAtStart = IsValid;
+
                 Results.Clear(); // Cover in case something unexpected has happened like a weird Serialization cover or maybe a Rule that exists on the client or not the server
 
                 foreach (var ruleIndex in Rules.Keys)
@@ -164,18 +175,24 @@ namespace Neatoo.Rules
 
                 CheckRulesQueue();
 
-                return WaitForRules;
+                await WaitForRules;
+
+                // TODO - This is lazy - we should be able to do this in the CheckRulesQueue
+                if (isValidAtStart != IsValid)
+                {
+                    if (Target is INotifiedOfPropertyChanged target)
+                    {
+                        target.HandlePropertyChange(nameof(IsValid), this);
+                    }
+                }
             }
             else
             {
-                return Task.CompletedTask;
+                await Task.CompletedTask;
             }
         }
 
-        public bool IsValid
-        {
-            get { return !IsBusy && !Results.Values.Where(r => r.IsError).Any(); }
-        }
+
 
         [PortalDataMember]
         public IRuleResult OverrideResult
@@ -204,50 +221,93 @@ namespace Neatoo.Rules
 
         public void CheckRulesQueue(bool isRecursiveCall = false)
         {
+            // This method runs rule one at a time
+            // If there is an async rule it waits for the async rule to complete
+            // to run the next rule
+            // If rules lead to more rules the queue will grow and the task
+            // will not be completed until all rules are ran
+
+            // This method does not return a Task
+            // Since we know that rule will be ran in the context of a property change
+            // that cannot be awaited
+            // We leave it up to the caller to await WaitForRules
 
             if (Target == null) { throw new TargetIsNullException(); }
 
             // DISCUSS : Runes the rules sequentially - even Async Rules
             // Make async rules changing properties a non-issue
 
-            void Start()
-            {
-                if (!isRecursiveCall)
-                {
-
-#if DEBUG
-                    if (!WaitForRules.IsCompleted) throw new Exception("Unexpected WaitForRules.IsCompleted is false");
-#endif
-                    isRunningRules = true;
-                    cancellationTokenSource = new CancellationTokenSource();
-                    waitForRulesSource = new TaskCompletionSource<object>();
-                }
-            }
-
-            void Stop()
-            {
-                // We need to handle if properties changed by the user while rules were running
-
-                if (ruleQueue.Any())
-                {
-                    CheckRulesQueue(true);
-                }
-                else
-                {
-#if DEBUG
-                    if (WaitForRules.IsCompleted) throw new Exception("Unexpected WaitForRules.IsCompleted is false");
-#endif
-
-                    isRunningRules = false;
-                    waitForRulesSource.SetResult(new object());
-                }
-            }
 
             lock (isRunningRulesLock)
             {
+                var isValidAtStart = IsValid;
+
+                void Start()
+                {
+                    if (!isRecursiveCall)
+                    {
+
+#if DEBUG
+                        if (!WaitForRules.IsCompleted) throw new Exception("Unexpected WaitForRules.IsCompleted is false");
+#endif
+                        isRunningRules = true;
+
+                        if (Target is INotifiedOfPropertyChanged target)
+                        {
+                            target.HandlePropertyChange(nameof(IsBusy), this);
+                        }
+
+                        cancellationTokenSource = new CancellationTokenSource();
+                        waitForRulesSource = new TaskCompletionSource<object>();
+
+                    }
+                }
+
+                void Stop()
+                {
+                    // We need to handle if properties changed by the user while rules were running
+
+                    if (ruleQueue.Any())
+                    {
+                        CheckRulesQueue(true);
+                    }
+                    else
+                    {
+#if DEBUG
+                        if (WaitForRules.IsCompleted) throw new Exception("Unexpected WaitForRules.IsCompleted is false");
+#endif
+                        isRunningRules = false;
+
+
+                        if (Results.Any(r => r.Value.Exception != null))
+                        {
+                            waitForRulesSource.SetException(new AggregateException(Results.Where(r => r.Value.Exception != null).Select(r => r.Value.Exception)));
+                        }
+                        else
+                        {
+                            waitForRulesSource.SetResult(new object());
+                        }
+
+                        // I don't know if this should be before SetResult or not
+                        if (Target is INotifiedOfPropertyChanged target)
+                        {
+                            target.HandlePropertyChange(nameof(IsBusy), this);
+
+                            if (IsValid != isValidAtStart)
+                            {
+                                target.HandlePropertyChange(nameof(IsValid), this);
+                            }
+                        }
+                    }
+                }
+
+
                 if (OverrideResult == null && !isRunningRules || isRecursiveCall)
                 {
                     Start();
+
+
+
                     var token = cancellationTokenSource.Token; // Local stack copy important
 
                     while (ruleQueue.TryDequeue(out var ruleIndex))
@@ -306,7 +366,7 @@ namespace Neatoo.Rules
                 // If there is an error mark all properties as failed
                 foreach (var p in r.TriggerProperties)
                 {
-                    result = RuleResult.PropertyError(p, ex.Message);
+                    result = RuleResult.PropertyError(p, ex.Message, ex);
                 }
             }
 

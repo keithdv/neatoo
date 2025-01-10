@@ -39,10 +39,10 @@ namespace Neatoo.Autofac
                         // and has zero constructor parameters
                         // assume no dependencies
                         // so it can be SingleInstance
-                        if (typeof(IRule).IsAssignableFrom(t) && zeroConstructorParams)
-                        {
-                            reg.SingleInstance();
-                        }
+                        //if (typeof(IRule).IsAssignableFrom(t) && zeroConstructorParams)
+                        //{
+                        //    reg.SingleInstance();
+                        //}
                     }
                     else
                     {
@@ -53,10 +53,12 @@ namespace Neatoo.Autofac
                         // assume no dependencies
                         // so it can be SingleInstance
                         var reg = builder.RegisterGeneric(t).As(i).AsSelf();
-                        if (typeof(IRule).IsAssignableFrom(t) && zeroConstructorParams)
-                        {
-                            reg.SingleInstance();
-                        }
+
+                        // Already had me confused
+                        //if (typeof(IRule).IsAssignableFrom(t) && zeroConstructorParams)
+                        //{
+                        //    reg.SingleInstance();
+                        //}
                     }
                 }
             }

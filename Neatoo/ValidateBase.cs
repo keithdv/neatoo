@@ -1,5 +1,6 @@
 ﻿using Neatoo.Attributes;
 using Neatoo.Core;
+using Neatoo.Portal;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
 using System;
@@ -26,7 +27,7 @@ namespace Neatoo
     }
 
     [PortalDataContract]
-    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IRegisteredPropertyAccess
+    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IRegisteredPropertyAccess, INotifiedOfPropertyChanged
         where T : ValidateBase<T>
     {
 
@@ -66,8 +67,26 @@ namespace Neatoo
         {
             if (PropertyValueManager.SetProperty(GetRegisteredProperty<P>(propertyName), value))
             {
-                PropertyHasChanged(propertyName);
-                CheckRules(propertyName);
+
+                // Make sure if there's a UI thread the task is continued on the UI thread
+                // What's happening is multiple threads are awaiting the RulesManager.waitForRulesSource.Task
+                // So when that's completed multiple threads take off and raise the PropertyChanged event
+
+                // To see, remove it and play with Cart.NumberOfHorses in the Horse and Cart example
+                // Parrallel exection of property changed event causes havoc
+
+                // See https://blog.stephencleary.com/2023/11/configureawait-in-net-8.html
+                // Since I'm not awaiting the task, I need to specify ConfigureAwait(true) to ensure the continuation is on the UI thread
+
+                // This also means that it's possible to get a different behavior in a unit test
+                // If you do, please let me (Keith Voels) know!!
+                CheckRules(propertyName)
+                    .ConfigureAwait(true)
+                    .GetAwaiter()
+                    .OnCompleted(() =>
+                    {
+                        PropertyHasChanged(propertyName);
+                    });
             }
         }
 
@@ -78,16 +97,17 @@ namespace Neatoo
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+
         protected void PropertyHasChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        protected virtual void CheckRules(string propertyName)
+        protected virtual Task CheckRules(string propertyName)
         {
             var isValid = IsValid;
 
-            RuleManager.CheckRulesForProperty(propertyName)
+            return RuleManager.CheckRulesForProperty(propertyName)
                 .ContinueWith(t =>
             {
                 if (isValid != IsValid)
@@ -99,7 +119,7 @@ namespace Neatoo
 
         public virtual Task WaitForRules()
         {
-            return Task.WhenAll(new Task[2] { RuleManager.WaitForRules, PropertyValueManager.WaitForRules() });
+            return Task.WhenAll([RuleManager.WaitForRules, PropertyValueManager.WaitForRules()]);
         }
 
         public IRuleResultReadOnlyList RuleResultList => RuleManager.Results;
@@ -130,9 +150,40 @@ namespace Neatoo
 
         public Task CheckAllRules(CancellationToken token = new CancellationToken())
         {
+            // TODO - This isn't raising the 'IsValid' property changed event
             return Task.WhenAll(RuleManager.CheckAllRules(token), PropertyValueManager.CheckAllRules(token));
         }
 
+        [Create]
+        protected async Task Create()
+        {
+            await CheckAllSelfRules();
+        }
+
+        [CreateChild]
+        protected async Task CreateChild()
+        {
+            await CheckAllSelfRules();
+        }
+
+        public void HandlePropertyChange(string propertyName, object source)
+        {
+            // TODO - Is this too loose of a way of doing this? Should I have a more specific implentation?
+            if(source == RuleManager)
+            {
+                if (propertyName == nameof(RuleManager.IsValid))
+                {
+                    PropertyHasChanged(nameof(IsSelfValid));
+                    PropertyHasChanged(nameof(IsValid));
+                }
+                else if (propertyName == nameof(RuleManager.IsBusy))
+                {
+                    PropertyHasChanged(nameof(IsSelfBusy));
+                    PropertyHasChanged(nameof(IsBusy));
+                }
+            }
+
+        }
     }
 }
 

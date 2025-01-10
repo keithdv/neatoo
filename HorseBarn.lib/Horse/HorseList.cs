@@ -41,6 +41,9 @@ namespace HorseBarn.lib.Horse
                 {
                     Remove(myhorse);
                 }
+            } else
+            {
+                throw new Exception($"Horse ${horse.GetType().FullName} is not of type {typeof(I).FullName}");
             }
         }
     }

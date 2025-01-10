@@ -29,6 +29,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             child = scope.Resolve<IValidateObject>();
             validate.Child = child;
             validate.PropertyChanged += Validate_PropertyChanged; 
+            validate.Child.PropertyChanged += ChildValidate_PropertyChanged;
         }
 
 
@@ -42,6 +43,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsFalse(validate.IsBusy);
             Assert.IsFalse(validate.IsSelfBusy);
             validate.PropertyChanged -= Validate_PropertyChanged;
+            validate.Child.PropertyChanged -= ChildValidate_PropertyChanged;
             scope.Dispose();
         }
 
@@ -49,6 +51,12 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         private void Validate_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             propertyChangedCalls.Add(e.PropertyName);
+        }
+
+        private List<string> childPropertyChangedCalls = new List<string>();
+        private void ChildValidate_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            childPropertyChangedCalls.Add(e.PropertyName);
         }
 
         [TestMethod]
@@ -173,7 +181,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         {
             var ruleCount = validate.RuleRunCount;
             await validate.CheckAllRules();
-            Assert.AreEqual(ruleCount + 4, validate.RuleRunCount);
+            Assert.AreEqual(ruleCount + 3, validate.RuleRunCount);
         }
 
 
@@ -197,6 +205,12 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsTrue(validate.IsSelfValid);
             Assert.IsFalse(child.IsValid);
             Assert.IsFalse(child.IsSelfValid);
+
+            Assert.IsFalse(propertyChangedCalls.Contains(nameof(validate.IsValid)));
+            Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsValid)));
+            Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
+            Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsBusy)));
+            Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsSelfBusy)));
         }
 
         [TestMethod]
@@ -224,6 +238,21 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.TestMarkInvalid(message = Guid.NewGuid().ToString());
             validate.FirstName = Guid.NewGuid().ToString();
             Assert.AreEqual(rrc, validate.RuleRunCount);
+        }
+
+        [TestMethod]
+        public void ValidateBase_RecursiveRule()
+        {
+            validate.ShortName = "Recursive";
+            Assert.AreEqual("Recursive change", validate.ShortName);
+        }
+
+        [TestMethod]
+        public void ValidateBase_RecursiveRule_Invalid()
+        {
+            // This will cause the ShortNameRule to fail
+            validate.ShortName = "Recursive Error";
+            Assert.IsFalse(validate.IsValid);
         }
 
     }
