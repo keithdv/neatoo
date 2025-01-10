@@ -14,7 +14,7 @@ namespace HorseBarn.WPF.Converters
         {
             if (value is bool && !(bool)value)
             {
-                return Brushes.Red;
+                return Brushes.LightPink;
             }
             return null;
         }

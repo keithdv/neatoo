@@ -44,6 +44,9 @@ namespace HorseBarn.lib.Cart
                 if(c.HorseList.Count > c.NumberOfHorses)
                 {
                     c.NumberOfHorses = c.HorseList.Count;
+                } else if (c.NumberOfHorses == 0)
+                {
+                    c.NumberOfHorses = 1;
                 }
                 else if (c.HorseList.Count != 0 && c.NumberOfHorses != c.HorseList.Count)
                 {
@@ -77,6 +80,7 @@ namespace HorseBarn.lib.Cart
         public async void CreateChild(ISendReceivePortalChild<IHorseList<H>> horsePortal)
         {
             this.HorseList = await horsePortal.CreateChild();
+            this.NumberOfHorses = 1;
             await this.CheckAllSelfRules();
         }
 
@@ -94,6 +98,15 @@ namespace HorseBarn.lib.Cart
             {
                 throw new ArgumentException($"Horse {horse.GetType().FullName} is not of type {typeof(H).FullName}");
             }
+        }
+
+        public bool CanAddHorse(IHorse horse)
+        {
+            if(horse is H && HorseList.Count < NumberOfHorses)
+            {
+                return true;
+            }
+            return false;
         }
     }
 }

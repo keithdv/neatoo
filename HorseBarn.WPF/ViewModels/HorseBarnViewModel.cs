@@ -7,9 +7,11 @@ using Neatoo.Portal;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace HorseBarn.WPF.ViewModels
 {
@@ -52,7 +54,7 @@ namespace HorseBarn.WPF.ViewModels
             var horseCriteria = await horseCriteriaPortal.Create();
             horseCriteria.Name = "Secretariat";
             horseCriteria.Breed = Breed.Clydesdale;
-            horseCriteria.BirthDay = new DateOnly(1970, 1, 1);
+            horseCriteria.BirthDay = new DateOnly(2010, 1, 1);
 
             await HorseBarn.AddNewHorse(horseCriteria);
 
@@ -63,8 +65,39 @@ namespace HorseBarn.WPF.ViewModels
 
             await HorseBarn.AddNewHorse(horseCriteria);
 
+            horseCriteria = await horseCriteriaPortal.Create();
+            horseCriteria.Name = "Speedy";
+            horseCriteria.Breed = Breed.Thoroughbred;
+            horseCriteria.BirthDay = new DateOnly(2010, 1, 1);
+
+            await HorseBarn.AddNewHorse(horseCriteria);
+
+            horseCriteria = await horseCriteriaPortal.Create();
+            horseCriteria.Name = "Flash";
+            horseCriteria.Breed = Breed.Mustang;
+            horseCriteria.BirthDay = new DateOnly(2015, 1, 1);
+
+            await HorseBarn.AddNewHorse(horseCriteria);
+
             Horses_CollectionChanged(this, null);
             HorseBarn.Pasture.Horses.CollectionChanged += Horses_CollectionChanged;
+
+            ICart cart = await HorseBarn.AddRacingChariot();
+            cart.NumberOfHorses = 2;
+            cart.Name = "Racing Chariot A";
+
+            cart = await HorseBarn.AddWagon();
+            cart.NumberOfHorses = 2;
+            cart.Name = "Wagon A";
+
+            HorseBarn.Carts.CollectionChanged += Carts_CollectionChanged;
+            Carts_CollectionChanged(null, null);
+        }
+
+        private void Carts_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            Carts = new BindableCollection<CartViewModel>(HorseBarn.Carts.Select(c => createCartViewModel(HorseBarn, c)));
+            NotifyOfPropertyChange(nameof(Carts));
         }
 
         private void Horses_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -83,7 +116,7 @@ namespace HorseBarn.WPF.ViewModels
             await HorseBarn.AddNewHorse(message);
         }
 
-        public IObservableCollection<CartViewModel> Carts { get; } = new BindableCollection<CartViewModel>();
+        public IObservableCollection<CartViewModel> Carts { get; set; } = new BindableCollection<CartViewModel>();
 
         public async Task AddRacingChariot()
         {
@@ -94,5 +127,29 @@ namespace HorseBarn.WPF.ViewModels
         {
             Carts.Add(createCartViewModel(HorseBarn, await HorseBarn.AddWagon()));
         }
+
+        public async Task HandleDragDrop(object source, DragEventArgs e)
+        {
+            var horseViewModel = e.Data.GetData(typeof(HorseViewModel)) as HorseViewModel;
+            if (horseViewModel != null && horseViewModel.Horse != null)
+            {
+                await HorseBarn.MoveHorseToPasture(horseViewModel.Horse);
+            }
+        }
+
+        //public void HandleDragOver(object source, DragEventArgs e)
+        //{
+        //    Debug.WriteLine("HorseBarn HandleDragOver");
+
+        //    var horseViewModel = e.Data.GetData(typeof(HorseViewModel)) as HorseViewModel;
+        //    if (horseViewModel != null && horseViewModel.Horse != null)
+        //    {
+        //        e.Effects = DragDropEffects.Move;
+        //    }
+        //    else
+        //    {
+        //        e.Effects = DragDropEffects.None;
+        //    }
+        //}
     }
 }

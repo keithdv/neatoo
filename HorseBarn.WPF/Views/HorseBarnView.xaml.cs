@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using HorseBarn.WPF;
 
 namespace HorseBarn.WPF.Views
 {
@@ -22,6 +23,13 @@ namespace HorseBarn.WPF.Views
         public HorseBarnView()
         {
             InitializeComponent();
+        }
+
+        public override void OnApplyTemplate()
+        {
+            base.OnApplyTemplate();
+            var accentBrush = TryFindResource("AccentColorBrush") as SolidColorBrush;
+            if (accentBrush != null) accentBrush.Color.CreateAccentColors();
         }
     }
 }

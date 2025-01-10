@@ -10,6 +10,7 @@ namespace HorseBarn.lib.Cart
         string Name { get; set;  }
         int NumberOfHorses { get; set;  }
         IEnumerable<IHorse> Horses { get; }
+        bool CanAddHorse(IHorse horse);
         internal void RemoveHorse(IHorse horse);
         internal void AddHorse(IHorse horse);
     }

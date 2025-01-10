@@ -24,10 +24,5 @@ namespace HorseBarn.WPF.Views
         {
             InitializeComponent();
         }
-
-        private void StackPanel_Drop(object sender, DragEventArgs e)
-        {
-
-        }
     }
 }

@@ -8,7 +8,9 @@
                 <ResourceDictionary>
                     <local:HorseBarnBootstrapper x:Key="Bootstrapper" />
                 </ResourceDictionary>
+                <ResourceDictionary Source="/Themes/Styles/Generic.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <SolidColorBrush x:Key="AccentColorBrush" Color="#007ACC" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

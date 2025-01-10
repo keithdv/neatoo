@@ -3,6 +3,7 @@ using HorseBarn.lib.Horse;
 using System.Windows.Input;
 using System.Windows.Shapes;
 using System.Windows;
+using System.Diagnostics;
 
 namespace HorseBarn.WPF.ViewModels
 {
@@ -36,7 +37,8 @@ namespace HorseBarn.WPF.ViewModels
             HorseViewModel? horse = dataContext as HorseViewModel;
             if (horse?.Horse != null && e.LeftButton == MouseButtonState.Pressed)
             {
-                DragDrop.DoDragDrop((FrameworkElement) source, horse, DragDropEffects.Move);
+                Debug.WriteLine("Horse DoDragDrop");
+                DragDrop.DoDragDrop((FrameworkElement)source, horse, DragDropEffects.Move | DragDropEffects.None);
             }
         }
 

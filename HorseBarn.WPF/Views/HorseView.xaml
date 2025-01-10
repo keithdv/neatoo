@@ -18,62 +18,21 @@
             <conv:InterfaceDataTemplateSelector.DataTemplates>
                 <x:Array Type="DataTemplate">
 
-                    <DataTemplate DataType="{x:Type horse:ILightHorse}">
-                        <Grid Background="{Binding Path=Horse.IsValid, Converter={StaticResource IsValidToRedConverter}}"
+                    <DataTemplate DataType="{x:Type horse:IHorse}">
+                        <StackPanel Background="{Binding Path=Horse.IsValid, Converter={StaticResource IsValidToRedConverter}}"
                               cal:Message.Attach="[Event MouseMove] = [Action HandleMouseMove($dataContext, $source, $eventArgs)]"
                               >
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"></ColumnDefinition>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="auto" />
-                                <RowDefinition Height="auto" />
-                                <RowDefinition Height="auto" />
-                                <RowDefinition Height="auto" />
-                            </Grid.RowDefinitions>
-                            <Label Grid.Row="0" Content="Light Horse" />
-                            <TextBlock Grid.Row="1" Text="{Binding Path=Horse.Name}"/>
-                            <TextBlock Grid.Row="2" Text="{Binding Path=Horse.Breed}"/>
-                            <TextBlock Grid.Row="3" Text="{Binding Path=Horse.BirthDate}"/>
-                        </Grid>
+                            <Label Grid.Row="0" Content="{Binding Path=Horse.Name}" Style="{StaticResource Label.AccentHeader30}"/>
+                            <DockPanel>
+                                <Label Content="Breed:"></Label>
+                                <TextBlock Text="{Binding Path=Horse.Breed}"/>
+                            </DockPanel>
+                            <DockPanel>
+                                <Label Content="Birth Date:"></Label>
+                                <TextBlock Text="{Binding Path=Horse.BirthDate}"/>
+                            </DockPanel>
+                        </StackPanel>
                     </DataTemplate>
-
-                    <DataTemplate DataType="{x:Type horse:IHeavyHorse}">
-                        <Grid Background="{Binding Path=IsValid, Converter={StaticResource IsValidToRedConverter}}"
-                              cal:Message.Attach="[Event MouseMove] = [Action HandleMouseMove($dataContext, $source, $eventArgs)]">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"></ColumnDefinition>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="auto" />
-                                <RowDefinition Height="auto" />
-                                <RowDefinition Height="auto" />
-                                <RowDefinition Height="auto" />
-                            </Grid.RowDefinitions>
-                            <Label Grid.Row="0" Content="Heavy Horse" />
-                            <TextBlock Grid.Row="1" Text="{Binding Path=Horse.Name}"/>
-                            <TextBlock Grid.Row="2" Text="{Binding Path=Horse.Breed}"/>
-                            <TextBlock Grid.Row="3" Text="{Binding Path=Horse.BirthDate}"/>
-                        </Grid>
-                    </DataTemplate>
-
-                    <DataTemplate DataType="{x:Type cart:IRacingChariot}">
-                        <Grid Background="{Binding Path=Cart.IsValid, Converter={StaticResource IsValidToRedConverter}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"></ColumnDefinition>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="auto" />
-                                <RowDefinition Height="auto" />
-                                <RowDefinition Height="auto" />
-                            </Grid.RowDefinitions>
-                            <Label Grid.Row="0" Content="Racing Chariot" />
-                            <TextBox Grid.Row="1" Text="{Binding Path=Cart.NumberOfHorses, Mode=TwoWay}"/>
-                            <TextBox Grid.Row="2" Text="{Binding Path=Cart.Name, Mode=TwoWay}"/>
-                        </Grid>
-                    </DataTemplate>
-
-
                 </x:Array>
             </conv:InterfaceDataTemplateSelector.DataTemplates>
             <conv:InterfaceDataTemplateSelector.NullTemplate>

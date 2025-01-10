@@ -5,10 +5,12 @@ using HorseBarn.lib.Horse;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 
 namespace HorseBarn.WPF.ViewModels
 {
@@ -27,35 +29,31 @@ namespace HorseBarn.WPF.ViewModels
             this.horseViewModelFactory = horseViewModelFactory;
             cart.PropertyChanged += Cart_PropertyChanged;
             cart.CollectionChanged += Horses_CollectionChanged;
+            RebuildHorseViewModels();
         }
 
-        private async void Horses_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        private void Horses_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            await RebuildHorseViewModels();
+            RebuildHorseViewModels();
         }
 
-        private async void Cart_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private void Cart_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ICart.NumberOfHorses))
             {
-                await RebuildHorseViewModels();
+                RebuildHorseViewModels();
             }
         }
-
-        private async Task RebuildHorseViewModels()
+        private void RebuildHorseViewModels()
         {
-            var index = Math.Max(Cart.Horses.Count(), Cart.NumberOfHorses);
+            var index = Cart.NumberOfHorses;
             var horses = Cart.Horses.GetEnumerator();
             HorseViewModels.Clear();
 
             for (int i = 0; i < index; i++)
             {
                 var horse = horses.MoveNext();
-                if (horse && i >= Cart.NumberOfHorses)
-                {
-                    await horseBarn.MoveHorseToPasture(horses.Current);
-                }
-                else if (horse)
+                 if (horse)
                 {
                     HorseViewModels.Add(horseViewModelFactory(horses.Current));
                 }
@@ -72,23 +70,47 @@ namespace HorseBarn.WPF.ViewModels
         private readonly IHorseBarn horseBarn;
         private readonly HorseViewModel.Factory horseViewModelFactory;
 
-        public async Task Plus()
+        public void Plus()
         {
             Cart.NumberOfHorses++;
         }
 
-        public async Task Minus()
+        public void Minus()
         {
             Cart.NumberOfHorses--;
         }
 
         public async Task HandleDragDrop(object source, DragEventArgs e)
         {
+            Debug.WriteLine("Cart HandleDragDrop");
             var horseViewModel = e.Data.GetData(typeof(HorseViewModel)) as HorseViewModel;
-            if (horseViewModel != null && horseViewModel.Horse != null && HorseViewModels.Any(h => h.Horse == null))
+            if (horseViewModel != null && horseViewModel.Horse != null && Cart.CanAddHorse(horseViewModel.Horse))
             {
                 await horseBarn.MoveHorseToCart(horseViewModel.Horse, Cart);
             }
         }
+
+        public void HandleDragOver(object source, DragEventArgs e)
+        {
+            Debug.WriteLine("Cart HandleDragOver");
+            var horseViewModel = e.Data.GetData(typeof(HorseViewModel)) as HorseViewModel;
+            if (horseViewModel != null && horseViewModel.Horse != null)
+            {
+                var canAdd = Cart.CanAddHorse(horseViewModel.Horse);
+
+                if (!canAdd)
+                {
+                    Debug.WriteLine("Cart None");
+                    e.Effects = DragDropEffects.None;
+                    e.Handled = true;
+                }
+            }
+        }
+
+        //public void HandleDragLeave(object source, DragEventArgs e)
+        //{
+        //    Debug.WriteLine("Cart Drag Leave");
+        //    e.Effects = DragDropEffects.Move;
+        //}
     }
 }

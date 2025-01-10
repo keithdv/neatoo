@@ -4,9 +4,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HorseBarn.WPF.Views"
-             xmlns:horse="clr-namespace:HorseBarn.lib.Horse;assembly=HorseBarn.lib"
-             xmlns:cart="clr-namespace:HorseBarn.lib.Cart;assembly=HorseBarn.lib"
-             xmlns:conv="clr-namespace:HorseBarn.WPF.Converters"
+        xmlns:horse="clr-namespace:HorseBarn.lib.Horse;assembly=HorseBarn.lib"
+        xmlns:cart="clr-namespace:HorseBarn.lib.Cart;assembly=HorseBarn.lib"
+        xmlns:conv="clr-namespace:HorseBarn.WPF.Converters"
+        xmlns:cal="http://www.caliburnproject.org"
         mc:Ignorable="d" 
              SizeToContent="Width" Height="600"
              >
@@ -51,19 +52,19 @@
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
 
-        <Label Grid.Column="0" Grid.Row="0" Content="Carts" />
-        <Label Grid.Column="1" Grid.Row="0" Content="Horses" />
+        <Label Grid.Column="0" Grid.Row="0" Content="Carts" Style="{StaticResource Label.AccentHeader40}" />
+        <Label Grid.Column="1" Grid.Row="0" Content="Pasture"  Style="{StaticResource Label.AccentHeader40}" />
 
-        <ListBox Grid.Column="0" Grid.Row="1" 
-                 Width="310"
-                 x:Name="Carts"
-                 SelectionMode="Extended"></ListBox>
+        <ItemsControl Grid.Column="0" Grid.Row="1" 
+                      Background="LightBlue"
+                 x:Name="Carts"></ItemsControl>
 
-        <ListBox Grid.Column="1" Grid.Row="1" 
-                 Width="310"
+        <ItemsControl Grid.Column="1" Grid.Row="1" 
+                      Background="LightGray"
                  x:Name="PastureHorses"
-                 SelectionMode="Extended">
-        </ListBox>
+                cal:Message.Attach="[Event Drop] = [Action HandleDragDrop($source, $eventArgs)]"
+                 AllowDrop="True">
+        </ItemsControl>
 
         <UniformGrid Grid.Row="2" Grid.ColumnSpan="2" Margin="10">
             <Button x:Name="AddHorse">Add Horse</Button>

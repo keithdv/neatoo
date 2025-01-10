@@ -22,13 +22,6 @@ namespace HorseBarn.lib.Cart
         internal void RemoveHorse(IHorse horse);
     }
 
-    //public interface ICartList<C, H> : IEditListBase<C>
-    //    where H : IHorse
-    //    where C : ICart<H>
-    //{
-
-    //}
-
     internal class CartList : CartList<CartList, ICart>, ICartList
     {
         public CartList(IEditListBaseServices<CartList, ICart> services) : base(services)
@@ -53,13 +46,4 @@ namespace HorseBarn.lib.Cart
         }
     }
 
-    //internal class CartList<L, C, H> : EditListBase<L, C>, ICartList<C, H>, ICartList
-    //    where L : CartList<L, C, H>
-    //    where C : ICart<H>
-    //    where H : IHorse
-    //{
-    //    public CartList(IEditListBaseServices<L, C> services) : base(services)
-    //    {
-    //    }
-    //}
 }
