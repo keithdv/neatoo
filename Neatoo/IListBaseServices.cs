@@ -17,7 +17,7 @@ namespace Neatoo
         where I : IBase
     {
         IPropertyValueManager<T> PropertyValueManager { get; }
-        IReceivePortalChild<I> ReceivePortal { get; }
+        IReadPortalChild<I> ReadPortal { get; }
     }
 
     public class ListBaseServices<T, I> : IListBaseServices<T, I>
@@ -25,14 +25,14 @@ namespace Neatoo
         where I : IBase
     {
 
-        public ListBaseServices(IPropertyValueManager<T> registeredPropertyDataManager, IReceivePortalChild<I> receivePortal)
+        public ListBaseServices(IPropertyValueManager<T> registeredPropertyDataManager, IReadPortalChild<I> readPortal)
         {
             PropertyValueManager = registeredPropertyDataManager;
-            ReceivePortal = receivePortal;
+            ReadPortal = readPortal;
         }
 
         public IPropertyValueManager<T> PropertyValueManager { get; }
-        public IReceivePortalChild<I> ReceivePortal { get; }
+        public IReadPortalChild<I> ReadPortal { get; }
 
     }
 }

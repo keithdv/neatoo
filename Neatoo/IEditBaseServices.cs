@@ -19,7 +19,7 @@ namespace Neatoo
     {
 
         IEditPropertyValueManager<T> EditPropertyValueManager { get; }
-        ISendReceivePortal<T> SendReceivePortal { get; }
+        IReadWritePortal<T> ReadWritePortal { get; }
     }
 
     public class EditBaseServices<T> : ValidateBaseServices<T>, IEditBaseServices<T>
@@ -27,18 +27,18 @@ namespace Neatoo
     {
 
         public IEditPropertyValueManager<T> EditPropertyValueManager { get; }
-        public ISendReceivePortal<T> SendReceivePortal { get; }
+        public IReadWritePortal<T> ReadWritePortal { get; }
 
-        public EditBaseServices(ISendReceivePortal<T> sendReceivePortal) : base(){
+        public EditBaseServices(IReadWritePortal<T> readWritePortal) : base(){
             EditPropertyValueManager = new EditPropertyValueManager<T>(RegisteredPropertyManager, new DefaultFactory(), new ValuesDiffer());
-            SendReceivePortal = sendReceivePortal;  
+            ReadWritePortal = readWritePortal;  
         }
 
-        public EditBaseServices(IEditPropertyValueManager<T> registeredPropertyValueManager, IRegisteredPropertyManager<T> registeredPropertyManager, IRuleManager<T> ruleManager, ISendReceivePortal<T> sendReceivePortal)
+        public EditBaseServices(IEditPropertyValueManager<T> registeredPropertyValueManager, IRegisteredPropertyManager<T> registeredPropertyManager, IRuleManager<T> ruleManager, IReadWritePortal<T> readWritePortal)
             : base(registeredPropertyValueManager, registeredPropertyManager, ruleManager)
         {
             EditPropertyValueManager = registeredPropertyValueManager;
-            SendReceivePortal = sendReceivePortal;
+            ReadWritePortal = readWritePortal;
         }
     }
 }

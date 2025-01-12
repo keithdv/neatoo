@@ -10,13 +10,13 @@ namespace HorseBarn.lib.integration.tests
     public sealed class HorseBarnTests
     {
         private ILifetimeScope scope;
-        private ISendReceivePortal<IHorseBarn> portal;
+        private IReadWritePortal<IHorseBarn> portal;
 
         [TestInitialize]
         public void TestInitialize()
         {
             scope = AutofacContainer.GetLifetimeScope();
-            portal = scope.Resolve<ISendReceivePortal<IHorseBarn>>();
+            portal = scope.Resolve<IReadWritePortal<IHorseBarn>>();
         }
 
         [TestCleanup]

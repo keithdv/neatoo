@@ -9,16 +9,16 @@ namespace Neatoo.UnitTest.ObjectPortal
 {
 
     [TestClass]
-    public class SendReceivePortalListTests
+    public class ReadWritePortalListTests
     {
         private ILifetimeScope scope = AutofacContainer.GetLifetimeScope(true);
-        private ISendReceivePortal<IEditObjectList> portal;
+        private IReadWritePortal<IEditObjectList> portal;
         private IEditObjectList editObjectList;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            portal = scope.Resolve<ISendReceivePortal<IEditObjectList>>();
+            portal = scope.Resolve<IReadWritePortal<IEditObjectList>>();
         }
 
         [TestCleanup]
@@ -30,7 +30,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task SendReceivePortalList_Create()
+        public async Task ReadWritePortalList_Create()
         {
             editObjectList = await portal.Create();
             Assert.IsTrue(editObjectList.CreateCalled);
@@ -39,7 +39,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task SendReceivePortalList_CreateGuidCriteriaCalled()
+        public async Task ReadWritePortalList_CreateGuidCriteriaCalled()
         {
             var crit = Guid.NewGuid();
             editObjectList = await portal.Create(crit);
@@ -48,7 +48,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task SendReceivePortalList_CreateIntCriteriaCalled()
+        public async Task ReadWritePortalList_CreateIntCriteriaCalled()
         {
             int crit = DateTime.Now.Millisecond;
             editObjectList = await portal.Create(crit);
@@ -58,7 +58,7 @@ namespace Neatoo.UnitTest.ObjectPortal
 
 
         [TestMethod]
-        public async Task SendReceivePortalList_Fetch()
+        public async Task ReadWritePortalList_Fetch()
         {
             editObjectList = await portal.Fetch();
             Assert.IsTrue(editObjectList.ID.HasValue);
@@ -72,7 +72,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task SendReceivePortalList_FetchGuidCriteriaCalled()
+        public async Task ReadWritePortalList_FetchGuidCriteriaCalled()
         {
             var crit = Guid.NewGuid();
             editObjectList = await portal.Fetch(crit);
@@ -81,7 +81,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task SendReceivePortalList_FetchIntCriteriaCalled()
+        public async Task ReadWritePortalList_FetchIntCriteriaCalled()
         {
             int crit = DateTime.Now.Millisecond;
             editObjectList = await portal.Fetch(crit);
@@ -92,7 +92,7 @@ namespace Neatoo.UnitTest.ObjectPortal
 
 
         [TestMethod]
-        public async Task SendReceivePortalList_Update()
+        public async Task ReadWritePortalList_Update()
         {
             editObjectList = await portal.Fetch();
             var id = Guid.NewGuid();
@@ -105,32 +105,10 @@ namespace Neatoo.UnitTest.ObjectPortal
             Assert.IsFalse(editObjectList.IsModified);
         }
 
-        [TestMethod]
-        public async Task SendReceivePortalList_UpdateGuidCriteriaCalled()
-        {
-            var crit = Guid.NewGuid();
-            editObjectList = await portal.Fetch();
-            editObjectList.ID = Guid.NewGuid();
-            await portal.Update(editObjectList, crit);
-            Assert.AreEqual(crit, editObjectList.GuidCriteria);
-            Assert.IsTrue(editObjectList.UpdateCalled);
-        }
-
-        [TestMethod]
-        public async Task SendReceivePortalList_UpdateIntCriteriaCalled()
-        {
-            int crit = DateTime.Now.Millisecond;
-            editObjectList = await portal.Fetch();
-            editObjectList.ID = Guid.NewGuid();
-            await portal.Update(editObjectList, crit);
-            Assert.AreEqual(crit, editObjectList.IntCriteria);
-            Assert.IsTrue(editObjectList.UpdateCalled);
-        }
-
 
 
         [TestMethod]
-        public async Task SendReceivePortalList_Insert()
+        public async Task ReadWritePortalList_Insert()
         {
             editObjectList = await portal.Create();
             editObjectList.ID = Guid.Empty;
@@ -142,30 +120,10 @@ namespace Neatoo.UnitTest.ObjectPortal
             Assert.IsFalse(editObjectList.IsModified);
         }
 
-        [TestMethod]
-        public async Task SendReceivePortalList_InsertGuidCriteriaCalled()
-        {
-            var crit = Guid.NewGuid();
-            editObjectList = await portal.Create();
-            await portal.Update(editObjectList, crit);
-            Assert.IsTrue(editObjectList.InsertCalled);
-            Assert.AreEqual(crit, editObjectList.GuidCriteria);
-        }
-
-        [TestMethod]
-        public async Task SendReceivePortalList_InsertIntCriteriaCalled()
-        {
-            int crit = DateTime.Now.Millisecond;
-            editObjectList = await portal.Create();
-            await portal.Update(editObjectList, crit);
-            Assert.IsTrue(editObjectList.InsertCalled);
-            Assert.AreEqual(crit, editObjectList.IntCriteria);
-        }
-
 
 
         [TestMethod]
-        public async Task SendReceivePortalList_Delete()
+        public async Task ReadWritePortalList_Delete()
         {
             editObjectList = await portal.Fetch();
             editObjectList.Delete();
@@ -173,30 +131,9 @@ namespace Neatoo.UnitTest.ObjectPortal
             Assert.IsTrue(editObjectList.DeleteCalled);
         }
 
-        [TestMethod]
-        public async Task SendReceivePortalList_DeleteGuidCriteriaCalled()
-        {
-            var crit = Guid.NewGuid();
-            editObjectList = await portal.Fetch();
-            editObjectList.Delete();
-            await portal.Update(editObjectList, crit);
-            Assert.IsTrue(editObjectList.DeleteCalled);
-            Assert.AreEqual(crit, editObjectList.GuidCriteria);
-        }
 
         [TestMethod]
-        public async Task SendReceivePortalList_DeleteIntCriteriaCalled()
-        {
-            int crit = DateTime.Now.Millisecond;
-            editObjectList = await portal.Fetch();
-            editObjectList.Delete();
-            await portal.Update(editObjectList, crit);
-            Assert.IsTrue(editObjectList.DeleteCalled);
-            Assert.AreEqual(crit, editObjectList.IntCriteria);
-        }
-
-        [TestMethod]
-        public async Task SendReceivePortalList_Remove_Save_IsModified()
+        public async Task ReadWritePortalList_Remove_Save_IsModified()
         {
             editObjectList = await portal.Fetch();
             var child = await editObjectList.CreateAdd();

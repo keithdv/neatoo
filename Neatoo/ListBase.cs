@@ -44,12 +44,12 @@ namespace Neatoo
 
         protected IPropertyValueManager<T> PropertyValueManager { get; private set; } // Private setter for Deserialization
 
-        protected IReceivePortalChild<I> ItemPortal { get; }
+        protected IReadPortalChild<I> ItemPortal { get; }
 
         public ListBase(IListBaseServices<T, I> services)
         {
             PropertyValueManager = services.PropertyValueManager;
-            ItemPortal = services.ReceivePortal;
+            ItemPortal = services.ReadPortal;
         }
 
         public IBase Parent { get; protected set; }

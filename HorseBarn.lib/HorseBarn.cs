@@ -8,16 +8,16 @@ namespace HorseBarn.lib
 {
     internal class HorseBarn : Neatoo.EditBase<HorseBarn>, IHorseBarn
     {
-        private readonly ISendReceivePortalChild<ILightHorse> lightHorsePortal;
-        private readonly ISendReceivePortalChild<IHeavyHorse> heavyHorsePortal;
-        private readonly ISendReceivePortalChild<IRacingChariot> racingChariotPortal;
-        private readonly ISendReceivePortalChild<IWagon> wagonPortal;
+        private readonly IReadWritePortalChild<ILightHorse> lightHorsePortal;
+        private readonly IReadWritePortalChild<IHeavyHorse> heavyHorsePortal;
+        private readonly IReadWritePortalChild<IRacingChariot> racingChariotPortal;
+        private readonly IReadWritePortalChild<IWagon> wagonPortal;
 
         public HorseBarn(IEditBaseServices<HorseBarn> services,
-                            ISendReceivePortalChild<ILightHorse> lightHorsePortal,
-                            ISendReceivePortalChild<IHeavyHorse> heavyHorsePortal,
-                            ISendReceivePortalChild<IRacingChariot> racingChariotPortal,
-                            ISendReceivePortalChild<IWagon> wagonPortal) : base(services)
+                            IReadWritePortalChild<ILightHorse> lightHorsePortal,
+                            IReadWritePortalChild<IHeavyHorse> heavyHorsePortal,
+                            IReadWritePortalChild<IRacingChariot> racingChariotPortal,
+                            IReadWritePortalChild<IWagon> wagonPortal) : base(services)
         {
             this.lightHorsePortal = lightHorsePortal;
             this.heavyHorsePortal = heavyHorsePortal;
@@ -31,7 +31,7 @@ namespace HorseBarn.lib
         IReadOnlyListBase<ICart> IHorseBarn.Carts => this.Carts;
 
         [Create]
-        public async Task Create(ISendReceivePortalChild<IPasture> pasturePortal, ISendReceivePortalChild<ICartList> cartListPortal)
+        public async Task Create(IReadWritePortalChild<IPasture> pasturePortal, IReadWritePortalChild<ICartList> cartListPortal)
         {
             this.Pasture = await pasturePortal.CreateChild();
             this.Carts = await cartListPortal.CreateChild();

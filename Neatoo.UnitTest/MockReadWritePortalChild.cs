@@ -5,15 +5,15 @@ using System;
 
 namespace Neatoo.UnitTest
 {
-    public class MockReceivePortalChild<T> : IReceivePortalChild<T>
-        where T : IPortalTarget
+    public class MockReadWritePortalChild<T> : IReadWritePortalChild<T>
+        where T : IPortalEditTarget, IEditMetaProperties
     {
-        public MockReceivePortalChild()
+        public MockReadWritePortalChild()
         {
-            MockPortal = new Mock<IReceivePortalChild<T>>(MockBehavior.Strict);
+            MockPortal = new Mock<IReadWritePortalChild<T>>(MockBehavior.Strict);
         }
 
-        public Mock<IReceivePortalChild<T>> MockPortal { get; }
+        public Mock<IReadWritePortalChild<T>> MockPortal { get; }
 
         public Task<T> CreateChild()
         {
@@ -23,6 +23,11 @@ namespace Neatoo.UnitTest
         {
             return MockPortal.Object.FetchChild();
         }
+        public Task UpdateChild(T target)
+        {
+            return MockPortal.Object.UpdateChild(target);
+        }
+
         public Task<T> CreateChild<C0>(C0 criteria0)
         {
             return MockPortal.Object.CreateChild(new object[] { criteria0 }, new Type[] { typeof(C0) });
@@ -87,6 +92,5 @@ namespace Neatoo.UnitTest
         {
             return MockPortal.Object.FetchChild(new object[] { criteria0, criteria1, criteria2, criteria3, criteria4, criteria5, criteria6, criteria7 }, new Type[] { typeof(C0), typeof(C1), typeof(C2), typeof(C3), typeof(C4), typeof(C5), typeof(C6), typeof(C7) });
         }
-
     }
 }

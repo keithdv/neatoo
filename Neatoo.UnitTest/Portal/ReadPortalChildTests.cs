@@ -9,16 +9,16 @@ namespace Neatoo.UnitTest.ObjectPortal
 {
 
     [TestClass]
-    public class ReceivePortalChildTests
+    public class ReadPortalChildTests
     {
         private ILifetimeScope scope = AutofacContainer.GetLifetimeScope(true);
-        private IReceivePortalChild<IBaseObject> portal;
+        private IReadPortalChild<IBaseObject> portal;
         private IBaseObject domainObject;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            portal = scope.Resolve<IReceivePortalChild<IBaseObject>>();
+            portal = scope.Resolve<IReadPortalChild<IBaseObject>>();
         }
 
         [TestCleanup]
@@ -30,14 +30,14 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortalChild_CreateChild()
+        public async Task ReadPortalChild_CreateChild()
         {
             domainObject = await portal.CreateChild();
             Assert.IsTrue(domainObject.CreateChildCalled);
         }
 
         [TestMethod]
-        public async Task ReceivePortalChild_CreateChildGuidCriteriaCalled()
+        public async Task ReadPortalChild_CreateChildGuidCriteriaCalled()
         {
             var crit = Guid.NewGuid();
             domainObject = await portal.CreateChild(crit);
@@ -45,7 +45,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortalChild_CreateChildIntCriteriaCalled()
+        public async Task ReadPortalChild_CreateChildIntCriteriaCalled()
         {
             int crit = DateTime.Now.Millisecond;
             domainObject = await portal.CreateChild(crit);
@@ -53,14 +53,14 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortalChild_FetchChild()
+        public async Task ReadPortalChild_FetchChild()
         {
             domainObject = await portal.FetchChild();
             Assert.IsTrue(domainObject.FetchChildCalled);
         }
 
         [TestMethod]
-        public async Task ReceivePortalChild_FetchChildGuidCriteriaCalled()
+        public async Task ReadPortalChild_FetchChildGuidCriteriaCalled()
         {
             var crit = Guid.NewGuid();
             domainObject = await portal.FetchChild(crit);
@@ -68,7 +68,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortalChild_FetchChildIntCriteriaCalled()
+        public async Task ReadPortalChild_FetchChildIntCriteriaCalled()
         {
             int crit = DateTime.Now.Millisecond;
             domainObject = await portal.FetchChild(crit);

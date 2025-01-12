@@ -10,6 +10,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HorseBarn.WPF
 {
@@ -23,6 +25,7 @@ namespace HorseBarn.WPF
 
         //private readonly ILog _logger = LogManager.GetLog(typeof(TypedAutofacBootStrapper<>));
         private IContainer _container;
+        private IHttpClientFactory httpClientFactory;
 
         protected IContainer Container
         {
@@ -32,6 +35,11 @@ namespace HorseBarn.WPF
         protected override async void OnStartup(object sender, System.Windows.StartupEventArgs e)
         {
             await this.DisplayRootViewForAsync<HorseBarnViewModel>();
+        }
+
+        protected override void OnExit(object sender, EventArgs e)
+        {
+            base.OnExit(sender, e);
         }
 
         #region Overrides
@@ -75,16 +83,28 @@ namespace HorseBarn.WPF
         {
             Container.InjectProperties(instance);
         }
+
         #endregion
 
         protected virtual void ConfigureContainer(ContainerBuilder builder)
         {
+
+            var services = new ServiceCollection();
+            services.AddHttpClient();
+            var provider = services.BuildServiceProvider();
+            httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+
+            builder.Register(_ =>
+            {
+                return httpClientFactory.CreateClient();
+            });
+
             builder.RegisterType<HorseBarnViewModel>();
             builder.RegisterType<CreateHorseViewModel>();
             builder.RegisterType<CartViewModel>();
             builder.RegisterType<HorseViewModel>();
 
-            builder.RegisterModule(new NeatooCoreModule(Portal.Local));
+            builder.RegisterModule(new NeatooCoreModule(Portal.Client));
             builder.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));
         }
     }

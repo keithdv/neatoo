@@ -41,27 +41,12 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
 
         private string Serialize(object target)
         {
-            return JsonConvert.SerializeObject(target, new JsonSerializerSettings()
-            {
-                ContractResolver = resolver,
-                TypeNameHandling = TypeNameHandling.All,
-                PreserveReferencesHandling = PreserveReferencesHandling.All,
-                Formatting = Formatting.Indented,
-                Converters = new List<JsonConverter>() { scope.Resolve<ListBaseCollectionConverter>() }
-
-            });
+            return resolver.Serialize(target);
         }
 
         private IValidateObject Deserialize(string json)
         {
-            return JsonConvert.DeserializeObject<IValidateObject>(json, new JsonSerializerSettings
-            {
-                ContractResolver = resolver,
-                TypeNameHandling = TypeNameHandling.All,
-                PreserveReferencesHandling = PreserveReferencesHandling.All,
-                Converters = new List<JsonConverter>() { scope.Resolve<ListBaseCollectionConverter>() }
-
-            });
+            return resolver.Deserialize<IValidateObject>(json);
         }
 
         [TestMethod]

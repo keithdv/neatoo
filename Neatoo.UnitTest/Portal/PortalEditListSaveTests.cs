@@ -14,14 +14,14 @@ namespace Neatoo.UnitTest.Portal
     {
 
         private ILifetimeScope scope = AutofacContainer.GetLifetimeScope(true);
-        private ISendReceivePortal<IEditObjectList> portal;
+        private IReadWritePortal<IEditObjectList> portal;
         private IEditObjectList list;
         private IEditObject child;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            portal = scope.Resolve<ISendReceivePortal<IEditObjectList>>();
+            portal = scope.Resolve<IReadWritePortal<IEditObjectList>>();
             list = portal.Fetch().Result;
             child = list.CreateAdd().Result;
             child.MarkUnmodified();

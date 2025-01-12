@@ -10,16 +10,16 @@ namespace Neatoo.UnitTest.ObjectPortal
 {
 
     [TestClass]
-    public class ReceivePortalTests
+    public class ReadPortalTests
     {
         private ILifetimeScope scope = AutofacContainer.GetLifetimeScope(true);
-        private IReceivePortal<IBaseObject> portal;
+        private IReadPortal<IBaseObject> portal;
         private IBaseObject domainObject;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            portal = scope.Resolve<IReceivePortal<IBaseObject>>();
+            portal = scope.Resolve<IReadPortal<IBaseObject>>();
         }
 
         [TestCleanup]
@@ -29,14 +29,14 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortal_Create()
+        public async Task ReadPortal_Create()
         {
             domainObject = await portal.Create();
             Assert.IsTrue(domainObject.CreateCalled);
         }
 
         [TestMethod]
-        public async Task ReceivePortal_CreateGuidCriteriaCalled()
+        public async Task ReadPortal_CreateGuidCriteriaCalled()
         {
             var crit = Guid.NewGuid();
             domainObject = await portal.Create(crit);
@@ -44,7 +44,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortal_CreateIntCriteriaCalled()
+        public async Task ReadPortal_CreateIntCriteriaCalled()
         {
             int crit = DateTime.Now.Millisecond;
             domainObject = await portal.Create(crit);
@@ -52,7 +52,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortal_CreateInferredCriteriaCalled()
+        public async Task ReadPortal_CreateInferredCriteriaCalled()
         {
             var crit = new List<int>() { 0, 1, 2 };
             domainObject = await portal.Create(crit);
@@ -61,14 +61,14 @@ namespace Neatoo.UnitTest.ObjectPortal
 
 
         [TestMethod]
-        public async Task ReceivePortal_CreateMultipleCriteriaCalled()
+        public async Task ReadPortal_CreateMultipleCriteriaCalled()
         {
             domainObject = await portal.Create(10, "String");
             CollectionAssert.AreEquivalent(new object[] { 10, "String" }, domainObject.MultipleCriteria);
         }
 
         [TestMethod]
-        public void ReceivePortal_CreateMultipleCriteria_Missing_Fail()
+        public void ReadPortal_CreateMultipleCriteria_Missing_Fail()
         {
             // No such method exists
 
@@ -77,7 +77,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public void ReceivePortal_CreateMultipleCriteria_Duplicate_Fail()
+        public void ReadPortal_CreateMultipleCriteria_Duplicate_Fail()
         {
             // Two possibilities exist due to one with a dependency and one without
             Assert.ThrowsException<AggregateException>(() => domainObject = portal.Create(1u).Result);
@@ -85,7 +85,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortal_CreateMultipleCriteriaCalled_Double()
+        public async Task ReadPortal_CreateMultipleCriteriaCalled_Double()
         {
             var r = scope.IsRegistered(typeof(int));
 
@@ -94,7 +94,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortal_CreateMultipleCriteria_NullIncluded()
+        public async Task ReadPortal_CreateMultipleCriteria_NullIncluded()
         {
             // Null created the need for generic criteria method
             // If a null criteria value is sent no longer have information
@@ -108,14 +108,14 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortal_Fetch()
+        public async Task ReadPortal_Fetch()
         {
             domainObject = await portal.Fetch();
             Assert.IsTrue(domainObject.FetchCalled);
         }
 
         [TestMethod]
-        public async Task ReceivePortal_FetchGuidCriteriaCalled()
+        public async Task ReadPortal_FetchGuidCriteriaCalled()
         {
             var crit = Guid.NewGuid();
             domainObject = await portal.Fetch(crit);
@@ -123,7 +123,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortal_FetchIntCriteriaCalled()
+        public async Task ReadPortal_FetchIntCriteriaCalled()
         {
             int crit = DateTime.Now.Millisecond;
             domainObject = await portal.Fetch(crit);

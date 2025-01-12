@@ -35,7 +35,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
         [Fetch]
         [FetchChild]
-        public async Task Fetch(PersonDto person, IReceivePortalChild<IValidateObject> portal, IReadOnlyList<PersonDto> personTable)
+        public async Task Fetch(PersonDto person, IReadPortalChild<IValidateObject> portal, IReadOnlyList<PersonDto> personTable)
         {
             base.FillFromDto(person);
 

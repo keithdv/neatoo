@@ -39,7 +39,7 @@ namespace Neatoo.Netwonsoft.Json.Test
                 builder.AutoRegisterAssemblyTypes(Assembly.GetExecutingAssembly());
 
                 // Newtonsoft.Json
-                builder.RegisterType<FatClientContractResolver>();
+                builder.RegisterType<FatClientContractResolver>().AsSelf().As<IPortalJsonSerializer>();
                 builder.RegisterType<ListBaseCollectionConverter>();
 
                 builder.RegisterType<DisposableDependencyList>();

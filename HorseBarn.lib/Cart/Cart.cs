@@ -77,7 +77,7 @@ namespace HorseBarn.lib.Cart
         }
 
         [CreateChild]
-        public async void CreateChild(ISendReceivePortalChild<IHorseList<H>> horsePortal)
+        public async void CreateChild(IReadWritePortalChild<IHorseList<H>> horsePortal)
         {
             this.HorseList = await horsePortal.CreateChild();
             this.NumberOfHorses = 1;

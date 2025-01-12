@@ -18,23 +18,23 @@ namespace HorseBarn.WPF.ViewModels
     public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
     {
         private readonly IWindowManager windowManager;
-        private readonly ISendReceivePortal<IHorseBarn> sendReceivePortalHorseBarn;
+        private readonly IReadPortal<IHorseBarn> readWritePortalHorseBarn;
         private readonly IEventAggregator eventAggregator;
         private readonly CreateHorseViewModel createHorseViewModel;
         private readonly CartViewModel.Factory createCartViewModel;
         private readonly HorseViewModel.Factory horseViewModelFactory;
-        private readonly IReceivePortal<IHorseCriteria> horseCriteriaPortal;
+        private readonly IReadPortal<IHorseCriteria> horseCriteriaPortal;
 
         public HorseBarnViewModel(IWindowManager windowManager,
-            ISendReceivePortal<IHorseBarn> sendReceivePortalHorseBarn,
+            IReadPortal<IHorseBarn> readWritePortalHorseBarn,
             IEventAggregator eventAggregator,
             CreateHorseViewModel createHorseViewModel,
             CartViewModel.Factory createCartViewModel,
             HorseViewModel.Factory horseViewModelFactory,
-            IReceivePortal<IHorseCriteria> horseCriteriaPortal)
+            IReadPortal<IHorseCriteria> horseCriteriaPortal)
         {
             this.windowManager = windowManager;
-            this.sendReceivePortalHorseBarn = sendReceivePortalHorseBarn;
+            this.readWritePortalHorseBarn = readWritePortalHorseBarn;
             this.eventAggregator = eventAggregator;
             this.createHorseViewModel = createHorseViewModel;
             this.createCartViewModel = createCartViewModel;
@@ -49,7 +49,7 @@ namespace HorseBarn.WPF.ViewModels
         protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
         {
             await base.OnInitializeAsync(cancellationToken);
-            HorseBarn = await sendReceivePortalHorseBarn.Create();
+            HorseBarn = await readWritePortalHorseBarn.Create();
 
             var horseCriteria = await horseCriteriaPortal.Create();
             horseCriteria.Name = "Secretariat";

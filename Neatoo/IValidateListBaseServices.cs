@@ -30,7 +30,7 @@ namespace Neatoo
     {
 
         public ValidateListBaseServices(IValidatePropertyValueManager<T> registeredPropertyManager,
-            IReceivePortalChild<I> portal,
+            IReadPortalChild<I> portal,
             IRuleManager<T> ruleManager) : base(registeredPropertyManager, portal)
         {
             this.ValidatePropertyValueManager = registeredPropertyManager;

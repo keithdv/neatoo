@@ -51,7 +51,7 @@ namespace Neatoo.UnitTest.BaseTests
         [TestMethod]
         public async Task ListBase_CreateAdd()
         {
-            var mock = scope.Resolve<MockReceivePortalChild<IBaseObject>>();
+            var mock = scope.Resolve<MockReadPortalChild<IBaseObject>>();
 
             mock.MockPortal.Setup(x => x.CreateChild()).ReturnsAsync(scope.Resolve<IBaseObject>());
 

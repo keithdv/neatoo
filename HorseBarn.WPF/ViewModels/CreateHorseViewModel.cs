@@ -13,14 +13,14 @@ namespace HorseBarn.WPF.ViewModels
     {
         private readonly IEventAggregator eventAggregator;
 
-        public CreateHorseViewModel(IReceivePortal<IHorseCriteria> horseCriteriaPortal,
+        public CreateHorseViewModel(IReadPortal<IHorseCriteria> horseCriteriaPortal,
             IEventAggregator eventAggregator)
         {
             HorseCriteriaPortal = horseCriteriaPortal;
             this.eventAggregator = eventAggregator;
         }
 
-        public IReceivePortal<IHorseCriteria> HorseCriteriaPortal { get; }
+        public IReadPortal<IHorseCriteria> HorseCriteriaPortal { get; }
 
         public IHorseCriteria HorseCriteria { get; private set; }
 

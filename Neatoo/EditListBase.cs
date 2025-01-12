@@ -28,13 +28,13 @@ namespace Neatoo
 
         protected new IEditPropertyValueManager<T> PropertyValueManager => (IEditPropertyValueManager<T>)base.PropertyValueManager;
 
-        protected new ISendReceivePortalChild<I> ItemPortal { get; }
-        public ISendReceivePortal<T> SendReceivePortal { get; }
+        protected new IReadWritePortalChild<I> ItemPortal { get; }
+        public IReadWritePortal<T> ReadWritePortal { get; }
 
         public EditListBase(IEditListBaseServices<T, I> services) : base(services)
         {
-            this.ItemPortal = services.SendReceivePortalChild;
-            this.SendReceivePortal = services.SendReceivePortal;
+            this.ItemPortal = services.ReadWritePortalChild;
+            this.ReadWritePortal = services.ReadWritePortal;
         }
 
         public bool IsModified => PropertyValueManager.IsModified || IsNew || this.Any(c => c.IsModified) || IsDeleted || DeletedList.Any();
@@ -133,21 +133,6 @@ namespace Neatoo
             }
         }
 
-        protected async Task UpdateList(params object[] criteria)
-        {
-            foreach (var d in DeletedList)
-            {
-                await ItemPortal.UpdateChild(d, criteria);
-            }
-
-            DeletedList.Clear();
-
-            foreach (var i in this.Where(i => i.IsModified).ToList())
-            {
-                await ItemPortal.UpdateChild(i, criteria);
-            }
-        }
-
         public virtual async Task Save()
         {
             if (!IsSavable)
@@ -166,7 +151,7 @@ namespace Neatoo
                 }
             }
 
-            await SendReceivePortal.Update((T)this);
+            await ReadWritePortal.Update((T)this);
 
         }
 

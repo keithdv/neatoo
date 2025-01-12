@@ -13,6 +13,8 @@ using Autofac.Builder;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
 using System.Reflection.Metadata.Ecma335;
+using Neatoo.Netwonsoft.Json;
+using Neatoo.Newtonsoft.Json;
 
 namespace Neatoo.Autofac
 {
@@ -54,6 +56,9 @@ namespace Neatoo.Autofac
             // When single instance it receives the root scopewhich is no good
             builder.RegisterGeneric(typeof(PortalOperationManager<>)).As(typeof(IPortalOperationManager<>)).InstancePerLifetimeScope();
 
+            builder.RegisterType<FatClientContractResolver>().AsSelf().As<IPortalJsonSerializer>();
+            builder.RegisterType<ListBaseCollectionConverter>().AsSelf();
+
             // Should not be singleinstance because AuthorizationRules can have constructor dependencies
             builder.RegisterGeneric(typeof(AuthorizationRuleManager<>)).As(typeof(IAuthorizationRuleManager<>)).InstancePerLifetimeScope();
             builder.RegisterGeneric(typeof(RuleManager<>)).As(typeof(IRuleManager<>)).AsSelf();
@@ -84,17 +89,31 @@ namespace Neatoo.Autofac
             if (Portal == Portal.Local)
             {
                 // Takes IServiceScope so these need to match it's lifetime
-                builder.RegisterGeneric(typeof(LocalReceivePortal<>))
-                    .As(typeof(IReceivePortal<>))
-                    .As(typeof(IReceivePortalChild<>))
+                builder.RegisterGeneric(typeof(LocalReadPortal<>))
+                    .As(typeof(IReadPortal<>))
+                    .As(typeof(IReadPortalChild<>))
                     .InstancePerLifetimeScope();
 
-                builder.RegisterGeneric(typeof(LocalSendReceivePortal<>))
-                    .As(typeof(ISendReceivePortal<>))
-                    .As(typeof(ISendReceivePortalChild<>))
+                builder.RegisterGeneric(typeof(LocalReadWritePortal<>))
+                    .As(typeof(IReadWritePortal<>))
+                    .As(typeof(IReadWritePortalChild<>))
                     .InstancePerLifetimeScope();
 
                 builder.RegisterGeneric(typeof(LocalMethodPortal<>)).As(typeof(IRemoteMethodPortal<>)).AsSelf();
+
+                builder.RegisterGeneric(typeof(Portal<>)).As(typeof(IPortal<>)).InstancePerLifetimeScope();
+            } 
+            else if(Portal == Portal.Client)
+            {
+                builder.RegisterGeneric(typeof(ClientReadPortal<>))
+                    .As(typeof(IReadPortal<>))
+                    .As(typeof(IReadPortalChild<>))
+                    .InstancePerLifetimeScope();
+
+                builder.RegisterGeneric(typeof(ClientReadWritePortal<>))
+                    .As(typeof(IReadWritePortal<>))
+                    .As(typeof(IReadWritePortalChild<>))
+                    .InstancePerLifetimeScope();
             }
 
             // Simple wrapper - Always InstancePerDependency

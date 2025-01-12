@@ -9,16 +9,16 @@ namespace Neatoo.UnitTest.ObjectPortal
 {
 
     [TestClass]
-    public class SendReceivePortalTests
+    public class ReadWritePortalTests
     {
         private ILifetimeScope scope = AutofacContainer.GetLifetimeScope(true);
-        private ISendReceivePortal<IEditObject> portal;
+        private IReadWritePortal<IEditObject> portal;
         private IEditObject editObject;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            portal = scope.Resolve<ISendReceivePortal<IEditObject>>();
+            portal = scope.Resolve<IReadWritePortal<IEditObject>>();
         }
 
         [TestCleanup]
@@ -30,7 +30,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task SendReceivePortal_Create()
+        public async Task ReadWritePortal_Create()
         {
             editObject = await portal.Create();
             Assert.IsTrue(editObject.CreateCalled);
@@ -39,7 +39,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task SendReceivePortal_CreateGuidCriteriaCalled()
+        public async Task ReadWritePortal_CreateGuidCriteriaCalled()
         {
             var crit = Guid.NewGuid();
             editObject = await portal.Create(crit);
@@ -48,7 +48,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task SendReceivePortal_CreateIntCriteriaCalled()
+        public async Task ReadWritePortal_CreateIntCriteriaCalled()
         {
             int crit = DateTime.Now.Millisecond;
             editObject = await portal.Create(crit);
@@ -58,7 +58,7 @@ namespace Neatoo.UnitTest.ObjectPortal
 
 
         [TestMethod]
-        public async Task SendReceivePortal_Fetch()
+        public async Task ReadWritePortal_Fetch()
         {
             editObject = await portal.Fetch();
             Assert.IsTrue(editObject.ID.HasValue);
@@ -72,7 +72,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task SendReceivePortal_FetchGuidCriteriaCalled()
+        public async Task ReadWritePortal_FetchGuidCriteriaCalled()
         {
             var crit = Guid.NewGuid();
             editObject = await portal.Fetch(crit);
@@ -81,7 +81,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task SendReceivePortal_FetchIntCriteriaCalled()
+        public async Task ReadWritePortal_FetchIntCriteriaCalled()
         {
             int crit = DateTime.Now.Millisecond;
             editObject = await portal.Fetch(crit);
@@ -92,7 +92,7 @@ namespace Neatoo.UnitTest.ObjectPortal
 
 
         [TestMethod]
-        public async Task SendReceivePortal_Update()
+        public async Task ReadWritePortal_Update()
         {
             editObject = await portal.Fetch();
             var id = Guid.NewGuid();
@@ -105,32 +105,10 @@ namespace Neatoo.UnitTest.ObjectPortal
             Assert.IsFalse(editObject.IsModified);
         }
 
-        [TestMethod]
-        public async Task SendReceivePortal_UpdateGuidCriteriaCalled()
-        {
-            var crit = Guid.NewGuid();
-            editObject = await portal.Fetch();
-            editObject.ID = Guid.NewGuid();
-            await portal.Update(editObject, crit);
-            Assert.AreEqual(crit, editObject.GuidCriteria);
-            Assert.IsTrue(editObject.UpdateCalled);
-        }
-
-        [TestMethod]
-        public async Task SendReceivePortal_UpdateIntCriteriaCalled()
-        {
-            int crit = DateTime.Now.Millisecond;
-            editObject = await portal.Fetch();
-            editObject.ID = Guid.NewGuid();
-            await portal.Update(editObject, crit);
-            Assert.AreEqual(crit, editObject.IntCriteria);
-            Assert.IsTrue(editObject.UpdateCalled);
-        }
-
 
 
         [TestMethod]
-        public async Task SendReceivePortal_Insert()
+        public async Task ReadWritePortal_Insert()
         {
             editObject = await portal.Create();
             editObject.ID = Guid.Empty;
@@ -142,30 +120,9 @@ namespace Neatoo.UnitTest.ObjectPortal
             Assert.IsFalse(editObject.IsModified);
         }
 
-        [TestMethod]
-        public async Task SendReceivePortal_InsertGuidCriteriaCalled()
-        {
-            var crit = Guid.NewGuid();
-            editObject = await portal.Create();
-            await portal.Update(editObject, crit);
-            Assert.IsTrue(editObject.InsertCalled);
-            Assert.AreEqual(crit, editObject.GuidCriteria);
-        }
 
         [TestMethod]
-        public async Task SendReceivePortal_InsertIntCriteriaCalled()
-        {
-            int crit = DateTime.Now.Millisecond;
-            editObject = await portal.Create();
-            await portal.Update(editObject, crit);
-            Assert.IsTrue(editObject.InsertCalled);
-            Assert.AreEqual(crit, editObject.IntCriteria);
-        }
-
-
-
-        [TestMethod]
-        public async Task SendReceivePortal_Delete()
+        public async Task ReadWritePortal_Delete()
         {
             editObject = await portal.Fetch();
             editObject.Delete();
@@ -173,27 +130,6 @@ namespace Neatoo.UnitTest.ObjectPortal
             Assert.IsTrue(editObject.DeleteCalled);
         }
 
-        [TestMethod]
-        public async Task SendReceivePortal_DeleteGuidCriteriaCalled()
-        {
-            var crit = Guid.NewGuid();
-            editObject = await portal.Fetch();
-            editObject.Delete();
-            await portal.Update(editObject, crit);
-            Assert.IsTrue(editObject.DeleteCalled);
-            Assert.AreEqual(crit, editObject.GuidCriteria);
-        }
-
-        [TestMethod]
-        public async Task SendReceivePortal_DeleteIntCriteriaCalled()
-        {
-            int crit = DateTime.Now.Millisecond;
-            editObject = await portal.Fetch();
-            editObject.Delete();
-            await portal.Update(editObject, crit);
-            Assert.IsTrue(editObject.DeleteCalled);
-            Assert.AreEqual(crit, editObject.IntCriteria);
-        }
 
     }
 }

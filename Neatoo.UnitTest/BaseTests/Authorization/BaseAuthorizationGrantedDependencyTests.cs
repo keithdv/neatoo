@@ -117,13 +117,13 @@ namespace Neatoo.UnitTest.BaseTests.Authorization
     {
 
         ILifetimeScope scope;
-        IReceivePortal<IBaseAuthorizationGrantedDependencyObject> portal;
+        IReadPortal<IBaseAuthorizationGrantedDependencyObject> portal;
 
         [TestInitialize]
         public void TestInitialize()
         {
             scope = AutofacContainer.GetLifetimeScope(true);
-            portal = scope.Resolve<IReceivePortal<IBaseAuthorizationGrantedDependencyObject>>();
+            portal = scope.Resolve<IReadPortal<IBaseAuthorizationGrantedDependencyObject>>();
         }
 
         [TestMethod]

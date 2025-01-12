@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace Neatoo.Portal.Core
 {
@@ -22,14 +23,16 @@ namespace Neatoo.Portal.Core
 
         protected IAuthorizationRuleManager AuthorizationRuleManager { get; }
 
+        protected IPortalJsonSerializer jsonSerializer { get; }
 
-        public PortalOperationManager(IServiceScope scope)
+        public PortalOperationManager(IServiceScope scope, IPortalJsonSerializer jsonSerializer)
         {
 #if DEBUG
             if (typeof(T).IsInterface) { throw new Exception($"PortalOperationManager should be service type not an interface. {typeof(T).FullName}"); }
 #endif
             RegisterPortalOperations();
             Scope = scope;
+            this.jsonSerializer = jsonSerializer;
             AuthorizationRuleManager = scope.Resolve<IAuthorizationRuleManager<T>>();
         }
 
@@ -308,6 +311,48 @@ namespace Neatoo.Portal.Core
                         break;
                 }
             }
+        }
+
+        public async Task<IPortalTarget> HandlePortalRequest(PortalRequest portalRequest)
+        {
+            Type concreteType = Type.GetType(portalRequest.Type);
+
+            if (concreteType.IsInterface)
+            {
+                concreteType = Scope.ConcreteType(concreteType);
+            }
+
+
+            IPortalTarget target = null;
+
+            if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Create) == (int)PortalOperationType.Create)
+            {
+                target = Scope.Resolve(concreteType) as IPortalTarget ?? throw new InvalidOperationException("Type is not an IPortalTarget");
+            }
+            else
+            {
+                target = jsonSerializer.Deserialize(portalRequest.ObjectJson, concreteType) as IPortalTarget ?? throw new InvalidOperationException("Type is not an IPortalTarget");
+            }
+
+            if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Create) == (int)PortalOperationType.Create
+                && portalRequest.CriteriaJson != null)
+            {
+                var criteriaJson = jsonSerializer.Deserialize<List<string>>(portalRequest.CriteriaJson);
+                var criteriaTypes = jsonSerializer.Deserialize<List<string>>(portalRequest.CriteriaTypes);
+                var criteria = new object[portalRequest.CriteriaJson.Length];
+                for (int i = 0; i < criteriaJson.Count; i++)
+                {
+                    criteria[i] = jsonSerializer.Deserialize(criteriaJson[i], Type.GetType(criteriaTypes[i]));
+                }
+                await TryCallOperation(target, portalRequest.PortalOperation, criteria, criteriaTypes.Select(ct => Type.GetType(ct)).ToArray());
+            }
+            else
+            {
+                await TryCallOperation(target, portalRequest.PortalOperation);
+            }
+
+
+            return target;
         }
 
     }

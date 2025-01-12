@@ -1,4 +1,5 @@
-﻿using Neatoo.Rules;
+﻿using Neatoo.Portal;
+using Neatoo.Rules;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -43,6 +44,19 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         }
 
         IRuleResult IValidateObject.OverrideResult => RuleManager.OverrideResult;
+
+        [Create]
+        public void Create(Guid ID, string Name)
+        {
+            this.ID = ID;
+            this.Name = Name;
+        }
+
+        [Update]
+        public void Update()
+        {
+            this.Name = "Updated";
+        }
     }
 
     public interface IValidateObjectList : IValidateListBase<IValidateObject>

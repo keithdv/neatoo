@@ -130,7 +130,7 @@ namespace Neatoo.UnitTest.EditBaseTests
         [TestMethod]
         public async Task EditListBaseTest_Save()
         {
-            var listMock = scope.Resolve<MockSendReceivePortal<EditPersonList>>();
+            var listMock = scope.Resolve<MockReadWritePortal<EditPersonList>>();
             listMock.MockPortal.Setup(x => x.Update((EditPersonList)list)).Returns(Task.CompletedTask);
 
             list.FirstName = Guid.NewGuid().ToString();

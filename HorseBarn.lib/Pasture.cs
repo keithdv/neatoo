@@ -29,7 +29,7 @@ namespace HorseBarn.lib
         }
 
         [CreateChild]
-        private async Task CreateChild(ISendReceivePortalChild<IHorseList> horseListPortal)
+        private async Task CreateChild(IReadWritePortalChild<IHorseList> horseListPortal)
         {
             HorseList = await horseListPortal.CreateChild(); 
             await CheckAllRules();

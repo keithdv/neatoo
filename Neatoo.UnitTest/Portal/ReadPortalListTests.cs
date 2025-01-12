@@ -11,16 +11,16 @@ namespace Neatoo.UnitTest.ObjectPortal
 {
 
     [TestClass]
-    public class ReceivePortalListTests
+    public class ReadPortalListTests
     {
         private ILifetimeScope scope = AutofacContainer.GetLifetimeScope(true);
-        private IReceivePortal<IBaseObjectList> portal;
+        private IReadPortal<IBaseObjectList> portal;
         private IBaseObjectList list;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            portal = scope.Resolve<IReceivePortal<IBaseObjectList>>();
+            portal = scope.Resolve<IReadPortal<IBaseObjectList>>();
         }
 
         [TestCleanup]
@@ -32,7 +32,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortalList_Create()
+        public async Task ReadPortalList_Create()
         {
             list = await portal.Create();
             Assert.IsTrue(list.CreateCalled);
@@ -40,7 +40,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortalList_CreateGuidCriteriaCalled()
+        public async Task ReadPortalList_CreateGuidCriteriaCalled()
         {
             var crit = Guid.NewGuid();
             list = await portal.Create(crit);
@@ -49,7 +49,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortalList_CreateIntCriteriaCalled()
+        public async Task ReadPortalList_CreateIntCriteriaCalled()
         {
             int crit = DateTime.Now.Millisecond;
             list = await portal.Create(crit);
@@ -58,7 +58,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortalList_Fetch()
+        public async Task ReadPortalList_Fetch()
         {
             list = await portal.Fetch();
             Assert.IsTrue(list.FetchCalled);
@@ -66,7 +66,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortalList_FetchGuidCriteriaCalled()
+        public async Task ReadPortalList_FetchGuidCriteriaCalled()
         {
             var crit = Guid.NewGuid();
             list = await portal.Fetch(crit);
@@ -75,7 +75,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
-        public async Task ReceivePortalList_FetchIntCriteriaCalled()
+        public async Task ReadPortalList_FetchIntCriteriaCalled()
         {
             int crit = DateTime.Now.Millisecond;
             list = await portal.Fetch(crit);

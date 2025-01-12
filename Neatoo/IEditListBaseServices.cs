@@ -18,8 +18,8 @@ namespace Neatoo
         where I : IEditBase
     {
         IEditPropertyValueManager<T> EditPropertyValueManager { get; }
-        ISendReceivePortalChild<I> SendReceivePortalChild { get; }
-        ISendReceivePortal<T> SendReceivePortal { get; }
+        IReadWritePortalChild<I> ReadWritePortalChild { get; }
+        IReadWritePortal<T> ReadWritePortal { get; }
     }
 
     public class EditListBaseServices<T, I> : ValidateListBaseServices<T, I>, IEditListBaseServices<T, I>
@@ -28,18 +28,18 @@ namespace Neatoo
     {
 
         public IEditPropertyValueManager<T> EditPropertyValueManager { get; }
-        public ISendReceivePortalChild<I> SendReceivePortalChild { get; }
-        public ISendReceivePortal<T> SendReceivePortal { get; }
+        public IReadWritePortalChild<I> ReadWritePortalChild { get; }
+        public IReadWritePortal<T> ReadWritePortal { get; }
 
         public EditListBaseServices(IEditPropertyValueManager<T> registeredPropertyManager,
-                                        ISendReceivePortalChild<I> sendReceivePortalChild,
-                                        ISendReceivePortal<T> sendReceivePortal,
+                                        IReadWritePortalChild<I> readWritePortalChild,
+                                        IReadWritePortal<T> readWritePortal,
                                         IRuleManager<T> ruleManager)
-            : base(registeredPropertyManager, sendReceivePortalChild, ruleManager)
+            : base(registeredPropertyManager, readWritePortalChild, ruleManager)
         {
             EditPropertyValueManager = registeredPropertyManager;
-            SendReceivePortalChild = sendReceivePortalChild;
-            SendReceivePortal = sendReceivePortal;
+            ReadWritePortalChild = readWritePortalChild;
+            ReadWritePortal = readWritePortal;
         }
     }
 }

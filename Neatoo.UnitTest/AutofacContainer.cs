@@ -41,10 +41,10 @@ namespace Neatoo.UnitTest
 
                     if(portal == Autofac.Portal.NoPortal)
                     {
-                        builder.RegisterGeneric(typeof(MockReceivePortal<>)).As(typeof(IReceivePortal<>)).AsSelf().InstancePerLifetimeScope();
-                        builder.RegisterGeneric(typeof(MockReceivePortalChild<>)).As(typeof(IReceivePortalChild<>)).AsSelf().InstancePerLifetimeScope();
-                        builder.RegisterGeneric(typeof(MockSendReceivePortal<>)).As(typeof(ISendReceivePortal<>)).AsSelf().InstancePerLifetimeScope();
-                        builder.RegisterGeneric(typeof(MockSendReceivePortalChild<>)).As(typeof(ISendReceivePortalChild<>)).AsSelf().InstancePerLifetimeScope();
+                        builder.RegisterGeneric(typeof(MockReadPortal<>)).As(typeof(IReadPortal<>)).AsSelf().InstancePerLifetimeScope();
+                        builder.RegisterGeneric(typeof(MockReadPortalChild<>)).As(typeof(IReadPortalChild<>)).AsSelf().InstancePerLifetimeScope();
+                        builder.RegisterGeneric(typeof(MockReadWritePortal<>)).As(typeof(IReadWritePortal<>)).AsSelf().InstancePerLifetimeScope();
+                        builder.RegisterGeneric(typeof(MockReadWritePortalChild<>)).As(typeof(IReadWritePortalChild<>)).AsSelf().InstancePerLifetimeScope();
                     }
                         
                         

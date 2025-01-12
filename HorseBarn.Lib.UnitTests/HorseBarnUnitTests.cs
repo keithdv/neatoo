@@ -11,13 +11,13 @@ namespace HorseBarn.lib.UnitTests
     [TestClass]
     public sealed class HorseBarnTests
     {
-        private Mock<ISendReceivePortalChild<ILightHorse>> mockLightHorsePortal;
-        private Mock<ISendReceivePortalChild<IHeavyHorse>> mockHeavyHorsePortal;
-        private Mock<ISendReceivePortalChild<IRacingChariot>> mockRacingChariotPortal;
-        private Mock<ISendReceivePortalChild<IWagon>> mockWagonPortal;
-        private Mock<ISendReceivePortalChild<IPasture>> mockPasturePortal;
-        private Mock<ISendReceivePortalChild<ICartList>> mockCartListPortal;
-        private Mock<ISendReceivePortal<HorseBarn>> mockHorseBarnPortal;
+        private Mock<IReadWritePortalChild<ILightHorse>> mockLightHorsePortal;
+        private Mock<IReadWritePortalChild<IHeavyHorse>> mockHeavyHorsePortal;
+        private Mock<IReadWritePortalChild<IRacingChariot>> mockRacingChariotPortal;
+        private Mock<IReadWritePortalChild<IWagon>> mockWagonPortal;
+        private Mock<IReadWritePortalChild<IPasture>> mockPasturePortal;
+        private Mock<IReadWritePortalChild<ICartList>> mockCartListPortal;
+        private Mock<IReadWritePortal<HorseBarn>> mockHorseBarnPortal;
         private HorseBarn horseBarn;
         private Mock<IPasture> mockPasture;
         private Mock<ICartList> mockCartList;
@@ -25,13 +25,13 @@ namespace HorseBarn.lib.UnitTests
         [TestInitialize]
         public async Task TestInitialize()
         {
-            mockLightHorsePortal = new Mock<ISendReceivePortalChild<ILightHorse>>();
-            mockHeavyHorsePortal = new Mock<ISendReceivePortalChild<IHeavyHorse>>();
-            mockRacingChariotPortal = new Mock<ISendReceivePortalChild<IRacingChariot>>();
-            mockWagonPortal = new Mock<ISendReceivePortalChild<IWagon>>();
-            mockPasturePortal = new Mock<ISendReceivePortalChild<IPasture>>();
-            mockCartListPortal = new Mock<ISendReceivePortalChild<ICartList>>();
-            mockHorseBarnPortal = new Mock<ISendReceivePortal<HorseBarn>>();
+            mockLightHorsePortal = new Mock<IReadWritePortalChild<ILightHorse>>();
+            mockHeavyHorsePortal = new Mock<IReadWritePortalChild<IHeavyHorse>>();
+            mockRacingChariotPortal = new Mock<IReadWritePortalChild<IRacingChariot>>();
+            mockWagonPortal = new Mock<IReadWritePortalChild<IWagon>>();
+            mockPasturePortal = new Mock<IReadWritePortalChild<IPasture>>();
+            mockCartListPortal = new Mock<IReadWritePortalChild<ICartList>>();
+            mockHorseBarnPortal = new Mock<IReadWritePortal<HorseBarn>>();
 
             horseBarn = new HorseBarn(new EditBaseServices<HorseBarn>(mockHorseBarnPortal.Object), mockLightHorsePortal.Object, mockHeavyHorsePortal.Object, mockRacingChariotPortal.Object, mockWagonPortal.Object);
 

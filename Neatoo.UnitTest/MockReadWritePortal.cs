@@ -5,19 +5,27 @@ using System;
 
 namespace Neatoo.UnitTest
 {
-    public class MockReceivePortal<T> : IReceivePortal<T>
-        where T : IPortalTarget
+    public class MockReadWritePortal<T> : IReadWritePortal<T>
+        where T : IPortalEditTarget, IEditMetaProperties
     {
-        public MockReceivePortal()
+        public MockReadWritePortal()
         {
-            MockPortal = new Mock<IReceivePortal<T>>(MockBehavior.Strict);
+            MockPortal = new Mock<IReadWritePortal<T>>(MockBehavior.Strict);
         }
 
-        public Mock<IReceivePortal<T>> MockPortal { get; }
+        public Mock<IReadWritePortal<T>> MockPortal { get; }
 
         public Task<T> Create()
         {
             return MockPortal.Object.Create();
+        }
+        public Task<T> Fetch()
+        {
+            return MockPortal.Object.Fetch();
+        }
+        public Task Update(T target)
+        {
+            return MockPortal.Object.Update(target);
         }
         public Task<T> Create<C0>(C0 criteria0)
         {
@@ -51,10 +59,7 @@ namespace Neatoo.UnitTest
         {
             return MockPortal.Object.Create(new object[] { criteria0, criteria1, criteria2, criteria3, criteria4, criteria5, criteria6, criteria7 }, new Type[] { typeof(C0), typeof(C1), typeof(C2), typeof(C3), typeof(C4), typeof(C5), typeof(C6), typeof(C7) });
         }
-        public Task<T> Fetch()
-        {
-            return MockPortal.Object.Fetch();
-        }
+
         public Task<T> Fetch<C0>(C0 criteria0)
         {
             return MockPortal.Object.Fetch(new object[] { criteria0 }, new Type[] { typeof(C0) });
@@ -87,6 +92,5 @@ namespace Neatoo.UnitTest
         {
             return MockPortal.Object.Fetch(new object[] { criteria0, criteria1, criteria2, criteria3, criteria4, criteria5, criteria6, criteria7 }, new Type[] { typeof(C0), typeof(C1), typeof(C2), typeof(C3), typeof(C4), typeof(C5), typeof(C6), typeof(C7) });
         }
-  
     }
 }

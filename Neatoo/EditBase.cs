@@ -17,7 +17,7 @@ namespace Neatoo
 
         public EditBase(IEditBaseServices<T> services) : base(services)
         {
-            SendReceivePortal = services.SendReceivePortal;
+            ReadWritePortal = services.ReadWritePortal;
         }
 
         public bool IsModified => PropertyValueManager.IsModified || IsDeleted || IsNew;
@@ -30,7 +30,7 @@ namespace Neatoo
         public IEnumerable<string> ModifiedProperties => PropertyValueManager.ModifiedProperties;
         [PortalDataMember]
         public bool IsChild { get; protected set; }
-        protected ISendReceivePortal<T> SendReceivePortal { get; }
+        protected IReadWritePortal<T> ReadWritePortal { get; }
 
         protected virtual void MarkAsChild()
         {
@@ -111,7 +111,7 @@ namespace Neatoo
                 }
             }
 
-            await SendReceivePortal.Update((T) this);
+            await ReadWritePortal.Update((T) this);
 
         }
     }
