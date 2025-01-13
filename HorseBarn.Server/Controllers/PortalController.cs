@@ -3,6 +3,7 @@ using HorseBarn.lib;
 using Microsoft.AspNetCore.Mvc;
 using Neatoo.Portal;
 using Neatoo.Portal.Core;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace HorseBarn.Server.Controllers
@@ -26,11 +27,15 @@ namespace HorseBarn.Server.Controllers
         [HttpPost]
         public async Task<PortalResponse> Post(PortalRequest portalRequest)
         {
-            var t = Type.GetType(portalRequest.Type) ?? throw new Exception($"Type {portalRequest.Type} not found");
+            var t = portalRequest.Target.Type() ?? throw new Exception($"Type {portalRequest.Target.Type} not found");
 
             if (t.IsInterface)
             {
                 t = lifetimeScope.ConcreteType(t);
+            } 
+            else
+            {
+                Debug.WriteLine($"Type {portalRequest.Target.AssemblyType} is not an interface");
             }
 
             var portal = (IPortalOperationManager) lifetimeScope.Resolve(typeof(IPortalOperationManager<>).MakeGenericType(t));
@@ -40,7 +45,7 @@ namespace HorseBarn.Server.Controllers
             return new PortalResponse()
             {
                 ObjectJson = jsonSerializer.Serialize(result),
-                Type = portalRequest.Type
+                AssemblyType = portalRequest.Target.AssemblyType
             };
         }
     }

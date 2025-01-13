@@ -18,9 +18,10 @@ namespace HorseBarn.lib.Cart
         where C : Cart<C, H>
         where H : class, IHorse
     {
-        public Cart(IEditBaseServices<C> services) : base(services)
+        public Cart(IEditBaseServices<C> services,
+                    ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services)
         {
-            AddRules(this.RuleManager);
+            RuleManager.AddRule(cartNumberOfHorsesRule);
         }
 
         event NotifyCollectionChangedEventHandler? INotifyCollectionChanged.CollectionChanged
@@ -36,25 +37,6 @@ namespace HorseBarn.lib.Cart
             }
         }
 
-        private static void AddRules(IRuleManager<C> ruleManager)
-        {
-            // Static method so you don't accidentally reference the instance properties and get an error
-            ruleManager.AddRule(c =>
-            {
-                if(c.HorseList.Count > c.NumberOfHorses)
-                {
-                    c.NumberOfHorses = c.HorseList.Count;
-                } else if (c.NumberOfHorses == 0)
-                {
-                    c.NumberOfHorses = 1;
-                }
-                else if (c.HorseList.Count != 0 && c.NumberOfHorses != c.HorseList.Count)
-                {
-                    return RuleResult.PropertyError(nameof(NumberOfHorses), $"There are {c.HorseList.Count} but there need to be {c.NumberOfHorses}");
-                }
-                return RuleResult.Empty();
-            }, nameof(NumberOfHorses), nameof(HorseList));
-        }
 
         public Guid? Id { get => Getter<Guid?>(); private set => Setter(value); }
 

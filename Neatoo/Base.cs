@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace Neatoo
 {
 
-    public interface IBase : INeatooObject, IPortalTarget
+    public interface IBase : INeatooObject
     {
         /// <summary>
         /// Stop events, rules and ismodified

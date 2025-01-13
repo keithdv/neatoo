@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using Neatoo.Newtonsoft.Json;
-using static System.Formats.Asn1.AsnWriter;
 using Neatoo.Portal;
 
 namespace Neatoo.Netwonsoft.Json
@@ -42,7 +41,6 @@ namespace Neatoo.Netwonsoft.Json
                 TypeNameHandling = TypeNameHandling.All,
                 PreserveReferencesHandling = PreserveReferencesHandling.All,
                 Converters = new List<JsonConverter>() { ListBaseCollectionConverter }
-
             });
         }
 
@@ -68,6 +66,28 @@ namespace Neatoo.Netwonsoft.Json
                 Formatting = Formatting.Indented,
                 Converters = new List<JsonConverter>() { ListBaseCollectionConverter }
             });
+        }
+
+        public ObjectTypeJson ToObjectTypeJson<T>()
+        {
+            return new ObjectTypeJson()
+            {
+                AssemblyType = typeof(T).FullName
+            };
+        }
+
+        public ObjectTypeJson ToObjectTypeJson(object target)
+        {
+            return new ObjectTypeJson()
+            {
+                Json = target != null ? Serialize(target) : null,
+                AssemblyType = target.GetType().FullName
+            };
+        }
+
+        public object FromObjectTypeJson(ObjectTypeJson objectTypeJson)
+        {
+            return Deserialize(objectTypeJson.Json, objectTypeJson.Type());
         }
 
         protected override JsonObjectContract CreateObjectContract(Type objectType)

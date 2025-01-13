@@ -8,13 +8,15 @@ using System.Text;
 
 namespace Neatoo.Autofac
 {
+    /// <summary>
+    /// TODO: I think I should get rid of this class and just use .NET IServiceScope
+    /// </summary>
     public class ServiceScope : IServiceScope
     {
         private ILifetimeScope scope { get; }
         public ServiceScope(ILifetimeScope scope)
         {
             this.scope = scope;
-
         }
 
         public IServiceScope BeginNewScope(object tag = null)

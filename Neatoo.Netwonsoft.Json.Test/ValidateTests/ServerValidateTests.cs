@@ -38,7 +38,7 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
             var portalRequest = new PortalRequest()
             {
                 PortalOperation = PortalOperation.Create,
-                Type = typeof(IValidateObject).AssemblyQualifiedName
+                Target = new ObjectTypeJson() { AssemblyType = typeof(IValidateObject).FullName }
             };
 
 
@@ -55,10 +55,9 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
             var portalRequest = new PortalRequest()
             {
                 PortalOperation = PortalOperation.Create,
-                CriteriaJson = [resolver.Serialize(Id), resolver.Serialize(Name)],
-                CriteriaTypes = [typeof(Guid).AssemblyQualifiedName, typeof(string).AssemblyQualifiedName]
+                Target = resolver.ToObjectTypeJson<IValidateObject>(),
+                Criteria = [resolver.ToObjectTypeJson(Id), resolver.ToObjectTypeJson(Name)]
             };
-
 
 
             var result = await portal.HandlePortalRequest(portalRequest) as IValidateObject;
@@ -75,8 +74,7 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
             var portalRequest = new PortalRequest()
             {
                 PortalOperation = PortalOperation.Update,
-                ObjectJson = resolver.Serialize(target),
-                Type = typeof(IValidateObject).AssemblyQualifiedName
+                Target = resolver.ToObjectTypeJson(target),
             };
 
             var result = await portal.HandlePortalRequest(portalRequest) as IValidateObject;

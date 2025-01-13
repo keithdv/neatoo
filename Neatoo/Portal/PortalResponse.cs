@@ -9,6 +9,6 @@ namespace Neatoo.Portal
     public class PortalResponse
     {
         public string ObjectJson { get; set; }
-        public string Type { get; set; }
+        public string AssemblyType { get; set; }
     }
 }

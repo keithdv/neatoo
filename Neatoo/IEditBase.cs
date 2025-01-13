@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Neatoo
 {
-    public interface IEditBase : IValidateBase, IEditMetaProperties, IPortalEditTarget
+    public interface IEditBase : IValidateBase, IEditMetaProperties
     {
         IEnumerable<string> ModifiedProperties { get; }
         bool IsChild { get; }
@@ -15,9 +15,5 @@ namespace Neatoo
         void Delete();
 
         Task Save();
-
     }
-
-
-
 }

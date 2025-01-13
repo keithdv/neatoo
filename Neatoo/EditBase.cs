@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Neatoo
 {
 
-    public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase
+    public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, IPortalEditTarget, IEditMetaProperties
         where T : EditBase<T>
     {
         [PortalDataMember]

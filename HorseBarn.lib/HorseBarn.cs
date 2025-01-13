@@ -6,7 +6,7 @@ using System.Net.Http.Headers;
 
 namespace HorseBarn.lib
 {
-    internal class HorseBarn : Neatoo.EditBase<HorseBarn>, IHorseBarn
+    internal partial class HorseBarn : Neatoo.EditBase<HorseBarn>, IHorseBarn
     {
         private readonly IReadWritePortalChild<ILightHorse> lightHorsePortal;
         private readonly IReadWritePortalChild<IHeavyHorse> heavyHorsePortal;
@@ -29,13 +29,6 @@ namespace HorseBarn.lib
         public ICartList Carts {  get => Getter<ICartList>(); private set => Setter(value); }
 
         IReadOnlyListBase<ICart> IHorseBarn.Carts => this.Carts;
-
-        [Create]
-        public async Task Create(IReadWritePortalChild<IPasture> pasturePortal, IReadWritePortalChild<ICartList> cartListPortal)
-        {
-            this.Pasture = await pasturePortal.CreateChild();
-            this.Carts = await cartListPortal.CreateChild();
-        }
 
         public async Task<IRacingChariot> AddRacingChariot()
         {
@@ -80,7 +73,7 @@ namespace HorseBarn.lib
 
             cart.AddHorse(horse);
 
-            await CheckAllRules(); // TODO: This should be automatic
+            await CheckAllRules(); // TODO: This should be automatically done by the Neatoo framework
         }
 
         public async Task MoveHorseToPasture(IHorse horse)
@@ -92,7 +85,26 @@ namespace HorseBarn.lib
                 Pasture.HorseList.Add(horse);
             }
 
-            await CheckAllRules(); // TODO: This should be automatic
+            await CheckAllRules(); // TODO: This should be automatically done by the Neatoo framework
         }
+
+#if !CLIENT
+
+        [Create]
+        public async Task Create(IReadWritePortalChild<IPasture> pasturePortal, IReadWritePortalChild<ICartList> cartListPortal)
+        {
+            this.Pasture = await pasturePortal.CreateChild();
+            this.Carts = await cartListPortal.CreateChild();
+        }
+
+        [Update]
+        public async Task Update(IReadWritePortalChild<IPasture> pasturePortal, IReadWritePortalChild<ICartList> cartListPortal)
+        {
+            await pasturePortal.UpdateChild(this.Pasture);
+            await cartListPortal.UpdateChild(this.Carts);
+        }
+
+#endif
+
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -11,7 +12,6 @@ using static System.Formats.Asn1.AsnWriter;
 namespace Neatoo.Portal.Core
 {
     public class PortalOperationManager<T> : IPortalOperationManager<T>
-        where T : IPortalTarget
     {
 
         // TODO (?) make these depedencies that can be set to single instance??
@@ -169,13 +169,20 @@ namespace Neatoo.Portal.Core
             await AuthorizationRuleManager.CheckAccess(operation, criteria);
         }
 
-        public async Task<bool> TryCallOperation(IPortalTarget target, PortalOperation operation)
+        public async Task<bool> TryCallOperation(object target, PortalOperation operation)
         {
             await CheckAccess(operation.ToAuthorizationOperation());
 
             var methods = MethodsForOperation(operation) ?? new List<MethodInfo>();
 
-            using (await target.StopAllActions())
+            IDisposable stopAllActions = null;
+
+            if(target is IPortalTarget portalTarget)
+            {
+                stopAllActions = await portalTarget.StopAllActions();
+            }
+
+            using (stopAllActions)
             {
                 var invoked = false;
 
@@ -222,16 +229,22 @@ namespace Neatoo.Portal.Core
                 return invoked;
             }
         }
-        public async Task<bool> TryCallOperation(IPortalTarget target, PortalOperation operation, object[] criteria, Type[] criteriaTypes)
+        public async Task<bool> TryCallOperation(object target, PortalOperation operation, object[] criteria)
         {
             await CheckAccess(operation.ToAuthorizationOperation(), criteria);
 
-            using (await target.StopAllActions())
+            IDisposable stopAllActions = null;
+            if (target is IPortalTarget portalTarget)
+            {
+                stopAllActions = await portalTarget.StopAllActions();
+            }
+
+            using (stopAllActions)
             {
                 // The criteriaTypes need to be captured by Generic method definitions
                 // in case the values sent in are null
 
-                var method = MethodForOperation(operation, criteriaTypes);
+                var method = MethodForOperation(operation, criteria.Select(c => c.GetType()).ToArray());
 
                 if (method != null)
                 {
@@ -275,7 +288,7 @@ namespace Neatoo.Portal.Core
             }
         }
 
-        protected virtual void PostOperation(IPortalTarget target, PortalOperation operation)
+        protected virtual void PostOperation(object target, PortalOperation operation)
         {
             var editTarget = target as IPortalEditTarget;
             if (editTarget != null)
@@ -313,43 +326,46 @@ namespace Neatoo.Portal.Core
             }
         }
 
-        public async Task<IPortalTarget> HandlePortalRequest(PortalRequest portalRequest)
+        public async Task<object> HandlePortalRequest(PortalRequest portalRequest)
         {
-            Type concreteType = Type.GetType(portalRequest.Type);
+            Debug.Assert(portalRequest.Target != null, "PortalRequest.Target is null");
+            Debug.Assert(!string.IsNullOrEmpty(portalRequest.Target.AssemblyType), "PortalRequest.Target.Type is null");
 
-            if (concreteType.IsInterface)
-            {
-                concreteType = Scope.ConcreteType(concreteType);
-            }
-
-
-            IPortalTarget target = null;
+            object target = null;
 
             if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Create) == (int)PortalOperationType.Create)
             {
-                target = Scope.Resolve(concreteType) as IPortalTarget ?? throw new InvalidOperationException("Type is not an IPortalTarget");
+                Debug.Assert(string.IsNullOrEmpty(portalRequest.Target.Json), "PortalRequest.Target.Json should not be defined for PortalOperationType.Create");
+                target = Scope.Resolve(portalRequest.Target.Type()) ?? throw new InvalidOperationException("Type is not an IPortalTarget");
             }
             else
             {
-                target = jsonSerializer.Deserialize(portalRequest.ObjectJson, concreteType) as IPortalTarget ?? throw new InvalidOperationException("Type is not an IPortalTarget");
+                target = jsonSerializer.FromObjectTypeJson(portalRequest.Target) ?? throw new InvalidOperationException("Type is not an IPortalTarget");
             }
 
+
             if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Create) == (int)PortalOperationType.Create
-                && portalRequest.CriteriaJson != null)
+                && portalRequest.Criteria != null)
             {
-                var criteriaJson = jsonSerializer.Deserialize<List<string>>(portalRequest.CriteriaJson);
-                var criteriaTypes = jsonSerializer.Deserialize<List<string>>(portalRequest.CriteriaTypes);
-                var criteria = new object[portalRequest.CriteriaJson.Length];
-                for (int i = 0; i < criteriaJson.Count; i++)
+                var criteria = portalRequest.Criteria.Select(c => jsonSerializer.FromObjectTypeJson(c)).ToArray();
+
+               var success = await TryCallOperation(target, portalRequest.PortalOperation, criteria);
+
+                if (!success)
                 {
-                    criteria[i] = jsonSerializer.Deserialize(criteriaJson[i], Type.GetType(criteriaTypes[i]));
+                    throw new Exception($"Failed on Server - Operation {portalRequest.PortalOperation.ToString()} with criteria {string.Join(',', criteria.Select(c => c.GetType().FullName))} not found");
                 }
-                await TryCallOperation(target, portalRequest.PortalOperation, criteria, criteriaTypes.Select(ct => Type.GetType(ct)).ToArray());
             }
             else
             {
-                await TryCallOperation(target, portalRequest.PortalOperation);
+                var success = await TryCallOperation(target, portalRequest.PortalOperation);
+
+                if (!success && !((((int)portalRequest.PortalOperation) & ((int)PortalOperationType.Read)) == ((int)PortalOperationType.Read)))
+                {
+                    throw new Exception($"Failed on Server - Operation {portalRequest.PortalOperation.ToString()} not found on {target.GetType().FullName}");
+                }
             }
+
 
 
             return target;

@@ -94,11 +94,14 @@ namespace Neatoo.UnitTest.ObjectPortal
         }
 
         [TestMethod]
+        [Ignore]
         public async Task ReadPortal_CreateMultipleCriteria_NullIncluded()
         {
             // Null created the need for generic criteria method
             // If a null criteria value is sent no longer have information
             // to know what method to connect up to
+
+            // 1/12/2025 Keith Voels - Let's not support this, doesn't make much sense
 
             var param1 = new List<int> { 10, 20 };
             List<int> param2 = null;

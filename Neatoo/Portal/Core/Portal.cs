@@ -12,23 +12,23 @@ namespace Neatoo.Portal.Core
 
     }
 
-    public interface IPortal<T> : IPortal where T : IPortalTarget
+    public interface IPortal<T> : IPortal
     {
         Task<T> CallReadOperationMethod(PortalOperation operation, bool throwException);
-        Task<T> CallReadOperationMethod(PortalOperation operation, object[] criteria, Type[] criteriaTypes);
-        Task CallWriteChildOperationMethod<E>(E target) where E : IPortalEditTarget, IEditMetaProperties;
-        Task CallWriteChildOperationMethod<E>(E target, object[] criteria, Type[] criteriaTypes) where E : IEditMetaProperties, IPortalTarget;
-        Task CallWriteOperationMethod<E>(E target) where E : IPortalEditTarget, IEditMetaProperties;
-        Task CallWriteOperationMethod<E>(E target, object[] criteria, Type[] criteriaTypes) where E : IEditMetaProperties, IPortalTarget;
-        Task CallOperationMethod<E>(E target, PortalOperation operation, bool throwException = true) where E : IPortalTarget;
-        Task CallOperationMethod<E>(E target, PortalOperation operation, object[] criteria, Type[] criteriaTypes) where E : IPortalTarget;
+        Task<T> CallReadOperationMethod(PortalOperation operation, object[] criteria);
+        Task CallWriteChildOperationMethod<E>(E target) where E : IEditMetaProperties;
+        Task CallWriteChildOperationMethod<E>(E target, object[] criteria) where E : IEditMetaProperties;
+        Task CallWriteOperationMethod<E>(E target) where E : IEditMetaProperties;
+        Task CallWriteOperationMethod<E>(E target, object[] criteria) where E : IEditMetaProperties;
+        Task CallOperationMethod<E>(E target, PortalOperation operation, bool throwException = true);
+        Task CallOperationMethod<E>(E target, PortalOperation operation, object[] criteria);
     }
 
     /// <summary>
     /// Provide Authorization Check
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class Portal<T> : IPortal<T> where T : IPortalTarget
+    public class Portal<T> : IPortal<T>
     {
 
         protected IServiceScope Scope { get; }
@@ -51,11 +51,14 @@ namespace Neatoo.Portal.Core
         {
             var target = Scope.Resolve<T>();
             await CallOperationMethod(target, operation, throwException);
-            await target.PostPortalConstruct();
+            if(target is IPortalTarget editTarget)
+            {
+                await editTarget.PostPortalConstruct();
+            }
             return target;
         }
 
-        public async Task CallWriteOperationMethod<E>(E target) where E : IPortalEditTarget, IEditMetaProperties
+        public async Task CallWriteOperationMethod<E>(E target) where E : IEditMetaProperties
         {
             if (target.IsDeleted)
             {
@@ -73,7 +76,7 @@ namespace Neatoo.Portal.Core
                 await CallOperationMethod(target, PortalOperation.Update);
             }
         }
-        public async Task CallWriteChildOperationMethod<E>(E target) where E : IPortalEditTarget, IEditMetaProperties
+        public async Task CallWriteChildOperationMethod<E>(E target) where E : IEditMetaProperties
         {
             if (target.IsDeleted)
             {
@@ -91,7 +94,7 @@ namespace Neatoo.Portal.Core
                 await CallOperationMethod(target, PortalOperation.UpdateChild);
             }
         }
-        public async Task CallOperationMethod<E>(E target, PortalOperation operation, bool throwException = true) where E : IPortalTarget
+        public async Task CallOperationMethod<E>(E target, PortalOperation operation, bool throwException = true)
         {
 
             var success = await OperationManager.TryCallOperation(target, operation);
@@ -103,62 +106,65 @@ namespace Neatoo.Portal.Core
 
         }
 
-        public async Task<T> CallReadOperationMethod(PortalOperation operation, object[] criteria, Type[] criteriaTypes)
+        public async Task<T> CallReadOperationMethod(PortalOperation operation, object[] criteria)
         {
             var target = Scope.Resolve<T>();
-            await CallOperationMethod(target, operation, criteria, criteriaTypes);
-            await target.PostPortalConstruct();
+            await CallOperationMethod(target, operation, criteria);
+            if (target is IPortalTarget editTarget)
+            {
+                await editTarget.PostPortalConstruct();
+            }
             return target;
         }
 
-        public async Task CallWriteOperationMethod<E>(E target, object[] criteria, Type[] criteriaTypes) where E : IEditMetaProperties, IPortalTarget
+        public async Task CallWriteOperationMethod<E>(E target, object[] criteria) where E : IEditMetaProperties
         {
             if (target.IsDeleted)
             {
                 if (!target.IsNew)
                 {
-                    await CallOperationMethod(target, PortalOperation.Delete, criteria, criteriaTypes);
+                    await CallOperationMethod(target, PortalOperation.Delete, criteria);
                 }
             }
             else if (target.IsNew)
             {
-                await CallOperationMethod(target, PortalOperation.Insert, criteria, criteriaTypes);
+                await CallOperationMethod(target, PortalOperation.Insert, criteria);
             }
             else
             {
-                await CallOperationMethod(target, PortalOperation.Update, criteria, criteriaTypes);
+                await CallOperationMethod(target, PortalOperation.Update, criteria);
             }
         }
 
-        public async Task CallWriteChildOperationMethod<E>(E target, object[] criteria, Type[] criteriaTypes) where E : IEditMetaProperties, IPortalTarget
+        public async Task CallWriteChildOperationMethod<E>(E target, object[] criteria) where E : IEditMetaProperties
         {
             if (target.IsDeleted)
             {
                 if (!target.IsNew)
                 {
-                    await CallOperationMethod(target, PortalOperation.DeleteChild, criteria, criteriaTypes);
+                    await CallOperationMethod(target, PortalOperation.DeleteChild, criteria);
                 }
             }
             else if (target.IsNew)
             {
-                await CallOperationMethod(target, PortalOperation.InsertChild, criteria, criteriaTypes);
+                await CallOperationMethod(target, PortalOperation.InsertChild, criteria);
             }
             else
             {
-                await CallOperationMethod(target, PortalOperation.UpdateChild, criteria, criteriaTypes);
+                await CallOperationMethod(target, PortalOperation.UpdateChild, criteria);
             }
         }
 
-        public async Task CallOperationMethod<E>(E target, PortalOperation operation, object[] criteria, Type[] criteriaTypes) where E : IPortalTarget
+        public async Task CallOperationMethod<E>(E target, PortalOperation operation, object[] criteria)
         {
             if (target == null) { throw new ArgumentNullException(nameof(target)); }
             if (criteria == null) { throw new ArgumentNullException(nameof(criteria)); }
 
-            var success = await OperationManager.TryCallOperation(target, operation, criteria, criteriaTypes);
+            var success = await OperationManager.TryCallOperation(target, operation, criteria);
 
             if (!success)
             {
-                throw new OperationMethodCallFailedException($"{operation.ToString()} method on {target.GetType().FullName} with criteria [{string.Join(", ", criteriaTypes.Select(x => x.FullName))}] not found.");
+                throw new OperationMethodCallFailedException($"{operation.ToString()} method on {target.GetType().FullName} with criteria [{string.Join(", ", criteria.Select(x => x.GetType().FullName))}] not found.");
             }
 
         }

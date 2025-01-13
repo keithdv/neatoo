@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace HorseBarn.lib
 {
-    public class Pasture : EditBase<Pasture>, IPasture
+    internal class Pasture : EditBase<Pasture>, IPasture
     {
         public Pasture(IEditBaseServices<Pasture> services) : base(services)
         {

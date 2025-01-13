@@ -16,14 +16,14 @@ using System.Threading.Tasks;
 namespace Neatoo
 {
 
-    public interface IReadOnlyListBase<I> : IBase, INeatooObject, IPortalTarget, INotifyCollectionChanged, INotifyPropertyChanged, IReadOnlyCollection<I>, IReadOnlyList<I>
+    public interface IReadOnlyListBase<I> : IBase, INeatooObject, INotifyCollectionChanged, INotifyPropertyChanged, IReadOnlyCollection<I>, IReadOnlyList<I>
         where I : IBase
     {
         
     }
 
 
-    public interface IListBase : IBase, INeatooObject, IPortalTarget, INotifyCollectionChanged, INotifyPropertyChanged, IEnumerable, ICollection, IList
+    public interface IListBase : IBase, INeatooObject, INotifyCollectionChanged, INotifyPropertyChanged, IEnumerable, ICollection, IList
     {
 
     }

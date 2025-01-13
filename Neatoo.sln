@@ -32,6 +32,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HorseBarn.Server", "HorseBa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neatoo.AspNet", "Neatoo.AspNet\Neatoo.AspNet.csproj", "{F479B2E0-32F1-4A09-ABA6-0D0BACECD58E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HorseBarn.Lib.Client", "HorseBarn.Lib.Client\HorseBarn.Lib.Client.csproj", "{B86A4B5C-0F54-4966-B802-348F9A30FF50}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -82,6 +84,10 @@ Global
 		{F479B2E0-32F1-4A09-ABA6-0D0BACECD58E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F479B2E0-32F1-4A09-ABA6-0D0BACECD58E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F479B2E0-32F1-4A09-ABA6-0D0BACECD58E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B86A4B5C-0F54-4966-B802-348F9A30FF50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B86A4B5C-0F54-4966-B802-348F9A30FF50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B86A4B5C-0F54-4966-B802-348F9A30FF50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B86A4B5C-0F54-4966-B802-348F9A30FF50}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -92,6 +98,7 @@ Global
 		{73C71A5C-14A7-44A3-863C-A34C49552F79} = {7558B8BE-EDFA-43F9-B120-533073E4F01C}
 		{4168F15F-A982-4BBA-9198-E787F60D4C45} = {7558B8BE-EDFA-43F9-B120-533073E4F01C}
 		{40681CD2-1B5A-4323-ADD8-2309C4652FBD} = {7558B8BE-EDFA-43F9-B120-533073E4F01C}
+		{B86A4B5C-0F54-4966-B802-348F9A30FF50} = {7558B8BE-EDFA-43F9-B120-533073E4F01C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {22595137-BA59-4B40-97E2-4BFF42A960E8}
