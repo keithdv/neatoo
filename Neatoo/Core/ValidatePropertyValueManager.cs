@@ -77,7 +77,7 @@ namespace Neatoo.Core
         public bool IsBusy => (Child?.IsBusy ?? false);
 
         public Task WaitForRules() { return Child?.WaitForRules() ?? Task.CompletedTask; }
-        public Task CheckAllRules(CancellationToken token) { return Child?.CheckAllRules(token); }
+        public Task CheckAllRules(CancellationToken token) { return Child?.CheckAllRules(token) ?? Task.CompletedTask; }
 
     }
 

@@ -15,6 +15,8 @@ using Neatoo.Rules.Rules;
 using System.Reflection.Metadata.Ecma335;
 using Neatoo.Netwonsoft.Json;
 using Neatoo.Newtonsoft.Json;
+using System.Net.Http;
+using System.Net.Mime;
 
 namespace Neatoo.Autofac
 {
@@ -76,7 +78,7 @@ namespace Neatoo.Autofac
                 var scope = cc.Resolve<Func<ILifetimeScope>>();
                 return (propertyInfo) =>
                 {
-                    return (IRegisteredProperty) scope().Resolve(typeof(IRegisteredProperty<>).MakeGenericType(propertyInfo.PropertyType), new TypedParameter(typeof(System.Reflection.PropertyInfo), propertyInfo));
+                    return (IRegisteredProperty)scope().Resolve(typeof(IRegisteredProperty<>).MakeGenericType(propertyInfo.PropertyType), new TypedParameter(typeof(System.Reflection.PropertyInfo), propertyInfo));
                 };
             });
 
@@ -85,6 +87,22 @@ namespace Neatoo.Autofac
             builder.RegisterGeneric(typeof(PropertyValueManager<>)).As(typeof(IPropertyValueManager<>)).AsSelf();
             builder.RegisterGeneric(typeof(ValidatePropertyValueManager<>)).As(typeof(IValidatePropertyValueManager<>)).AsSelf();
             builder.RegisterGeneric(typeof(EditPropertyValueManager<>)).As(typeof(IEditPropertyValueManager<>)).AsSelf();
+
+            builder.RegisterGeneric(typeof(LocalReadPortal<>))
+                .As(typeof(ILocalReadPortal<>))
+                .InstancePerLifetimeScope();
+
+            builder.RegisterGeneric(typeof(LocalReadWritePortal<>))
+                .As(typeof(ILocalReadWritePortal<>))
+                .InstancePerLifetimeScope();
+
+            builder.RegisterGeneric(typeof(ClientReadPortal<>))
+                .As(typeof(IClientReadPortal<>))
+                .InstancePerLifetimeScope();
+
+            builder.RegisterGeneric(typeof(ClientReadWritePortal<>))
+                .As(typeof(IClientReadWritePortal<>))
+                .InstancePerLifetimeScope();
 
             if (Portal == Portal.Local)
             {
@@ -102,8 +120,8 @@ namespace Neatoo.Autofac
                 builder.RegisterGeneric(typeof(LocalMethodPortal<>)).As(typeof(IRemoteMethodPortal<>)).AsSelf();
 
                 builder.RegisterGeneric(typeof(Portal<>)).As(typeof(IPortal<>)).InstancePerLifetimeScope();
-            } 
-            else if(Portal == Portal.Client)
+            }
+            else if (Portal == Portal.Client)
             {
                 builder.RegisterGeneric(typeof(ClientReadPortal<>))
                     .As(typeof(IReadPortal<>))
@@ -123,6 +141,26 @@ namespace Neatoo.Autofac
             builder.RegisterGeneric(typeof(ValidateListBaseServices<,>)).As(typeof(IValidateListBaseServices<,>));
             builder.RegisterGeneric(typeof(EditBaseServices<>)).As(typeof(IEditBaseServices<>));
             builder.RegisterGeneric(typeof(EditListBaseServices<,>)).As(typeof(IEditListBaseServices<,>));
+
+            builder.Register<RequestFromServerDelegate>(cc => {
+
+                var httpClient = cc.Resolve<HttpClient>();
+                var portalJsonSerializer = cc.Resolve<IPortalJsonSerializer>();
+
+                return async (portalRequest) =>
+                {
+
+                    var response = await httpClient.PostAsync("http://localhost:5037/portal", new StringContent(portalJsonSerializer.Serialize(portalRequest), Encoding.UTF8, MediaTypeNames.Application.Json));
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        var issue = response.Content.ReadAsStringAsync();
+                        throw new HttpRequestException($"Failed to call portal. Status code: {response.StatusCode} {issue}");
+                    }
+
+                    return portalJsonSerializer.Deserialize<PortalResponse>(await response.Content.ReadAsStringAsync());
+                };
+            });
 
         }
     }

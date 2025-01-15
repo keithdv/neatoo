@@ -87,8 +87,18 @@ namespace Neatoo
         {
             MarkDeleted();
         }
+        
+        async Task<I> IEditBase.SaveRetrieve<I>()
+        {
+            return await Task.FromResult((await DoSave()) as I);
+        }
 
-        public virtual async Task Save()
+        public Task Save()
+        {
+            return DoSave();
+        }
+
+        protected virtual async Task<T> DoSave()
         {
             if (!IsSavable)
             {
@@ -111,9 +121,10 @@ namespace Neatoo
                 }
             }
 
-            await ReadWritePortal.Update((T) this);
-
+            return await ReadWritePortal.Update((T)this);
         }
+
+
     }
 
 

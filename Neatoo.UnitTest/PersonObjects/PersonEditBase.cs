@@ -27,7 +27,7 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public string FullName { get { return Getter<string>(); } set { Setter(value); } }
 
-        public uint? Age { get => Getter<uint>(); set => Setter(value); }
+        public uint? Age { get => Getter<uint?>(); set => Setter(value); }
         public void FillFromDto(PersonDto dto)
         {
             LoadProperty(IdProperty, dto.PersonId);

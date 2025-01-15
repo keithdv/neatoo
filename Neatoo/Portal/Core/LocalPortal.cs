@@ -9,8 +9,12 @@ using System.Threading.Tasks;
 namespace Neatoo.Portal.Core
 {
 
+    public interface ILocalReadPortal<T> : IReadPortal<T>, IReadPortalChild<T>
+    {
 
-    public class LocalReadPortal<T> : Portal<T>, IReadPortal<T>, IReadPortalChild<T>
+    }
+
+    public class LocalReadPortal<T> : Portal<T>, ILocalReadPortal<T>
     {
         public LocalReadPortal(IServiceScope scope)
             : base(scope)
@@ -55,8 +59,12 @@ namespace Neatoo.Portal.Core
         }
     }
 
+    public interface ILocalReadWritePortal<T> : ILocalReadPortal<T>, IReadWritePortal<T>, IReadWritePortalChild<T>
+        where T : IEditMetaProperties
+    {
+    }
 
-    public class LocalReadWritePortal<T> : LocalReadPortal<T>, IReadWritePortal<T>, IReadWritePortalChild<T>
+    public class LocalReadWritePortal<T> : LocalReadPortal<T>, ILocalReadWritePortal<T>
         where T : IEditMetaProperties
     {
 
@@ -65,14 +73,31 @@ namespace Neatoo.Portal.Core
         {
         }
 
-        public async Task Update(T target)
+        public async Task<T> Update(T target)
         {
             await CallWriteOperationMethod(target);
+
+            return target;
         }
 
-        public async Task UpdateChild(T target)
+        public async Task<T> Update(T target, params object[] criteria)
+        {
+            await CallWriteOperationMethod(target, criteria);
+
+            return target;
+        }
+
+        public async Task<T> UpdateChild(T target)
         {
             await CallWriteChildOperationMethod(target);
+
+            return target;
+        }
+        public async Task<T> UpdateChild(T target, params object[] criteria)
+        {
+            await CallWriteChildOperationMethod(target, criteria);
+
+            return target;
         }
     }
 

@@ -43,5 +43,28 @@ namespace HorseBarn.lib.Horse
                 }
             }
         }
+
+#if !CLIENT
+
+        [InsertChild]
+        [UpdateChild]
+        public async Task InsertChild(Dal.Ef.Pasture pasture, IReadWritePortalChild<IHorse> horsePortal)
+        {
+            foreach (var horse in this)
+            {
+                await horsePortal.UpdateChild(horse, pasture);
+            }
+        }
+
+        [InsertChild]
+        [UpdateChild]
+        public async Task InsertChild(Dal.Ef.Cart cart, IReadWritePortalChild<IHorse> horsePortal)
+        {
+            foreach (var horse in this)
+            {
+                await horsePortal.UpdateChild(horse, cart);
+            }
+        }
+#endif
     }
 }

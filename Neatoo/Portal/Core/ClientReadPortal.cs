@@ -19,15 +19,18 @@ namespace Neatoo.Portal.Core
     {
     }
 
+
+    public delegate Task<PortalResponse> RequestFromServerDelegate(PortalRequest request);
+
     public class ClientReadPortal<T> : IClientReadPortal<T>
     {
-        private readonly HttpClient httpClient;
         private readonly IPortalJsonSerializer portalJsonSerializer;
+        private readonly RequestFromServerDelegate requestFromServerDelegate;
 
-        public ClientReadPortal(HttpClient httpClient, IPortalJsonSerializer portalJsonSerializer)
+        public ClientReadPortal(IPortalJsonSerializer portalJsonSerializer, RequestFromServerDelegate requestFromServerDelegate)
         {
-            this.httpClient = httpClient;
             this.portalJsonSerializer = portalJsonSerializer;
+            this.requestFromServerDelegate = requestFromServerDelegate;
         }
 
         public async Task<T> Create()
@@ -58,16 +61,7 @@ namespace Neatoo.Portal.Core
             return RequestFromServer(portalRequest);
         }
 
-        protected Task<T> RequestFromServer(PortalOperation portalOperation, T target)
-        {
-            var portalRequest = new PortalRequest()
-            {
-                PortalOperation = portalOperation,
-                Target = portalJsonSerializer.ToObjectTypeJson(target)
-            };
 
-            return RequestFromServer(portalRequest);
-        }
 
         protected Task<T> RequestFromServer(PortalOperation portalOperation, object[] criteria)
         {
@@ -81,17 +75,32 @@ namespace Neatoo.Portal.Core
             return RequestFromServer(portalRequest);
         }
 
+        protected Task<T> RequestFromServer(PortalOperation portalOperation, T target)
+        {
+            var portalRequest = new PortalRequest()
+            {
+                PortalOperation = portalOperation,
+                Target = portalJsonSerializer.ToObjectTypeJson(target)
+            };
+
+            return RequestFromServer(portalRequest);
+        }
+
+        protected Task<T> RequestFromServer(PortalOperation portalOperation, T target, object[] criteria)
+        {
+            var portalRequest = new PortalRequest()
+            {
+                PortalOperation = portalOperation,
+                Target = portalJsonSerializer.ToObjectTypeJson(target),
+                Criteria = criteria.Select(x => portalJsonSerializer.ToObjectTypeJson(x)).ToList()
+            };
+
+            return RequestFromServer(portalRequest);
+        }
+
         protected async Task<T> RequestFromServer(PortalRequest request)
         {
-            var response = await httpClient.PostAsync("http://localhost:5037/portal", new StringContent(portalJsonSerializer.Serialize(request), Encoding.UTF8, MediaTypeNames.Application.Json));
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var issue = await response.Content.ReadAsStringAsync();
-                throw new HttpRequestException($"Failed to call portal. Status code: {response.StatusCode} {issue}");
-            }
-
-            var result = portalJsonSerializer.Deserialize<PortalResponse>(await response.Content.ReadAsStringAsync());
+            var result = await this.requestFromServerDelegate(request);
 
             return portalJsonSerializer.Deserialize<T>(result.ObjectJson);
         }
@@ -120,17 +129,25 @@ namespace Neatoo.Portal.Core
     public class ClientReadWritePortal<T> : ClientReadPortal<T>, IClientReadWritePortal<T>
         where T : IEditMetaProperties
     {
-        public ClientReadWritePortal(HttpClient httpClient, IPortalJsonSerializer portalJsonSerializer) : base(httpClient, portalJsonSerializer)
+        public ClientReadWritePortal(IPortalJsonSerializer portalJsonSerializer, RequestFromServerDelegate requestFromServerDelegate) : base(portalJsonSerializer, requestFromServerDelegate)
         {
         }
 
-        public Task Update(T target)
+        public Task<T> Update(T target)
         {
             return RequestFromServer(PortalOperation.Update, target);
         }
-        public Task UpdateChild(T target)
+        public Task<T> UpdateChild(T target)
         {
             return RequestFromServer(PortalOperation.UpdateChild, target);
+        }
+        public Task<T> Update(T target, params object[] criteria)
+        {
+            return RequestFromServer(PortalOperation.Update, target, criteria);
+        }
+        public Task<T> UpdateChild(T target, params object[] criteria)
+        {
+            return RequestFromServer(PortalOperation.UpdateChild, target, criteria);
         }
     }
 }

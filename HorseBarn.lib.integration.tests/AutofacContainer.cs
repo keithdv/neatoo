@@ -2,6 +2,7 @@
 using Neatoo.Autofac;
 using Autofac;
 using System.Reflection;
+using HorseBarn.Dal.Ef;
 
 namespace HorseBarn.lib.integration.tests
 {
@@ -11,12 +12,11 @@ namespace HorseBarn.lib.integration.tests
 
 
         private static IContainer? Container;
-        private static IContainer? LocalPortalContainer;
 
-        public static ILifetimeScope GetLifetimeScope(bool localPortal = false)
+        public static ILifetimeScope GetLifetimeScope()
         {
 
-            if (Container == null || LocalPortalContainer == null)
+            if (Container == null)
             {
 
                 IContainer CreateContainer(Neatoo.Autofac.Portal portal)
@@ -28,6 +28,9 @@ namespace HorseBarn.lib.integration.tests
                     builder.AutoRegisterAssemblyTypes(Assembly.GetExecutingAssembly());
 
                     builder.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));
+
+                    builder.RegisterType<HorseBarnContext>().As<IHorseBarnContext>().AsSelf().InstancePerLifetimeScope();
+
                     return builder.Build();
                 }
 
@@ -36,14 +39,7 @@ namespace HorseBarn.lib.integration.tests
 
             }
 
-            if (!localPortal)
-            {
-                return Container.BeginLifetimeScope();
-            }
-            else
-            {
-                return LocalPortalContainer.BeginLifetimeScope();
-            }
+            return Container.BeginLifetimeScope();
 
         }
 

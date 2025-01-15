@@ -6,7 +6,9 @@ using Neatoo.Rules.Rules;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -14,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace HorseBarn.lib.Cart
 {
-    internal class Cart<C, H> : EditBase<C>, ICart<H>, ICart
+    internal class Cart<C, H> : CustomEditBase<C>, ICart<H>, ICart
         where C : Cart<C, H>
         where H : class, IHorse
     {
@@ -36,9 +38,6 @@ namespace HorseBarn.lib.Cart
                 HorseList.CollectionChanged -= value;
             }
         }
-
-
-        public Guid? Id { get => Getter<Guid?>(); private set => Setter(value); }
 
         [Required]
         public string Name { get => Getter<string>(); set => Setter(value); }
@@ -90,5 +89,23 @@ namespace HorseBarn.lib.Cart
             }
             return false;
         }
+
+#if !CLIENT
+
+        [InsertChild]
+        protected async Task Insert(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<IHorseList<H>> horseList)
+        {
+            Dal.Ef.Cart cart = new Dal.Ef.Cart();
+
+            cart.Name = this.Name;
+            cart.NumberOfHorses = this.NumberOfHorses;
+            cart.HorseBarn = horseBarn;
+            cart.PropertyChanged += HandleIdPropertyChanged;
+
+            horseBarn.Carts.Add(cart);
+
+            await horseList.UpdateChild(this.HorseList, cart);
+        }
+#endif
     }
 }

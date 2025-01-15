@@ -17,6 +17,11 @@ using Neatoo.Netwonsoft.Json.Test.ValidateTests;
 using Neatoo.Newtonsoft.Json;
 using Neatoo.Autofac;
 using System.Reflection;
+using System.Net.Http;
+using System.Net.Mime;
+using System.Threading.Tasks;
+using Autofac.Core.Lifetime;
+using System.Diagnostics;
 
 namespace Neatoo.Netwonsoft.Json.Test
 {
@@ -24,17 +29,17 @@ namespace Neatoo.Netwonsoft.Json.Test
     public static class AutofacContainer
     {
 
-        private static IContainer Container;
+        private static Dictionary<Neatoo.Autofac.Portal, IContainer> containers = new Dictionary<Autofac.Portal, IContainer>();
 
-        public static ILifetimeScope GetLifetimeScope()
+        public static ILifetimeScope GetLifetimeScope(Neatoo.Autofac.Portal portal = Autofac.Portal.Local)
         {
 
-            if (Container == null)
+            if (!containers.ContainsKey(portal))
             {
                 var builder = new ContainerBuilder();
 
                 // Run first - some of these definition need to be modified
-                builder.RegisterModule(new NeatooCoreModule(Autofac.Portal.Local));
+                builder.RegisterModule(new NeatooCoreModule(portal));
 
                 builder.AutoRegisterAssemblyTypes(Assembly.GetExecutingAssembly());
 
@@ -54,10 +59,50 @@ namespace Neatoo.Netwonsoft.Json.Test
                 builder.RegisterGeneric(typeof(RemoteMethodCall<,,>)).As(typeof(IRemoteMethod<,,>)).AsSelf();
                 builder.RegisterType<MethodObject>();
 
-                Container = builder.Build();
+                builder.Register<RequestFromServerDelegate>(cc =>
+                {
+
+                    var portalJsonSerializer = cc.Resolve<IPortalJsonSerializer>();
+                    var scope = cc.Resolve<IServiceScope>();
+
+                    return async (portalRequest) =>
+                    {
+                        // Simulate making a server call
+                        // TODO: Duplicate Code -> Probably want to make this a delegate and share with the controller
+
+                        var serialized = portalJsonSerializer.Serialize(portalRequest);
+
+                        portalRequest = portalJsonSerializer.Deserialize<PortalRequest>(serialized);
+
+                        var t = portalRequest.Target.Type() ?? throw new Exception($"Type {portalRequest.Target.Type} not found");
+
+                        if (t.IsInterface)
+                        {
+                            t = scope.ConcreteType(t);
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"Type {portalRequest.Target.AssemblyType} is not an interface");
+                        }
+
+                        var portal = (IPortalOperationManager) scope.Resolve(typeof(IPortalOperationManager<>).MakeGenericType(t));
+
+                        var result = await portal.HandlePortalRequest(portalRequest);
+
+                        var portalResponse = new PortalResponse()
+                        {
+                            ObjectJson = portalJsonSerializer.Serialize(result),
+                            AssemblyType = portalRequest.Target.AssemblyType
+                        };
+
+                        return portalResponse;
+                    };
+                });
+
+                containers.Add(portal, builder.Build());
             }
 
-            return Container.BeginLifetimeScope(Guid.NewGuid());
+            return containers[portal].BeginLifetimeScope(Guid.NewGuid());
 
         }
 

@@ -127,7 +127,7 @@ namespace Neatoo.UnitTest.EditBaseTests
         public async Task EditBaseTest_Save()
         {
             var mock = scope.Resolve<MockReadWritePortal<EditPerson>>();
-            mock.MockPortal.Setup(x => x.Update((EditPerson) editPerson)).Returns(Task.CompletedTask);
+            mock.MockPortal.Setup(x => x.Update((EditPerson) editPerson)).Returns(Task.FromResult((EditPerson) editPerson));
 
             editPerson.FirstName = Guid.NewGuid().ToString();
             await editPerson.Save();

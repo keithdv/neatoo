@@ -1,5 +1,6 @@
 ﻿using HorseBarn.lib.Horse;
 using Neatoo;
+using Neatoo.Portal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +45,19 @@ namespace HorseBarn.lib.Cart
                 c.RemoveHorse(horse);
             }
         }
+
+#if !CLIENT
+
+        [InsertChild]
+        [UpdateChild]
+        public async Task InsertChild(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<ICart> cartPortal)
+        {
+            foreach (var cart in this)
+            {
+                await cartPortal.UpdateChild(cart, horseBarn);
+            }
+        }
+#endif
     }
 
 }

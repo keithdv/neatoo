@@ -180,8 +180,9 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public async Task ValidateBase_RunAllRules()
         {
             var ruleCount = validate.RuleRunCount;
+            validate.Age = 10;
             await validate.CheckAllRules();
-            Assert.AreEqual(ruleCount + 3, validate.RuleRunCount);
+            Assert.AreEqual(ruleCount + 2, validate.RuleRunCount);
         }
 
 

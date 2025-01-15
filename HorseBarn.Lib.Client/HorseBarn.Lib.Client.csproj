@@ -16,6 +16,7 @@
     <Compile Include="..\HorseBarn.lib\Cart\ICart.cs" Link="Cart\ICart.cs" />
     <Compile Include="..\HorseBarn.lib\Cart\RacingChariot.cs" Link="Cart\RacingChariot.cs" />
     <Compile Include="..\HorseBarn.lib\Cart\Wagon.cs" Link="Cart\Wagon.cs" />
+    <Compile Include="..\HorseBarn.lib\CustomEditBase.cs" Link="CustomEditBase.cs" />
     <Compile Include="..\HorseBarn.lib\HorseBarn.cs" Link="HorseBarn.cs" />
     <Compile Include="..\HorseBarn.lib\Horse\Breed.cs" Link="Horse\Breed.cs" />
     <Compile Include="..\HorseBarn.lib\Horse\HeavyHorse.cs" Link="Horse\HeavyHorse.cs" />

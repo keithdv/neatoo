@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Neatoo.Portal;
+using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
@@ -55,6 +56,19 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
         void IEditObject.MarkUnmodified()
         {
             this.MarkUnmodified();
+        }
+
+        [Create]
+        public void Create(Guid ID, string Name)
+        {
+            this.ID = ID;
+            this.Name = Name;
+        }
+
+        [Update]
+        public void Update()
+        {
+            this.Name = "Updated";
         }
     }
 

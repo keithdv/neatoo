@@ -4,20 +4,21 @@ using Neatoo.Portal;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace HorseBarn.lib
 {
-    internal class Pasture : EditBase<Pasture>, IPasture
+    internal class Pasture : CustomEditBase<Pasture>, IPasture
     {
         public Pasture(IEditBaseServices<Pasture> services) : base(services)
         {
         }
 
-        public Guid? Id { get => Getter<Guid?>(); set => Setter(value); }
 
         public IHorseList HorseList {  get => Getter<IHorseList>(); private set => Setter(value); }
 
@@ -28,13 +29,27 @@ namespace HorseBarn.lib
             HorseList.RemoveHorse(horse);
         }
 
+#if !CLIENT
+
         [CreateChild]
-        private async Task CreateChild(IReadWritePortalChild<IHorseList> horseListPortal)
+        public async Task CreateChild(IReadWritePortalChild<IHorseList> horseListPortal)
         {
             HorseList = await horseListPortal.CreateChild(); 
             await CheckAllRules();
         }
 
+        [InsertChild]
+        public async Task InsertChild(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<IHorseList> horseListPortal)
+        {
+            var pasture = new Dal.Ef.Pasture();
+            pasture.PropertyChanged += HandleIdPropertyChanged;
+            horseBarn.Pasture = pasture;
+            await horseListPortal.UpdateChild(HorseList, pasture);
+        }
+
+
+
+#endif
 
     }
 }

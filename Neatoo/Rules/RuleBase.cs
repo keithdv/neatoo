@@ -82,7 +82,7 @@ namespace Neatoo.Rules
 
         public abstract Task<IRuleResult> Execute(T target, CancellationToken token);
 
-        private IRegisteredPropertyAccess ToPropertyAccessor(T target)
+        protected IRegisteredPropertyAccess ToPropertyAccessor(T target)
         {
             return target as IRegisteredPropertyAccess ?? throw new Exception("Target must inherit from Base<> to use ReadPropertyValue method");
         }

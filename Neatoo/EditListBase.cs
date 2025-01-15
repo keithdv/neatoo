@@ -133,7 +133,17 @@ namespace Neatoo
             }
         }
 
-        public virtual async Task Save()
+        async Task<I> IEditBase.SaveRetrieve<I>()
+        {
+            return await Task.FromResult((await DoSave()) as I);
+        }
+
+        public Task Save()
+        {
+            return DoSave();
+        }
+
+        public virtual async Task<T> DoSave()
         {
             if (!IsSavable)
             {
@@ -151,8 +161,7 @@ namespace Neatoo
                 }
             }
 
-            await ReadWritePortal.Update((T)this);
-
+            return await ReadWritePortal.Update((T)this);
         }
 
         [Update]

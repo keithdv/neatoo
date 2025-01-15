@@ -31,10 +31,14 @@ namespace Neatoo.UnitTest
         {
             return MockPortal.Object.FetchChild(criteria);
         }
-        public Task UpdateChild(T target)
+        public Task<T> UpdateChild(T target)
         {
             return MockPortal.Object.UpdateChild(target);
         }
 
+        public Task<T> UpdateChild(T target, params object[] criteria)
+        {
+            return MockPortal.Object.UpdateChild(target, criteria);
+        }
     }
 }

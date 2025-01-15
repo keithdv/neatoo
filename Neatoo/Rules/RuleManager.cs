@@ -10,7 +10,6 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Neatoo.Rules
 {
@@ -310,10 +309,14 @@ namespace Neatoo.Rules
 
                     var token = cancellationTokenSource.Token; // Local stack copy important
 
+                    var guild = Guid.NewGuid();
+                    var ruleQueueCopy = ruleQueue.ToArray();
+
                     while (ruleQueue.TryDequeue(out var ruleIndex))
                     {
-
                         // System.Diagnostics.Debug.WriteLine($"Dequeue {propertyName}");
+
+                        var rule = Rules[ruleIndex];
 
                         var ruleManagerTask = RunRule(Rules[ruleIndex], token);
 

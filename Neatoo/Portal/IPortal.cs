@@ -26,13 +26,14 @@ namespace Neatoo.Portal
 
     public interface IReadWritePortal<T> : IReadPortal<T>
     {
-        Task Update(T target);
+        Task<T> Update(T target);
+        Task<T> Update(T target, params object[] criteria);
     }
 
     public interface IReadWritePortalChild<T> : IReadPortalChild<T>
     {
-        Task UpdateChild(T target);
-
+        Task<T> UpdateChild(T target);
+        Task<T> UpdateChild(T target, params object[] criteria);
     }
 
 }

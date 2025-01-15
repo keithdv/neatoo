@@ -15,5 +15,8 @@ namespace Neatoo
         void Delete();
 
         Task Save();
+
+        Task<I> SaveRetrieve<I>() where I : class, IEditBase;
     }
+
 }

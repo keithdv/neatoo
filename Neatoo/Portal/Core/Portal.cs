@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace Neatoo.Portal.Core
 {
@@ -32,18 +33,11 @@ namespace Neatoo.Portal.Core
     {
 
         protected IServiceScope Scope { get; }
-        protected IPortalOperationManager OperationManager { get; }
         public Portal(IServiceScope scope)
         {
             Scope = scope;
 
-            // To find the portal methods this needs to be the concrete type
-            // The portal methods should not be on the interface
-            var concreteType = scope.ConcreteType<T>(); // TODO:  ?? throw new Exception($"Type {typeof(T).FullName} is not registered");
-            if (concreteType != null)
-            {
-                OperationManager = (IPortalOperationManager)scope.Resolve(typeof(IPortalOperationManager<>).MakeGenericType(concreteType));
-            }
+
         }
 
 
@@ -96,8 +90,11 @@ namespace Neatoo.Portal.Core
         }
         public async Task CallOperationMethod<E>(E target, PortalOperation operation, bool throwException = true)
         {
-
-            var success = await OperationManager.TryCallOperation(target, operation);
+            // Concrete type can vary since an interface can have more than one implementation
+            // So need to load the actual concrete type
+            var operationManager = (IPortalOperationManager)Scope.Resolve(typeof(IPortalOperationManager<>).MakeGenericType(target.GetType()));
+         
+            var success = await operationManager.TryCallOperation(target, operation);
 
             if (!success && throwException)
             {
@@ -160,7 +157,11 @@ namespace Neatoo.Portal.Core
             if (target == null) { throw new ArgumentNullException(nameof(target)); }
             if (criteria == null) { throw new ArgumentNullException(nameof(criteria)); }
 
-            var success = await OperationManager.TryCallOperation(target, operation, criteria);
+            // Concrete type can vary since an interface can have more than one implementation
+            // So need to load the actual concrete type
+            var operationManager = (IPortalOperationManager)Scope.Resolve(typeof(IPortalOperationManager<>).MakeGenericType(target.GetType()));
+
+            var success = await operationManager.TryCallOperation(target, operation, criteria);
 
             if (!success)
             {

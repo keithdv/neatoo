@@ -2,11 +2,14 @@
 using HorseBarn.lib.Horse;
 using Neatoo;
 using Neatoo.Portal;
-using System.Net.Http.Headers;
+
+#if !CLIENT
+using HorseBarn.Dal.Ef;
+#endif
 
 namespace HorseBarn.lib
 {
-    internal partial class HorseBarn : Neatoo.EditBase<HorseBarn>, IHorseBarn
+    internal partial class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
     {
         private readonly IReadWritePortalChild<ILightHorse> lightHorsePortal;
         private readonly IReadWritePortalChild<IHeavyHorse> heavyHorsePortal;
@@ -27,6 +30,7 @@ namespace HorseBarn.lib
 
         public IPasture Pasture { get => Getter<IPasture>(); private set => Setter(value); }
         public ICartList Carts {  get => Getter<ICartList>(); private set => Setter(value); }
+        public IEnumerable<IHorse> Horses => Carts.SelectMany(c => c.Horses).Union(Pasture.HorseList);
 
         IReadOnlyListBase<ICart> IHorseBarn.Carts => this.Carts;
 
@@ -88,6 +92,7 @@ namespace HorseBarn.lib
             await CheckAllRules(); // TODO: This should be automatically done by the Neatoo framework
         }
 
+
 #if !CLIENT
 
         [Create]
@@ -97,11 +102,21 @@ namespace HorseBarn.lib
             this.Carts = await cartListPortal.CreateChild();
         }
 
-        [Update]
-        public async Task Update(IReadWritePortalChild<IPasture> pasturePortal, IReadWritePortalChild<ICartList> cartListPortal)
+        [Insert]
+        public async Task Update(HorseBarnContext horseBarnContext,
+                                IReadWritePortalChild<IPasture> pasturePortal,
+                                IReadWritePortalChild<ICartList> cartPortal)
         {
-            await pasturePortal.UpdateChild(this.Pasture);
-            await cartListPortal.UpdateChild(this.Carts);
+            var horseBarn = new Dal.Ef.HorseBarn();
+
+            horseBarn.PropertyChanged += HandleIdPropertyChanged;
+
+            await pasturePortal.UpdateChild(this.Pasture, horseBarn);
+            await cartPortal.UpdateChild(this.Carts, horseBarn);
+
+            horseBarnContext.HorseBarns.Add(horseBarn);
+
+            await horseBarnContext.SaveChangesAsync();
         }
 
 #endif

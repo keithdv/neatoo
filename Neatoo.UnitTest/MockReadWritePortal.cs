@@ -35,9 +35,14 @@ namespace Neatoo.UnitTest
             return MockPortal.Object.Fetch(criteria);
         }
 
-        public Task Update(T target)
+        public Task<T> Update(T target)
         {
             return MockPortal.Object.Update(target);
+        }
+
+        public Task<T> Update(T target, params object[] criteria)
+        {
+            return MockPortal.Object.Update(target, criteria);
         }
     }
 }

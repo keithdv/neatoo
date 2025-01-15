@@ -50,7 +50,7 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public uint? Age
         {
-            get => Getter<uint>(); set => Setter(value);
+            get => Getter<uint?>(); set => Setter(value);
         }
 
         public void FillFromDto(PersonDto dto)

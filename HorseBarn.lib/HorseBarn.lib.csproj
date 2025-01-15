@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\HorseBarn.Dal.Ef\HorseBarn.Dal.Ef.csproj" />
     <ProjectReference Include="..\Neatoo\Neatoo.csproj" />
   </ItemGroup>
 
@@ -32,6 +33,11 @@
 	<ItemGroup>
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
 			<_Parameter1>HorseBarn.Lib.Client</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+			<_Parameter1>HorseBarn.lib.integration.tests</_Parameter1>
 		</AssemblyAttribute>
 	</ItemGroup>
 </Project>

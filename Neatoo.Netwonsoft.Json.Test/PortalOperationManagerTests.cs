@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neatoo.Netwonsoft.Json.Test.ValidateTests;
 using Neatoo.Portal;
 using System;
 using System.Collections.Generic;
@@ -9,10 +10,10 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Formats.Asn1.AsnWriter;
 
-namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
+namespace Neatoo.Netwonsoft.Json.Test
 {
     [TestClass]
-    public class ServerValidateTests
+    public class PortalOperationManagerTests
     {
         IServiceScope scope;
         IValidateObject target;
@@ -29,7 +30,7 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
             target.ID = Id;
             target.Name = Name;
             resolver = scope.Resolve<FatClientContractResolver>();
-            portal = scope.Resolve<IPortalOperationManager<ValidateObject>>(); 
+            portal = scope.Resolve<IPortalOperationManager<ValidateObject>>();
         }
 
         [TestMethod]

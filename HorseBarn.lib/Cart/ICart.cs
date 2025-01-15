@@ -7,6 +7,7 @@ namespace HorseBarn.lib.Cart
 
     public interface ICart : IEditBase, INotifyCollectionChanged
     {
+        internal int? Id { get; }
         string Name { get; set;  }
         int NumberOfHorses { get; set;  }
         IEnumerable<IHorse> Horses { get; }

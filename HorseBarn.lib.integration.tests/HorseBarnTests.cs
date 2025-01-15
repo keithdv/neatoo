@@ -1,8 +1,12 @@
 ﻿using Autofac;
+using HorseBarn.Dal.Ef;
 using HorseBarn.lib.Cart;
 using HorseBarn.lib.Horse;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
 using Neatoo.Portal;
+using System.Data;
 
 namespace HorseBarn.lib.integration.tests
 {
@@ -11,17 +15,22 @@ namespace HorseBarn.lib.integration.tests
     {
         private ILifetimeScope scope;
         private IReadWritePortal<IHorseBarn> portal;
+        private HorseBarnContext horseBarnContext;
+        private IDbContextTransaction transaction;
 
         [TestInitialize]
-        public void TestInitialize()
+        public async Task TestInitialize()
         {
             scope = AutofacContainer.GetLifetimeScope();
             portal = scope.Resolve<IReadWritePortal<IHorseBarn>>();
+            horseBarnContext = scope.Resolve<HorseBarnContext>();
+            transaction = await horseBarnContext.Database.BeginTransactionAsync();
         }
 
         [TestCleanup]
         public void TestCleanup()
         {
+            transaction.Rollback();
             scope.Dispose();
         }
 
@@ -38,7 +47,7 @@ namespace HorseBarn.lib.integration.tests
 
             var heavyHorse = (IHeavyHorse) await horseBarn.AddNewHorse(criteria);
 
-            Assert.IsFalse(horseBarn.IsValid);
+            Assert.IsTrue(horseBarn.IsValid);
 
             Assert.IsInstanceOfType<IHeavyHorse>(heavyHorse);
 
@@ -78,6 +87,21 @@ namespace HorseBarn.lib.integration.tests
             await horseBarn.MoveHorseToCart(heavyHorse, wagon);
 
             Assert.IsTrue(horseBarn.IsValid);
+
+            horseBarn = await horseBarn.SaveRetrieve<IHorseBarn>();
+
+            var horseBarnContext = scope.Resolve<IHorseBarnContext>();
+
+            var horses = await horseBarnContext.Horses.ToListAsync();
+
+            Assert.AreEqual(3, horses.Count);
+            CollectionAssert.AreEquivalent(horseBarn.Horses.Select(h => h.Id).ToList(), horses.Select(h => h.Id).ToList());
+
+            var carts = await horseBarnContext.Carts.ToListAsync();
+            CollectionAssert.AreEquivalent(horseBarn.Carts.Select(c => c.Id).ToList(), carts.Select(c => c.Id).ToList());
+
+            var pasture = await horseBarnContext.Pastures.ToListAsync();
+            Assert.AreEqual(pasture.Single().Id, horseBarn.Pasture.Id);
         }
 
         [TestMethod]
