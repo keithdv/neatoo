@@ -13,6 +13,7 @@
     <Compile Include="..\HorseBarn.lib\Cart\Cart.cs" Link="Cart\Cart.cs" />
     <Compile Include="..\HorseBarn.lib\Cart\CartList.cs" Link="Cart\CartList.cs" />
     <Compile Include="..\HorseBarn.lib\Cart\CartNumberOfHorsesRule.cs" Link="Cart\CartNumberOfHorsesRule.cs" />
+    <Compile Include="..\HorseBarn.lib\Cart\CartType.cs" Link="Cart\CartType.cs" />
     <Compile Include="..\HorseBarn.lib\Cart\ICart.cs" Link="Cart\ICart.cs" />
     <Compile Include="..\HorseBarn.lib\Cart\RacingChariot.cs" Link="Cart\RacingChariot.cs" />
     <Compile Include="..\HorseBarn.lib\Cart\Wagon.cs" Link="Cart\Wagon.cs" />

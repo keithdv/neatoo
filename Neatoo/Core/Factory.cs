@@ -18,17 +18,36 @@ namespace Neatoo.Core
         {
         }
 
-        public IPropertyValue<P> CreatePropertyValue<P>(IRegisteredProperty<P> registeredProperty, P value)
+        public PropertyValue<P> CreatePropertyValue<P>(IRegisteredProperty<P> registeredProperty, P value)
         {
+            if(value is IPropertyValue v){
+                v.Name = registeredProperty.Name;
+                return v as PropertyValue<P>;
+            }
+
             return new PropertyValue<P>(registeredProperty.Name, value);
         }
-        public IValidatePropertyValue<P> CreateValidatePropertyValue<P>(IRegisteredProperty<P> registeredProperty, P value)
+        public ValidatePropertyValue<P> CreateValidatePropertyValue<P>(IRegisteredProperty<P> registeredProperty, P value)
         {
+            if (value is IPropertyValue v)
+            {
+                v.Name = registeredProperty.Name;
+                return v as ValidatePropertyValue<P>;
+            }
+
             return new ValidatePropertyValue<P>(registeredProperty.Name, value);
         }
 
-        public IEditPropertyValue<P> CreateEditPropertyValue<P>(IRegisteredProperty<P> registeredProperty, P value)
+        public EditPropertyValue<P> CreateEditPropertyValue<P>(IRegisteredProperty<P> registeredProperty, P value)
         {
+            // TODO: I think this should throw an exception if value is not an EditPropertyValue<P>
+
+            if (value is IPropertyValue v)
+            {
+                v.Name = registeredProperty.Name;
+                return v as EditPropertyValue<P>;
+            }
+
             return new EditPropertyValue<P>(registeredProperty.Name, value);
         }
 

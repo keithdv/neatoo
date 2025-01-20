@@ -96,6 +96,9 @@ namespace HorseBarn.Dal.Ef
         public string Name { get; set; }
 
         [Required]
+        public int CartType { get; set; }
+
+        [Required]
         public int NumberOfHorses { get; set; }
 
         public virtual ICollection<Horse> Horses { get; set; } = new List<Horse>();

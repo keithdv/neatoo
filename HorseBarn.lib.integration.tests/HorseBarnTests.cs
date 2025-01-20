@@ -39,54 +39,59 @@ namespace HorseBarn.lib.integration.tests
         {
             var horseBarn = await portal.Create();
             
-            var criteria = Mock.Of<IHorseCriteria>();
+            async Task AddCartToHorseBarch()
+            {
+                var criteria = Mock.Of<IHorseCriteria>();
 
-            criteria.Name = "Heavy Horse A";
-            criteria.Breed = Breed.Clydesdale;
-            criteria.BirthDay = DateOnly.FromDateTime(DateTime.Now);
+                criteria.Name = "Heavy Horse A";
+                criteria.Breed = Breed.Clydesdale;
+                criteria.BirthDay = DateOnly.FromDateTime(DateTime.Now);
 
-            var heavyHorse = (IHeavyHorse) await horseBarn.AddNewHorse(criteria);
+                var heavyHorse = (IHeavyHorse)await horseBarn.AddNewHorse(criteria);
 
-            Assert.IsTrue(horseBarn.IsValid);
+                Assert.IsTrue(horseBarn.IsValid);
 
-            Assert.IsInstanceOfType<IHeavyHorse>(heavyHorse);
+                Assert.IsInstanceOfType<IHeavyHorse>(heavyHorse);
 
-            criteria.Name = "Light Horse B"; 
-            criteria.Breed = Breed.Thoroughbred;
+                criteria.Name = "Light Horse B";
+                criteria.Breed = Breed.Thoroughbred;
 
-            var lightHorse = (ILightHorse) await horseBarn.AddNewHorse(criteria);
+                var lightHorse = (ILightHorse)await horseBarn.AddNewHorse(criteria);
 
-            Assert.IsInstanceOfType<ILightHorse>(lightHorse);
+                Assert.IsInstanceOfType<ILightHorse>(lightHorse);
 
-            Assert.IsTrue(horseBarn.IsValid);
+                Assert.IsTrue(horseBarn.IsValid);
 
-            var racingChariot = await horseBarn.AddRacingChariot();
+                var racingChariot = await horseBarn.AddRacingChariot();
 
-            var wagon = await horseBarn.AddWagon();
+                var wagon = await horseBarn.AddWagon();
 
-            Assert.IsFalse(horseBarn.IsValid);
+                Assert.IsFalse(horseBarn.IsValid);
 
-            racingChariot.Name = "Racing Chariot";
-            wagon.Name = "Wagon";
+                racingChariot.Name = "Racing Chariot";
+                wagon.Name = "Wagon";
 
-            Assert.IsTrue(horseBarn.IsValid);
+                Assert.IsTrue(horseBarn.IsValid);
 
-            wagon.NumberOfHorses = 2;
+                wagon.NumberOfHorses = 2;
 
-            // Key: Cannot add an ILightHorse to the wagon 
-            // No validation, no if statements
-            await horseBarn.MoveHorseToCart(heavyHorse, wagon);
+                // Key: Cannot add an ILightHorse to the wagon 
+                // No validation, no if statements
+                await horseBarn.MoveHorseToCart(heavyHorse, wagon);
 
-            Assert.IsFalse(horseBarn.IsValid);
+                Assert.IsFalse(horseBarn.IsValid);
 
-            criteria.Name = "Heavy Horse B";
-            criteria.Breed = Breed.Clydesdale;
+                criteria.Name = "Heavy Horse B";
+                criteria.Breed = Breed.Clydesdale;
 
-            heavyHorse = (IHeavyHorse) await horseBarn.AddNewHorse(criteria);
+                heavyHorse = (IHeavyHorse)await horseBarn.AddNewHorse(criteria);
 
-            await horseBarn.MoveHorseToCart(heavyHorse, wagon);
+                await horseBarn.MoveHorseToCart(heavyHorse, wagon);
 
-            Assert.IsTrue(horseBarn.IsValid);
+                Assert.IsTrue(horseBarn.IsValid);
+            }
+
+            await AddCartToHorseBarch();
 
             horseBarn = await horseBarn.SaveRetrieve<IHorseBarn>();
 
@@ -102,6 +107,23 @@ namespace HorseBarn.lib.integration.tests
 
             var pasture = await horseBarnContext.Pastures.ToListAsync();
             Assert.AreEqual(pasture.Single().Id, horseBarn.Pasture.Id);
+
+
+            horseBarn = await portal.Fetch();
+
+            await AddCartToHorseBarch();
+
+
+            foreach (var item in horseBarn.Horses)
+            {
+                item.Name = Guid.NewGuid().ToString();
+            }
+
+            var horseNames = horseBarn.Horses.Select(h => h.Name).ToList();
+
+            await horseBarn.Save();
+
+            CollectionAssert.AreEquivalent(horseNames, horseBarn.Horses.Select(h => h.Name).ToList());
         }
 
         [TestMethod]

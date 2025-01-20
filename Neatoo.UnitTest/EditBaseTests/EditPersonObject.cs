@@ -1,4 +1,5 @@
-﻿using Neatoo.Portal;
+﻿using Neatoo.Core;
+using Neatoo.Portal;
 using Neatoo.UnitTest.PersonObjects;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ namespace Neatoo.UnitTest.EditBaseTests
 
     public interface IEditPerson : IPersonBase, IEditBase
     {
+
         IEditPerson Child { get; set; }
 
         List<int> InitiallyNull { get; set; }

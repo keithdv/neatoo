@@ -21,7 +21,7 @@ namespace HorseBarn.lib.Horse
         [CreateChild]
         public void createChild(IHorseCriteria criteria)
         {
-            if (!Horse<HeavyHorse>.IsLightHorse(criteria.Breed))
+            if (!IHorse.IsLightHorse(criteria.Breed))
             {
                 throw new Exception($"Incorrect Breed: {criteria.Breed.ToString()}");
             }

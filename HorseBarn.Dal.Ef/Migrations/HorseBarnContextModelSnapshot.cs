@@ -23,6 +23,9 @@ namespace HorseBarn.Dal.Ef.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("CartType")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("HorseBarnId")
                         .HasColumnType("INTEGER");
 

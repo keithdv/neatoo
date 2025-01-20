@@ -1,7 +1,10 @@
-﻿using System;
+﻿using Neatoo.Rules;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +17,7 @@ namespace Neatoo.Core
         bool IsBusy { get; }
         Task CheckAllRules(CancellationToken token);
         Task WaitForRules();
-        bool SetProperty<P>(IRegisteredProperty<P> registeredProperty, P newValue);
+        Task<bool> SetProperty<P>(IRegisteredProperty<P> registeredProperty, P newValue);
 
 
     }
@@ -24,7 +27,7 @@ namespace Neatoo.Core
 
     }
 
-    public interface IValidatePropertyValue : IPropertyValue
+    public interface IValidatePropertyValue : IPropertyValue, INotifyPropertyChanged
     {
         bool IsValid { get; }
         bool IsBusy { get; }
@@ -41,11 +44,9 @@ namespace Neatoo.Core
     public class ValidatePropertyValue<T> : PropertyValue<T>, IValidatePropertyValue<T>
     {
 
-        public virtual IValidateBase Child { get; protected set; }
-
+        public virtual IValidateBase Child => Value as IValidateBase;
         public ValidatePropertyValue(string name, T value) : base(name, value)
         {
-            Child = value as IValidateBase;
         }
 
         public override T Value
@@ -53,11 +54,14 @@ namespace Neatoo.Core
             get => base.Value;
             set
             {
+
                 OnValueChanging(base.Value, value);
                 base.Value = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
                 OnValueChanged(base.Value);
             }
         }
+
 
         /// <summary>
         /// Before any checks on if the value actually changed
@@ -70,7 +74,7 @@ namespace Neatoo.Core
         }
         protected virtual void OnValueChanged(T newValue)
         {
-            Child = newValue as IValidateBase;
+
         }
 
         public bool IsValid => (Child?.IsValid ?? true);
@@ -79,11 +83,23 @@ namespace Neatoo.Core
         public Task WaitForRules() { return Child?.WaitForRules() ?? Task.CompletedTask; }
         public Task CheckAllRules(CancellationToken token) { return Child?.CheckAllRules(token) ?? Task.CompletedTask; }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        // TODO : Future - get and assign PropertyValue<>
+        // Gives the ability to wait for a property set if the Property is PropertyValue<XYZ>
+        // Too complicated for now.
+
+        //public static implicit operator T(ValidatePropertyValue<T> value) => value.Value;
+        //public static implicit operator ValidatePropertyValue<T>(T value) => new ValidatePropertyValue<T>(value);
+        //public static implicit operator Task(ValidatePropertyValue<T> value) => value.Task;
     }
 
-    public class ValidatePropertyValueManager<T> : ValidatePropertyValueManagerBase<T, IValidatePropertyValue>
+    public class ValidatePropertyValueManager<T> : ValidatePropertyValueManagerBase<T, IValidatePropertyValue>, IValidatePropertyValueManager<T>
         where T : IBase
     {
+
+        IRegisteredPropertyManager<T> IPropertyValueManager<T>.RegisteredPropertyManager => RegisteredPropertyManager;
+
         public ValidatePropertyValueManager(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory, IValuesDiffer valuesDiffer) : base(registeredPropertyManager, factory, valuesDiffer)
         {
 
@@ -93,9 +109,25 @@ namespace Neatoo.Core
         {
             return Factory.CreateValidatePropertyValue(registeredProperty, value);
         }
+
+
+        public virtual void LoadProperty<PV>(IRegisteredProperty<PropertyValue<PV>> registeredProperty, PropertyValue<PV> newValue)
+        {
+            if (!fieldData.ContainsKey(registeredProperty.Index))
+            {
+                // TODO Destroy and Delink to old value
+                // TODO - If they've created an event link to the PropertyValue.NotifyPropertyChanged event
+                // Does just create a new one create a memory leak?
+            }
+            newValue.Name = registeredProperty.Name;
+            fieldData[registeredProperty.Index] = (IValidatePropertyValue) newValue;
+
+            SetParent(newValue.Value);
+        }
+
     }
 
-    public abstract class ValidatePropertyValueManagerBase<T, P> : PropertyValueManagerBase<T, P>, IValidatePropertyValueManager<T>
+    public abstract class ValidatePropertyValueManagerBase<T, P> : PropertyValueManagerBase<T, P>
         where T : IBase
         where P : IValidatePropertyValue
     {
@@ -121,12 +153,12 @@ namespace Neatoo.Core
             return Task.WhenAll(tasks.Where(t => t != null));
         }
 
-        public virtual bool SetProperty<PV>(string name, PV newValue)
+        public virtual Task<bool> SetProperty<PV>(string name, PV newValue)
         {
             return SetProperty(GetRegisteredProperty<PV>(name), newValue);
         }
 
-        public virtual bool SetProperty<PV>(IRegisteredProperty<PV> registeredProperty, PV newValue)
+        public virtual async Task<bool> SetProperty<PV>(IRegisteredProperty<PV> registeredProperty, PV newValue)
         {
             if (!fieldData.TryGetValue(registeredProperty.Index, out var value))
             {
@@ -135,12 +167,13 @@ namespace Neatoo.Core
                 fieldData[registeredProperty.Index] = value = CreatePropertyValue(registeredProperty, default(PV));
             }
 
-            IPropertyValue<PV> fd = value as IPropertyValue<PV> ?? throw new PropertyTypeMismatchException($"Property {registeredProperty.Name} is not type {typeof(PV).FullName}");
+            PropertyValue<PV> fd = value as PropertyValue<PV> ?? throw new PropertyTypeMismatchException($"Property {registeredProperty.Name} is not type {typeof(PV).FullName}");
 
             if (ValuesDiffer.Check(fd.Value, newValue))
             {
-                fd.Value = newValue;
                 SetParent(newValue);
+                fd.Value = newValue;
+                OnPropertyChanged(registeredProperty.Name);
                 return true;
             } else
             {

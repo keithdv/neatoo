@@ -57,10 +57,7 @@ namespace Neatoo
 
         protected virtual void SetProperty<P>(string propertyName, P value)
         {
-            if (PropertyValueManager.SetProperty(GetRegisteredProperty<P>(propertyName), value))
-            {
-                PropertyHasChanged(propertyName);
-            }
+            PropertyValueManager.SetProperty(GetRegisteredProperty<P>(propertyName), value);
         }
 
 

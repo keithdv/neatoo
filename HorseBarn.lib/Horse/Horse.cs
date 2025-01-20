@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace HorseBarn.lib.Horse
 {
-    // TODO : Abstract causes portal methods (ex [CreateChild]) to not be recognized by PortalOperationManager
+    // TODO : Abstract causes portal methods (ex [CreateChild]) to not be recognized by PortalOperationManager and I don't know why
     internal class Horse<H> : CustomEditBase<H>, IHorse
         where H : Horse<H>
     {
@@ -47,21 +47,6 @@ namespace HorseBarn.lib.Horse
 
         public double? Weight { get => Getter<double>(); set => Setter(value); }
 
-        private static IEnumerable<Breed> LightHorses = [Horse.Breed.QuarterHorse, Horse.Breed.Thoroughbred, Horse.Breed.Mustang];
-
-        private static IEnumerable<Breed> HeavyHorses = [Horse.Breed.Clydesdale, Horse.Breed.Shire];
-
-        internal static bool IsLightHorse(Breed breed)
-        {
-            return LightHorses.Contains(breed);
-        }
-
-        internal static bool IsHeavyHorse(Breed breed)
-        {
-            return HeavyHorses.Contains(breed);
-        }
-
-
         protected void Create(IHorseCriteria horseCriteria)
         {
             this.Breed = horseCriteria.Breed;
@@ -69,8 +54,16 @@ namespace HorseBarn.lib.Horse
             this.Name = horseCriteria.Name;
         }
 
-
 #if !CLIENT
+
+        [FetchChild]
+        protected void Fetch(Dal.Ef.Horse horse)
+        {
+            this.Id = horse.Id;
+            this.BirthDate = horse.BirthDate;
+            this.Breed = (Breed)horse.Breed;
+            this.Name = horse.Name;
+        }
 
         Dal.Ef.Horse horse;
 
@@ -100,6 +93,14 @@ namespace HorseBarn.lib.Horse
             horse.PropertyChanged += HandleIdPropertyChanged;
         }
 
+        [UpdateChild]
+        protected void Update(Dal.Ef.Horse horse)
+        {
+            Debug.Assert(horse.Id == this.Id, "Unexpected Id");
+            horse.BirthDate = this.BirthDate;
+            horse.Breed = (int)this.Breed;
+            horse.Name = this.Name;
+        }
 #endif
     }
 }

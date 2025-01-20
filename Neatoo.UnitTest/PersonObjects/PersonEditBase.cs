@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Neatoo;
+using Neatoo.Core;
 
 namespace Neatoo.UnitTest.PersonObjects
 
@@ -28,6 +29,8 @@ namespace Neatoo.UnitTest.PersonObjects
         public string FullName { get { return Getter<string>(); } set { Setter(value); } }
 
         public uint? Age { get => Getter<uint?>(); set => Setter(value); }
+        string IPersonBase.FirstName { get => FirstName; set => FirstName = value; }
+
         public void FillFromDto(PersonDto dto)
         {
             LoadProperty(IdProperty, dto.PersonId);

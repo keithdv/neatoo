@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
@@ -27,7 +28,7 @@ namespace Neatoo
     }
 
     [PortalDataContract]
-    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IRegisteredPropertyAccess, INotifiedOfPropertyChanged
+    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged,  IRegisteredPropertyAccess
         where T : ValidateBase<T>
     {
 
@@ -41,6 +42,7 @@ namespace Neatoo
         {
             this.RuleManager = services.RuleManager;
             ((ISetTarget)this.RuleManager).SetTarget(this);
+            this.RuleManager.PropertyChanged += OnRuleManagerPropertyChanged;
         }
 
         public bool IsValid => RuleManager.IsValid && PropertyValueManager.IsValid;
@@ -63,31 +65,56 @@ namespace Neatoo
             }
         }
 
-        protected virtual void SetProperty<P>(string propertyName, P value)
+        protected virtual async Task SetProperty<P>(string propertyName, P value)
         {
-            if (PropertyValueManager.SetProperty(GetRegisteredProperty<P>(propertyName), value))
+            if(await PropertyValueManager.SetProperty(GetRegisteredProperty<P>(propertyName), value))
             {
+                // TODO: Allow the consumer more control of PropertyValue<> and ValidatePropertyValue<>
+                // Assume that if they're working directly with ValidatePropertyValue
+                // That they're listening to ValidatePropertyValues PropertyChanged event
+                // We don't want to raise the property changed event if the property is a IValidatePropertyValue
+                //if (!typeof(P).IsAssignableTo(typeof(IValidatePropertyValue)))
+                //{
+                PropertyHasChanged(propertyName);
+                //}
 
-                // Make sure if there's a UI thread the task is continued on the UI thread
-                // What's happening is multiple threads are awaiting the RulesManager.waitForRulesSource.Task
-                // So when that's completed multiple threads take off and raise the PropertyChanged event
-
-                // To see, remove it and play with Cart.NumberOfHorses in the Horse and Cart example
-                // Parrallel exection of property changed event causes havoc
-
-                // See https://blog.stephencleary.com/2023/11/configureawait-in-net-8.html
-                // Since I'm not awaiting the task, I need to specify ConfigureAwait(true) to ensure the continuation is on the UI thread
-
-                // This also means that it's possible to get a different behavior in a unit test
-                // If you do, please let me (Keith Voels) know!!
-                CheckRules(propertyName)
-                    .ConfigureAwait(true)
-                    .GetAwaiter()
-                    .OnCompleted(() =>
-                    {
-                        PropertyHasChanged(propertyName);
-                    });
+                // Sync Rules Only - Sync Properties Only
+                // Sync Rules Only - Async Properties (IsBusy = true, WaitForRules works)
+                // Async Rule - Sync Property Only (IsBusy = true, WaitForRules Works)
+                // Async Rule - Async Property (IsBusy = true, WaitForRules works)
+                await CheckRules(propertyName);
             }
+
+
+            //if (await PropertyValueManager.SetProperty(GetRegisteredProperty<P>(propertyName), value))
+            //{
+
+            //    // Make sure if there's a UI thread the task is continued on the UI thread
+            //    // What's happening is multiple threads are awaiting the RulesManager.waitForRulesSource.Task
+            //    // So when that's completed multiple threads take off and raise the PropertyChanged event
+
+            //    // To see, remove it and play with Cart.NumberOfHorses in the Horse and Cart example
+            //    // Parrallel exection of property changed event causes havoc
+
+            //    // See https://blog.stephencleary.com/2023/11/configureawait-in-net-8.html
+            //    // Since I'm not awaiting the task, I need to specify ConfigureAwait(true) to ensure the continuation is on the UI thread
+
+            //    // This also means that it's possible to get a different behavior in a unit test
+            //    // If you do, please let me (Keith Voels) know!!
+            //    var task = CheckRules(propertyName);
+
+            //        task
+            //        .ConfigureAwait(true).GetAwaiter()
+            //        .OnCompleted(async () =>
+            //        {
+            //            if (task.IsFaulted)
+            //            {
+            //                MarkInvalid(task.Exception.Message);
+            //            }
+            //            Debug.Assert(!IsBusy, "All rules should have executed by the time we raise any async forked property change events");
+            //            await PropertyHasChanged(propertyName);
+            //        });
+            //}
         }
 
         void IRegisteredPropertyAccess.SetProperty<P>(IRegisteredProperty<P> registeredProperty, P value)
@@ -98,23 +125,14 @@ namespace Neatoo
         public event PropertyChangedEventHandler PropertyChanged;
 
 
-        protected void PropertyHasChanged(string propertyName)
+        protected virtual void PropertyHasChanged(string propertyName, object source = null)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(source ?? this, new PropertyChangedEventArgs(propertyName));
         }
 
         protected virtual Task CheckRules(string propertyName)
         {
-            var isValid = IsValid;
-
-            return RuleManager.CheckRulesForProperty(propertyName)
-                .ContinueWith(t =>
-            {
-                if (isValid != IsValid)
-                {
-                    PropertyHasChanged(nameof(IsValid));
-                }
-            });
+            return RuleManager.CheckRulesForProperty(propertyName);
         }
 
         public virtual Task WaitForRules()
@@ -166,23 +184,13 @@ namespace Neatoo
             await CheckAllSelfRules();
         }
 
-        public void HandlePropertyChange(string propertyName, object source)
-        {
-            // TODO - Is this too loose of a way of doing this? Should I have a more specific implentation?
-            if(source == RuleManager)
-            {
-                if (propertyName == nameof(RuleManager.IsValid))
-                {
-                    PropertyHasChanged(nameof(IsSelfValid));
-                    PropertyHasChanged(nameof(IsValid));
-                }
-                else if (propertyName == nameof(RuleManager.IsBusy))
-                {
-                    PropertyHasChanged(nameof(IsSelfBusy));
-                    PropertyHasChanged(nameof(IsBusy));
-                }
-            }
 
+        public void OnRuleManagerPropertyChanged(object sender, PropertyChangedEventArgs eventArgs)
+        {
+            PropertyHasChanged(nameof(IsSelfValid));
+            PropertyHasChanged(nameof(IsValid));
+            PropertyHasChanged(nameof(IsSelfBusy));
+            PropertyHasChanged(nameof(IsBusy));
         }
     }
 }

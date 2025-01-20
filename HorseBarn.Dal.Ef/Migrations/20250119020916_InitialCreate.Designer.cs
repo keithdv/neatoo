@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HorseBarn.Dal.Ef.Migrations
 {
     [DbContext(typeof(HorseBarnContext))]
-    [Migration("20250115035034_InitialCreate")]
+    [Migration("20250119020916_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -24,6 +24,9 @@ namespace HorseBarn.Dal.Ef.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CartType")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("HorseBarnId")

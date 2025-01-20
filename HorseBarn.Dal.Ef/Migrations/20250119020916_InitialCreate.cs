@@ -30,6 +30,7 @@ namespace HorseBarn.Dal.Ef.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    CartType = table.Column<int>(type: "INTEGER", nullable: false),
                     NumberOfHorses = table.Column<int>(type: "INTEGER", nullable: false),
                     HorseBarnId = table.Column<int>(type: "INTEGER", nullable: false)
                 },

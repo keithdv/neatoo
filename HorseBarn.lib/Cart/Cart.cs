@@ -57,14 +57,6 @@ namespace HorseBarn.lib.Cart
             return base.PostPortalConstruct();
         }
 
-        [CreateChild]
-        public async void CreateChild(IReadWritePortalChild<IHorseList<H>> horsePortal)
-        {
-            this.HorseList = await horsePortal.CreateChild();
-            this.NumberOfHorses = 1;
-            await this.CheckAllSelfRules();
-        }
-
         public void RemoveHorse(IHorse horse)
         {
             HorseList.RemoveHorse(horse);
@@ -90,7 +82,26 @@ namespace HorseBarn.lib.Cart
             return false;
         }
 
+        protected virtual CartType CartType => throw new NotImplementedException();
+
 #if !CLIENT
+
+
+        [CreateChild]
+        public async void CreateChild(IReadWritePortalChild<IHorseList<H>> horsePortal)
+        {
+            this.HorseList = await horsePortal.CreateChild();
+            this.NumberOfHorses = 1;
+            await this.CheckAllSelfRules();
+        }
+
+        [FetchChild]
+        public async Task FetchChild(Dal.Ef.Cart cart, IReadPortalChild<IHorseList<H>> horsePortal)
+        {
+            this.Name = cart.Name;
+            this.NumberOfHorses = cart.NumberOfHorses;
+            this.HorseList = await horsePortal.FetchChild(cart.Horses);
+        }
 
         [InsertChild]
         protected async Task Insert(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<IHorseList<H>> horseList)
@@ -98,12 +109,23 @@ namespace HorseBarn.lib.Cart
             Dal.Ef.Cart cart = new Dal.Ef.Cart();
 
             cart.Name = this.Name;
+            cart.CartType = (int) this.CartType;
             cart.NumberOfHorses = this.NumberOfHorses;
             cart.HorseBarn = horseBarn;
             cart.PropertyChanged += HandleIdPropertyChanged;
 
             horseBarn.Carts.Add(cart);
 
+            await horseList.UpdateChild(this.HorseList, cart);
+        }
+
+        [UpdateChild]
+        protected async Task Update(Dal.Ef.Cart cart, IReadWritePortalChild<IHorseList<H>> horseList)
+        {
+            Debug.Assert(cart.CartType == cart.CartType, "CartType mismatch");
+
+            cart.Name = this.Name;
+            cart.NumberOfHorses = this.NumberOfHorses;
             await horseList.UpdateChild(this.HorseList, cart);
         }
 #endif

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Neatoo.Core;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -65,7 +66,7 @@ namespace Neatoo.UnitTest.BaseTests
             /// Example - If the types are different you need to explicitly define the type
             /// of the Property
             /// The <IA> in this case
-            LoadProperty<IA>(TestPropertyTypeProperty, propertyValue);
+            LoadProperty<IA>(TestPropertyTypeProperty, (IA) propertyValue);
 
         }
     }

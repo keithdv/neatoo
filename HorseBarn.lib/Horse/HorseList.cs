@@ -1,4 +1,5 @@
-﻿using Neatoo;
+﻿using HorseBarn.lib.Cart;
+using Neatoo;
 using Neatoo.Portal;
 using System;
 using System.Collections.Generic;
@@ -65,6 +66,29 @@ namespace HorseBarn.lib.Horse
                 await horsePortal.UpdateChild(horse, cart);
             }
         }
+
+        [FetchChild] 
+        public async Task FetchChild(ICollection<Dal.Ef.Horse> horses,
+                                        IReadPortalChild<ILightHorse> lightHorsePortal,
+                                        IReadPortalChild<IHeavyHorse> heavyHorsePortal)
+        {
+            foreach (var horse in horses)
+            {
+                if(IHorse.IsLightHorse((Breed) horse.Breed))
+                {
+                    var h = (I) await lightHorsePortal.FetchChild(horse);
+                    Add(h);
+                }
+                else
+                {
+                    var h = (I) await heavyHorsePortal.FetchChild(horse);
+                    Add(h);
+                }
+            }
+        }
+
+
+        
 #endif
     }
 }

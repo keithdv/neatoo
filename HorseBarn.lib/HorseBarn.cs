@@ -4,6 +4,7 @@ using Neatoo;
 using Neatoo.Portal;
 
 #if !CLIENT
+using Microsoft.EntityFrameworkCore;
 using HorseBarn.Dal.Ef;
 #endif
 
@@ -52,11 +53,11 @@ namespace HorseBarn.lib
         {
             IHorse horse;
 
-            if (Horse<LightHorse>.IsLightHorse(horseCriteria.Breed))
+            if (IHorse.IsLightHorse(horseCriteria.Breed))
             {
                 horse = await lightHorsePortal.CreateChild(horseCriteria);
             }
-            else if (Horse<HeavyHorse>.IsHeavyHorse(horseCriteria.Breed))
+            else if (IHorse.IsHeavyHorse(horseCriteria.Breed))
             {
                 horse = await heavyHorsePortal.CreateChild(horseCriteria);
             }
@@ -64,9 +65,9 @@ namespace HorseBarn.lib
             {
                 throw new Exception($"Cannot create child horse for breed {horseCriteria.Breed}");
             }
-
-            await horse.CheckAllRules();
+            
             this.Pasture.HorseList.Add(horse);
+            await horse.CheckAllRules();
             return horse;
         }
 
@@ -102,8 +103,19 @@ namespace HorseBarn.lib
             this.Carts = await cartListPortal.CreateChild();
         }
 
+        [Fetch]
+        public async Task Fetch(HorseBarnContext horseBarnContext,
+                                IReadPortalChild<IPasture> pasturePortal,
+                                IReadPortalChild<ICartList> cartPortal)
+        {
+            var horseBarn = await horseBarnContext.HorseBarns.FirstAsync();
+            this.Id = horseBarn.Id;
+            this.Pasture = await pasturePortal.FetchChild(horseBarn.Pasture);
+            this.Carts = await cartPortal.FetchChild(horseBarn.Carts);
+        }
+
         [Insert]
-        public async Task Update(HorseBarnContext horseBarnContext,
+        public async Task Insert(HorseBarnContext horseBarnContext,
                                 IReadWritePortalChild<IPasture> pasturePortal,
                                 IReadWritePortalChild<ICartList> cartPortal)
         {
@@ -116,6 +128,17 @@ namespace HorseBarn.lib
 
             horseBarnContext.HorseBarns.Add(horseBarn);
 
+            await horseBarnContext.SaveChangesAsync();
+        }
+
+        [Update]
+        public async Task Update(HorseBarnContext horseBarnContext,
+                                IReadWritePortalChild<IPasture> pasturePortal,
+                                IReadWritePortalChild<ICartList> cartPortal)
+        {
+            var horseBarn = await horseBarnContext.HorseBarns.FirstAsync(hb => hb.Id == this.Id);
+            await pasturePortal.UpdateChild(this.Pasture, horseBarn.Pasture);
+            await cartPortal.UpdateChild(this.Carts, horseBarn.Carts);
             await horseBarnContext.SaveChangesAsync();
         }
 

@@ -19,5 +19,7 @@ namespace HorseBarn.lib.Cart
         public Wagon(IEditBaseServices<Wagon> services, ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services, cartNumberOfHorsesRule)
         {
         }
+
+        protected override CartType CartType => CartType.Wagon;
     }
 }

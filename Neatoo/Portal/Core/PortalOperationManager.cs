@@ -241,9 +241,6 @@ namespace Neatoo.Portal.Core
 
             using (stopAllActions)
             {
-                // The criteriaTypes need to be captured by Generic method definitions
-                // in case the values sent in are null
-
                 var method = MethodForOperation(operation, criteria.Select(c => c.GetType()).ToArray());
 
                 if (method != null)

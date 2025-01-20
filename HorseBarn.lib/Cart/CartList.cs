@@ -57,6 +57,33 @@ namespace HorseBarn.lib.Cart
                 await cartPortal.UpdateChild(cart, horseBarn);
             }
         }
+
+        [InsertChild]
+        [UpdateChild]
+        public async Task InsertChild(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<ICart> cartPortal)
+        {
+            foreach (var cart in this)
+            {
+                await cartPortal.UpdateChild(cart, horseBarn);
+            }
+        }
+
+        [FetchChild]
+        public async Task FetchChild(ICollection<Dal.Ef.Cart> carts, IReadPortalChild<IRacingChariot> racingChariotPortal, IReadPortalChild<IWagon> wagonPortal)
+        {
+            foreach (var cart in carts)
+            {
+                if (cart.CartType == (int)CartType.RacingChariot)
+                {
+                    Add((C)await racingChariotPortal.FetchChild(cart));
+                }
+                else if(cart.CartType == (int)CartType.Wagon)
+                {
+                    Add((C)await wagonPortal.FetchChild(cart));
+                }
+            }
+        }
+
 #endif
     }
 

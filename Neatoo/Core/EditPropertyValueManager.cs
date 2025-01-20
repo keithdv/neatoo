@@ -67,11 +67,17 @@ namespace Neatoo.Core
         {
             IsSelfModified = false;
         }
+        //public static implicit operator T(EditPropertyValue<T> value) => value.Value;
+        //public static implicit operator EditPropertyValue<T>(T value) => new EditPropertyValue<T>(value);
+        //public static implicit operator Task(EditPropertyValue<T> value) => value.Task;
     }
 
     public class EditPropertyValueManager<T> : ValidatePropertyValueManagerBase<T, IEditPropertyValue>, IEditPropertyValueManager<T>
         where T : IBase
     {
+
+        IRegisteredPropertyManager<T> IPropertyValueManager<T>.RegisteredPropertyManager => RegisteredPropertyManager;
+
         public EditPropertyValueManager(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory, IValuesDiffer valuesDiffer) : base(registeredPropertyManager, factory, valuesDiffer)
         {
 
@@ -94,6 +100,21 @@ namespace Neatoo.Core
                 fd.MarkSelfUnmodified();
             }
         }
+
+        public virtual void LoadProperty<PV>(IRegisteredProperty<PropertyValue<PV>> registeredProperty, PropertyValue<PV> newValue)
+        {
+            if (!fieldData.ContainsKey(registeredProperty.Index))
+            {
+                // TODO Destroy and Delink to old value
+                // TODO - If they've created an event link to the PropertyValue.NotifyPropertyChanged event
+                // Does just create a new one create a memory leak?
+            }
+            newValue.Name = registeredProperty.Name;
+            fieldData[registeredProperty.Index] = (IEditPropertyValue)newValue;
+
+            SetParent(newValue.Value);
+        }
+
     }
 
 

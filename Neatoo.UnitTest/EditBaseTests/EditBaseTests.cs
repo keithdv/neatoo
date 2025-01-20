@@ -33,6 +33,7 @@ namespace Neatoo.UnitTest.EditBaseTests
             Assert.IsFalse(editPerson.IsModified);
             Assert.IsFalse(editPerson.IsNew);
             Assert.IsFalse(editPerson.IsSavable);
+            Assert.IsFalse(editPerson.IsBusy);
         }
 
         [TestCleanup]
@@ -122,6 +123,7 @@ namespace Neatoo.UnitTest.EditBaseTests
             editPerson.FirstName = Guid.NewGuid().ToString();
             Assert.IsTrue(editPerson.IsSavable);
         }
+
 
         [TestMethod]
         public async Task EditBaseTest_Save()

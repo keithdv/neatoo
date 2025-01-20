@@ -118,20 +118,7 @@ namespace Neatoo
         }
 
 
-        protected async Task UpdateList()
-        {
-            foreach (var d in DeletedList)
-            {
-                await ItemPortal.UpdateChild(d);
-            }
 
-            DeletedList.Clear();
-
-            foreach (var i in this.Where(i => i.IsModified).ToList())
-            {
-                await ItemPortal.UpdateChild(i);
-            }
-        }
 
         async Task<I> IEditBase.SaveRetrieve<I>()
         {
@@ -173,6 +160,47 @@ namespace Neatoo
                 throw new Exception($"{typeof(T).FullName} is modified you must override and define Update().");
             }
             await UpdateList();
+        }
+
+        [Update]
+        [UpdateChild]
+        protected virtual async Task Update(object[] criteria)
+        {
+            if (IsSelfModified)
+            {
+                throw new Exception($"{typeof(T).FullName} is modified you must override and define Update().");
+            }
+            await UpdateList(criteria);
+        }
+
+        protected async Task UpdateList()
+        {
+            foreach (var d in DeletedList)
+            {
+                await ItemPortal.UpdateChild(d);
+            }
+
+            DeletedList.Clear();
+
+            foreach (var i in this.Where(i => i.IsModified).ToList())
+            {
+                await ItemPortal.UpdateChild(i);
+            }
+        }
+
+        protected async Task UpdateList(object[] criteria)
+        {
+            foreach (var d in DeletedList)
+            {
+                await ItemPortal.UpdateChild(d, criteria);
+            }
+
+            DeletedList.Clear();
+
+            foreach (var i in this.Where(i => i.IsModified).ToList())
+            {
+                await ItemPortal.UpdateChild(i, criteria);
+            }
         }
     }
 

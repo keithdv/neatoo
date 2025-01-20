@@ -58,9 +58,17 @@ namespace Neatoo
             return ReadProperty<P>(GetRegisteredProperty<P>(propertyName));
         }
 
+
         protected virtual void Setter<P>(P value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
         {
             LoadProperty(GetRegisteredProperty<P>(propertyName), value);
+        }
+
+        protected virtual void Setter<P>(PropertyValue<P> value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
+        {
+            //I can't throw the propertyvalue away in case they are using it for something else
+            // I just need to ensure it is the right case and if it is not use CreatePropertyInfo in the factory
+            LoadProperty(GetRegisteredProperty<PropertyValue<P>>(propertyName), value);
         }
 
         protected virtual P ReadProperty<P>(IRegisteredProperty<P> property)
@@ -69,6 +77,11 @@ namespace Neatoo
         }
 
         protected virtual void LoadProperty<P>(IRegisteredProperty<P> registeredProperty, P value)
+        {
+            PropertyValueManager.LoadProperty(registeredProperty, value);
+        }
+
+        protected virtual void LoadProperty<P>(IRegisteredProperty<PropertyValue<P>> registeredProperty, PropertyValue<P> value)
         {
             PropertyValueManager.LoadProperty(registeredProperty, value);
         }

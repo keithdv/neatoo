@@ -21,6 +21,8 @@ namespace HorseBarn.lib.Cart
         public RacingChariot(IEditBaseServices<RacingChariot> services, ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services, cartNumberOfHorsesRule)
         {
         }
+
+        protected override CartType CartType => CartType.RacingChariot;
     }
 
     public interface IRacingChariotList : ICartList<IRacingChariot>

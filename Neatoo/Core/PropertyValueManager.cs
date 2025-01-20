@@ -2,9 +2,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Neatoo.Core
 {
@@ -12,10 +15,11 @@ namespace Neatoo.Core
     /// <summary>
     /// DO NOT REGISTER IN THE CONTAINER
     /// </summary>
-    public interface IPropertyValueManager
+    public interface IPropertyValueManager : INotifyPropertyChanged
     {
         IRegisteredProperty<PV> GetRegisteredProperty<PV>(string name);
         void LoadProperty<P>(IRegisteredProperty<P> registeredProperty, P newValue);
+        void LoadProperty<P>(IRegisteredProperty<PropertyValue<P>> registeredProperty, PropertyValue<P> newValue);
         P ReadProperty<P>(IRegisteredProperty<P> registeredProperty);
         P ReadProperty<P>(string propertyName);
 
@@ -39,21 +43,21 @@ namespace Neatoo.Core
 
     public interface IPropertyValue
     {
-        string Name { get; }
+        string Name { get; internal set; }
         object Value { get; }
-
     }
 
     public interface IPropertyValue<T> : IPropertyValue
     {
-        T Value { get; set; }
+        new T Value { get; set; }
     }
 
     [PortalDataContract]
     public class PropertyValue<T> : IPropertyValue<T>, IPropertyValue
     {
+        // TODO: Shouldn't be modified from the outside
         [PortalDataMember]
-        public string Name { get; protected set; } // Setter for Deserialization of Edit
+        public string Name { get; set; } // Setter for Deserialization of Edit
 
         [PortalDataMember]
         public virtual T Value { get; set; }
@@ -67,9 +71,15 @@ namespace Neatoo.Core
             this.Name = name;
             this.Value = value;
         }
+
+
+
+        // NOTE: These also broke serialization
+        //public static implicit operator T(PropertyValue<T> value) => value.Value;
+        //public static implicit operator PropertyValue<T>(T value) => new PropertyValue<T>(value);
     }
 
-    public class PropertyValueManager<T> : PropertyValueManagerBase<T, IPropertyValue>
+    public class PropertyValueManager<T> : PropertyValueManagerBase<T, IPropertyValue>, IPropertyValueManager<T>
         where T : IBase
     {
         public PropertyValueManager(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
@@ -77,14 +87,31 @@ namespace Neatoo.Core
 
         }
 
+        IRegisteredPropertyManager<T> IPropertyValueManager<T>.RegisteredPropertyManager => RegisteredPropertyManager;
+
         protected override IPropertyValue CreatePropertyValue<PV>(IRegisteredProperty<PV> registeredProperty, PV value)
         {
             return Factory.CreatePropertyValue(registeredProperty, value);
         }
+
+        public virtual void LoadProperty<PV>(IRegisteredProperty<PropertyValue<PV>> registeredProperty, PropertyValue<PV> newValue)
+        {
+            if (!fieldData.ContainsKey(registeredProperty.Index))
+            {
+                // TODO Destroy and Delink to old value
+                // TODO - If they've created an event link to the PropertyValue.NotifyPropertyChanged event
+                // Does just create a new one create a memory leak?
+            }
+            newValue.Name = registeredProperty.Name;
+            fieldData[registeredProperty.Index] = newValue;
+
+            SetParent(newValue.Value);
+        }
+
     }
 
     [PortalDataContract]
-    public abstract class PropertyValueManagerBase<T, P> : IPropertyValueManager<T>, ISetTarget
+    public abstract class PropertyValueManagerBase<T, P> : ISetTarget
         where T : IBase
         where P : IPropertyValue
     {
@@ -92,13 +119,19 @@ namespace Neatoo.Core
 
         protected IFactory Factory { get; }
 
-        IRegisteredPropertyManager<T> IPropertyValueManager<T>.RegisteredPropertyManager => RegisteredPropertyManager;
 
         protected readonly IRegisteredPropertyManager<T> RegisteredPropertyManager;
 
 
         [PortalDataMember]
         protected IDictionary<uint, P> fieldData = new ConcurrentDictionary<uint, P>();
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         public PropertyValueManagerBase(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory)
         {
@@ -126,15 +159,22 @@ namespace Neatoo.Core
 
         public virtual void LoadProperty<PV>(IRegisteredProperty<PV> registeredProperty, PV newValue)
         {
+            Debug.Assert(!(newValue is IPropertyValue), "IPropertyValue has a different call stack");
+
             if (!fieldData.ContainsKey(registeredProperty.Index))
             {
                 // TODO Destroy and Delink to old value
+                // TODO - If they've created an event link to the PropertyValue.NotifyPropertyChanged event
+                // Does just create a new one create a memory leak?
             }
 
             fieldData[registeredProperty.Index] = CreatePropertyValue(registeredProperty, newValue);
 
             SetParent(newValue);
         }
+
+
+
 
         public PV ReadProperty<PV>(string name)
         {
@@ -146,6 +186,11 @@ namespace Neatoo.Core
             if (!fieldData.TryGetValue(registeredProperty.Index, out var value))
             {
                 return default(PV);
+            }
+
+            if(value is PV propertyValue)
+            {
+                return propertyValue;
             }
 
             IPropertyValue<PV> fd = value as IPropertyValue<PV> ?? throw new PropertyTypeMismatchException($"Property {registeredProperty.Name} is not type {typeof(PV).FullName}");
@@ -178,6 +223,16 @@ namespace Neatoo.Core
             }
         }
 
+        //public virtual async Task HandlePropertyChange(string propertyName, object source)
+        //{
+        //    foreach (var item in fieldData)
+        //    {
+        //        if(item is INotifiedOfPropertyChanged notified)
+        //        {
+        //            await notified.HandlePropertyChange(propertyName, source);
+        //        }
+        //    }
+        //}
 
     }
 
