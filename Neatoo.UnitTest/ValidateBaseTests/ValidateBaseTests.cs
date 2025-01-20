@@ -256,5 +256,11 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsFalse(validate.IsValid);
         }
 
+        [TestMethod]
+        public void ValidateBase_ThrowsException()
+        {
+            validate.FirstName = "Throw";
+
+        }
     }
 }

@@ -21,25 +21,11 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public override IRuleResult Execute(T target)
         {
-
             RunCount++;
 
             target.FullName = $"{target.Title} {target.ShortName}";
 
-
-            if(target.Age == 10)
-            {
-                if(RunCount == 1)
-                {
-
-                } else if (RunCount == 2)
-                {
-                }
-            }
-
             return RuleResult.Empty();
-
         }
-
     }
 }

@@ -23,10 +23,11 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public ValidateObject(IValidateBaseServices<ValidateObject> services,
             IShortNameRule<ValidateObject> shortNameRule,
             IFullNameRule<ValidateObject> fullNameRule,
-            IRecursiveRule recursiveRule
+            IRecursiveRule recursiveRule,
+            IRuleThrowsException ruleThrowsException
             ) : base(services)
         {
-            RuleManager.AddRules(shortNameRule, fullNameRule, recursiveRule);
+            RuleManager.AddRules(shortNameRule, fullNameRule, recursiveRule, ruleThrowsException);
             ShortNameRule = shortNameRule;
             FullNameRule = fullNameRule;
         }
