@@ -38,6 +38,7 @@ namespace Neatoo.Newtonsoft.Json
         public bool IsNew { get; set; }
         public bool IsChild { get; set; }
         public bool IsDeleted { get; set; }
+        public bool SetModified { get; set; }
     }
 
     public class ListBaseCollectionConverter : JsonConverter
@@ -94,6 +95,7 @@ namespace Neatoo.Newtonsoft.Json
                 editType.InvokeMember(nameof(IEditBase.IsNew), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsNew });
                 editType.InvokeMember(nameof(IEditBase.IsChild), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsChild });
                 editType.InvokeMember(nameof(IEditBase.IsDeleted), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsDeleted });
+                editType.InvokeMember(nameof(ListBaseSurrogate.SetModified), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.SetModified });
             }
 
             return list;
@@ -168,6 +170,7 @@ namespace Neatoo.Newtonsoft.Json
                 surrogate.IsNew = edit.IsNew;
                 surrogate.IsChild = edit.IsChild;
                 surrogate.IsDeleted = edit.IsDeleted;
+                surrogate.SetModified = edit.SetModified;
             }
 
 

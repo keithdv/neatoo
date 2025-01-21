@@ -38,7 +38,7 @@ namespace Neatoo
         }
 
         protected bool SetModified { get; set; } = false;
-        public bool IsModified => PropertyValueManager.IsModified || IsNew || this.Any(c => c.IsModified) || IsDeleted || DeletedList.Any();
+        public bool IsModified => PropertyValueManager.IsModified || IsNew || this.Any(c => c.IsModified) || IsDeleted || DeletedList.Any() || IsSelfModified;
         public bool IsSelfModified => PropertyValueManager.IsSelfModified || IsDeleted || SetModified;
         public bool IsSavable => IsModified && IsValid && !IsBusy && !IsChild;
         public bool IsNew { get; protected set; }
@@ -46,6 +46,8 @@ namespace Neatoo
         public IEnumerable<string> ModifiedProperties => PropertyValueManager.ModifiedProperties;
         public bool IsChild { get; protected set; }
         protected List<I> DeletedList { get; } = new List<I>();
+
+        bool IEditBase.SetModified => SetModified;
 
         protected virtual void MarkAsChild()
         {
@@ -121,21 +123,22 @@ namespace Neatoo
             IsDeleted = false;
         }
 
-        //protected override void InsertItem(int index, I item)
-        //{
-        //    if(item.IsDeleted)
-        //    {
-        //        item.UnDelete();
-        //        ((ISetParent) item).SetParent(this);
-        //    }
+        protected override void InsertItem(int index, I item)
+        {
+            if (item.IsDeleted)
+            {
+                item.UnDelete();
+            }
 
-        //    if (!IsStopped && !item.IsNew)
-        //    {
-        //        ((IPortalEditTarget)item).MarkModified();
-        //    }
+            if (!IsStopped && !item.IsNew)
+            {
+                ((IPortalEditTarget)item).MarkModified();
+            }
 
-        //    base.InsertItem(index, item);
-        //}
+            //((ISetParent)item).SetParent(this);
+
+            base.InsertItem(index, item);
+        }
 
         protected override void RemoveItem(int index)
         {

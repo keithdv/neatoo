@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace HorseBarn.WPF.ViewModels
 {
@@ -30,11 +31,17 @@ namespace HorseBarn.WPF.ViewModels
         {
             HorseCriteria = await HorseCriteriaPortal.Create();
             HorseCriteria.Breed = Breed.Thoroughbred;
+            NotifyOfPropertyChange(nameof(HorseCriteria));
             await base.OnActivateAsync(cancellationToken);
         }
 
         public async Task create()
         {
+            if(!HorseCriteria.IsValid)
+            {
+                MessageBox.Show("Invalid Horse Criteria");
+                return;
+            }
             await eventAggregator.PublishOnUIThreadAsync(HorseCriteria);
             await this.TryCloseAsync();
         }

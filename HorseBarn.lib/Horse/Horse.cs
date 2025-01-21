@@ -1,4 +1,5 @@
-﻿using Neatoo;
+﻿
+using Neatoo;
 using Neatoo.Portal;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
@@ -11,6 +12,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
+#if !CLIENT
+using HorseBarn.Dal.Ef;
+using Microsoft.EntityFrameworkCore;
+#endif
 namespace HorseBarn.lib.Horse
 {
     // TODO : Abstract causes portal methods (ex [CreateChild]) to not be recognized by PortalOperationManager and I don't know why
@@ -94,23 +100,34 @@ namespace HorseBarn.lib.Horse
         }
 
         [UpdateChild]
-        protected void Update(Dal.Ef.Pasture pasture)
+        protected async Task Update(Dal.Ef.Pasture pasture, HorseBarnContext horseBarnContext)
         {
-            var horse = pasture.Horses.First(h => h.Id == this.Id);
+            var horse = await horseBarnContext.Horses.SingleAsync(h => h.Id == this.Id);
+
+            if (horse.Cart != null)
+            {
+                horse.Cart.Horses.Remove(horse);
+            }
 
             horse.BirthDate = this.BirthDate;
             horse.Breed = (int)this.Breed;
             horse.Name = this.Name;
+            pasture.Horses.Add(horse);
         }
 
         [UpdateChild]
-        protected void Update(Dal.Ef.Cart cart)
+        protected async Task Update(Dal.Ef.Cart cart, HorseBarnContext horseBarnContext)
         {
-            var horse = cart.Horses.First(h => h.Id == this.Id);
+            var horse = await horseBarnContext.Horses.SingleAsync(h => h.Id == this.Id);
 
+            if(horse.Pasture != null)
+            {
+                horse.Pasture.Horses.Remove(horse);
+            }
             horse.BirthDate = this.BirthDate;
             horse.Breed = (int)this.Breed;
             horse.Name = this.Name;
+            cart.Horses.Add(horse);
         }
 
         [DeleteChild]

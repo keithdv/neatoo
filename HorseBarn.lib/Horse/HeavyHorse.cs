@@ -15,6 +15,7 @@ namespace HorseBarn.lib.Horse
         {
         }
 
+        [Create]
         [CreateChild]
         public void createChild(IHorseCriteria horseCriteria)
         {

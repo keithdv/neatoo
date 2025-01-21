@@ -17,6 +17,8 @@ namespace Neatoo
         Task Save();
 
         Task<I> SaveRetrieve<I>() where I : class, IEditBase;
+
+        internal bool SetModified { get; }
     }
 
 }

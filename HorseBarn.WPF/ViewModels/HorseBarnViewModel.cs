@@ -158,7 +158,7 @@ namespace HorseBarn.WPF.ViewModels
             }
         }
 
-        public async Task Save()
+        public async void Save()
         {
             HorseBarn.Pasture.Horses.CollectionChanged -= Horses_CollectionChanged;
             HorseBarn.Carts.CollectionChanged -= Carts_CollectionChanged;

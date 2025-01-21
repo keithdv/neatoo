@@ -18,6 +18,7 @@ namespace HorseBarn.lib.Horse
 
         public double TopSpeed { get => Getter<double>(); set => Setter(value); }
 
+        [Create]
         [CreateChild]
         public void createChild(IHorseCriteria criteria)
         {

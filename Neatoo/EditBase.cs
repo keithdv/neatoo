@@ -20,8 +20,9 @@ namespace Neatoo
             ReadWritePortal = services.ReadWritePortal;
         }
 
+        [PortalDataMember]
         protected bool SetModified { get; set; } = false;
-        public bool IsModified => PropertyValueManager.IsModified || IsDeleted;
+        public bool IsModified => PropertyValueManager.IsModified || IsDeleted || IsNew || IsSelfModified;
         public bool IsSelfModified => PropertyValueManager.IsSelfModified || IsDeleted || SetModified;
         public bool IsSavable => IsModified && IsValid && !IsBusy && !IsChild;
         [PortalDataMember]
@@ -33,7 +34,7 @@ namespace Neatoo
         public bool IsChild { get; protected set; }
         protected IReadWritePortal<T> ReadWritePortal { get; }
 
-
+        bool IEditBase.SetModified => SetModified;
 
         protected virtual void MarkAsChild()
         {
@@ -146,9 +147,5 @@ namespace Neatoo
 
             return await ReadWritePortal.Update((T)this);
         }
-
     }
-
-
-
 }

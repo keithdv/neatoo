@@ -32,10 +32,10 @@ namespace Neatoo.UnitTest.EditBaseTests
             list.MarkOld();
 
             child = scope.Resolve<IEditPerson>();
+            list.Add(child);
             child.MarkUnmodified();
             child.MarkOld();
             child.MarkAsChild();
-            list.Add(child);
 
             Assert.IsFalse(list.IsBusy);
 
