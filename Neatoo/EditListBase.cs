@@ -37,8 +37,9 @@ namespace Neatoo
             this.ReadWritePortal = services.ReadWritePortal;
         }
 
+        protected bool SetModified { get; set; } = false;
         public bool IsModified => PropertyValueManager.IsModified || IsNew || this.Any(c => c.IsModified) || IsDeleted || DeletedList.Any();
-        public bool IsSelfModified => PropertyValueManager.IsSelfModified || IsDeleted;
+        public bool IsSelfModified => PropertyValueManager.IsSelfModified || IsDeleted || SetModified;
         public bool IsSavable => IsModified && IsValid && !IsBusy && !IsChild;
         public bool IsNew { get; protected set; }
         public bool IsDeleted { get; protected set; }
@@ -64,6 +65,16 @@ namespace Neatoo
         void IPortalEditTarget.MarkUnmodified()
         {
             MarkUnmodified();
+        }
+
+        protected virtual void MarkModified()
+        {
+            SetModified = true;
+        }
+
+        void IPortalEditTarget.MarkModified()
+        {
+            MarkModified();
         }
 
         protected virtual void MarkNew()
@@ -104,6 +115,27 @@ namespace Neatoo
             MarkDeleted();
         }
 
+        public void UnDelete()
+        {
+            // TODO : Blurry here too...should I delete all of my children?
+            IsDeleted = false;
+        }
+
+        //protected override void InsertItem(int index, I item)
+        //{
+        //    if(item.IsDeleted)
+        //    {
+        //        item.UnDelete();
+        //        ((ISetParent) item).SetParent(this);
+        //    }
+
+        //    if (!IsStopped && !item.IsNew)
+        //    {
+        //        ((IPortalEditTarget)item).MarkModified();
+        //    }
+
+        //    base.InsertItem(index, item);
+        //}
 
         protected override void RemoveItem(int index)
         {
@@ -116,9 +148,6 @@ namespace Neatoo
 
             base.RemoveItem(index);
         }
-
-
-
 
         async Task<I> IEditBase.SaveRetrieve<I>()
         {
@@ -177,7 +206,10 @@ namespace Neatoo
         {
             foreach (var d in DeletedList)
             {
-                await ItemPortal.UpdateChild(d);
+                if (d.IsDeleted) // May have been moved to a different parent
+                {
+                    await ItemPortal.UpdateChild(d);
+                }
             }
 
             DeletedList.Clear();

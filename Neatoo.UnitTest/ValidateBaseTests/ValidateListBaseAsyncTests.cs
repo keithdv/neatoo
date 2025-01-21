@@ -186,7 +186,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         {
             var ruleCount = List.RuleRunCount;
             await List.CheckAllSelfRules();
-            Assert.AreEqual(ruleCount + 2, List.RuleRunCount);
+            Assert.AreEqual(ruleCount + 3, List.RuleRunCount);
         }
 
         [TestMethod]
@@ -194,7 +194,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         {
             var ruleCount = List.RuleRunCount;
             await List.CheckAllRules();
-            Assert.AreEqual(ruleCount + 4, List.RuleRunCount); // +2 for child
+            Assert.AreEqual(ruleCount + 6, List.RuleRunCount); // +2 for child
         }
     }
 }

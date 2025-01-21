@@ -4,7 +4,7 @@ public interface IRegisteredPropertyAccess
 {
     IPropertyValue ReadPropertyValue(string propertyName);
     IPropertyValue ReadPropertyValue(IRegisteredProperty registeredProperty);
-    P ReadProperty<P>(IRegisteredProperty<P> registeredProperty);
-    void SetProperty<P>(IRegisteredProperty<P> registeredProperty, P value);
-    void LoadProperty<P>(IRegisteredProperty<P> registeredProperty, P value);
+    P ReadProperty<P>(IRegisteredProperty registeredProperty);
+    void SetProperty<P>(IRegisteredProperty registeredProperty, P value);
+    void LoadProperty<P>(IRegisteredProperty registeredProperty, P value);
 }

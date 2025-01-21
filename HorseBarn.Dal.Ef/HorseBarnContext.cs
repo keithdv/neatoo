@@ -26,7 +26,8 @@ namespace HorseBarn.Dal.Ef
         // The following configures EF to create a Sqlite database file in the
         // special "local" folder for your platform.
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite($"Data Source={DbPath}");
+            => options.UseSqlite($"Data Source={DbPath}")
+            .UseLazyLoadingProxies();
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -59,8 +60,8 @@ namespace HorseBarn.Dal.Ef
     [Table("HorseBarn")]
     public class HorseBarn : IdPropertyChangedBase
     {
-        public Pasture Pasture { get; set; }
-        public List<Cart> Carts { get; set; } = new List<Cart>();
+        public virtual Pasture Pasture { get; set; } = null!;
+        public virtual List<Cart> Carts { get; set; } = new List<Cart>();
     }
 
     [Table("Horse")]
@@ -83,7 +84,8 @@ namespace HorseBarn.Dal.Ef
         public int Breed { get; set; }
 
         public int? CartId { get; set; }
-        public Cart? Cart { get; set; }
+        public virtual Cart? Cart { get; set; }
+        public virtual Pasture? Pasture { get; set; }
 
     }
 
@@ -106,7 +108,7 @@ namespace HorseBarn.Dal.Ef
         [Required]
         public int HorseBarnId { get; set; }
 
-        public HorseBarn HorseBarn { get; set; } = null!;
+        public virtual HorseBarn HorseBarn { get; set; } = null!;
 
     }
 
@@ -116,7 +118,7 @@ namespace HorseBarn.Dal.Ef
 
 
         public int HorseBarnId { get; set; }
-        public HorseBarn HorseBarn { get; set; } = null!;
+        public virtual HorseBarn HorseBarn { get; set; } = null!;
         public virtual ICollection<Horse> Horses { get; set; } = new List<Horse>();
     }
 

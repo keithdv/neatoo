@@ -10,7 +10,6 @@ namespace Neatoo
     /// <typeparam name="T">Generic to ensure that types can only access their properties</typeparam>
     public interface IRegisteredPropertyManager
     {
-        IRegisteredProperty<P> GetRegisteredProperty<P>(string name);
         IRegisteredProperty GetRegisteredProperty(string name);
         IEnumerable<IRegisteredProperty> GetRegisteredProperties();
     }

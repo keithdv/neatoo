@@ -18,7 +18,7 @@ namespace Neatoo.Core
         {
         }
 
-        public PropertyValue<P> CreatePropertyValue<P>(IRegisteredProperty<P> registeredProperty, P value)
+        public PropertyValue<P> CreatePropertyValue<P>(IRegisteredProperty registeredProperty, P value)
         {
             if(value is IPropertyValue v){
                 v.Name = registeredProperty.Name;
@@ -27,7 +27,7 @@ namespace Neatoo.Core
 
             return new PropertyValue<P>(registeredProperty.Name, value);
         }
-        public ValidatePropertyValue<P> CreateValidatePropertyValue<P>(IRegisteredProperty<P> registeredProperty, P value)
+        public ValidatePropertyValue<P> CreateValidatePropertyValue<P>(IRegisteredProperty registeredProperty, P value)
         {
             if (value is IPropertyValue v)
             {
@@ -38,9 +38,15 @@ namespace Neatoo.Core
             return new ValidatePropertyValue<P>(registeredProperty.Name, value);
         }
 
-        public EditPropertyValue<P> CreateEditPropertyValue<P>(IRegisteredProperty<P> registeredProperty, P value)
+        public EditPropertyValue<P> CreateEditPropertyValue<P>(IRegisteredProperty registeredProperty, P value)
         {
             // TODO: I think this should throw an exception if value is not an EditPropertyValue<P>
+
+            if(!typeof(P).IsGenericType &&                
+                registeredProperty.PropertyInfo.PropertyType.IsGenericType && registeredProperty.PropertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                throw new Exception("Since the property is Nullable, you must define the type of the property in LoadProperty or Set Property, ex LoadProperty<int?>(registeredProperty, value)");
+            }
 
             if (value is IPropertyValue v)
             {

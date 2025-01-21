@@ -17,11 +17,11 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
     public class ShortNameRule : Rules.AsyncRuleBase<IValidateBase>
     {
-        private readonly IRegisteredProperty<string> shortName;
-        private readonly IRegisteredProperty<string> firstName;
-        private readonly IRegisteredProperty<string> lastName;
+        private readonly IRegisteredProperty shortName;
+        private readonly IRegisteredProperty firstName;
+        private readonly IRegisteredProperty lastName;
 
-        public ShortNameRule(IRegisteredProperty<string> shortName, IRegisteredProperty<string> firstName, IRegisteredProperty<string> lastName) : base(shortName, firstName, lastName)
+        public ShortNameRule(IRegisteredProperty shortName, IRegisteredProperty firstName, IRegisteredProperty lastName) : base(shortName, firstName, lastName)
         {
             this.shortName = shortName;
             this.firstName = firstName;
@@ -32,7 +32,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         {
             await Task.Delay(10);
 
-            var sn = $"{ReadProperty(target, firstName)} {ReadProperty(target, lastName)}";
+            var sn = $"{ReadProperty<string>(target, firstName)} {ReadProperty<string>(target, lastName)}";
 
             SetProperty(target, shortName, sn);
 
@@ -49,9 +49,9 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public SharedAsyncRuleObject(IValidateBaseServices<SharedAsyncRuleObject> services) : base(services)
         {
 
-            var fn = services.RegisteredPropertyManager.GetRegisteredProperty<string>(nameof(FirstName));
-            var ln = services.RegisteredPropertyManager.GetRegisteredProperty<string>(nameof(LastName));
-            var sn = services.RegisteredPropertyManager.GetRegisteredProperty<string>(nameof(ShortName));
+            var fn = services.RegisteredPropertyManager.GetRegisteredProperty(nameof(FirstName));
+            var ln = services.RegisteredPropertyManager.GetRegisteredProperty(nameof(LastName));
+            var sn = services.RegisteredPropertyManager.GetRegisteredProperty(nameof(ShortName));
 
             RuleManager.AddRule(new ShortNameRule(sn, fn, ln));
 

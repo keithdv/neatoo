@@ -13,7 +13,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         {
         }
 
-        private IRegisteredProperty<Guid?> IDProperty => GetRegisteredProperty<Guid?>(nameof(ID));
+        private IRegisteredProperty IDProperty => GetRegisteredProperty(nameof(ID));
         public Guid? ID { get => Getter<Guid?>(); set => Setter(value); }
         public Guid GuidCriteria { get => Getter<Guid>(); set => Setter(value); }
         public int IntCriteria { get => Getter<int>(); set => Setter(value); }

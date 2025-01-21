@@ -16,12 +16,10 @@ namespace Neatoo.Rules
 {
 
 
-    public interface IRuleManager // TODO : INotifyPropertyChanged
+    public interface IRuleManager
     {
 
         bool IsValid { get; }
-        bool IsBusy { get; }
-        Task WaitForRules { get; }
         IEnumerable<IRule> Rules { get; }
         IRuleResult OverrideResult { get; }
 
@@ -40,7 +38,7 @@ namespace Neatoo.Rules
 
     }
 
-    public interface IRuleManager<T> : IRuleManager, INotifyPropertyChanged
+    public interface IRuleManager<T> : IRuleManager
     {
         FluentRule<T> AddRule(Func<T, IRuleResult> func, params string[] triggerProperty);
 
@@ -48,7 +46,7 @@ namespace Neatoo.Rules
 
 
     [PortalDataContract]
-    public class RuleManager<T> : IRuleManager<T>, ISetTarget, INotifyPropertyChanged
+    public class RuleManager<T> : IRuleManager<T>, ISetTarget
     {
 
         protected T Target { get; set; }
@@ -59,8 +57,7 @@ namespace Neatoo.Rules
         IRuleResultReadOnlyList IRuleManager.Results => Results.RuleResultList;
 
         protected bool TransferredResults = false;
-        public bool IsBusy => isRunningRules;
-        public bool IsValid => !IsBusy && !Results.Values.Where(r => r.IsError).Any();
+        public bool IsValid => !Results.Values.Where(r => r.IsError).Any();
 
         public RuleManager(IRegisteredPropertyManager<T> registeredPropertyManager)
         {
@@ -82,8 +79,6 @@ namespace Neatoo.Rules
         {
             get { return Results[propertyName]; }
         }
-
-        private ConcurrentQueue<uint> ruleQueue = new ConcurrentQueue<uint>();
 
         protected virtual void AddAttributeRules(IAttributeToRule attributeToRule, IRegisteredPropertyManager<T> registeredPropertyManager)
         {
@@ -136,16 +131,11 @@ namespace Neatoo.Rules
                     }
                 }
 
-                foreach (var index in Rules.Values.Where(r => r.TriggerProperties.Contains(propertyName)).Select(r => r.UniqueIndex))
+                foreach (var rule in Rules.Values.Where(r => r.TriggerProperties.Contains(propertyName)).ToList())
                 {
-                    if (!ruleQueue.Contains(index))
-                    {
-                        // System.Diagnostics.Debug.WriteLine($"Enqueue {propertyName}");
-                        ruleQueue.Enqueue(index);
-                    }
+                    // System.Diagnostics.Debug.WriteLine($"Enqueue {propertyName}");
+                    await RunRule(rule, CancellationToken.None);
                 }
-
-                await CheckRulesQueue();
             }
             else
             {
@@ -162,12 +152,11 @@ namespace Neatoo.Rules
 
                 Results.Clear(); // Cover in case something unexpected has happened like a weird Serialization cover or maybe a Rule that exists on the client or not the server
 
-                foreach (var ruleIndex in Rules.Keys)
+                foreach (var ruleIndex in Rules.ToList())
                 {
-                    ruleQueue.Enqueue(ruleIndex);
+                    await RunRule(ruleIndex.Value, token);
                 }
 
-                await CheckRulesQueue();
 
                 // TODO - This is lazy - we should be able to do this in the CheckRulesQueue
                 if (isValidAtStart != IsValid)
@@ -195,216 +184,211 @@ namespace Neatoo.Rules
 
         public void MarkInvalid(string message)
         {
-            if (cancellationTokenSource != null)
-            {
-                cancellationTokenSource.Cancel();
-            }
-
             Results.OverrideResult = RuleResult.PropertyError(typeof(T).FullName, message);
         }
 
-        public Task WaitForRules => allDoneCompletionSource?.Task ?? Task.CompletedTask;
+        //public Task WaitForRules => allDoneCompletionSource?.Task ?? Task.CompletedTask;
 
-        private class MyTaskCompletionSource
-        {
-            // Be clear which Func<Task, Task> is being used
-            public MyTaskCompletionSource(Func<Task, Task> initialContinueWith)
-            {
-                TaskCompletionSource = new TaskCompletionSource<bool>();
-                ContinueWith = initialContinueWith;
-                TaskCompletionSource.Task.ContinueWith(t =>
-                {
-                    return ContinueWith(t);
-                });
-            }
+        //private class MyTaskCompletionSource
+        //{
+        //    // Be clear which Func<Task, Task> is being used
+        //    public MyTaskCompletionSource(Func<Task, Task> initialContinueWith)
+        //    {
+        //        TaskCompletionSource = new TaskCompletionSource<bool>();
+        //        ContinueWith = initialContinueWith;
+        //        TaskCompletionSource.Task.ContinueWith(t =>
+        //        {
+        //            return ContinueWith(t);
+        //        });
+        //    }
 
-            private TaskCompletionSource<bool> TaskCompletionSource { get; set; }
+        //    private TaskCompletionSource<bool> TaskCompletionSource { get; set; }
 
-            public Task Task => TaskCompletionSource.Task;
+        //    public Task Task => TaskCompletionSource.Task;
 
-            public void SetException(Exception ex)
-            {
-                TaskCompletionSource.SetException(ex);
-            }
+        //    public void SetException(Exception ex)
+        //    {
+        //        TaskCompletionSource.SetException(ex);
+        //    }
 
-            public void SetResult()
-            {
-                TaskCompletionSource.SetResult(true);
-            }
-                // TODO
-            public CancellationTokenSource CancellationTokenSource { get; set; }
-            public Func<Task, Task> ContinueWith { get; set; }
-        }
+        //    public void SetResult()
+        //    {
+        //        TaskCompletionSource.SetResult(true);
+        //    }
+        //        // TODO
+        //    public CancellationTokenSource CancellationTokenSource { get; set; }
+        //    public Func<Task, Task> ContinueWith { get; set; }
+        //}
 
-        private MyTaskCompletionSource firstTaskCompletionSource;
-        private MyTaskCompletionSource lastTaskCompletionSource;
-        private TaskCompletionSource<bool> allDoneCompletionSource;
-        private CancellationTokenSource cancellationTokenSource;
+        //private MyTaskCompletionSource firstTaskCompletionSource;
+        //private MyTaskCompletionSource lastTaskCompletionSource;
+        //private TaskCompletionSource<bool> allDoneCompletionSource;
+        //private CancellationTokenSource cancellationTokenSource;
 
-        private bool isRunningRules = false;
-        private object isRunningRulesLock = new object();
-
-
-        public Task CheckRulesQueue()
-        {
-
-            // Goals
-            // If all the rules are syncronous, run on the same task, when the property setting is finish isbusy=false
-
-            // This method runs rule one at a time
-            // If there is an async rule it waits for the async rule to complete
-            // to run the next rule
-            // If rules lead to more rules the queue will grow and the task
-            // will not be completed until all rules are ran
-
-            // This method does not return a Task
-            // Since we know that rule will be ran in the context of a property change
-            // that cannot be awaited
-            // We leave it up to the caller to await WaitForRules
-
-            if (Target == null) { throw new TargetIsNullException(); }
-
-            // DISCUSS : Runes the rules sequentially - even Async Rules
-            // Make async rules changing properties a non-issue
-
-            lock (isRunningRulesLock)
-            {
-                if (OverrideResult != null)
-                {
-                    return Task.CompletedTask;
-                }
-
-                if (isRunningRules)
-                {
-
-                    var nextTaskCompletionSource = new MyTaskCompletionSource((t) =>
-                    {
-                        if (t.IsFaulted)
-                        {
-                            allDoneCompletionSource.SetException(t.Exception);
-                        }
-                        else
-                        {
-                            allDoneCompletionSource.SetResult(true);
-                        }
-
-                        return allDoneCompletionSource.Task;
-
-                    });
+        //private bool isRunningRules = false;
+        //private object isRunningRulesLock = new object();
 
 
-                    lastTaskCompletionSource.ContinueWith = (t) =>
-                    {
-                        nextTaskCompletionSource.SetResult();
-                        return allDoneCompletionSource.Task;
-                    };
+        //public Task CheckRulesQueue()
+        //{
 
-                    lastTaskCompletionSource = nextTaskCompletionSource;
+        //    // Goals
+        //    // If all the rules are syncronous, run on the same task, when the property setting is finish isbusy=false
 
-                    return nextTaskCompletionSource.Task;
-                }
-                else
-                {
-                    // Start
+        //    // This method runs rule one at a time
+        //    // If there is an async rule it waits for the async rule to complete
+        //    // to run the next rule
+        //    // If rules lead to more rules the queue will grow and the task
+        //    // will not be completed until all rules are ran
 
-                    isRunningRules = true;
+        //    // This method does not return a Task
+        //    // Since we know that rule will be ran in the context of a property change
+        //    // that cannot be awaited
+        //    // We leave it up to the caller to await WaitForRules
 
-                    firstTaskCompletionSource = new MyTaskCompletionSource((t) =>
-                    {
-                        if (t.IsFaulted)
-                        {
-                            allDoneCompletionSource.SetException(t.Exception);
-                        }
-                        else
-                        {
-                            allDoneCompletionSource.SetResult(true);
-                        }
+        //    if (Target == null) { throw new TargetIsNullException(); }
 
-                        return allDoneCompletionSource.Task;
+        //    // DISCUSS : Runes the rules sequentially - even Async Rules
+        //    // Make async rules changing properties a non-issue
 
-                    });
+        //    lock (isRunningRulesLock)
+        //    {
+        //        if (OverrideResult != null)
+        //        {
+        //            return Task.CompletedTask;
+        //        }
 
-                    lastTaskCompletionSource = firstTaskCompletionSource;
-                    allDoneCompletionSource = new TaskCompletionSource<bool>();
+        //        if (isRunningRules)
+        //        {
 
-                }
-            }
+        //            var nextTaskCompletionSource = new MyTaskCompletionSource((t) =>
+        //            {
+        //                if (t.IsFaulted)
+        //                {
+        //                    allDoneCompletionSource.SetException(t.Exception);
+        //                }
+        //                else
+        //                {
+        //                    allDoneCompletionSource.SetResult(true);
+        //                }
 
-            async Task RecursiveCheckRulesQueue()
-            {
-                var token = CancellationToken.None;
+        //                return allDoneCompletionSource.Task;
 
-                var guild = Guid.NewGuid();
-                var ruleQueueCopy = ruleQueue.ToArray();
-
-                while (ruleQueue.TryDequeue(out var ruleIndex))
-                {
-                    // System.Diagnostics.Debug.WriteLine($"Dequeue {propertyName}");
-
-                    var rule = Rules[ruleIndex];
-
-                    var ruleManagerTask = RunRule(Rules[ruleIndex], token);
-
-                    if (!ruleManagerTask.IsCompleted)
-                    {
-
-                        // Really important
-                        // If there there is not an asyncronous fork all of the async methods will run synchronously
-                        // Which is great! Because we are likely within a property change
-                        // However, if there was an asyncronous fork we need to handle it's completion
-                        // WPF is an executable so this will continue "hands off"
-                        // In request response the WaitForRules needs to be awaited!
-                        await ruleManagerTask.ConfigureAwait(false);
+        //            });
 
 
-                        //return; // Let the ContinueWith call CheckRulesQueue again
-                    }
-                }
-            }
+        //            lastTaskCompletionSource.ContinueWith = (t) =>
+        //            {
+        //                nextTaskCompletionSource.SetResult();
+        //                return allDoneCompletionSource.Task;
+        //            };
 
-            var task = RecursiveCheckRulesQueue();
+        //            lastTaskCompletionSource = nextTaskCompletionSource;
 
-            void Completed()
-            {
-                lock (isRunningRulesLock)
-                {
-                    isRunningRules = false;
+        //            return nextTaskCompletionSource.Task;
+        //        }
+        //        else
+        //        {
+        //            // Start
+
+        //            isRunningRules = true;
+
+        //            firstTaskCompletionSource = new MyTaskCompletionSource((t) =>
+        //            {
+        //                if (t.IsFaulted)
+        //                {
+        //                    allDoneCompletionSource.SetException(t.Exception);
+        //                }
+        //                else
+        //                {
+        //                    allDoneCompletionSource.SetResult(true);
+        //                }
+
+        //                return allDoneCompletionSource.Task;
+
+        //            });
+
+        //            lastTaskCompletionSource = firstTaskCompletionSource;
+        //            allDoneCompletionSource = new TaskCompletionSource<bool>();
+
+        //        }
+        //    }
+
+        //    async Task RecursiveCheckRulesQueue()
+        //    {
+        //        var token = CancellationToken.None;
+
+        //        var guild = Guid.NewGuid();
+        //        var ruleQueueCopy = ruleQueue.ToArray();
+
+        //        while (ruleQueue.TryDequeue(out var ruleIndex))
+        //        {
+        //            // System.Diagnostics.Debug.WriteLine($"Dequeue {propertyName}");
+
+        //            var rule = Rules[ruleIndex];
+
+        //            var ruleManagerTask = RunRule(Rules[ruleIndex], token);
+
+        //            if (!ruleManagerTask.IsCompleted)
+        //            {
+
+        //                // Really important
+        //                // If there there is not an asyncronous fork all of the async methods will run synchronously
+        //                // Which is great! Because we are likely within a property change
+        //                // However, if there was an asyncronous fork we need to handle it's completion
+        //                // WPF is an executable so this will continue "hands off"
+        //                // In request response the WaitForRules needs to be awaited!
+        //                await ruleManagerTask.ConfigureAwait(false);
 
 
-                    if (Results.Any(r => r.Value.Exception != null))
-                    {
-                        firstTaskCompletionSource.SetException(new AggregateException(Results.Where(r => r.Value.Exception != null).Select(r => r.Value.Exception)));
-                    }
-                    else
-                    {
-                        firstTaskCompletionSource.SetResult();
-                    }
-                }
-            }
+        //                //return; // Let the ContinueWith call CheckRulesQueue again
+        //            }
+        //        }
+        //    }
 
-            // No async for occured - keep the sync going
-            if (task.IsCompleted)
-            {
-                Completed();
+        //    var task = RecursiveCheckRulesQueue();
 
-                Debug.Assert(!isRunningRules, "All rules should have executed in the loop");
+        //    void Completed()
+        //    {
+        //        lock (isRunningRulesLock)
+        //        {
+        //            isRunningRules = false;
 
-                OnPropertyChanged(nameof(IsBusy));
 
-                return Task.CompletedTask;
-            }
-            else
-            {
-                return task.ContinueWith(t =>
-                {
-                    Completed();
+        //            if (Results.Any(r => r.Value.Exception != null))
+        //            {
+        //                firstTaskCompletionSource.SetException(new AggregateException(Results.Where(r => r.Value.Exception != null).Select(r => r.Value.Exception)));
+        //            }
+        //            else
+        //            {
+        //                firstTaskCompletionSource.SetResult();
+        //            }
+        //        }
+        //    }
 
-                    Debug.Assert(!isRunningRules, "All rules should have executed in the loop");
+        //    // No async for occured - keep the sync going
+        //    if (task.IsCompleted)
+        //    {
+        //        Completed();
 
-                    OnPropertyChanged(nameof(IsBusy));
-                });
-            }
-        }
+        //        Debug.Assert(!isRunningRules, "All rules should have executed in the loop");
+
+        //        OnPropertyChanged(nameof(IsBusy));
+
+        //        return Task.CompletedTask;
+        //    }
+        //    else
+        //    {
+        //        return task.ContinueWith(t =>
+        //        {
+        //            Completed();
+
+        //            Debug.Assert(!isRunningRules, "All rules should have executed in the loop");
+
+        //            OnPropertyChanged(nameof(IsBusy));
+        //        });
+        //    }
+        //}
 
         private async Task RunRule(IRule r, CancellationToken token)
         {
@@ -435,28 +419,34 @@ namespace Neatoo.Rules
                 {
                     result = RuleResult.PropertyError(p, ex.Message, ex);
                 }
+
+                throw;
+            }
+            finally
+            {
+                if (result.IsError)
+                {
+                    result.TriggerProperties = r.TriggerProperties;
+                    Results[(int)r.UniqueIndex] = result;
+                }
+                else if (Results.ContainsKey((int)r.UniqueIndex))
+                {
+                    // Optimized approach for when/if this is serialized
+                    Results.Remove((int)r.UniqueIndex);
+                }
             }
 
-            if (result.IsError)
-            {
-                result.TriggerProperties = r.TriggerProperties;
-                Results[(int)r.UniqueIndex] = result;
-            }
-            else if (Results.ContainsKey((int)r.UniqueIndex))
-            {
-                // Optimized approach for when/if this is serialized
-                Results.Remove((int)r.UniqueIndex);
-            }
+
 
         }
 
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        //public event PropertyChangedEventHandler PropertyChanged;
 
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        //protected virtual void OnPropertyChanged(string propertyName)
+        //{
+        //    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        //}
 
         void ISetTarget.SetTarget(IBase target)
         {

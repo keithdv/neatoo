@@ -72,13 +72,13 @@ namespace Neatoo.Autofac
                 return (string propertyName) => new RequiredRule(propertyName);
             });
 
-            builder.RegisterGeneric(typeof(RegisteredProperty<>)).As(typeof(IRegisteredProperty<>));
+            builder.RegisterType<RegisteredProperty>().As<IRegisteredProperty>().AsSelf();
             builder.Register<CreateRegisteredProperty>(cc =>
             {
                 var scope = cc.Resolve<Func<ILifetimeScope>>();
                 return (propertyInfo) =>
                 {
-                    return (IRegisteredProperty)scope().Resolve(typeof(IRegisteredProperty<>).MakeGenericType(propertyInfo.PropertyType), new TypedParameter(typeof(System.Reflection.PropertyInfo), propertyInfo));
+                    return scope().Resolve<Func<System.Reflection.PropertyInfo, IRegisteredProperty>>()(propertyInfo);
                 };
             });
 

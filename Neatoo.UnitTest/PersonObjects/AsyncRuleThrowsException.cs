@@ -21,13 +21,14 @@ namespace Neatoo.UnitTest.PersonObjects
             TriggerProperties.Add("ThrowException");
         }
 
-        public override Task<IRuleResult> Execute(IValidateAsyncObject target, CancellationToken token)
+        public override async Task<IRuleResult> Execute(IValidateAsyncObject target, CancellationToken token)
         {
-            if(target.ThrowException == "Throw")
+            await Task.Delay(5);
+            if (target.ThrowException == "Throw")
             {
                 throw new Exception("Rule Failed");
             }
-            return Task.FromResult<IRuleResult>(RuleResult.Empty());
+            return RuleResult.Empty();
         }
     }
 }

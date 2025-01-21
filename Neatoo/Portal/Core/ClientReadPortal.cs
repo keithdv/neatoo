@@ -133,21 +133,47 @@ namespace Neatoo.Portal.Core
         {
         }
 
+        protected PortalOperation GetOperation(T target)
+        {
+            if (target.IsChild)
+            {
+                if (target.IsNew)
+                {
+                    return PortalOperation.InsertChild;
+                }
+                else
+                {
+                    return PortalOperation.UpdateChild;
+                }
+            }
+            else
+            {
+                if (target.IsNew)
+                {
+                    return PortalOperation.Insert;
+                }
+                else
+                {
+                    return PortalOperation.Update;
+                }
+            }
+        }
+
         public Task<T> Update(T target)
         {
-            return RequestFromServer(PortalOperation.Update, target);
+            return RequestFromServer(GetOperation(target), target);
         }
         public Task<T> UpdateChild(T target)
         {
-            return RequestFromServer(PortalOperation.UpdateChild, target);
+            return RequestFromServer(GetOperation(target), target);
         }
         public Task<T> Update(T target, params object[] criteria)
         {
-            return RequestFromServer(PortalOperation.Update, target, criteria);
+            return RequestFromServer(GetOperation(target), target, criteria);
         }
         public Task<T> UpdateChild(T target, params object[] criteria)
         {
-            return RequestFromServer(PortalOperation.UpdateChild, target, criteria);
+            return RequestFromServer(GetOperation(target), target, criteria);
         }
     }
 }

@@ -17,10 +17,10 @@ namespace Neatoo.Core
     /// </summary>
     public interface IPropertyValueManager : INotifyPropertyChanged
     {
-        IRegisteredProperty<PV> GetRegisteredProperty<PV>(string name);
-        void LoadProperty<P>(IRegisteredProperty<P> registeredProperty, P newValue);
-        void LoadProperty<P>(IRegisteredProperty<PropertyValue<P>> registeredProperty, PropertyValue<P> newValue);
-        P ReadProperty<P>(IRegisteredProperty<P> registeredProperty);
+        IRegisteredProperty GetRegisteredProperty(string name);
+        void LoadProperty<P>(IRegisteredProperty registeredProperty, P newValue);
+        void LoadProperty<P>(IRegisteredProperty registeredProperty, PropertyValue<P> newValue);
+        P ReadProperty<P>(IRegisteredProperty registeredProperty);
         P ReadProperty<P>(string propertyName);
 
         // This isn't possible without some nasty reflection or static backing fields
@@ -89,12 +89,12 @@ namespace Neatoo.Core
 
         IRegisteredPropertyManager<T> IPropertyValueManager<T>.RegisteredPropertyManager => RegisteredPropertyManager;
 
-        protected override IPropertyValue CreatePropertyValue<PV>(IRegisteredProperty<PV> registeredProperty, PV value)
+        protected override IPropertyValue CreatePropertyValue<PV>(IRegisteredProperty registeredProperty, PV value)
         {
             return Factory.CreatePropertyValue(registeredProperty, value);
         }
 
-        public virtual void LoadProperty<PV>(IRegisteredProperty<PropertyValue<PV>> registeredProperty, PropertyValue<PV> newValue)
+        public virtual void LoadProperty<PV>(IRegisteredProperty registeredProperty, PropertyValue<PV> newValue)
         {
             if (!fieldData.ContainsKey(registeredProperty.Index))
             {
@@ -139,11 +139,11 @@ namespace Neatoo.Core
             Factory = factory;
         }
 
-        protected abstract P CreatePropertyValue<PV>(IRegisteredProperty<PV> registeredProperty, PV value);
+        protected abstract P CreatePropertyValue<PV>(IRegisteredProperty registeredProperty, PV value);
 
-        public IRegisteredProperty<PV> GetRegisteredProperty<PV>(string name)
+        public IRegisteredProperty GetRegisteredProperty(string name)
         {
-            return RegisteredPropertyManager.GetRegisteredProperty<PV>(name);
+            return RegisteredPropertyManager.GetRegisteredProperty(name);
         }
 
         void ISetTarget.SetTarget(IBase target)
@@ -154,10 +154,10 @@ namespace Neatoo.Core
 
         public virtual void LoadProperty<PV>(string name, PV newValue)
         {
-            LoadProperty(GetRegisteredProperty<PV>(name), newValue);
+            LoadProperty(GetRegisteredProperty(name), newValue);
         }
 
-        public virtual void LoadProperty<PV>(IRegisteredProperty<PV> registeredProperty, PV newValue)
+        public virtual void LoadProperty<PV>(IRegisteredProperty registeredProperty, PV newValue)
         {
             Debug.Assert(!(newValue is IPropertyValue), "IPropertyValue has a different call stack");
 
@@ -178,10 +178,10 @@ namespace Neatoo.Core
 
         public PV ReadProperty<PV>(string name)
         {
-            return ReadProperty<PV>(GetRegisteredProperty<PV>(name));
+            return ReadProperty<PV>(GetRegisteredProperty(name));
         }
 
-        public virtual PV ReadProperty<PV>(IRegisteredProperty<PV> registeredProperty)
+        public virtual PV ReadProperty<PV>(IRegisteredProperty registeredProperty)
         {
             if (!fieldData.TryGetValue(registeredProperty.Index, out var value))
             {

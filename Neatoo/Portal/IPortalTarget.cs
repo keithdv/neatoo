@@ -8,7 +8,7 @@ namespace Neatoo.Portal
 {
     public interface IPortalTarget
     {
-        Task<IDisposable> StopAllActions();
+        IDisposable StopAllActions();
         void StartAllActions();
         internal Task PostPortalConstruct();
     }
@@ -22,6 +22,7 @@ namespace Neatoo.Portal
         internal void MarkOld();
 
         internal void MarkUnmodified();
+        internal void MarkModified();
 
         internal void MarkDeleted();
     }

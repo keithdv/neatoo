@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Neatoo.Portal;
 
 namespace Neatoo.Newtonsoft.Json
 {
@@ -68,10 +69,12 @@ namespace Neatoo.Newtonsoft.Json
             var surrogate = serializer.Deserialize<ListBaseSurrogate>(reader);
 
             var list = (IListBase)Scope.Resolve(surrogate.ListType);
-
-            foreach (var i in surrogate.Collection)
+            using(var stopped = ((IPortalEditTarget)list).StopAllActions())
             {
-                list.Add(i);
+                foreach (var i in surrogate.Collection)
+                {
+                    list.Add(i);
+                }
             }
 
             GetListBase(list.GetType()).InvokeMember("PropertyValueManager", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.PropertyValueManager });

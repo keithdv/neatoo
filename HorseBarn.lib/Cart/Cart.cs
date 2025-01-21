@@ -98,6 +98,7 @@ namespace HorseBarn.lib.Cart
         [FetchChild]
         public async Task FetchChild(Dal.Ef.Cart cart, IReadPortalChild<IHorseList<H>> horsePortal)
         {
+            this.Id = cart.Id;
             this.Name = cart.Name;
             this.NumberOfHorses = cart.NumberOfHorses;
             this.HorseList = await horsePortal.FetchChild(cart.Horses);
@@ -120,8 +121,10 @@ namespace HorseBarn.lib.Cart
         }
 
         [UpdateChild]
-        protected async Task Update(Dal.Ef.Cart cart, IReadWritePortalChild<IHorseList<H>> horseList)
+        protected async Task Update(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<IHorseList<H>> horseList)
         {
+            var cart = horseBarn.Carts.First(c => c.Id == this.Id);
+
             Debug.Assert(cart.CartType == cart.CartType, "CartType mismatch");
 
             cart.Name = this.Name;

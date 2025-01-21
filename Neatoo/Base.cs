@@ -43,56 +43,65 @@ namespace Neatoo
         [PortalDataMember]
         public IBase Parent { get; protected set; }
 
-        void ISetParent.SetParent(IBase parent)
+        protected virtual void SetParent(IBase parent)
         {
             Parent = parent;
         }
-
-        protected IRegisteredProperty<PV> GetRegisteredProperty<PV>(string name)
+        void ISetParent.SetParent(IBase parent)
         {
-            return PropertyValueManager.GetRegisteredProperty<PV>(name);
+            SetParent(parent);
+        }
+
+        protected IRegisteredProperty GetRegisteredProperty(string name)
+        {
+            return PropertyValueManager.GetRegisteredProperty(name);
         }
 
         protected virtual P Getter<P>([System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
         {
-            return ReadProperty<P>(GetRegisteredProperty<P>(propertyName));
+            return ReadProperty<P>(GetRegisteredProperty(propertyName));
         }
 
 
         protected virtual void Setter<P>(P value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
         {
-            LoadProperty(GetRegisteredProperty<P>(propertyName), value);
+            LoadProperty(GetRegisteredProperty(propertyName), value);
         }
 
         protected virtual void Setter<P>(PropertyValue<P> value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
         {
             //I can't throw the propertyvalue away in case they are using it for something else
             // I just need to ensure it is the right case and if it is not use CreatePropertyInfo in the factory
-            LoadProperty(GetRegisteredProperty<PropertyValue<P>>(propertyName), value);
+            LoadProperty(GetRegisteredProperty(propertyName), value);
         }
 
-        protected virtual P ReadProperty<P>(IRegisteredProperty<P> property)
+        protected virtual P ReadProperty<P>(IRegisteredProperty property)
         {
             return PropertyValueManager.ReadProperty<P>(property);
         }
 
-        protected virtual void LoadProperty<P>(IRegisteredProperty<P> registeredProperty, P value)
+        protected virtual void LoadProperty<P>(string propertyName, P value)
+        {
+            LoadProperty(GetRegisteredProperty(propertyName), value);
+        }
+
+        protected virtual void LoadProperty<P>(IRegisteredProperty registeredProperty, P value)
         {
             PropertyValueManager.LoadProperty(registeredProperty, value);
         }
 
-        protected virtual void LoadProperty<P>(IRegisteredProperty<PropertyValue<P>> registeredProperty, PropertyValue<P> value)
+        protected virtual void LoadProperty<P>(IRegisteredProperty registeredProperty, PropertyValue<P> value)
         {
             PropertyValueManager.LoadProperty(registeredProperty, value);
         }
 
         public bool IsStopped { get; protected set; }
 
-        public virtual Task<IDisposable> StopAllActions()
+        public virtual IDisposable StopAllActions()
         {
-            if (IsStopped) { return Task.FromResult<IDisposable>(null); } // You are a nested using; You get nothing!!
+            if (IsStopped) { return null; } // You are a nested using; You get nothing!!
             IsStopped = true;
-            return Task.FromResult<IDisposable>(new Core.Stopped(this));
+            return new Core.Stopped(this);
         }
 
         public void StartAllActions()
@@ -103,7 +112,7 @@ namespace Neatoo
             }
         }
 
-        Task<IDisposable> IPortalTarget.StopAllActions()
+        IDisposable IPortalTarget.StopAllActions()
         {
             return StopAllActions();
         }
@@ -123,17 +132,17 @@ namespace Neatoo
             return Task.CompletedTask;
         }
 
-        P IRegisteredPropertyAccess.ReadProperty<P>(IRegisteredProperty<P> registeredProperty)
+        P IRegisteredPropertyAccess.ReadProperty<P>(IRegisteredProperty registeredProperty)
         {
-            return PropertyValueManager.ReadProperty(registeredProperty);
+            return PropertyValueManager.ReadProperty<P>(registeredProperty);
         }
                
-        void IRegisteredPropertyAccess.SetProperty<P>(IRegisteredProperty<P> registeredProperty, P value)
+        void IRegisteredPropertyAccess.SetProperty<P>(IRegisteredProperty registeredProperty, P value)
         {
             PropertyValueManager.LoadProperty(registeredProperty, value);
         }
 
-        void IRegisteredPropertyAccess.LoadProperty<P>(IRegisteredProperty<P> registeredProperty, P value)
+        void IRegisteredPropertyAccess.LoadProperty<P>(IRegisteredProperty registeredProperty, P value)
         {
             PropertyValueManager.LoadProperty(registeredProperty, value);
         }

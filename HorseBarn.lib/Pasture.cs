@@ -67,7 +67,6 @@ namespace HorseBarn.lib
             await horseListPortal.UpdateChild(HorseList, pasture);
         }
 
-
 #endif
 
     }

@@ -94,12 +94,37 @@ namespace HorseBarn.lib.Horse
         }
 
         [UpdateChild]
-        protected void Update(Dal.Ef.Horse horse)
+        protected void Update(Dal.Ef.Pasture pasture)
         {
-            Debug.Assert(horse.Id == this.Id, "Unexpected Id");
+            var horse = pasture.Horses.First(h => h.Id == this.Id);
+
             horse.BirthDate = this.BirthDate;
             horse.Breed = (int)this.Breed;
             horse.Name = this.Name;
+        }
+
+        [UpdateChild]
+        protected void Update(Dal.Ef.Cart cart)
+        {
+            var horse = cart.Horses.First(h => h.Id == this.Id);
+
+            horse.BirthDate = this.BirthDate;
+            horse.Breed = (int)this.Breed;
+            horse.Name = this.Name;
+        }
+
+        [DeleteChild]
+        protected void Delete(Dal.Ef.Cart cart)
+        {
+            var horse = cart.Horses.First(h => h.Id == this.Id);
+            cart.Horses.Remove(horse);
+        }
+
+        [DeleteChild]
+        protected void Delete(Dal.Ef.Pasture pasture)
+        {
+            var horse = pasture.Horses.First(h => h.Id == this.Id);
+            pasture.Horses.Remove(horse);
         }
 #endif
     }

@@ -34,7 +34,7 @@ namespace Neatoo.UnitTest.EditBaseTests
         }
 
         public int DeletedCount => DeletedList.Count;
-        private IRegisteredProperty<Guid> IdProperty => GetRegisteredProperty<Guid>(nameof(Id));
+        private IRegisteredProperty IdProperty => GetRegisteredProperty(nameof(Id));
         public Guid Id { get { return Getter<Guid>(); } }
 
         public string FirstName { get { return Getter<string>(); } set { Setter(value); } }

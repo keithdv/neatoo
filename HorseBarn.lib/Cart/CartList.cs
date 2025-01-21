@@ -48,16 +48,6 @@ namespace HorseBarn.lib.Cart
 
 #if !CLIENT
 
-        [InsertChild]
-        [UpdateChild]
-        public async Task InsertChild(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<ICart> cartPortal)
-        {
-            foreach (var cart in this)
-            {
-                await cartPortal.UpdateChild(cart, horseBarn);
-            }
-        }
-
         [FetchChild]
         public async Task FetchChild(ICollection<Dal.Ef.Cart> carts, IReadPortalChild<IRacingChariot> racingChariotPortal, IReadPortalChild<IWagon> wagonPortal)
         {

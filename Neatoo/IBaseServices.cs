@@ -39,7 +39,7 @@ namespace Neatoo
 
         private IRegisteredProperty CreateRegisteredProperty(PropertyInfo propertyInfo)
         {
-            return (IRegisteredProperty)Activator.CreateInstance(typeof(RegisteredProperty<>).MakeGenericType(propertyInfo.PropertyType), propertyInfo);
+            return (IRegisteredProperty)Activator.CreateInstance(typeof(RegisteredProperty), propertyInfo);
         }
 
         public IPropertyValueManager<T> PropertyValueManager { get; }

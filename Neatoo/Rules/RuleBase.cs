@@ -108,12 +108,12 @@ namespace Neatoo.Rules
             return ReadPropertyValue(target, propertyName)?.Value;
         }
 
-        protected P ReadProperty<P>(T target, IRegisteredProperty<P> registeredProperty)
+        protected P ReadProperty<P>(T target, IRegisteredProperty registeredProperty)
         {
-            return ToPropertyAccessor(target).ReadProperty(registeredProperty);
+            return ToPropertyAccessor(target).ReadProperty<P>(registeredProperty);
         }
 
-        protected void SetProperty<P>(T target, IRegisteredProperty<P> registeredProperty, P value)
+        protected void SetProperty<P>(T target, IRegisteredProperty registeredProperty, P value)
         {
             ToPropertyAccessor(target).SetProperty(registeredProperty, value);
         }
@@ -125,7 +125,7 @@ namespace Neatoo.Rules
         /// <param name="target"></param>
         /// <param name="registeredProperty"></param>
         /// <param name="value"></param>
-        protected void LoadProperty<P>(T target, IRegisteredProperty<P> registeredProperty, P value)
+        protected void LoadProperty<P>(T target, IRegisteredProperty registeredProperty, P value)
         {
             ToPropertyAccessor(target).LoadProperty(registeredProperty, value);
         }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -83,7 +84,7 @@ namespace Neatoo.Core
 
         }
 
-        protected override IEditPropertyValue CreatePropertyValue<PV>(IRegisteredProperty<PV> registeredProperty, PV value)
+        protected override IEditPropertyValue CreatePropertyValue<PV>(IRegisteredProperty registeredProperty, PV value)
         {
             return Factory.CreateEditPropertyValue(registeredProperty, value);
         }
@@ -101,7 +102,7 @@ namespace Neatoo.Core
             }
         }
 
-        public virtual void LoadProperty<PV>(IRegisteredProperty<PropertyValue<PV>> registeredProperty, PropertyValue<PV> newValue)
+        public virtual void LoadProperty<PV>(IRegisteredProperty registeredProperty, PropertyValue<PV> newValue)
         {
             if (!fieldData.ContainsKey(registeredProperty.Index))
             {

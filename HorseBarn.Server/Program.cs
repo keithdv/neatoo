@@ -3,6 +3,7 @@ using Autofac;
 using HorseBarn.lib;
 using System.Reflection;
 using Neatoo.Autofac;
+using HorseBarn.Dal.Ef;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,7 @@ builder.Host
     .UseServiceProviderFactory(new AutofacServiceProviderFactory())
     .ConfigureContainer<ContainerBuilder>((container) =>
     {
+        container.RegisterType<HorseBarnContext>().AsSelf().InstancePerLifetimeScope();
         container.RegisterModule(new Neatoo.Autofac.NeatooCoreModule(Neatoo.Autofac.Portal.Local));
         container.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));
     });

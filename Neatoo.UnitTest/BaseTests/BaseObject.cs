@@ -49,7 +49,7 @@ namespace Neatoo.UnitTest.BaseTests
             set { Setter(value); }
         }
 
-        private IRegisteredProperty<IA> TestPropertyTypeProperty => GetRegisteredProperty<IA>(nameof(TestPropertyType));
+        private IRegisteredProperty TestPropertyTypeProperty => GetRegisteredProperty(nameof(TestPropertyType));
         public IA TestPropertyType
         {
             get { return Getter<IA>(); }

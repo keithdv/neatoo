@@ -16,6 +16,7 @@ namespace Neatoo
 
     public interface IEditMetaProperties : IValidateMetaProperties
     {
+        bool IsChild { get; }
         bool IsModified { get; }
         bool IsSelfModified { get; }
         bool IsNew { get; }

@@ -11,9 +11,4 @@ namespace Neatoo
         string Key { get; }
         uint Index { get; }
     }
-
-    public interface IRegisteredProperty<T> : IRegisteredProperty
-    {
-
-    }
 }

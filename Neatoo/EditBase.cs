@@ -20,8 +20,9 @@ namespace Neatoo
             ReadWritePortal = services.ReadWritePortal;
         }
 
-        public bool IsModified => PropertyValueManager.IsModified || IsDeleted || IsNew;
-        public bool IsSelfModified => PropertyValueManager.IsSelfModified || IsDeleted;
+        protected bool SetModified { get; set; } = false;
+        public bool IsModified => PropertyValueManager.IsModified || IsDeleted;
+        public bool IsSelfModified => PropertyValueManager.IsSelfModified || IsDeleted || SetModified;
         public bool IsSavable => IsModified && IsValid && !IsBusy && !IsChild;
         [PortalDataMember]
         public bool IsNew { get; protected set; }
@@ -31,6 +32,8 @@ namespace Neatoo
         [PortalDataMember]
         public bool IsChild { get; protected set; }
         protected IReadWritePortal<T> ReadWritePortal { get; }
+
+
 
         protected virtual void MarkAsChild()
         {
@@ -42,15 +45,27 @@ namespace Neatoo
             MarkAsChild();
         }
 
+        // TODO - Recursive set clean for all children
         protected virtual void MarkUnmodified()
         {
             // TODO : What if busy??
             PropertyValueManager.MarkSelfUnmodified();
+            SetModified = false;
         }
 
         void IPortalEditTarget.MarkUnmodified()
         {
             MarkUnmodified();
+        }
+
+        protected virtual void MarkModified()
+        {
+            SetModified = true;
+        }
+
+        void IPortalEditTarget.MarkModified()
+        {
+            MarkModified();
         }
 
         protected virtual void MarkNew()
@@ -87,6 +102,14 @@ namespace Neatoo
         {
             MarkDeleted();
         }
+
+        public void UnDelete()
+        {
+            if (IsDeleted)
+            {
+                IsDeleted = false;
+            }
+        }
         
         async Task<I> IEditBase.SaveRetrieve<I>()
         {
@@ -110,7 +133,7 @@ namespace Neatoo
                 {
                     throw new Exception("Object is not valid and cannot be saved.");
                 }
-                if (!IsModified)
+                if (!(IsModified || IsSelfModified))
                 {
                     throw new Exception("Object has not been modified.");
                 }
@@ -123,7 +146,6 @@ namespace Neatoo
 
             return await ReadWritePortal.Update((T)this);
         }
-
 
     }
 

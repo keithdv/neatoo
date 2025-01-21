@@ -49,49 +49,70 @@ namespace HorseBarn.WPF.ViewModels
         protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
         {
             await base.OnInitializeAsync(cancellationToken);
-            HorseBarn = await readWritePortalHorseBarn.Create();
 
-            var horseCriteria = await horseCriteriaPortal.Create();
-            horseCriteria.Name = "Secretariat";
-            horseCriteria.Breed = Breed.Clydesdale;
-            horseCriteria.BirthDay = new DateOnly(2010, 1, 1);
+            HorseBarn = await readWritePortalHorseBarn.Fetch();
 
-            await HorseBarn.AddNewHorse(horseCriteria);
+            // TODO - Improve fetch when the object is not found
+            // how does CSLA handle this?
+            if (HorseBarn.Pasture is null)
+            {
+                HorseBarn = await readWritePortalHorseBarn.Create();
 
-            horseCriteria = await horseCriteriaPortal.Create();
-            horseCriteria.Name = "Seattle Slew";
-            horseCriteria.Breed = Breed.Clydesdale;
-            horseCriteria.BirthDay = new DateOnly(2000, 1, 1);
+                var horseCriteria = await horseCriteriaPortal.Create();
+                horseCriteria.Name = "Secretariat";
+                horseCriteria.Breed = Breed.Clydesdale;
+                horseCriteria.BirthDay = new DateOnly(2010, 1, 1);
 
-            await HorseBarn.AddNewHorse(horseCriteria);
+                await HorseBarn.AddNewHorse(horseCriteria);
 
-            horseCriteria = await horseCriteriaPortal.Create();
-            horseCriteria.Name = "Speedy";
-            horseCriteria.Breed = Breed.Thoroughbred;
-            horseCriteria.BirthDay = new DateOnly(2010, 1, 1);
+                horseCriteria = await horseCriteriaPortal.Create();
+                horseCriteria.Name = "Seattle Slew";
+                horseCriteria.Breed = Breed.Clydesdale;
+                horseCriteria.BirthDay = new DateOnly(2000, 1, 1);
 
-            await HorseBarn.AddNewHorse(horseCriteria);
+                await HorseBarn.AddNewHorse(horseCriteria);
 
-            horseCriteria = await horseCriteriaPortal.Create();
-            horseCriteria.Name = "Flash";
-            horseCriteria.Breed = Breed.Mustang;
-            horseCriteria.BirthDay = new DateOnly(2015, 1, 1);
+                horseCriteria = await horseCriteriaPortal.Create();
+                horseCriteria.Name = "Speedy";
+                horseCriteria.Breed = Breed.Thoroughbred;
+                horseCriteria.BirthDay = new DateOnly(2010, 1, 1);
 
-            await HorseBarn.AddNewHorse(horseCriteria);
+                await HorseBarn.AddNewHorse(horseCriteria);
 
+                horseCriteria = await horseCriteriaPortal.Create();
+                horseCriteria.Name = "Flash";
+                horseCriteria.Breed = Breed.Mustang;
+                horseCriteria.BirthDay = new DateOnly(2015, 1, 1);
+
+                await HorseBarn.AddNewHorse(horseCriteria);
+
+
+                ICart cart = await HorseBarn.AddRacingChariot();
+                cart.NumberOfHorses = 2;
+                cart.Name = "Racing Chariot A";
+
+                cart = await HorseBarn.AddWagon();
+                cart.NumberOfHorses = 2;
+                cart.Name = "Wagon A";
+
+
+
+                HorseBarn = await HorseBarn.SaveRetrieve<IHorseBarn>();
+            }
+
+            LoadHorseBarn();
+
+        }
+
+        private void LoadHorseBarn()
+        {
             Horses_CollectionChanged(this, null);
             HorseBarn.Pasture.Horses.CollectionChanged += Horses_CollectionChanged;
 
-            ICart cart = await HorseBarn.AddRacingChariot();
-            cart.NumberOfHorses = 2;
-            cart.Name = "Racing Chariot A";
-
-            cart = await HorseBarn.AddWagon();
-            cart.NumberOfHorses = 2;
-            cart.Name = "Wagon A";
-
             HorseBarn.Carts.CollectionChanged += Carts_CollectionChanged;
             Carts_CollectionChanged(null, null);
+
+            NotifyOfPropertyChange(nameof(HorseBarn));
         }
 
         private void Carts_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -135,6 +156,14 @@ namespace HorseBarn.WPF.ViewModels
             {
                 await HorseBarn.MoveHorseToPasture(horseViewModel.Horse);
             }
+        }
+
+        public async Task Save()
+        {
+            HorseBarn.Pasture.Horses.CollectionChanged -= Horses_CollectionChanged;
+            HorseBarn.Carts.CollectionChanged -= Carts_CollectionChanged;
+            HorseBarn = await HorseBarn.SaveRetrieve<IHorseBarn>();
+            LoadHorseBarn();
         }
 
         //public void HandleDragOver(object source, DragEventArgs e)

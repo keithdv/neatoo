@@ -28,7 +28,7 @@ namespace Neatoo
     }
 
     [PortalDataContract]
-    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged,  IRegisteredPropertyAccess
+    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IRegisteredPropertyAccess
         where T : ValidateBase<T>
     {
 
@@ -42,16 +42,15 @@ namespace Neatoo
         {
             this.RuleManager = services.RuleManager;
             ((ISetTarget)this.RuleManager).SetTarget(this);
-            this.RuleManager.PropertyChanged += OnRuleManagerPropertyChanged;
         }
 
         public bool IsValid => RuleManager.IsValid && PropertyValueManager.IsValid;
 
         public bool IsSelfValid => RuleManager.IsValid;
 
-        public bool IsSelfBusy => RuleManager.IsBusy;
+        public bool IsSelfBusy => !AsyncTaskSequencer.AllDone.IsCompleted;
 
-        public bool IsBusy => RuleManager.IsBusy || PropertyValueManager.IsBusy;
+        public bool IsBusy => IsSelfBusy || PropertyValueManager.IsBusy;
 
         protected override void Setter<P>(P value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
         {
@@ -61,13 +60,42 @@ namespace Neatoo
             }
             else
             {
-                LoadProperty(GetRegisteredProperty<P>(propertyName), value);
+                LoadProperty(GetRegisteredProperty(propertyName), value);
             }
         }
 
-        protected virtual async Task SetProperty<P>(string propertyName, P value)
+        // TODO: Inject
+        protected AsyncTaskSequencer AsyncTaskSequencer { get; set; } = new AsyncTaskSequencer();
+
+        protected virtual void SetProperty<P>(string propertyName, P value)
         {
-            if(await PropertyValueManager.SetProperty(GetRegisteredProperty<P>(propertyName), value))
+            
+            if (!AsyncTaskSequencer.IsRunning)
+            {
+                var state = (IsValid, IsSelfValid, IsBusy, IsSelfBusy);
+
+                AsyncTaskSequencer.OnCompleted = () =>
+                {
+                    if (state.IsValid != IsValid)
+                    {
+                        PropertyHasChanged(nameof(IsValid));
+                    }
+                    if (state.IsSelfValid != IsSelfValid)
+                    {
+                        PropertyHasChanged(nameof(IsSelfValid));
+                    }
+                    if (state.IsSelfBusy)
+                    {
+                        PropertyHasChanged(nameof(IsSelfBusy));
+                    }
+                    if (state.IsBusy)
+                    {
+                        PropertyHasChanged(nameof(IsBusy));
+                    }
+                };
+            }
+
+            if (PropertyValueManager.SetProperty(propertyName, value))
             {
                 // TODO: Allow the consumer more control of PropertyValue<> and ValidatePropertyValue<>
                 // Assume that if they're working directly with ValidatePropertyValue
@@ -78,46 +106,23 @@ namespace Neatoo
                 PropertyHasChanged(propertyName);
                 //}
 
+                var isRunning = AsyncTaskSequencer.IsRunning;
+
                 // Sync Rules Only - Sync Properties Only
                 // Sync Rules Only - Async Properties (IsBusy = true, WaitForRules works)
                 // Async Rule - Sync Property Only (IsBusy = true, WaitForRules Works)
                 // Async Rule - Async Property (IsBusy = true, WaitForRules works)
-                await CheckRules(propertyName);
+                AsyncTaskSequencer.AddTask(() => CheckRules(propertyName));
+
+                if (!isRunning && AsyncTaskSequencer.IsRunning)
+                {
+                    PropertyHasChanged(nameof(IsSelfBusy));
+                    PropertyHasChanged(nameof(IsBusy));
+                }
             }
-
-
-            //if (await PropertyValueManager.SetProperty(GetRegisteredProperty<P>(propertyName), value))
-            //{
-
-            //    // Make sure if there's a UI thread the task is continued on the UI thread
-            //    // What's happening is multiple threads are awaiting the RulesManager.waitForRulesSource.Task
-            //    // So when that's completed multiple threads take off and raise the PropertyChanged event
-
-            //    // To see, remove it and play with Cart.NumberOfHorses in the Horse and Cart example
-            //    // Parrallel exection of property changed event causes havoc
-
-            //    // See https://blog.stephencleary.com/2023/11/configureawait-in-net-8.html
-            //    // Since I'm not awaiting the task, I need to specify ConfigureAwait(true) to ensure the continuation is on the UI thread
-
-            //    // This also means that it's possible to get a different behavior in a unit test
-            //    // If you do, please let me (Keith Voels) know!!
-            //    var task = CheckRules(propertyName);
-
-            //        task
-            //        .ConfigureAwait(true).GetAwaiter()
-            //        .OnCompleted(async () =>
-            //        {
-            //            if (task.IsFaulted)
-            //            {
-            //                MarkInvalid(task.Exception.Message);
-            //            }
-            //            Debug.Assert(!IsBusy, "All rules should have executed by the time we raise any async forked property change events");
-            //            await PropertyHasChanged(propertyName);
-            //        });
-            //}
         }
 
-        void IRegisteredPropertyAccess.SetProperty<P>(IRegisteredProperty<P> registeredProperty, P value)
+        void IRegisteredPropertyAccess.SetProperty<P>(IRegisteredProperty registeredProperty, P value)
         {
             PropertyValueManager.SetProperty(registeredProperty, value);
         }
@@ -137,7 +142,7 @@ namespace Neatoo
 
         public virtual Task WaitForRules()
         {
-            return Task.WhenAll([RuleManager.WaitForRules, PropertyValueManager.WaitForRules()]);
+            return Task.WhenAll([AsyncTaskSequencer.AllDone, PropertyValueManager.WaitForRules()]);
         }
 
         public IRuleResultReadOnlyList RuleResultList => RuleManager.Results;
@@ -154,10 +159,9 @@ namespace Neatoo
             RuleManager.MarkInvalid(message);
         }
 
-        public override async Task<IDisposable> StopAllActions()
+        public override IDisposable StopAllActions()
         {
-            var result = await base.StopAllActions();
-            await WaitForRules();
+            var result = base.StopAllActions();
             return result;
         }
 
@@ -182,15 +186,6 @@ namespace Neatoo
         protected async Task CreateChild()
         {
             await CheckAllSelfRules();
-        }
-
-
-        public void OnRuleManagerPropertyChanged(object sender, PropertyChangedEventArgs eventArgs)
-        {
-            PropertyHasChanged(nameof(IsSelfValid));
-            PropertyHasChanged(nameof(IsValid));
-            PropertyHasChanged(nameof(IsSelfBusy));
-            PropertyHasChanged(nameof(IsBusy));
         }
     }
 }

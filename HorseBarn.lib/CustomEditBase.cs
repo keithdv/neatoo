@@ -35,7 +35,9 @@ namespace HorseBarn.lib
 
             if (sender is IdPropertyChangedBase id && e.PropertyName == nameof(IdPropertyChangedBase.Id))
             {
-                this.Id = ((IdPropertyChangedBase)sender).Id;
+                // If the normal setting is used sets to IsModified = true
+                // TODO: Anyway to not have to define <int?> ??
+                this.LoadProperty<int?>(nameof(Id), ((IdPropertyChangedBase)sender).Id);
                 id.PropertyChanged -= HandleIdPropertyChanged;
             }
         }

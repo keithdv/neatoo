@@ -108,10 +108,18 @@ namespace HorseBarn.lib
                                 IReadPortalChild<IPasture> pasturePortal,
                                 IReadPortalChild<ICartList> cartPortal)
         {
-            var horseBarn = await horseBarnContext.HorseBarns.FirstAsync();
-            this.Id = horseBarn.Id;
-            this.Pasture = await pasturePortal.FetchChild(horseBarn.Pasture);
-            this.Carts = await cartPortal.FetchChild(horseBarn.Carts);
+            //await horseBarnContext.Horses.ExecuteDeleteAsync();
+            //await horseBarnContext.Carts.ExecuteDeleteAsync();
+            //await horseBarnContext.Pastures.ExecuteDeleteAsync();
+            //await horseBarnContext.HorseBarns.ExecuteDeleteAsync();
+            //return;
+            var horseBarn = await horseBarnContext.HorseBarns.FirstOrDefaultAsync();
+            if (horseBarn != null)
+            {
+                this.Id = horseBarn.Id;
+                this.Pasture = await pasturePortal.FetchChild(horseBarn.Pasture);
+                this.Carts = await cartPortal.FetchChild(horseBarn.Carts);
+            }
         }
 
         [Insert]
@@ -137,8 +145,16 @@ namespace HorseBarn.lib
                                 IReadWritePortalChild<ICartList> cartPortal)
         {
             var horseBarn = await horseBarnContext.HorseBarns.FirstAsync(hb => hb.Id == this.Id);
-            await pasturePortal.UpdateChild(this.Pasture, horseBarn.Pasture);
-            await cartPortal.UpdateChild(this.Carts, horseBarn.Carts);
+            if (this.Pasture.IsModified)
+            {
+                await pasturePortal.UpdateChild(this.Pasture, horseBarn.Pasture);
+            }
+
+            if (this.Carts.IsModified)
+            {
+                await cartPortal.UpdateChild(this.Carts, horseBarn);
+            }
+
             await horseBarnContext.SaveChangesAsync();
         }
 

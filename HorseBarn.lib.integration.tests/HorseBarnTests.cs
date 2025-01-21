@@ -108,11 +108,9 @@ namespace HorseBarn.lib.integration.tests
             var pasture = await horseBarnContext.Pastures.ToListAsync();
             Assert.AreEqual(pasture.Single().Id, horseBarn.Pasture.Id);
 
-
             horseBarn = await portal.Fetch();
 
             await AddCartToHorseBarch();
-
 
             foreach (var item in horseBarn.Horses)
             {
@@ -121,9 +119,13 @@ namespace HorseBarn.lib.integration.tests
 
             var horseNames = horseBarn.Horses.Select(h => h.Name).ToList();
 
-            await horseBarn.Save();
+            // Mix of Inserts and Updates
+            horseBarn = await horseBarn.SaveRetrieve<IHorseBarn>();
 
-            CollectionAssert.AreEquivalent(horseNames, horseBarn.Horses.Select(h => h.Name).ToList());
+            Assert.IsFalse(horseBarn.IsModified); // TODO
+            CollectionAssert.AreEquivalent(horseNames, horseBarnContext.Horses.Select(h => h.Name).ToList());
+            CollectionAssert.AreEquivalent(horseBarn.Carts.Select(c => c.Id).ToList(), horseBarnContext.Carts.Select(c => c.Id).ToList());
+            Assert.AreEqual(horseBarn.Pasture.Id, horseBarnContext.Pastures.Single().Id);
         }
 
         [TestMethod]

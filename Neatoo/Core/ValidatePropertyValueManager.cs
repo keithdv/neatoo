@@ -17,8 +17,8 @@ namespace Neatoo.Core
         bool IsBusy { get; }
         Task CheckAllRules(CancellationToken token);
         Task WaitForRules();
-        Task<bool> SetProperty<P>(IRegisteredProperty<P> registeredProperty, P newValue);
-
+        bool SetProperty<P>(string propertyName, P newValue);
+        bool SetProperty<P>(IRegisteredProperty propertyName, P newValue);
 
     }
 
@@ -105,13 +105,13 @@ namespace Neatoo.Core
 
         }
 
-        protected override IValidatePropertyValue CreatePropertyValue<PV>(IRegisteredProperty<PV> registeredProperty, PV value)
+        protected override IValidatePropertyValue CreatePropertyValue<PV>(IRegisteredProperty registeredProperty, PV value)
         {
             return Factory.CreateValidatePropertyValue(registeredProperty, value);
         }
 
 
-        public virtual void LoadProperty<PV>(IRegisteredProperty<PropertyValue<PV>> registeredProperty, PropertyValue<PV> newValue)
+        public virtual void LoadProperty<PV>(IRegisteredProperty registeredProperty, PropertyValue<PV> newValue)
         {
             if (!fieldData.ContainsKey(registeredProperty.Index))
             {
@@ -153,12 +153,12 @@ namespace Neatoo.Core
             return Task.WhenAll(tasks.Where(t => t != null));
         }
 
-        public virtual Task<bool> SetProperty<PV>(string name, PV newValue)
+        public virtual bool SetProperty<PV>(string name, PV newValue)
         {
-            return SetProperty(GetRegisteredProperty<PV>(name), newValue);
+            return SetProperty(GetRegisteredProperty(name), newValue);
         }
 
-        public virtual async Task<bool> SetProperty<PV>(IRegisteredProperty<PV> registeredProperty, PV newValue)
+        public virtual bool SetProperty<PV>(IRegisteredProperty registeredProperty, PV newValue)
         {
             if (!fieldData.TryGetValue(registeredProperty.Index, out var value))
             {

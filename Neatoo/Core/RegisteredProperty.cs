@@ -21,16 +21,13 @@ namespace Neatoo.Core
         }
     }
 
-    public class RegisteredProperty<T> : IRegisteredProperty, IRegisteredProperty<T>
+    public class RegisteredProperty : IRegisteredProperty
     {
 
         public RegisteredProperty(PropertyInfo propertyInfo)
         {
             this.PropertyInfo = propertyInfo;
             this.Index = RegisteredPropertyIndex.StaticIndex;
-#if DEBUG
-            if (propertyInfo.PropertyType != typeof(T)) { throw new Exception($"{propertyInfo.PropertyType.FullName} is not {typeof(T).FullName}"); }
-#endif
         }
 
         public PropertyInfo PropertyInfo { get; }

@@ -173,7 +173,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         {
             var ruleCount = validate.RuleRunCount;
             await validate.CheckAllSelfRules();
-            Assert.AreEqual(ruleCount + 2, validate.RuleRunCount);
+            Assert.AreEqual(ruleCount + 3, validate.RuleRunCount);
         }
 
         [TestMethod]
@@ -182,7 +182,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             var ruleCount = validate.RuleRunCount;
             validate.Age = 10;
             await validate.CheckAllRules();
-            Assert.AreEqual(ruleCount + 2, validate.RuleRunCount);
+            Assert.AreEqual(ruleCount + 3, validate.RuleRunCount);
         }
 
 
@@ -210,8 +210,9 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsFalse(propertyChangedCalls.Contains(nameof(validate.IsValid)));
             Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsValid)));
             Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
-            Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsBusy)));
-            Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsSelfBusy)));
+            // No async rules - so never busy
+            Assert.IsFalse(childPropertyChangedCalls.Contains(nameof(validate.IsBusy)));
+            Assert.IsFalse(childPropertyChangedCalls.Contains(nameof(validate.IsSelfBusy)));
         }
 
         [TestMethod]
@@ -259,8 +260,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         [TestMethod]
         public void ValidateBase_ThrowsException()
         {
-            validate.FirstName = "Throw";
-
+            Assert.ThrowsException<AggregateException>(() => validate.FirstName = "Throw");
         }
     }
 }

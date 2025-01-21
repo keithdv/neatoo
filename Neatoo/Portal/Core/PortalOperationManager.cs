@@ -112,6 +112,10 @@ namespace Neatoo.Portal.Core
                     {
                         return m;
                     }
+                    else if (parameters.Count() == 1 && parameters[0].ParameterType == typeof(object[]))
+                    {
+                        matchingMethod = m;
+                    }
                     else if (criteriaTypes.Any() && parameters.Any() && parameters.Count() >= criteriaTypes.Count())
                     {
 
@@ -150,7 +154,6 @@ namespace Neatoo.Portal.Core
 
                             matchingMethod = m;
                         }
-
                     }
                 }
             }
@@ -177,9 +180,9 @@ namespace Neatoo.Portal.Core
 
             IDisposable stopAllActions = null;
 
-            if(target is IPortalTarget portalTarget)
+            if (target is IPortalTarget portalTarget)
             {
-                stopAllActions = await portalTarget.StopAllActions();
+                stopAllActions = portalTarget.StopAllActions();
             }
 
             using (stopAllActions)
@@ -215,6 +218,7 @@ namespace Neatoo.Portal.Core
                         invoked = true;
 
                         var result = method.Invoke(target, parameterValues);
+
                         if (method.ReturnType == typeof(Task))
                         {
                             await (Task)result;
@@ -236,7 +240,7 @@ namespace Neatoo.Portal.Core
             IDisposable stopAllActions = null;
             if (target is IPortalTarget portalTarget)
             {
-                stopAllActions = await portalTarget.StopAllActions();
+                stopAllActions = portalTarget.StopAllActions();
             }
 
             using (stopAllActions)
@@ -249,26 +253,34 @@ namespace Neatoo.Portal.Core
                     var parameters = method.GetParameters().ToList();
                     var parameterValues = new object[parameters.Count()];
 
-                    var criteriaE = criteria.GetEnumerator();
-
-                    for (var i = 0; i < parameterValues.Length; i++)
+                    if (parameters.Count == 1 && parameters[0].ParameterType == typeof(object[]))
                     {
-                        if (criteriaE.MoveNext())
+                        parameterValues = [ criteria ];
+                    }
+                    else
+                    {
+
+
+                        var criteriaE = criteria.GetEnumerator();
+
+                        for (var i = 0; i < parameterValues.Length; i++)
                         {
-                            // Use up the criteria values first
-                            // Assume MethodForOperation got the types right
-                            parameterValues[i] = criteriaE.Current;
-                        }
-                        else
-                        {
-                            var parameter = parameters[i];
-                            if (Scope.TryResolve(parameter.ParameterType, out var pv))
+                            if (criteriaE.MoveNext())
                             {
-                                parameterValues[i] = pv;
+                                // Use up the criteria values first
+                                // Assume MethodForOperation got the types right
+                                parameterValues[i] = criteriaE.Current;
+                            }
+                            else
+                            {
+                                var parameter = parameters[i];
+                                if (Scope.TryResolve(parameter.ParameterType, out var pv))
+                                {
+                                    parameterValues[i] = pv;
+                                }
                             }
                         }
                     }
-
                     var result = method.Invoke(target, parameterValues);
 
                     if (method.ReturnType == typeof(Task))
@@ -330,7 +342,7 @@ namespace Neatoo.Portal.Core
 
             object target = null;
 
-            if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Create) == (int)PortalOperationType.Create)
+            if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Read) == (int)PortalOperationType.Read)
             {
                 Debug.Assert(string.IsNullOrEmpty(portalRequest.Target.Json), "PortalRequest.Target.Json should not be defined for PortalOperationType.Create");
                 target = Scope.Resolve(portalRequest.Target.Type()) ?? throw new InvalidOperationException("Type is not an IPortalTarget");
@@ -341,12 +353,12 @@ namespace Neatoo.Portal.Core
             }
 
 
-            if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Create) == (int)PortalOperationType.Create
+            if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Read) == (int)PortalOperationType.Read
                 && portalRequest.Criteria != null)
             {
                 var criteria = portalRequest.Criteria.Select(c => jsonSerializer.FromObjectTypeJson(c)).ToArray();
 
-               var success = await TryCallOperation(target, portalRequest.PortalOperation, criteria);
+                var success = await TryCallOperation(target, portalRequest.PortalOperation, criteria);
 
                 if (!success)
                 {
