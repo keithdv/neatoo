@@ -71,17 +71,15 @@ namespace HorseBarn.lib
             return horse;
         }
 
-        public async Task MoveHorseToCart(IHorse horse, ICart cart)
+        public void MoveHorseToCart(IHorse horse, ICart cart)
         {
             Pasture.RemoveHorse(horse);
             Carts.RemoveHorse(horse);
 
             cart.AddHorse(horse);
-
-            await CheckAllRules(); // TODO: This should be automatically done by the Neatoo framework
         }
 
-        public async Task MoveHorseToPasture(IHorse horse)
+        public void MoveHorseToPasture(IHorse horse)
         {
             Carts.RemoveHorse(horse);
 
@@ -89,8 +87,6 @@ namespace HorseBarn.lib
             {
                 Pasture.HorseList.Add(horse);
             }
-
-            await CheckAllRules(); // TODO: This should be automatically done by the Neatoo framework
         }
 
 

@@ -77,7 +77,7 @@ namespace HorseBarn.lib.integration.tests
 
                 // Key: Cannot add an ILightHorse to the wagon 
                 // No validation, no if statements
-                await horseBarn.MoveHorseToCart(heavyHorse, wagon);
+                horseBarn.MoveHorseToCart(heavyHorse, wagon);
 
                 Assert.IsFalse(horseBarn.IsValid);
 
@@ -86,7 +86,7 @@ namespace HorseBarn.lib.integration.tests
 
                 heavyHorse = (IHeavyHorse)await horseBarn.AddNewHorse(criteria);
 
-                await horseBarn.MoveHorseToCart(heavyHorse, wagon);
+                horseBarn.MoveHorseToCart(heavyHorse, wagon);
 
                 Assert.IsTrue(horseBarn.IsValid);
             }
@@ -202,7 +202,7 @@ namespace HorseBarn.lib.integration.tests
             var heavyHorse = (IHeavyHorse)await horseBarn.AddNewHorse(criteria);
             var wagon = await horseBarn.AddWagon();
 
-            await horseBarn.MoveHorseToCart(heavyHorse, wagon);
+            horseBarn.MoveHorseToCart(heavyHorse, wagon);
 
             Assert.IsFalse(horseBarn.Pasture.Horses.Contains(heavyHorse));
             Assert.IsTrue(wagon.Horses.Contains(heavyHorse));

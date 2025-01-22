@@ -194,6 +194,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         {
             var ruleCount = List.RuleRunCount;
             await List.CheckAllRules();
+            Assert.IsFalse(List.IsBusy);
             Assert.AreEqual(ruleCount + 6, List.RuleRunCount); // +2 for child
         }
     }

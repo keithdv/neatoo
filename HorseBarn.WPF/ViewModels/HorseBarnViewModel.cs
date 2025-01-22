@@ -149,12 +149,12 @@ namespace HorseBarn.WPF.ViewModels
             Carts.Add(createCartViewModel(HorseBarn, await HorseBarn.AddWagon()));
         }
 
-        public async Task HandleDragDrop(object source, DragEventArgs e)
+        public void HandleDragDrop(object source, DragEventArgs e)
         {
             var horseViewModel = e.Data.GetData(typeof(HorseViewModel)) as HorseViewModel;
             if (horseViewModel != null && horseViewModel.Horse != null)
             {
-                await HorseBarn.MoveHorseToPasture(horseViewModel.Horse);
+                HorseBarn.MoveHorseToPasture(horseViewModel.Horse);
             }
         }
 

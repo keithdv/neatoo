@@ -66,6 +66,7 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
         }
 
         [Update]
+        [Insert]
         public void Update()
         {
             this.Name = "Updated";

@@ -4,6 +4,7 @@ using Neatoo.Rules;
 using Neatoo.UnitTest.PersonObjects;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,6 +27,8 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             scope = AutofacContainer.GetLifetimeScope();
             List = scope.Resolve<IValidateObjectList>();
             Child = scope.Resolve<IValidateObject>();
+            List.PropertyChanged += Validate_PropertyChanged;
+            Child.PropertyChanged += ChildValidate_PropertyChanged;
             List.Add(Child);
         }
 
@@ -34,6 +37,20 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         {
             Assert.IsFalse(List.IsBusy);
             Assert.IsFalse(List.IsSelfBusy);
+            List.PropertyChanged -= Validate_PropertyChanged;
+            Child.PropertyChanged -= ChildValidate_PropertyChanged;
+        }
+
+        private List<string> propertyChangedCalls = new List<string>();
+        private void Validate_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            propertyChangedCalls.Add(e.PropertyName);
+        }
+
+        private List<string> childPropertyChangedCalls = new List<string>();
+        private void ChildValidate_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            childPropertyChangedCalls.Add(e.PropertyName);
         }
 
         [TestMethod]
@@ -109,6 +126,9 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
             Assert.IsFalse(List.IsValid);
             Assert.IsTrue(List.RuleResultList[nameof(List.FirstName)].IsError);
+
+            Assert.IsTrue(propertyChangedCalls.Contains(nameof(List.IsValid)));
+            Assert.IsTrue(propertyChangedCalls.Contains(nameof(List.IsSelfValid)));
         }
 
         [TestMethod]
@@ -124,6 +144,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
             Assert.IsTrue(List.IsValid);
             Assert.IsNull(List.RuleResultList[nameof(List.FirstName)]);
+
 
         }
 
@@ -148,6 +169,15 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsFalse(List.IsBusy);
             Assert.IsFalse(List.IsValid);
             Assert.IsTrue(List.IsSelfValid);
+
+            Assert.IsTrue(propertyChangedCalls.Contains(nameof(List.IsValid)));
+            Assert.IsFalse(propertyChangedCalls.Contains(nameof(List.IsSelfValid)));
+
+            Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(Child.IsValid)));
+            Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(Child.IsSelfValid)));
+            // No async rules - so never busy
+            Assert.IsFalse(childPropertyChangedCalls.Contains(nameof(Child.IsBusy)));
+            Assert.IsFalse(childPropertyChangedCalls.Contains(nameof(Child.IsSelfBusy)));
         }
 
         [TestMethod]

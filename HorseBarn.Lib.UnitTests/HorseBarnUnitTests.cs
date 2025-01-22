@@ -107,22 +107,21 @@ namespace HorseBarn.lib.UnitTests
 
         [TestMethod]
         [ExpectedException(typeof(Exception))]
-        public async Task HorseBarn_AddNewHorse_InvalidBreed()
+        public void HorseBarn_AddNewHorse_InvalidBreed()
         {
             var criteria = Mock.Of<IHorseCriteria>();
             criteria.Breed = (Breed) 999;
 
-            await horseBarn.AddNewHorse(criteria); // Invalid breed
-
+            horseBarn.AddNewHorse(criteria); // Invalid breed
         }
 
         [TestMethod]
-        public async Task HorseBarn_MoveHorseToCart()
+        public void HorseBarn_MoveHorseToCart()
         {
             var mockHeavyHorse = new Mock<IHeavyHorse>();
             var mockWagon = new Mock<ICart<IHeavyHorse>>();
 
-            await horseBarn.MoveHorseToCart(mockHeavyHorse.Object, mockWagon.Object);
+            horseBarn.MoveHorseToCart(mockHeavyHorse.Object, mockWagon.Object);
 
             mockWagon.Verify(w => w.HorseList.Add(mockHeavyHorse.Object), Times.Once);
             mockWagon.Verify(w => w.CheckAllRules(CancellationToken.None), Times.Once);

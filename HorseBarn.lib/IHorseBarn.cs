@@ -13,7 +13,7 @@ namespace HorseBarn.lib
         Task<IHorse> AddNewHorse(IHorseCriteria horseCriteria);
         Task<IRacingChariot> AddRacingChariot();
         Task<IWagon> AddWagon();
-        Task MoveHorseToCart(IHorse horse, ICart cart);
-        Task MoveHorseToPasture(IHorse horse);
+        void MoveHorseToCart(IHorse horse, ICart cart);
+        void MoveHorseToPasture(IHorse horse);
     }
 }

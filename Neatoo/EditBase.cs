@@ -4,6 +4,7 @@ using Neatoo.Portal;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Neatoo
@@ -35,6 +36,56 @@ namespace Neatoo
         protected IReadWritePortal<T> ReadWritePortal { get; }
 
         bool IEditBase.SetModified => SetModified;
+
+        protected override void AddAsyncMethod(Func<Task> method)
+        {
+
+            if (!AsyncTaskSequencer.IsRunning)
+            {
+                var state = (IsSavable, IsModified, IsSelfModified, IsNew);
+
+                var curOnCompleted = AsyncTaskSequencer.OnCompleted;
+
+                AsyncTaskSequencer.OnCompleted = () =>
+                {
+                    if (state.IsSavable != IsSavable)
+                    {
+                        PropertyHasChanged(nameof(IsSavable));
+                    }
+                    if (state.IsModified != IsModified)
+                    {
+                        PropertyHasChanged(nameof(IsModified));
+                    }
+                    if (state.IsSelfModified != IsSelfModified)
+                    {
+                        PropertyHasChanged(nameof(IsSelfModified));
+                    }
+                    if (state.IsNew != IsNew)
+                    {
+                        PropertyHasChanged(nameof(IsNew));
+                    }
+
+                    curOnCompleted?.Invoke();
+                };
+            }
+
+            base.AddAsyncMethod(method);
+        }
+
+        protected override void ChildPropertyChanged(string propertyName, IBase source)
+        {
+            if (new string[] { nameof(IsSavable), nameof(IsModified), nameof(IsNew), nameof(IsValid) }.Contains(propertyName))
+            {
+                PropertyHasChanged(propertyName, this);
+            }
+
+            if(nameof(IsValid) == propertyName)
+            {
+                PropertyHasChanged(nameof(IsSavable), this);
+            }
+
+            base.ChildPropertyChanged(propertyName, source);
+        }
 
         protected virtual void MarkAsChild()
         {

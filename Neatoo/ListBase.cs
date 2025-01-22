@@ -69,6 +69,15 @@ namespace Neatoo
             return Task.CompletedTask;
         }
 
+        protected virtual void ChildPropertyChanged(string propertyName, IBase source)
+        {
+            Parent?.ChildPropertyChanged(propertyName, this);
+        }
+        void IBase.ChildPropertyChanged(string propertyName, IBase source)
+        {
+            ChildPropertyChanged(propertyName, source);
+        }
+
         protected IRegisteredProperty GetRegisteredProperty(string name)
         {
             return PropertyValueManager.GetRegisteredProperty(name);

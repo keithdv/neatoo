@@ -33,9 +33,6 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         }
 
 
-
-
-
         [TestCleanup]
         public async Task TestCleanup()
         {
@@ -150,7 +147,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         }
 
         [TestMethod]
-        public async Task ValidateBase_Rule_IsValid_False_Fixed()
+        public void ValidateBase_Rule_IsValid_False_Fixed()
         {
             validate.Title = "Mr.";
             validate.FirstName = "Error";
@@ -160,12 +157,11 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
             validate.FirstName = "John";
 
-            await validate.WaitForRules();
-
+            Assert.IsFalse(validate.IsBusy);
             Assert.IsTrue(validate.IsValid);
             Assert.IsNull(validate.RuleResultList[nameof(validate.FirstName)]);
             Assert.IsTrue(propertyChangedCalls.Contains(nameof(validate.IsValid)));
-
+            Assert.IsTrue(propertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
         }
 
         [TestMethod]
@@ -195,6 +191,9 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsFalse(validate.IsSelfValid);
             Assert.IsTrue(child.IsValid);
             Assert.IsTrue(child.IsSelfValid);
+            Assert.IsTrue(propertyChangedCalls.Contains(nameof(validate.IsValid)));
+            Assert.IsTrue(propertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
+
         }
 
         [TestMethod]
@@ -207,7 +206,9 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsFalse(child.IsValid);
             Assert.IsFalse(child.IsSelfValid);
 
-            Assert.IsFalse(propertyChangedCalls.Contains(nameof(validate.IsValid)));
+            Assert.IsTrue(propertyChangedCalls.Contains(nameof(validate.IsValid)));
+            Assert.IsFalse(propertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
+
             Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsValid)));
             Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
             // No async rules - so never busy

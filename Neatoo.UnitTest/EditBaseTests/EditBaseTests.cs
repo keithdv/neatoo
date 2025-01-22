@@ -5,6 +5,7 @@ using Neatoo.Portal;
 using Neatoo.UnitTest.PersonObjects;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,6 +35,14 @@ namespace Neatoo.UnitTest.EditBaseTests
             Assert.IsFalse(editPerson.IsNew);
             Assert.IsFalse(editPerson.IsSavable);
             Assert.IsFalse(editPerson.IsBusy);
+
+            editPerson.PropertyChanged += EditPersonPropertyChanged;
+        }
+
+        private List<string> editPersonPropertyChanged = new List<string>();
+        private void EditPersonPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            editPersonPropertyChanged.Add(e.PropertyName);
         }
 
         [TestCleanup]
@@ -57,6 +66,11 @@ namespace Neatoo.UnitTest.EditBaseTests
             Assert.IsTrue(editPerson.IsModified);
             Assert.IsTrue(editPerson.IsSelfModified);
             CollectionAssert.AreEquivalent(new List<string>() { nameof(IEditPerson.FullName), }, editPerson.ModifiedProperties.ToList());
+            CollectionAssert.Contains(editPersonPropertyChanged, nameof(IEditPerson.FullName));
+            CollectionAssert.Contains(editPersonPropertyChanged, nameof(IEditPerson.IsModified));
+            CollectionAssert.Contains(editPersonPropertyChanged, nameof(IEditPerson.IsSelfModified));
+            CollectionAssert.DoesNotContain(editPersonPropertyChanged, nameof(IEditPerson.IsBusy));
+            CollectionAssert.Contains(editPersonPropertyChanged, nameof(IEditPerson.IsSavable));
         }
 
         [TestMethod]
@@ -66,6 +80,12 @@ namespace Neatoo.UnitTest.EditBaseTests
             editPerson.FirstName = firstName;
             Assert.IsFalse(editPerson.IsModified);
             Assert.IsFalse(editPerson.IsSelfModified);
+
+            CollectionAssert.DoesNotContain(editPersonPropertyChanged, nameof(IEditPerson.FullName));
+            CollectionAssert.DoesNotContain(editPersonPropertyChanged, nameof(IEditPerson.IsModified));
+            CollectionAssert.DoesNotContain(editPersonPropertyChanged, nameof(IEditPerson.IsSelfModified));
+            CollectionAssert.DoesNotContain(editPersonPropertyChanged, nameof(IEditPerson.IsBusy));
+            CollectionAssert.DoesNotContain(editPersonPropertyChanged, nameof(IEditPerson.IsSavable));
         }
 
         [TestMethod]
@@ -88,6 +108,12 @@ namespace Neatoo.UnitTest.EditBaseTests
             Assert.IsFalse(editPerson.IsModified);
             Assert.IsFalse(editPerson.IsSelfModified);
             Assert.AreEqual(0, editPerson.ModifiedProperties.Count());
+
+            CollectionAssert.DoesNotContain(editPersonPropertyChanged, nameof(IEditPerson.FullName));
+            CollectionAssert.DoesNotContain(editPersonPropertyChanged, nameof(IEditPerson.IsModified));
+            CollectionAssert.DoesNotContain(editPersonPropertyChanged, nameof(IEditPerson.IsSelfModified));
+            CollectionAssert.DoesNotContain(editPersonPropertyChanged, nameof(IEditPerson.IsBusy));
+            CollectionAssert.DoesNotContain(editPersonPropertyChanged, nameof(IEditPerson.IsSavable));
         }
 
         [TestMethod]

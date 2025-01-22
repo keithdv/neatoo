@@ -24,6 +24,8 @@ namespace Neatoo
 
         IBase Parent { get; }
 
+        internal void ChildPropertyChanged(string propertyName, IBase source);
+
     }
 
     [PortalDataContract]
@@ -50,6 +52,17 @@ namespace Neatoo
         void ISetParent.SetParent(IBase parent)
         {
             SetParent(parent);
+        }
+
+        protected virtual void ChildPropertyChanged(string propertyName, IBase source)
+        {
+            Parent?.ChildPropertyChanged(propertyName, this);
+        }
+
+
+        void IBase.ChildPropertyChanged(string propertyName, IBase source)
+        {
+            ChildPropertyChanged(propertyName, source);
         }
 
         protected IRegisteredProperty GetRegisteredProperty(string name)

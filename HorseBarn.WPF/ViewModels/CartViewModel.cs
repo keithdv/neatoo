@@ -80,19 +80,17 @@ namespace HorseBarn.WPF.ViewModels
             Cart.NumberOfHorses--;
         }
 
-        public async Task HandleDragDrop(object source, DragEventArgs e)
+        public void HandleDragDrop(object source, DragEventArgs e)
         {
-            Debug.WriteLine("Cart HandleDragDrop");
             var horseViewModel = e.Data.GetData(typeof(HorseViewModel)) as HorseViewModel;
             if (horseViewModel != null && horseViewModel.Horse != null && Cart.CanAddHorse(horseViewModel.Horse))
             {
-                await horseBarn.MoveHorseToCart(horseViewModel.Horse, Cart);
+                horseBarn.MoveHorseToCart(horseViewModel.Horse, Cart);
             }
         }
 
         public void HandleDragOver(object source, DragEventArgs e)
         {
-            Debug.WriteLine("Cart HandleDragOver");
             var horseViewModel = e.Data.GetData(typeof(HorseViewModel)) as HorseViewModel;
             if (horseViewModel != null && horseViewModel.Horse != null)
             {
@@ -100,7 +98,6 @@ namespace HorseBarn.WPF.ViewModels
 
                 if (!canAdd)
                 {
-                    Debug.WriteLine("Cart None");
                     e.Effects = DragDropEffects.None;
                     e.Handled = true;
                 }

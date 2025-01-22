@@ -51,10 +51,15 @@ namespace HorseBarn.lib.Cart
 
         IEnumerable<IHorse> ICart.Horses => HorseList;
 
-        protected override Task PostPortalConstruct()
+
+        protected override void ChildPropertyChanged(string propertyName, IBase source)
         {
-            HorseList.CollectionChanged += (s, e) => CheckRules(nameof(HorseList));
-            return base.PostPortalConstruct();
+            base.ChildPropertyChanged(propertyName, source);
+
+            if(source == HorseList && propertyName == nameof(HorseList.Count))
+            {
+                CheckRules(nameof(NumberOfHorses));
+            }
         }
 
         public void RemoveHorse(IHorse horse)

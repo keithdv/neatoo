@@ -39,6 +39,7 @@ namespace Neatoo.Newtonsoft.Json
         public bool IsChild { get; set; }
         public bool IsDeleted { get; set; }
         public bool SetModified { get; set; }
+        public IBase Parent { get; set; }
     }
 
     public class ListBaseCollectionConverter : JsonConverter
@@ -70,12 +71,17 @@ namespace Neatoo.Newtonsoft.Json
             var surrogate = serializer.Deserialize<ListBaseSurrogate>(reader);
 
             var list = (IListBase)Scope.Resolve(surrogate.ListType);
-            using(var stopped = ((IPortalEditTarget)list).StopAllActions())
+            using(var stopped = (list as IPortalEditTarget)?.StopAllActions())
             {
                 foreach (var i in surrogate.Collection)
                 {
                     list.Add(i);
+                    if(i is ISetParent setParent)
+                    {
+                        setParent.SetParent(list);
+                    }
                 }
+                ((ISetParent) list).SetParent(surrogate.Parent);
             }
 
             GetListBase(list.GetType()).InvokeMember("PropertyValueManager", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.PropertyValueManager });
@@ -148,10 +154,16 @@ namespace Neatoo.Newtonsoft.Json
             var listType = typeof(List<>).MakeGenericType(itemType);
             var list = (IList)Activator.CreateInstance(listType, value);
 
+            // Causes a circular reference
+            // Set back in ReadJson
+            list.OfType<ISetParent>().ToList().ForEach(i => i.SetParent(null));
+
             // Get PropertyValueManager property
             var pvmProp = GetListBase(value.GetType()).GetProperty("PropertyValueManager", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
             var pvm = (IPropertyValueManager)pvmProp.GetValue(value);
             var surrogate = new ListBaseSurrogate(value.GetType(), list, pvm);
+
+            surrogate.Parent = (value as IBase)?.Parent;
 
             // ValidateListBase
             var validateType = GetValidateListBase(value.GetType());
@@ -164,6 +176,7 @@ namespace Neatoo.Newtonsoft.Json
                 surrogate.OverrideResult = ruleResults.OverrideResult;
                 surrogate.RuleResultList = ruleResults;
             }
+
 
             if (value is IEditBase edit)
             {

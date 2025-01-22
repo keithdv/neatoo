@@ -70,7 +70,7 @@
             <Button x:Name="AddHorse">Add Horse</Button>
             <Button x:Name="AddRacingChariot">Add Racing Chariot</Button>
             <Button x:Name="AddWagon">Add Wagon</Button>
-            <Button x:Name="Save">Save</Button>
+            <Button x:Name="Save" IsEnabled="{Binding Path=HorseBarn.IsSavable}">Save</Button>
         </UniformGrid>
     </Grid>
 </Window>
