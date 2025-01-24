@@ -42,8 +42,6 @@ namespace Neatoo.Autofac
             // SingleInstance as long it is isn't modified to accept dependencies
             builder.RegisterType<DefaultFactory>().As<IFactory>().SingleInstance();
 
-            // Tools - More or less Static classes - but now they can be changed! (For better or worse...)
-            builder.RegisterType<Core.ValuesDiffer>().As<IValuesDiffer>().SingleInstance();
 
             // Scope Wrapper
             builder.RegisterType<ServiceScope>().As<IServiceScope>().InstancePerLifetimeScope();

@@ -37,7 +37,7 @@ namespace Neatoo
         new int Count { get; }
     }
 
-    public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, IPortalTarget, IRegisteredPropertyAccess, ISetParent
+    public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, IPortalTarget, ISetParent
         where T : ListBase<T, I>
         where I : IBase
     {
@@ -49,14 +49,62 @@ namespace Neatoo
         public ListBase(IListBaseServices<T, I> services)
         {
             PropertyValueManager = services.PropertyValueManager;
+            ((ISetTarget)PropertyValueManager).SetTarget(this);
             ItemPortal = services.ReadPortal;
         }
 
         public IBase Parent { get; protected set; }
 
+
+        #region "Match Base"
         void ISetParent.SetParent(IBase parent)
         {
             Parent = parent;
+        }
+
+
+        protected virtual P Getter<P>([System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
+        {
+            return (P)PropertyValueManager[propertyName].Value;
+        }
+
+
+        protected virtual void Setter<P>(P value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
+        {
+            PropertyValueManager[propertyName].SetValue(value);
+        }
+
+        protected virtual void HandlePropertyChanged(string propertyName, IBase source)
+        {
+            Parent?.HandlePropertyChanged(propertyName, this);
+        }
+
+        void IBase.HandlePropertyChanged(string propertyName, IBase source)
+        {
+            HandlePropertyChanged(propertyName, source);
+        }
+        protected IRegisteredProperty GetRegisteredProperty(string propertyName)
+        {
+            return PropertyValueManager.RegisteredPropertyManager.GetRegisteredProperty(propertyName);
+        }
+
+        public IPropertyValue GetProperty(string propertyName)
+        {
+            return PropertyValueManager[propertyName];
+        }
+
+        public IPropertyValue GetProperty(IRegisteredProperty registeredProperty)
+        {
+            return PropertyValueManager[registeredProperty];
+        }
+
+        IDisposable IPortalTarget.StopAllActions()
+        {
+            return null;
+        }
+
+        void IPortalTarget.StartAllActions()
+        {
         }
 
         Task IPortalTarget.PostPortalConstruct()
@@ -69,66 +117,10 @@ namespace Neatoo
             return Task.CompletedTask;
         }
 
-        protected virtual void ChildPropertyChanged(string propertyName, IBase source)
-        {
-            Parent?.ChildPropertyChanged(propertyName, this);
-        }
-        void IBase.ChildPropertyChanged(string propertyName, IBase source)
-        {
-            ChildPropertyChanged(propertyName, source);
-        }
+        protected IPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
+        protected IPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
 
-        protected IRegisteredProperty GetRegisteredProperty(string name)
-        {
-            return PropertyValueManager.GetRegisteredProperty(name);
-        }
-
-        protected virtual P Getter<P>([System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
-        {
-            return ReadProperty<P>(GetRegisteredProperty(propertyName));
-        }
-
-        protected virtual void Setter<P>(P value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
-        {
-            LoadProperty(GetRegisteredProperty(propertyName), value);
-        }
-
-        protected virtual P ReadProperty<P>(IRegisteredProperty property)
-        {
-            return PropertyValueManager.ReadProperty<P>(property);
-        }
-
-        protected virtual void LoadProperty<P>(IRegisteredProperty registeredProperty, P value)
-        {
-            PropertyValueManager.LoadProperty(registeredProperty, value);
-        }
-
-        public bool IsStopped { get; protected set; }
-
-        public virtual IDisposable StopAllActions()
-        {
-            if (IsStopped) { return null; } // You are a nested using; You get nothing!!
-            IsStopped = true;
-            return new Core.Stopped(this);
-        }
-
-        public void StartAllActions()
-        {
-            if (IsStopped)
-            {
-                IsStopped = false;
-            }
-        }
-
-        IDisposable IPortalTarget.StopAllActions()
-        {
-            return StopAllActions();
-        }
-
-        void IPortalTarget.StartAllActions()
-        {
-            StartAllActions();
-        }
+        #endregion
 
         public async Task<I> CreateAdd()
         {
@@ -144,30 +136,6 @@ namespace Neatoo
             return item;
         }
 
-        P IRegisteredPropertyAccess.ReadProperty<P>(IRegisteredProperty registeredProperty)
-        {
-            return (P) PropertyValueManager.ReadProperty(registeredProperty);
-        }
-
-        void IRegisteredPropertyAccess.SetProperty<P>(IRegisteredProperty registeredProperty, P value)
-        {
-            PropertyValueManager.LoadProperty(registeredProperty, value);
-        }
-
-        void IRegisteredPropertyAccess.LoadProperty<P>(IRegisteredProperty registeredProperty, P value)
-        {
-            PropertyValueManager.LoadProperty(registeredProperty, value);
-        }
-
-        IPropertyValue IRegisteredPropertyAccess.ReadPropertyValue(string propertyName)
-        {
-            return PropertyValueManager.ReadProperty(propertyName);
-        }
-
-        IPropertyValue IRegisteredPropertyAccess.ReadPropertyValue(IRegisteredProperty registeredProperty)
-        {
-            return PropertyValueManager.ReadProperty(registeredProperty);
-        }
 
     }
 

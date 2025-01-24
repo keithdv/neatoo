@@ -51,7 +51,7 @@ namespace Neatoo.UnitTest.EditBaseTests
 
         public void FillFromDto(PersonDto dto)
         {
-            LoadProperty(IdProperty, dto.PersonId);
+            this[IdProperty].LoadProperty(dto.PersonId);
 
             // These will not mark IsModified to true
             // as long as within ObjectPortal operation
@@ -63,7 +63,7 @@ namespace Neatoo.UnitTest.EditBaseTests
         [Fetch]
         private async Task FillFromDto(PersonDto dto, IReadOnlyList<PersonDto> personTable)
         {
-            LoadProperty(IdProperty, dto.PersonId);
+            this[IdProperty].LoadProperty(dto.PersonId);
 
             // These will not mark IsModified to true
             // as long as within ObjectPortal operation

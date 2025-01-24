@@ -10,9 +10,6 @@ namespace Neatoo.Rules
 
         public IValidateBase Target { get; set; }
 
-        internal IRegisteredPropertyAccess TargetSet => (IRegisteredPropertyAccess)Target;
-
-
 
     }
 }

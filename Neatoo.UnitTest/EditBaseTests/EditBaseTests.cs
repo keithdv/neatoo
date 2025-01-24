@@ -62,7 +62,12 @@ namespace Neatoo.UnitTest.EditBaseTests
         [TestMethod]
         public void EditBaseTest_SetString_IsModified()
         {
+            Assert.IsFalse(editPerson.IsModified);
+            Assert.IsFalse(editPerson.IsSelfModified);
+            Assert.IsFalse(editPerson.IsBusy);
+
             editPerson.FullName = Guid.NewGuid().ToString();
+            Assert.IsFalse(editPerson.IsBusy);
             Assert.IsTrue(editPerson.IsModified);
             Assert.IsTrue(editPerson.IsSelfModified);
             CollectionAssert.AreEquivalent(new List<string>() { nameof(IEditPerson.FullName), }, editPerson.ModifiedProperties.ToList());

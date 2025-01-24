@@ -28,7 +28,7 @@ namespace Neatoo
     {
         public ValidateBaseServices() : base()
         {
-            this.ValidatePropertyValueManager = new ValidatePropertyValueManager<T>(RegisteredPropertyManager, new DefaultFactory(), new ValuesDiffer());
+            this.ValidatePropertyValueManager = new ValidatePropertyValueManager<T>(RegisteredPropertyManager, new DefaultFactory());
             this.RuleManager = new RuleManager<T>(RegisteredPropertyManager);
         }
 

@@ -55,7 +55,7 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public void FillFromDto(PersonDto dto)
         {
-            LoadProperty(IdProperty, dto.PersonId);
+            this[IdProperty].SetValue(dto.PersonId);
             FirstName = dto.FirstName;
             LastName = dto.LastName;
             Title = dto.Title;

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Neatoo
@@ -35,57 +36,41 @@ namespace Neatoo
         public bool IsChild { get; protected set; }
         protected IReadWritePortal<T> ReadWritePortal { get; }
 
-        bool IEditBase.SetModified => SetModified;
+        protected (bool IsModified, bool IsSelfModified, bool IsSavable, bool IsDeleted) EditMetaState { get; private set; }
 
-        protected override void AddAsyncMethod(Func<Task> method)
+        protected override void RaiseMetaPropertiesChanged()
         {
 
-            if (!AsyncTaskSequencer.IsRunning)
+            if (!IsStopped)
             {
-                var state = (IsSavable, IsModified, IsSelfModified, IsNew);
-
-                var curOnCompleted = AsyncTaskSequencer.OnCompleted;
-
-                AsyncTaskSequencer.OnCompleted = () =>
+                if (EditMetaState.IsModified != IsModified)
                 {
-                    if (state.IsSavable != IsSavable)
-                    {
-                        PropertyHasChanged(nameof(IsSavable));
-                    }
-                    if (state.IsModified != IsModified)
-                    {
-                        PropertyHasChanged(nameof(IsModified));
-                    }
-                    if (state.IsSelfModified != IsSelfModified)
-                    {
-                        PropertyHasChanged(nameof(IsSelfModified));
-                    }
-                    if (state.IsNew != IsNew)
-                    {
-                        PropertyHasChanged(nameof(IsNew));
-                    }
-
-                    curOnCompleted?.Invoke();
-                };
+                    PropertyHasChanged(nameof(IsModified));
+                }
+                if (EditMetaState.IsSelfModified != IsSelfModified)
+                {
+                    PropertyHasChanged(nameof(IsSelfModified));
+                }
+                if (EditMetaState.IsSavable != IsSavable)
+                {
+                    PropertyHasChanged(nameof(IsSavable));
+                }
+                if (EditMetaState.IsDeleted != IsDeleted)
+                {
+                    PropertyHasChanged(nameof(IsDeleted));
+                }
             }
 
-            base.AddAsyncMethod(method);
+            base.RaiseMetaPropertiesChanged();
         }
 
-        protected override void ChildPropertyChanged(string propertyName, IBase source)
+        protected override void ResetMetaState()
         {
-            if (new string[] { nameof(IsSavable), nameof(IsModified), nameof(IsNew), nameof(IsValid) }.Contains(propertyName))
-            {
-                PropertyHasChanged(propertyName, this);
-            }
-
-            if(nameof(IsValid) == propertyName)
-            {
-                PropertyHasChanged(nameof(IsSavable), this);
-            }
-
-            base.ChildPropertyChanged(propertyName, source);
+            base.ResetMetaState();
+            EditMetaState = (IsModified, IsSelfModified, IsSavable, IsDeleted);
         }
+
+        bool IEditBase.SetModified => SetModified;
 
         protected virtual void MarkAsChild()
         {
@@ -103,6 +88,7 @@ namespace Neatoo
             // TODO : What if busy??
             PropertyValueManager.MarkSelfUnmodified();
             SetModified = false;
+            RaiseMetaPropertiesChanged(); // Really shouldn't be anything listening to this
         }
 
         void IPortalEditTarget.MarkUnmodified()
@@ -113,6 +99,7 @@ namespace Neatoo
         protected virtual void MarkModified()
         {
             SetModified = true;
+            RaiseMetaPropertiesChanged();
         }
 
         void IPortalEditTarget.MarkModified()
@@ -143,6 +130,7 @@ namespace Neatoo
         protected virtual void MarkDeleted()
         {
             IsDeleted = true;
+            RaiseMetaPropertiesChanged();
         }
 
         void IPortalEditTarget.MarkDeleted()
@@ -160,6 +148,7 @@ namespace Neatoo
             if (IsDeleted)
             {
                 IsDeleted = false;
+                RaiseMetaPropertiesChanged();
             }
         }
         
@@ -198,5 +187,18 @@ namespace Neatoo
 
             return await ReadWritePortal.Update((T)this);
         }
+
+        new protected IEditPropertyValue GetProperty(string propertyName)
+        {
+            return PropertyValueManager[propertyName];
+        }
+
+        new protected IEditPropertyValue GetProperty(IRegisteredProperty registeredProperty)
+        {
+            return PropertyValueManager[registeredProperty];
+        }
+
+        new protected IEditPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
+        new protected IEditPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 }

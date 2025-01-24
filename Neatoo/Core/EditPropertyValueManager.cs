@@ -16,6 +16,13 @@ namespace Neatoo.Core
 
         IEnumerable<string> ModifiedProperties { get; }
         void MarkSelfUnmodified();
+
+
+        new IEditPropertyValue GetProperty(string propertyName);
+        new IEditPropertyValue GetProperty(IRegisteredProperty registeredProperty);
+
+        public new IEditPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
+        public new IEditPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 
     public interface IEditPropertyValueManager<T> : IEditPropertyValueManager, IValidatePropertyValueManager<T>
@@ -28,6 +35,8 @@ namespace Neatoo.Core
         bool IsModified { get; }
         bool IsSelfModified { get; }
         void MarkSelfUnmodified();
+
+
     }
 
     public interface IEditPropertyValue<T> : IEditPropertyValue, IValidatePropertyValue<T>
@@ -39,25 +48,25 @@ namespace Neatoo.Core
     public class EditPropertyValue<T> : ValidatePropertyValue<T>, IEditPropertyValue<T>
     {
 
-
-        private bool initialValue = true;
-        public EditPropertyValue(string name, T value) : base(name, value)
+        public EditPropertyValue(string name) : base(name)
         {
-            EditChild = value as IEditBase;
-            initialValue = false;
         }
 
-        public IEditBase EditChild { get; protected set; }
+        public IEditBase EditChild => Value as IEditBase;
 
         protected override void OnValueChanged(T newValue)
         {
             base.OnValueChanged(newValue);
-            EditChild = newValue as IEditBase;
-            if (!initialValue)
+
+            if (Parent is IEditBase edit)
             {
-                IsSelfModified = true && EditChild == null; // Never consider ourself modified if Neatoo object
+                if (!edit.IsStopped)
+                {
+                    IsSelfModified = true && EditChild == null; // Never consider ourself modified if holding a Neatoo object
+                }
             }
         }
+
 
         public bool IsModified => IsSelfModified || (EditChild?.IsModified ?? false);
 
@@ -68,9 +77,12 @@ namespace Neatoo.Core
         {
             IsSelfModified = false;
         }
-        //public static implicit operator T(EditPropertyValue<T> value) => value.Value;
-        //public static implicit operator EditPropertyValue<T>(T value) => new EditPropertyValue<T>(value);
-        //public static implicit operator Task(EditPropertyValue<T> value) => value.Task;
+
+        public override void LoadProperty(object value)
+        {
+            base.LoadProperty(value);
+            IsSelfModified = false;
+        }
     }
 
     public class EditPropertyValueManager<T> : ValidatePropertyValueManagerBase<T, IEditPropertyValue>, IEditPropertyValueManager<T>
@@ -79,14 +91,14 @@ namespace Neatoo.Core
 
         IRegisteredPropertyManager<T> IPropertyValueManager<T>.RegisteredPropertyManager => RegisteredPropertyManager;
 
-        public EditPropertyValueManager(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory, IValuesDiffer valuesDiffer) : base(registeredPropertyManager, factory, valuesDiffer)
+        public EditPropertyValueManager(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
         {
 
         }
 
-        protected override IEditPropertyValue CreatePropertyValue<PV>(IRegisteredProperty registeredProperty, PV value)
+        protected override IEditPropertyValue CreatePropertyValue<PV>(IRegisteredProperty registeredProperty, IBase parent)
         {
-            return Factory.CreateEditPropertyValue(registeredProperty, value);
+            return Factory.CreateEditPropertyValue<PV>(registeredProperty, parent);
         }
 
         public bool IsModified => fieldData.Values.Any(p => p.IsModified);
@@ -102,20 +114,55 @@ namespace Neatoo.Core
             }
         }
 
-        public virtual void LoadProperty<PV>(IRegisteredProperty registeredProperty, PropertyValue<PV> newValue)
+        public IEditPropertyValue this[string propertyName]
         {
-            if (!fieldData.ContainsKey(registeredProperty.Index))
-            {
-                // TODO Destroy and Delink to old value
-                // TODO - If they've created an event link to the PropertyValue.NotifyPropertyChanged event
-                // Does just create a new one create a memory leak?
-            }
-            newValue.Name = registeredProperty.Name;
-            fieldData[registeredProperty.Index] = (IEditPropertyValue)newValue;
-
-            SetParent(newValue.Value);
+            get => GetProperty(propertyName);
         }
 
+        public IEditPropertyValue this[IRegisteredProperty registeredProperty]
+        {
+            get => GetProperty(registeredProperty);
+        }
+
+
+        public virtual IEditPropertyValue GetProperty(string propertyName)
+        {
+            return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
+        }
+
+        public virtual IEditPropertyValue GetProperty(IRegisteredProperty registeredProperty)
+        {
+            if (fieldData.TryGetValue(registeredProperty.Index, out var fd))
+            {
+                return fd;
+            }
+
+            var newPropertyValue = (IEditPropertyValue)this.GetType().GetMethod(nameof(this.CreatePropertyValue), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty, Target });
+
+            fieldData[registeredProperty.Index] = newPropertyValue;
+
+            return newPropertyValue;
+        }
+
+        IValidatePropertyValue IValidatePropertyValueManager.GetProperty(string propertyName)
+        {
+            return GetProperty(propertyName);
+        }
+
+        IValidatePropertyValue IValidatePropertyValueManager.GetProperty(IRegisteredProperty registeredProperty)
+        {
+            return GetProperty(registeredProperty);
+        }
+
+        IPropertyValue IPropertyValueManager.GetProperty(string propertyName)
+        {
+            return GetProperty(propertyName);
+        }
+
+        IPropertyValue IPropertyValueManager.GetProperty(IRegisteredProperty registeredProperty)
+        {
+            return GetProperty(registeredProperty);
+        }
     }
 
 

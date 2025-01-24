@@ -12,6 +12,7 @@ namespace Neatoo
     {
         IRegisteredProperty GetRegisteredProperty(string name);
         IEnumerable<IRegisteredProperty> GetRegisteredProperties();
+        bool HasProperty(string propertyName);
     }
 
     /// <summary>

@@ -34,7 +34,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
             var sn = $"{ReadProperty<string>(target, firstName)} {ReadProperty<string>(target, lastName)}";
 
-            SetProperty(target, shortName, sn);
+            LoadProperty(target, shortName, sn);
 
             return RuleResult.Empty();
 

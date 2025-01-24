@@ -39,6 +39,7 @@ namespace Neatoo.Rules
     }
 
     public interface IRuleManager<T> : IRuleManager
+        where T : IBase
     {
         FluentRule<T> AddRule(Func<T, IRuleResult> func, params string[] triggerProperty);
 
@@ -47,6 +48,7 @@ namespace Neatoo.Rules
 
     [PortalDataContract]
     public class RuleManager<T> : IRuleManager<T>, ISetTarget
+        where T : IBase
     {
 
         protected T Target { get; set; }

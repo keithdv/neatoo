@@ -15,21 +15,22 @@ namespace Neatoo
 
     public interface IBase : INeatooObject
     {
-        /// <summary>
-        /// Stop events, rules and ismodified
-        /// Only affects the Setter method
-        /// Not SetProperty or LoadProperty
-        /// </summary>
-        bool IsStopped { get; }
+
 
         IBase Parent { get; }
 
-        internal void ChildPropertyChanged(string propertyName, IBase source);
+        internal void HandlePropertyChanged(string propertyName, IBase source);
+
+        internal IPropertyValue GetProperty(string propertyName);
+        internal IPropertyValue GetProperty(IRegisteredProperty registeredProperty);
+
+        internal IPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
+        internal IPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
 
     }
 
     [PortalDataContract]
-    public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, IRegisteredPropertyAccess, ISetParent
+    public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent
         where T : Base<T>
     {
 
@@ -54,85 +55,48 @@ namespace Neatoo
             SetParent(parent);
         }
 
-        protected virtual void ChildPropertyChanged(string propertyName, IBase source)
-        {
-            Parent?.ChildPropertyChanged(propertyName, this);
-        }
-
-
-        void IBase.ChildPropertyChanged(string propertyName, IBase source)
-        {
-            ChildPropertyChanged(propertyName, source);
-        }
-
-        protected IRegisteredProperty GetRegisteredProperty(string name)
-        {
-            return PropertyValueManager.GetRegisteredProperty(name);
-        }
-
         protected virtual P Getter<P>([System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
         {
-            return ReadProperty<P>(GetRegisteredProperty(propertyName));
+            return (P) PropertyValueManager[propertyName].Value;
         }
-
 
         protected virtual void Setter<P>(P value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
         {
-            LoadProperty(GetRegisteredProperty(propertyName), value);
+            PropertyValueManager[propertyName].SetValue(value);
         }
 
-        protected virtual void Setter<P>(PropertyValue<P> value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
+        protected virtual void HandlePropertyChanged(string propertyName, IBase source)
         {
-            //I can't throw the propertyvalue away in case they are using it for something else
-            // I just need to ensure it is the right case and if it is not use CreatePropertyInfo in the factory
-            LoadProperty(GetRegisteredProperty(propertyName), value);
+            Parent?.HandlePropertyChanged(propertyName, this);
         }
 
-        protected virtual P ReadProperty<P>(IRegisteredProperty property)
+        void IBase.HandlePropertyChanged(string propertyName, IBase source)
         {
-            return PropertyValueManager.ReadProperty<P>(property);
+            HandlePropertyChanged(propertyName, source);
         }
 
-        protected virtual void LoadProperty<P>(string propertyName, P value)
+        protected IRegisteredProperty GetRegisteredProperty(string propertyName)
         {
-            LoadProperty(GetRegisteredProperty(propertyName), value);
+            return PropertyValueManager.RegisteredPropertyManager.GetRegisteredProperty(propertyName);
         }
 
-        protected virtual void LoadProperty<P>(IRegisteredProperty registeredProperty, P value)
+        public IPropertyValue GetProperty(string propertyName)
         {
-            PropertyValueManager.LoadProperty(registeredProperty, value);
+            return PropertyValueManager[propertyName];
         }
 
-        protected virtual void LoadProperty<P>(IRegisteredProperty registeredProperty, PropertyValue<P> value)
+        public IPropertyValue GetProperty(IRegisteredProperty registeredProperty)
         {
-            PropertyValueManager.LoadProperty(registeredProperty, value);
-        }
-
-        public bool IsStopped { get; protected set; }
-
-        public virtual IDisposable StopAllActions()
-        {
-            if (IsStopped) { return null; } // You are a nested using; You get nothing!!
-            IsStopped = true;
-            return new Core.Stopped(this);
-        }
-
-        public void StartAllActions()
-        {
-            if (IsStopped)
-            {
-                IsStopped = false;
-            }
+            return PropertyValueManager[registeredProperty];
         }
 
         IDisposable IPortalTarget.StopAllActions()
         {
-            return StopAllActions();
+            return null;
         }
 
         void IPortalTarget.StartAllActions()
         {
-            StartAllActions();
         }
 
         Task IPortalTarget.PostPortalConstruct()
@@ -145,32 +109,8 @@ namespace Neatoo
             return Task.CompletedTask;
         }
 
-        P IRegisteredPropertyAccess.ReadProperty<P>(IRegisteredProperty registeredProperty)
-        {
-            return PropertyValueManager.ReadProperty<P>(registeredProperty);
-        }
-               
-        void IRegisteredPropertyAccess.SetProperty<P>(IRegisteredProperty registeredProperty, P value)
-        {
-            PropertyValueManager.LoadProperty(registeredProperty, value);
-        }
-
-        void IRegisteredPropertyAccess.LoadProperty<P>(IRegisteredProperty registeredProperty, P value)
-        {
-            PropertyValueManager.LoadProperty(registeredProperty, value);
-        }
-
-        IPropertyValue IRegisteredPropertyAccess.ReadPropertyValue(string propertyName)
-        {
-            return PropertyValueManager.ReadProperty(propertyName);
-        }
-
-        IPropertyValue IRegisteredPropertyAccess.ReadPropertyValue(IRegisteredProperty registeredProperty)
-        {
-            return PropertyValueManager.ReadProperty(registeredProperty);
-        }
-
-
+        protected IPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
+        protected IPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 
 }

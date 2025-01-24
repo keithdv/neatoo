@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace Neatoo.Core
         private CancellationTokenSource cancellationTokenSource;
         public bool IsRunning => !this.allDoneCompletionSource?.Task.IsCompleted ?? false;
 
-        public Action OnCompleted { get; set; }
+        public ConcurrentBag<Action> OnEachComplete { get; } = new ConcurrentBag<Action>();
 
         public void AddTask(Func<Task> task)
         {
@@ -41,7 +42,10 @@ namespace Neatoo.Core
                             throw eTask.Exception;
                         }
 
-                        OnCompleted?.Invoke();
+                        foreach (var action in OnEachComplete.ToList())
+                        {
+                            action();
+                        }
 
                         return;
                     }
@@ -50,7 +54,10 @@ namespace Neatoo.Core
 
                     Func<Task, Task> continueWith = async (t) =>
                     {
-                        OnCompleted?.Invoke();
+                        foreach (var action in OnEachComplete.ToList())
+                        {
+                            action();
+                        }
 
                         if (t.IsFaulted)
                         {

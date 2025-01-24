@@ -70,5 +70,10 @@ namespace Neatoo.Core
         {
             return RegisteredProperties.Values;
         }
+
+        public bool HasProperty(string propertyName)
+        {
+            return RegisteredProperties.ContainsKey(propertyName);
+        }
     }
 }

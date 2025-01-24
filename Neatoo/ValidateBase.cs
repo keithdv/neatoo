@@ -25,10 +25,17 @@ namespace Neatoo
         Task CheckAllSelfRules(CancellationToken token = new CancellationToken());
         IRuleResultReadOnlyList RuleResultList { get; }
         IEnumerable<string> BrokenRuleMessages { get; }
+
+        /// <summary>
+        /// Stop events, rules and ismodified
+        /// Only affects the Setter method
+        /// Not SetProperty or LoadProperty
+        /// </summary>
+        bool IsStopped { get; }
     }
 
     [PortalDataContract]
-    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IRegisteredPropertyAccess
+    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IPortalTarget
         where T : ValidateBase<T>
     {
 
@@ -42,6 +49,8 @@ namespace Neatoo
         {
             this.RuleManager = services.RuleManager;
             ((ISetTarget)this.RuleManager).SetTarget(this);
+            AsyncTaskSequencer.OnEachComplete.Add(RaiseMetaPropertiesChanged);
+            ResetMetaState();
         }
 
         public bool IsValid => RuleManager.IsValid && PropertyValueManager.IsValid;
@@ -52,33 +61,48 @@ namespace Neatoo
 
         public bool IsBusy => IsSelfBusy || PropertyValueManager.IsBusy;
 
-        protected override void Setter<P>(P value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
+        protected (bool IsValid, bool IsSelfValid, bool IsBusy, bool IsSelfBusy) MetaState { get; private set; }
+
+        protected virtual void RaiseMetaPropertiesChanged()
         {
-            if (!IsStopped)
+            if (MetaState.IsValid != IsValid)
             {
-                SetProperty(propertyName, value);
+                PropertyHasChanged(nameof(IsValid));
             }
-            else
+            if (MetaState.IsSelfValid != IsSelfValid)
             {
-                LoadProperty(GetRegisteredProperty(propertyName), value);
+                PropertyHasChanged(nameof(IsSelfValid));
             }
+            if (MetaState.IsSelfBusy)
+            {
+                PropertyHasChanged(nameof(IsSelfBusy));
+            }
+            if (MetaState.IsBusy)
+            {
+                PropertyHasChanged(nameof(IsBusy));
+            }
+
+            ResetMetaState();
+        }
+
+        protected virtual void ResetMetaState()
+        {
+            MetaState = (IsValid, IsSelfValid, IsBusy, IsSelfBusy);
         }
 
         // TODO: Inject
         protected AsyncTaskSequencer AsyncTaskSequencer { get; set; } = new AsyncTaskSequencer();
 
-        protected virtual void SetProperty<P>(string propertyName, P value)
-        {
-            if (PropertyValueManager.SetProperty(propertyName, value))
-            {
-                PropertyHasChanged(propertyName);
-                AddAsyncMethod(() => RuleManager.CheckRulesForProperty(propertyName));
-            }
-        }
 
-        void IRegisteredPropertyAccess.SetProperty<P>(IRegisteredProperty registeredProperty, P value)
+        protected override void HandlePropertyChanged(string propertyName, IBase source)
         {
-            PropertyValueManager.SetProperty(registeredProperty, value);
+            if (source == this && !IsStopped && PropertyValueManager.HasProperty(propertyName))
+            {
+                CheckRules(propertyName);
+                PropertyHasChanged(propertyName);
+            }
+
+            RaiseMetaPropertiesChanged();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -87,57 +111,13 @@ namespace Neatoo
         protected virtual void PropertyHasChanged(string propertyName, object source = null)
         {
             PropertyChanged?.Invoke(source ?? this, new PropertyChangedEventArgs(propertyName));
-            Parent?.ChildPropertyChanged(propertyName, this);
-        }
-
-        protected override void ChildPropertyChanged(string propertyName, IBase source)
-        {
-            if (new string[] { nameof(IsValid), nameof(IsBusy) }.Contains(propertyName))
-            {
-                PropertyHasChanged(propertyName, this);
-            }
+            Parent?.HandlePropertyChanged(propertyName, this);
         }
 
         protected virtual void AddAsyncMethod(Func<Task> method)
         {
-            if (!AsyncTaskSequencer.IsRunning)
-            {
-                var state = (IsValid, IsSelfValid, IsBusy, IsSelfBusy);
-
-                var curOnCompleted = AsyncTaskSequencer.OnCompleted;
-
-                AsyncTaskSequencer.OnCompleted = () =>
-                {
-                    if (state.IsValid != IsValid)
-                    {
-                        PropertyHasChanged(nameof(IsValid));
-                    }
-                    if (state.IsSelfValid != IsSelfValid)
-                    {
-                        PropertyHasChanged(nameof(IsSelfValid));
-                    }
-                    if (state.IsSelfBusy)
-                    {
-                        PropertyHasChanged(nameof(IsSelfBusy));
-                    }
-                    if (state.IsBusy)
-                    {
-                        PropertyHasChanged(nameof(IsBusy));
-                    }
-
-                    curOnCompleted?.Invoke();
-                };
-            }
-
-            var isRunning = AsyncTaskSequencer.IsRunning;
-
             AsyncTaskSequencer.AddTask(method);
-
-            if (!isRunning && AsyncTaskSequencer.IsRunning)
-            {
-                PropertyHasChanged(nameof(IsSelfBusy));
-                PropertyHasChanged(nameof(IsBusy));
-            }
+            RaiseMetaPropertiesChanged();
         }
 
         public virtual Task WaitForRules()
@@ -157,12 +137,48 @@ namespace Neatoo
         protected virtual void MarkInvalid(string message)
         {
             RuleManager.MarkInvalid(message);
+            RaiseMetaPropertiesChanged();
         }
 
-        public override IDisposable StopAllActions()
+        new protected IValidatePropertyValue GetProperty(string propertyName)
         {
-            var result = base.StopAllActions();
-            return result;
+            return PropertyValueManager[propertyName];
+        }
+
+        new protected IValidatePropertyValue GetProperty(IRegisteredProperty registeredProperty)
+        {
+            return PropertyValueManager[registeredProperty];
+        }
+
+        new protected IValidatePropertyValue this[string propertyName] { get => GetProperty(propertyName); }
+        new protected IValidatePropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
+
+        public bool IsStopped { get; protected set; }
+
+        public virtual IDisposable StopAllActions()
+        {
+            if (IsStopped) { return null; } // You are a nested using; You get nothing!!
+            IsStopped = true;
+            return new Core.Stopped(this);
+        }
+
+        public void StartAllActions()
+        {
+            if (IsStopped)
+            {
+                IsStopped = false;
+                ResetMetaState();
+            }
+        }
+
+        IDisposable IPortalTarget.StopAllActions()
+        {
+            return StopAllActions();
+        }
+
+        void IPortalTarget.StartAllActions()
+        {
+            StartAllActions();
         }
 
         public Task CheckRules(string propertyName)

@@ -70,6 +70,7 @@ namespace Neatoo.Newtonsoft.Json
         {
             var surrogate = serializer.Deserialize<ListBaseSurrogate>(reader);
 
+
             var list = (IListBase)Scope.Resolve(surrogate.ListType);
             using(var stopped = (list as IPortalEditTarget)?.StopAllActions())
             {
@@ -83,6 +84,9 @@ namespace Neatoo.Newtonsoft.Json
                 }
                 ((ISetParent) list).SetParent(surrogate.Parent);
             }
+
+            surrogate.PropertyValueManager.SetParent(list);
+
 
             GetListBase(list.GetType()).InvokeMember("PropertyValueManager", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.PropertyValueManager });
 
@@ -163,6 +167,7 @@ namespace Neatoo.Newtonsoft.Json
             var pvm = (IPropertyValueManager)pvmProp.GetValue(value);
             var surrogate = new ListBaseSurrogate(value.GetType(), list, pvm);
 
+            pvm.SetParent(null);
             surrogate.Parent = (value as IBase)?.Parent;
 
             // ValidateListBase

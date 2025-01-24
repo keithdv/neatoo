@@ -30,6 +30,9 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.Child = child;
             validate.PropertyChanged += Validate_PropertyChanged; 
             validate.Child.PropertyChanged += ChildValidate_PropertyChanged;
+
+            Assert.IsFalse(validate.IsBusy);
+
         }
 
 

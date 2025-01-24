@@ -42,6 +42,7 @@ namespace Neatoo.Rules
     }
 
     public abstract class AsyncRuleBase<T> : IRule<T>
+        where T : IBase
     {
 
 
@@ -82,15 +83,10 @@ namespace Neatoo.Rules
 
         public abstract Task<IRuleResult> Execute(T target, CancellationToken token);
 
-        protected IRegisteredPropertyAccess ToPropertyAccessor(T target)
-        {
-            return target as IRegisteredPropertyAccess ?? throw new Exception("Target must inherit from Base<> to use ReadPropertyValue method");
-        }
-
-        protected IPropertyValue ReadPropertyValue(T target, IRegisteredProperty registeredProperty)
-        {
-            return ToPropertyAccessor(target).ReadPropertyValue(registeredProperty);
-        }
+        //protected IPropertyValue ReadPropertyValue(T target, IRegisteredProperty registeredProperty)
+        //{
+        //    return target[registeredProperty];
+        //}
 
         /// <summary>
         /// Allows rule to get the meta properties (IsValid, IsModified)
@@ -98,24 +94,24 @@ namespace Neatoo.Rules
         /// <param name="target"></param>
         /// <param name="propertyName"></param>
         /// <returns></returns>
-        protected IPropertyValue ReadPropertyValue(T target, string propertyName)
-        {
-            return ToPropertyAccessor(target).ReadPropertyValue(propertyName);
-        }
+        //protected IPropertyValue ReadPropertyValue(T target, string propertyName)
+        //{
+        //    return ToPropertyAccessor(target).ReadPropertyValue(propertyName);
+        //}
 
         protected object ReadProperty(T target, string propertyName)
         {
-            return ReadPropertyValue(target, propertyName)?.Value;
+            return target[propertyName].Value;
         }
 
         protected P ReadProperty<P>(T target, IRegisteredProperty registeredProperty)
         {
-            return ToPropertyAccessor(target).ReadProperty<P>(registeredProperty);
+            return (P)target[registeredProperty].Value;
         }
 
         protected void SetProperty<P>(T target, IRegisteredProperty registeredProperty, P value)
         {
-            ToPropertyAccessor(target).SetProperty(registeredProperty, value);
+            target[registeredProperty].SetValue(value);
         }
 
         /// <summary>
@@ -127,13 +123,21 @@ namespace Neatoo.Rules
         /// <param name="value"></param>
         protected void LoadProperty<P>(T target, IRegisteredProperty registeredProperty, P value)
         {
-            ToPropertyAccessor(target).LoadProperty(registeredProperty, value);
+            if (target[registeredProperty] is IValidatePropertyValue editPropertyValue)
+            {
+                editPropertyValue.LoadProperty(value);
+            }
+            else
+            {
+                target[registeredProperty].SetValue(value);
+            }
         }
 
     }
 
 
     public abstract class RuleBase<T> : AsyncRuleBase<T>
+        where T : IBase
     {
         protected RuleBase() : base() { }
 
@@ -155,6 +159,7 @@ namespace Neatoo.Rules
     }
 
     public class FluentRule<T> : RuleBase<T>
+        where T : IBase
     {
         private Func<T, IRuleResult> ExecuteFunc { get; }
         public FluentRule(Func<T, IRuleResult> execute, params string[] triggerProperties) : base(triggerProperties)

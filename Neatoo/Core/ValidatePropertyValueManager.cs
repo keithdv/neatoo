@@ -17,9 +17,13 @@ namespace Neatoo.Core
         bool IsBusy { get; }
         Task CheckAllRules(CancellationToken token);
         Task WaitForRules();
-        bool SetProperty<P>(string propertyName, P newValue);
-        bool SetProperty<P>(IRegisteredProperty propertyName, P newValue);
 
+
+        new IValidatePropertyValue GetProperty(string propertyName);
+        new IValidatePropertyValue GetProperty(IRegisteredProperty registeredProperty);
+
+        public new IValidatePropertyValue this[string propertyName] { get => GetProperty(propertyName); }
+        public new IValidatePropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 
     public interface IValidatePropertyValueManager<T> : IValidatePropertyValueManager, IPropertyValueManager<T>
@@ -32,8 +36,9 @@ namespace Neatoo.Core
         bool IsValid { get; }
         bool IsBusy { get; }
         Task CheckAllRules(CancellationToken token);
-
         Task WaitForRules();
+
+        void LoadProperty(object value);
     }
 
     public interface IValidatePropertyValue<T> : IValidatePropertyValue, IPropertyValue<T>
@@ -45,36 +50,9 @@ namespace Neatoo.Core
     {
 
         public virtual IValidateBase Child => Value as IValidateBase;
-        public ValidatePropertyValue(string name, T value) : base(name, value)
+
+        public ValidatePropertyValue(string name) : base(name)
         {
-        }
-
-        public override T Value
-        {
-            get => base.Value;
-            set
-            {
-
-                OnValueChanging(base.Value, value);
-                base.Value = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
-                OnValueChanged(base.Value);
-            }
-        }
-
-
-        /// <summary>
-        /// Before any checks on if the value actually changed
-        /// </summary>
-        /// <param name="oldValue"></param>
-        /// <param name="newValue"></param>
-        protected virtual void OnValueChanging(T oldValue, T newValue)
-        {
-
-        }
-        protected virtual void OnValueChanged(T newValue)
-        {
-
         }
 
         public bool IsValid => (Child?.IsValid ?? true);
@@ -83,15 +61,18 @@ namespace Neatoo.Core
         public Task WaitForRules() { return Child?.WaitForRules() ?? Task.CompletedTask; }
         public Task CheckAllRules(CancellationToken token) { return Child?.CheckAllRules(token) ?? Task.CompletedTask; }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public virtual void LoadProperty(object value)
+        {
+            if (value is T x)
+            {
+                _value = x;
+            }
+            else
+            {
+                throw new RegisteredPropertyValidateChildDataWrongTypeException();
+            }
+        }
 
-        // TODO : Future - get and assign PropertyValue<>
-        // Gives the ability to wait for a property set if the Property is PropertyValue<XYZ>
-        // Too complicated for now.
-
-        //public static implicit operator T(ValidatePropertyValue<T> value) => value.Value;
-        //public static implicit operator ValidatePropertyValue<T>(T value) => new ValidatePropertyValue<T>(value);
-        //public static implicit operator Task(ValidatePropertyValue<T> value) => value.Task;
     }
 
     public class ValidatePropertyValueManager<T> : ValidatePropertyValueManagerBase<T, IValidatePropertyValue>, IValidatePropertyValueManager<T>
@@ -100,47 +81,69 @@ namespace Neatoo.Core
 
         IRegisteredPropertyManager<T> IPropertyValueManager<T>.RegisteredPropertyManager => RegisteredPropertyManager;
 
-        public ValidatePropertyValueManager(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory, IValuesDiffer valuesDiffer) : base(registeredPropertyManager, factory, valuesDiffer)
+        public ValidatePropertyValueManager(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
         {
 
         }
 
-        protected override IValidatePropertyValue CreatePropertyValue<PV>(IRegisteredProperty registeredProperty, PV value)
+        protected override IValidatePropertyValue CreatePropertyValue<PV>(IRegisteredProperty registeredProperty, IBase parent)
         {
-            return Factory.CreateValidatePropertyValue(registeredProperty, value);
+            return Factory.CreateValidatePropertyValue<PV>(registeredProperty, parent);
+        }
+
+        public IValidatePropertyValue this[string propertyName]
+        {
+            get => GetProperty(propertyName);
+        }
+
+        public IValidatePropertyValue this[IRegisteredProperty registeredProperty]
+        {
+            get => GetProperty(registeredProperty);
         }
 
 
-        public virtual void LoadProperty<PV>(IRegisteredProperty registeredProperty, PropertyValue<PV> newValue)
+        public virtual IValidatePropertyValue GetProperty(string propertyName)
         {
-            if (!fieldData.ContainsKey(registeredProperty.Index))
+            return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
+        }
+
+        public virtual IValidatePropertyValue GetProperty(IRegisteredProperty registeredProperty)
+        {
+            if (fieldData.TryGetValue(registeredProperty.Index, out var fd))
             {
-                // TODO Destroy and Delink to old value
-                // TODO - If they've created an event link to the PropertyValue.NotifyPropertyChanged event
-                // Does just create a new one create a memory leak?
+                return fd;
             }
-            newValue.Name = registeredProperty.Name;
-            fieldData[registeredProperty.Index] = (IValidatePropertyValue) newValue;
 
-            SetParent(newValue.Value);
+            var newPropertyValue = (IValidatePropertyValue) this.GetType().GetMethod(nameof(this.CreatePropertyValue), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty, Target });
+
+            fieldData[registeredProperty.Index] = newPropertyValue;
+
+            return newPropertyValue;
         }
 
+        IPropertyValue IPropertyValueManager.GetProperty(string propertyName)
+        {
+            return GetProperty(propertyName);
+        }
+
+        IPropertyValue IPropertyValueManager.GetProperty(IRegisteredProperty registeredProperty)
+        {
+            return GetProperty(registeredProperty);
+        }
     }
 
     public abstract class ValidatePropertyValueManagerBase<T, P> : PropertyValueManagerBase<T, P>
         where T : IBase
         where P : IValidatePropertyValue
     {
-        public ValidatePropertyValueManagerBase(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory, IValuesDiffer valuesDiffer) : base(registeredPropertyManager, factory)
+        public ValidatePropertyValueManagerBase(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
         {
-            ValuesDiffer = valuesDiffer;
         }
 
         public bool IsValid => !fieldData.Values.Any(_ => !_.IsValid);
 
         public bool IsBusy => fieldData.Values.Any(_ => _.IsBusy);
 
-        public IValuesDiffer ValuesDiffer { get; }
 
         public Task WaitForRules()
         {
@@ -153,33 +156,6 @@ namespace Neatoo.Core
             return Task.WhenAll(tasks.Where(t => t != null));
         }
 
-        public virtual bool SetProperty<PV>(string name, PV newValue)
-        {
-            return SetProperty(GetRegisteredProperty(name), newValue);
-        }
-
-        public virtual bool SetProperty<PV>(IRegisteredProperty registeredProperty, PV newValue)
-        {
-            if (!fieldData.TryGetValue(registeredProperty.Index, out var value))
-            {
-                // Default(P) so that it get's marked dirty
-                // Maybe it would be better to use MarkSelfModified; you know; once I write that
-                fieldData[registeredProperty.Index] = value = CreatePropertyValue(registeredProperty, default(PV));
-            }
-
-            PropertyValue<PV> fd = value as PropertyValue<PV> ?? throw new PropertyTypeMismatchException($"Property {registeredProperty.Name} is not type {typeof(PV).FullName}");
-
-            if (ValuesDiffer.Check(fd.Value, newValue))
-            {
-                SetParent(newValue);
-                fd.Value = newValue;
-                OnPropertyChanged(registeredProperty.Name);
-                return true;
-            } else
-            {
-                return false;
-            }
-        }
     }
 
 

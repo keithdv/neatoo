@@ -90,7 +90,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         }
 
 
-        public interface IShortNameRuleTarget
+        public interface IShortNameRuleTarget : IBase
         {
             string FirstName { get; }
             string LastName { get; }

@@ -49,48 +49,46 @@ namespace Neatoo
 
         bool IEditBase.SetModified => SetModified;
 
-        protected override void SetProperty<P>(string propertyName, P value)
+        protected (bool IsModified, bool IsSelfModified, bool IsSavable) EditMetaState { get; private set; }
+
+        protected override void RaiseMetaPropertiesChanged()
         {
-            if (!AsyncTaskSequencer.IsRunning)
+            base.RaiseMetaPropertiesChanged();
+
+            if (EditMetaState.IsModified != IsModified)
             {
-                var state = (IsSavable, IsModified, IsSelfModified, IsNew);
-
-                var curOnCompleted = AsyncTaskSequencer.OnCompleted;
-
-                AsyncTaskSequencer.OnCompleted = () =>
-                {
-                    if (state.IsSavable != IsSavable)
-                    {
-                        PropertyHasChanged(nameof(IsSavable));
-                    }
-                    if (state.IsModified != IsModified)
-                    {
-                        PropertyHasChanged(nameof(IsModified));
-                    }
-                    if (state.IsSelfModified != IsSelfModified)
-                    {
-                        PropertyHasChanged(nameof(IsSelfModified));
-                    }
-                    if (state.IsNew != IsNew)
-                    {
-                        PropertyHasChanged(nameof(IsNew));
-                    }
-
-                    curOnCompleted?.Invoke();
-                };
+                PropertyHasChanged(nameof(IsModified));
+            }
+            if (EditMetaState.IsSelfModified != IsSelfModified)
+            {
+                PropertyHasChanged(nameof(IsSelfModified));
+            }
+            if (EditMetaState.IsSavable != IsSavable)
+            {
+                PropertyHasChanged(nameof(IsSavable));
             }
 
-            base.SetProperty(propertyName, value);
+            ResetMetaState();
         }
 
-        protected override void ChildPropertyChanged(string propertyName, IBase source)
+        protected override void ResetMetaState()
         {
-            if (new string[] { nameof(IsSavable), nameof(IsModified), nameof(IsNew), nameof(IsValid) }.Contains(propertyName))
-            {
-                PropertyHasChanged(propertyName, this);
-            }
-            base.ChildPropertyChanged(propertyName, source);
+            base.ResetMetaState();
+            EditMetaState = (IsModified, IsSelfModified, IsSavable);
         }
+
+        new protected IEditPropertyValue GetProperty(string propertyName)
+        {
+            return PropertyValueManager[propertyName];
+        }
+
+        new protected IEditPropertyValue GetProperty(IRegisteredProperty registeredProperty)
+        {
+            return PropertyValueManager[registeredProperty];
+        }
+
+        new protected IEditPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
+        new protected IEditPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
 
         protected virtual void MarkAsChild()
         {

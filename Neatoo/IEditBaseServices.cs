@@ -30,7 +30,7 @@ namespace Neatoo
         public IReadWritePortal<T> ReadWritePortal { get; }
 
         public EditBaseServices(IReadWritePortal<T> readWritePortal) : base(){
-            EditPropertyValueManager = new EditPropertyValueManager<T>(RegisteredPropertyManager, new DefaultFactory(), new ValuesDiffer());
+            EditPropertyValueManager = new EditPropertyValueManager<T>(RegisteredPropertyManager, new DefaultFactory());
             ReadWritePortal = readWritePortal;  
         }
 
