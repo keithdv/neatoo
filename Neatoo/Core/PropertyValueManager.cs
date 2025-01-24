@@ -56,6 +56,10 @@ namespace Neatoo.Core
         void SetValue(object newValue);
 
         IBase Parent { get; protected internal set; }
+
+        Task Task { get; }
+
+        TaskAwaiter GetAwaiter() => Task.GetAwaiter();
     }
 
     public interface IPropertyValue<T> : IPropertyValue
@@ -87,8 +91,11 @@ namespace Neatoo.Core
 
         object IPropertyValue.Value { get => Value; set => SetValue(value); }
 
+        public Task Task { get; protected set; }
+
         public void SetValue(object newValue)
         {
+
             if(newValue == null && _value == null) { return; }
 
             if(newValue == null)
@@ -96,7 +103,7 @@ namespace Neatoo.Core
                 _value = default;
                 OnValueChanged(_value);
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
-                Parent?.HandlePropertyChanged(Name, Parent);
+                Task = Parent?.HandlePropertyChanged(Name, Parent);
             }
             else if (newValue is T value)
             {
@@ -108,12 +115,17 @@ namespace Neatoo.Core
                 {
                     OnValueChanged(value);
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
-                    Parent?.HandlePropertyChanged(Name, Parent);
+                    Task = Parent?.HandlePropertyChanged(Name, Parent);
                 }
             }
             else
             {
                 throw new PropertyTypeMismatchException($"Type {newValue.GetType()} is not type {typeof(T).FullName}");
+            }
+
+            if(Task.IsCompleted && Task.IsFaulted)
+            {
+                throw Task.Exception;
             }
         }
 

@@ -19,7 +19,7 @@ namespace Neatoo
 
         IBase Parent { get; }
 
-        internal void HandlePropertyChanged(string propertyName, IBase source);
+        internal Task HandlePropertyChanged(string propertyName, IBase source);
 
         internal IPropertyValue GetProperty(string propertyName);
         internal IPropertyValue GetProperty(IRegisteredProperty registeredProperty);
@@ -65,14 +65,15 @@ namespace Neatoo
             PropertyValueManager[propertyName].SetValue(value);
         }
 
-        protected virtual void HandlePropertyChanged(string propertyName, IBase source)
+        protected virtual Task HandlePropertyChanged(string propertyName, IBase source)
         {
             Parent?.HandlePropertyChanged(propertyName, this);
+            return Task.CompletedTask;
         }
 
-        void IBase.HandlePropertyChanged(string propertyName, IBase source)
+        Task IBase.HandlePropertyChanged(string propertyName, IBase source)
         {
-            HandlePropertyChanged(propertyName, source);
+            return HandlePropertyChanged(propertyName, source);
         }
 
         protected IRegisteredProperty GetRegisteredProperty(string propertyName)

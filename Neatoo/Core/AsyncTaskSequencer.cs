@@ -21,7 +21,7 @@ namespace Neatoo.Core
 
         public ConcurrentBag<Action> OnEachComplete { get; } = new ConcurrentBag<Action>();
 
-        public void AddTask(Func<Task> task)
+        public Task AddTask(Func<Task> task)
         {
             lock (lockObject)
             {
@@ -47,7 +47,7 @@ namespace Neatoo.Core
                             action();
                         }
 
-                        return;
+                        return eTask;
                     }
 
                     allDoneCompletionSource = new TaskCompletionSource<bool>();
@@ -74,6 +74,8 @@ namespace Neatoo.Core
                     firstTask = new AsyncTaskSequencerTask(eTask, continueWith);
 
                     currentTask = firstTask;
+
+                    return firstTask.Task;
                 }
                 else
                 {
@@ -97,6 +99,8 @@ namespace Neatoo.Core
                     };
 
                     currentTask = nextTask;
+
+                    return currentTask.Task;
                 }
             }
         }
@@ -108,6 +112,7 @@ namespace Neatoo.Core
     public interface IContinueWith
     {
         public Func<Task, Task> ContinueWith { get; set; }
+        public Task Task { get; }
     }
 
     public class AsyncTaskSequencerTask : IContinueWith
@@ -132,16 +137,31 @@ namespace Neatoo.Core
         {
             this.task = task;
             ContinueWith = initialContinueWith;
+
         }
 
         private bool callOnce = false;
         private readonly Func<Task> task;
-
+        private readonly TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
+        public Task Task => taskCompletionSource.Task;
         public Task Execute()
         {
             Debug.Assert(!callOnce, "Task has already been executed");
             callOnce = true;
-            return task().ContinueWith((t) => ContinueWith(t));
+            return task().ContinueWith((t) =>
+            {
+
+                if (t.IsFaulted)
+                {
+                    taskCompletionSource.SetException(t.Exception);
+                }
+                else
+                {
+                    taskCompletionSource.SetResult(true);
+                }
+
+                return ContinueWith(t);
+            });
         }
 
         public CancellationTokenSource CancellationTokenSource { get; set; }

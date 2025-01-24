@@ -39,12 +39,19 @@ namespace Neatoo.UnitTest.AsyncFlowTests
         }
 
         [TestMethod]
+        public async Task AsyncFlowTests_CheckAllRules()
+        {
+            // Just ensure there's not a circular reference
+            await asyncValidateObject.CheckAllRules(); 
+        }
+
+        [TestMethod]
         public void AsyncFlowTests_NoAwait_IsBusy()
         {
             // Need to implement PropertyValueManager.IsBusy
             // in the same way it is implemented for RulesManager
 
-            asyncValidateObject.HasAsyncRules = "test";
+            asyncValidateObject.AsyncDelayRuleValue = "test";
             Assert.AreEqual(1, asyncValidateObject.AsyncDelayRule.RunCount);
             Assert.IsTrue(asyncValidateObject.IsBusy);
             
@@ -65,5 +72,38 @@ namespace Neatoo.UnitTest.AsyncFlowTests
                                      }, propertyChangedCalls.ToList());
         }
 
+        [TestMethod]
+        public async Task AsyncFlowTests_CallerCanWaitForPropertyUpdate_NotAllOnly()
+        {
+            asyncValidateObject.AsyncRuleCanWaitPropertyValue.Value = "test";
+
+            Assert.IsTrue(asyncValidateObject.IsBusy);
+            Assert.AreNotEqual("Ran", asyncValidateObject.AsyncRulesCanWaitNested);
+
+            await asyncValidateObject.AsyncRuleCanWaitPropertyValue.Task;
+
+            Assert.IsTrue(asyncValidateObject.IsBusy);
+            Assert.AreEqual("Ran", asyncValidateObject.AsyncRulesCanWaitNested);
+
+            await asyncValidateObject.WaitForRules();
+            Assert.IsFalse(asyncValidateObject.IsBusy);
+        }
+
+        [TestMethod]
+        public async Task AsyncFlowTests_RuleCanWaitForAnotherRule()
+        {
+            asyncValidateObject.AsyncRuleCanWaitPropertyValue.Value = "Wait";
+
+            Assert.IsTrue(asyncValidateObject.IsBusy);
+            Assert.AreNotEqual("Ran", asyncValidateObject.AsyncRulesCanWaitNested);
+
+            await asyncValidateObject.AsyncRuleCanWaitPropertyValue.Task;
+
+            Assert.IsTrue(asyncValidateObject.IsBusy);
+            Assert.AreEqual("Ran", asyncValidateObject.AsyncRulesCanWaitNested);
+
+            await asyncValidateObject.WaitForRules();
+            Assert.IsFalse(asyncValidateObject.IsBusy);
+        }
     }
 }

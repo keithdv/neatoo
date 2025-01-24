@@ -94,11 +94,12 @@ namespace Neatoo
         protected AsyncTaskSequencer AsyncTaskSequencer { get; set; } = new AsyncTaskSequencer();
 
 
-        protected override void HandlePropertyChanged(string propertyName, IBase source)
+        protected override async Task HandlePropertyChanged(string propertyName, IBase source)
         {
+
             if (source == this && !IsStopped && PropertyValueManager.HasProperty(propertyName))
             {
-                CheckRules(propertyName);
+                await CheckRules(propertyName);
                 PropertyHasChanged(propertyName);
             }
 
@@ -114,10 +115,9 @@ namespace Neatoo
             Parent?.HandlePropertyChanged(propertyName, this);
         }
 
-        protected virtual void AddAsyncMethod(Func<Task> method)
+        protected virtual Task AddAsyncMethod(Func<Task> method)
         {
-            AsyncTaskSequencer.AddTask(method);
-            RaiseMetaPropertiesChanged();
+            return AsyncTaskSequencer.AddTask(method);
         }
 
         public virtual Task WaitForRules()
@@ -183,8 +183,7 @@ namespace Neatoo
 
         public Task CheckRules(string propertyName)
         {
-            AddAsyncMethod(() => RuleManager.CheckRulesForProperty(propertyName));
-            return AsyncTaskSequencer.AllDone;
+            return AddAsyncMethod(() => RuleManager.CheckRulesForProperty(propertyName));
         }
 
         public Task CheckAllSelfRules(CancellationToken token = new CancellationToken())

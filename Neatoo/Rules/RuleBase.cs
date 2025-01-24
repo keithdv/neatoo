@@ -99,6 +99,11 @@ namespace Neatoo.Rules
         //    return ToPropertyAccessor(target).ReadPropertyValue(propertyName);
         //}
 
+        protected IPropertyValue ReadPropertyValue(T target, string propertyName)
+        {
+            return target[propertyName];
+        }
+
         protected object ReadProperty(T target, string propertyName)
         {
             return target[propertyName].Value;

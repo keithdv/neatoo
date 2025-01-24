@@ -74,14 +74,15 @@ namespace Neatoo
             PropertyValueManager[propertyName].SetValue(value);
         }
 
-        protected virtual void HandlePropertyChanged(string propertyName, IBase source)
+        protected virtual Task HandlePropertyChanged(string propertyName, IBase source)
         {
             Parent?.HandlePropertyChanged(propertyName, this);
+            return Task.CompletedTask;
         }
 
-        void IBase.HandlePropertyChanged(string propertyName, IBase source)
+        Task IBase.HandlePropertyChanged(string propertyName, IBase source)
         {
-            HandlePropertyChanged(propertyName, source);
+            return HandlePropertyChanged(propertyName, source);
         }
         protected IRegisteredProperty GetRegisteredProperty(string propertyName)
         {
