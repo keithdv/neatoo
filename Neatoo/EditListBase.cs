@@ -51,9 +51,9 @@ namespace Neatoo
 
         protected (bool IsModified, bool IsSelfModified, bool IsSavable) EditMetaState { get; private set; }
 
-        protected override void RaiseMetaPropertiesChanged()
+        protected override void RaiseMetaPropertiesChanged(bool resetBusy = false)
         {
-            base.RaiseMetaPropertiesChanged();
+            base.RaiseMetaPropertiesChanged(resetBusy);
 
             if (EditMetaState.IsModified != IsModified)
             {

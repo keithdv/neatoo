@@ -52,16 +52,16 @@ namespace HorseBarn.lib.Cart
         IEnumerable<IHorse> ICart.Horses => HorseList;
 
 
-        protected override Task HandlePropertyChanged(string propertyName, IBase source)
+        protected override async Task HandlePropertyChanged(string propertyName, IBase source)
         {
-            base.HandlePropertyChanged(propertyName, source);
 
-            if(source == HorseList && propertyName == nameof(HorseList.Count))
+            if (source == HorseList && propertyName == nameof(HorseList.Count))
             {
-                return CheckRules(nameof(NumberOfHorses));
+                await CheckRules(nameof(NumberOfHorses)); 
             }
 
-            return Task.CompletedTask;
+            await base.HandlePropertyChanged(propertyName, source);
+
         }
 
         public void RemoveHorse(IHorse horse)

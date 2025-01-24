@@ -54,7 +54,8 @@ namespace Neatoo.UnitTest.AsyncFlowTests
             asyncValidateObject.AsyncDelayRuleValue = "test";
             Assert.AreEqual(1, asyncValidateObject.AsyncDelayRule.RunCount);
             Assert.IsTrue(asyncValidateObject.IsBusy);
-            
+            CollectionAssert.Contains(propertyChangedCalls, "IsBusy");
+            CollectionAssert.Contains(propertyChangedCalls, "IsSelfBusy");
         }
 
         [TestMethod]
@@ -104,6 +105,59 @@ namespace Neatoo.UnitTest.AsyncFlowTests
 
             await asyncValidateObject.WaitForRules();
             Assert.IsFalse(asyncValidateObject.IsBusy);
+        }
+
+        [TestMethod]
+        public async Task AsyncFlowTests_PropertyValue_PropertyChangedEvents()
+        {
+
+            PropertyChangedEventHandler propertyChanged = (s, e) =>
+            {
+                propertyValuePropertyChangedCalls.Add(e.PropertyName);
+            };
+
+            try
+            {
+                asyncValidateObject.AsyncRuleCanWaitPropertyValue.PropertyChanged += propertyChanged;
+
+                asyncValidateObject.AsyncRuleCanWaitPropertyValue.Value = "Wait";
+
+                await Task.Delay(2);
+
+                CollectionAssert.Contains(propertyChangedCalls, "IsBusy");
+                CollectionAssert.Contains(propertyChangedCalls, "IsSelfBusy");
+                CollectionAssert.Contains(propertyValuePropertyChangedCalls, "IsBusy");
+                CollectionAssert.Contains(propertyValuePropertyChangedCalls, "IsSelfBusy");
+
+                Assert.IsTrue(asyncValidateObject.IsBusy);
+                Assert.AreNotEqual("Ran", asyncValidateObject.AsyncRulesCanWaitNested);
+
+                propertyChangedCalls.Clear();
+                propertyValuePropertyChangedCalls.Clear();
+
+                await asyncValidateObject.AsyncRuleCanWaitPropertyValue.Task;
+
+                Assert.IsTrue(asyncValidateObject.IsBusy);
+                Assert.AreEqual("Ran", asyncValidateObject.AsyncRulesCanWaitNested);
+
+                await asyncValidateObject.WaitForRules();
+
+                Assert.IsFalse(asyncValidateObject.IsBusy);
+
+                await Task.Delay(5);
+
+                CollectionAssert.Contains(propertyChangedCalls, "IsBusy");
+                CollectionAssert.Contains(propertyChangedCalls, "IsSelfBusy");
+                CollectionAssert.Contains(propertyValuePropertyChangedCalls, "IsBusy");
+                CollectionAssert.Contains(propertyValuePropertyChangedCalls, "IsSelfBusy");
+
+            }
+            finally
+            {
+                asyncValidateObject.AsyncRuleCanWaitPropertyValue.PropertyChanged -= propertyChanged;
+            }
+
+
         }
     }
 }

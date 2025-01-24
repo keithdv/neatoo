@@ -38,7 +38,7 @@ namespace Neatoo
             this.RuleManager = services.RuleManager;
             ((ISetTarget)this.RuleManager).SetTarget(this);
 
-            AsyncTaskSequencer.OnEachComplete.Add(RaiseMetaPropertiesChanged);
+            AsyncTaskSequencer.OnFullSequenceComplete.Add(() => RaiseMetaPropertiesChanged(true));
 
             ResetMetaState();
         }
@@ -50,7 +50,7 @@ namespace Neatoo
 
         protected (bool IsValid, bool IsSelfValid, bool IsBusy, bool IsSelfBusy) MetaState { get; private set; }
 
-        protected virtual void RaiseMetaPropertiesChanged()
+        protected virtual void RaiseMetaPropertiesChanged(bool raiseBusy = false)
         {
             if (MetaState.IsValid != IsValid)
             {
@@ -60,11 +60,11 @@ namespace Neatoo
             {
                 PropertyHasChanged(nameof(IsSelfValid));
             }
-            if (MetaState.IsSelfBusy)
+            if (raiseBusy && IsSelfBusy || MetaState.IsSelfBusy != IsSelfBusy)
             {
                 PropertyHasChanged(nameof(IsSelfBusy));
             }
-            if (MetaState.IsBusy)
+            if (raiseBusy && IsBusy || MetaState.IsBusy != IsBusy)
             {
                 PropertyHasChanged(nameof(IsBusy));
             }
@@ -80,18 +80,36 @@ namespace Neatoo
         // TODO: Inject
         protected AsyncTaskSequencer AsyncTaskSequencer { get; set; } = new AsyncTaskSequencer();
 
-        
-        protected override async Task HandlePropertyChanged(string propertyName, IBase source)
+        protected override Task HandlePropertyChanged(string propertyName, IBase source)
         {
             if (source == this && !IsStopped && PropertyValueManager.HasProperty(propertyName))
             {
-                await CheckRules(propertyName);
                 PropertyHasChanged(propertyName);
+
+                var t = CheckRules(propertyName);
+
+                if (!t.IsCompleted || t.IsFaulted)
+                {
+                    RaiseMetaPropertiesChanged();
+                }
+
+                return t;
             }
 
             RaiseMetaPropertiesChanged();
+
+            return Task.CompletedTask;
         }
 
+        protected virtual Task AddAsyncMethod(Func<Task, Task> method, bool runOnException = false)
+        {
+            return AsyncTaskSequencer.AddTask(method, runOnException);
+        }
+
+        Task IValidateBase.AddSequencedTask(System.Func<Task, Task> task, bool runOnException = false)
+        {
+            return AddAsyncMethod(task, runOnException);
+        }
 
         protected virtual void PropertyHasChanged(string propertyName, object source = null)
         {
@@ -99,10 +117,7 @@ namespace Neatoo
             Parent?.HandlePropertyChanged(propertyName, this);
         }
 
-        protected virtual Task AddAsyncMethod(Func<Task> method)
-        {
-            return AsyncTaskSequencer.AddTask(method);
-        }
+
 
         new protected IValidatePropertyValue GetProperty(string propertyName)
         {
@@ -147,22 +162,22 @@ namespace Neatoo
 
         public Task CheckRules(string propertyName)
         {
-            return AddAsyncMethod(() => RuleManager.CheckRulesForProperty(propertyName));
+            return AddAsyncMethod((t) => RuleManager.CheckRulesForProperty(propertyName));
         }
 
         public virtual Task CheckAllSelfRules(CancellationToken token = new CancellationToken())
         {
-            AddAsyncMethod(() => RuleManager.CheckAllRules());
+            AddAsyncMethod((t) => RuleManager.CheckAllRules());
             return AsyncTaskSequencer.AllDone;
         }
 
         public virtual Task CheckAllRules(CancellationToken token = new CancellationToken())
         {
-            AddAsyncMethod(() => RuleManager.CheckAllRules(token));
-            AddAsyncMethod(() => PropertyValueManager.CheckAllRules(token));
+            AddAsyncMethod((t) => RuleManager.CheckAllRules(token));
+            AddAsyncMethod((t) => PropertyValueManager.CheckAllRules(token));
             foreach (var item in this)
             {
-                AddAsyncMethod(() => item.CheckAllRules(token));
+                AddAsyncMethod((t) => item.CheckAllRules(token));
             }
             // TODO - This isn't raising the 'IsValid' property changed event
             return AsyncTaskSequencer.AllDone;
@@ -182,6 +197,12 @@ namespace Neatoo
             PropertyHasChanged(nameof(Count));
         }
 
+        protected override void RemoveItem(int index)
+        {
+            base.RemoveItem(index);
+
+            PropertyHasChanged(nameof(Count));
+        }
 
         /// <summary>
         /// Permantatly mark invalid
@@ -196,6 +217,7 @@ namespace Neatoo
 
         IRuleResultReadOnlyList IValidateBase.RuleResultList => RuleManager.Results;
         IEnumerable<string> IValidateBase.BrokenRuleMessages => RuleManager.Results.Where(x => x.IsError).SelectMany(x => x.PropertyErrorMessages).Select(x => x.Value);
+
 
     }
 }

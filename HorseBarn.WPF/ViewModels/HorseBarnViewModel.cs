@@ -96,7 +96,6 @@ namespace HorseBarn.WPF.ViewModels
                 cart.Name = "Wagon A";
 
 
-
                 HorseBarn = await HorseBarn.SaveRetrieve<IHorseBarn>();
             }
 

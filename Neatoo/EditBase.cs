@@ -38,7 +38,7 @@ namespace Neatoo
 
         protected (bool IsModified, bool IsSelfModified, bool IsSavable, bool IsDeleted) EditMetaState { get; private set; }
 
-        protected override void RaiseMetaPropertiesChanged()
+        protected override void RaiseMetaPropertiesChanged(bool raiseBusy = true)
         {
 
             if (!IsStopped)
@@ -61,7 +61,7 @@ namespace Neatoo
                 }
             }
 
-            base.RaiseMetaPropertiesChanged();
+            base.RaiseMetaPropertiesChanged(raiseBusy);
         }
 
         protected override void ResetMetaState()

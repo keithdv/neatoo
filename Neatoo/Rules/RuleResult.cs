@@ -40,8 +40,6 @@ namespace Neatoo.Rules
         {
             return new RuleResult();
         }
-
-
        
         public static RuleResult PropertyError(string propertyName, string message, Exception exception = null)
         {

@@ -54,15 +54,18 @@ namespace Neatoo.Core
 
         public IEditBase EditChild => Value as IEditBase;
 
-        protected override void OnValueChanged(T newValue)
+        protected override void OnPropertyChanged(string propertyName)
         {
-            base.OnValueChanged(newValue);
+            base.OnPropertyChanged(propertyName);
 
-            if (Parent is IEditBase edit)
+            if (propertyName == nameof(Value))
             {
-                if (!edit.IsStopped)
+                if (Parent is IEditBase edit)
                 {
-                    IsSelfModified = true && EditChild == null; // Never consider ourself modified if holding a Neatoo object
+                    if (!edit.IsStopped)
+                    {
+                        IsSelfModified = true && EditChild == null; // Never consider ourself modified if holding a Neatoo object
+                    }
                 }
             }
         }

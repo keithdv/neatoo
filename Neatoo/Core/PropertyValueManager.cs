@@ -48,7 +48,7 @@ namespace Neatoo.Core
         internal IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
     }
 
-    public interface IPropertyValue
+    public interface IPropertyValue : INotifyPropertyChanged
     {
         string Name { get; }
         object Value { get; set; }
@@ -93,17 +93,17 @@ namespace Neatoo.Core
 
         public Task Task { get; protected set; }
 
-        public void SetValue(object newValue)
+        public virtual void SetValue(object newValue)
         {
-
             if(newValue == null && _value == null) { return; }
+
+            Task = Task.CompletedTask;
 
             if(newValue == null)
             {
                 _value = default;
-                OnValueChanged(_value);
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
-                Task = Parent?.HandlePropertyChanged(Name, Parent);
+                OnPropertyChanged(nameof(Value));
+                Task = HandlePropertyChanged(Name, Parent);
             }
             else if (newValue is T value)
             {
@@ -113,9 +113,8 @@ namespace Neatoo.Core
                 _value = value;
                 if (isDiff)
                 {
-                    OnValueChanged(value);
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
-                    Task = Parent?.HandlePropertyChanged(Name, Parent);
+                    OnPropertyChanged(nameof(Value));
+                    Task = HandlePropertyChanged(Name, Parent);
                 }
             }
             else
@@ -129,13 +128,20 @@ namespace Neatoo.Core
             }
         }
 
-        protected virtual void OnValueChanged(T newValue) { }
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected virtual Task HandlePropertyChanged(string propertyName, IBase source)
+        {
+            return Parent?.HandlePropertyChanged(Name, Parent);
+        }
 
         public PropertyValue(string name)
         {
             this.Name = name;
         }
-
 
         protected void SetParentOfValue(object newValue)
         {

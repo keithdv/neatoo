@@ -22,7 +22,7 @@ namespace Neatoo.UnitTest
             bool completedB = false;
             bool completedC = false;
 
-            Func<Task> funcA = async () =>
+            Func<Task, Task> funcA = async (t) =>
             {
                 await Task.Delay(5);
                 Assert.IsFalse(completedA);
@@ -31,7 +31,7 @@ namespace Neatoo.UnitTest
                 completedA = true;
             };
 
-            Func<Task> funcB = async () =>
+            Func<Task, Task> funcB = async (t) =>
             {
                 await Task.Delay(10);
                 Assert.IsTrue(completedA);
@@ -40,7 +40,7 @@ namespace Neatoo.UnitTest
                 completedB = true;
             };
 
-            Func<Task> funcC = async () =>
+            Func<Task, Task> funcC = async (t) =>
             {
                 await Task.Delay(15);
                 Assert.IsTrue(completedA);
@@ -71,7 +71,7 @@ namespace Neatoo.UnitTest
             bool completedB = false;
             bool completedC = false;
 
-            Func<Task> funcA = () =>
+            Func<Task, Task> funcA = (t) =>
             {
                 Assert.IsFalse(completedA);
                 Assert.IsFalse(completedB);
@@ -80,7 +80,7 @@ namespace Neatoo.UnitTest
                 return Task.CompletedTask;
             };
 
-            Func<Task> funcB = () =>
+            Func<Task, Task> funcB = (t) =>
             {
                 Assert.IsTrue(completedA);
                 Assert.IsFalse(completedB);
@@ -89,7 +89,7 @@ namespace Neatoo.UnitTest
                 return Task.CompletedTask;
             };
 
-            Func<Task> funcC = () =>
+            Func<Task, Task> funcC = (t) =>
             {
                 Assert.IsTrue(completedA);
                 Assert.IsTrue(completedB);
@@ -120,9 +120,11 @@ namespace Neatoo.UnitTest
             bool completedA = false;
             bool completedB = false;
             bool completedC = false;
+            bool completedD = false;
+
             Exception exception = new Exception("Test");
 
-            Func<Task> funcA = async () =>
+            Func<Task, Task> funcA = async (t) =>
             {
                 await Task.Delay(5);
                 Assert.IsFalse(completedA);
@@ -131,7 +133,7 @@ namespace Neatoo.UnitTest
                 completedA = true;
             };
 
-            Func<Task> funcB = async () =>
+            Func<Task, Task> funcB = async (t) =>
             {
                 await Task.Delay(5);
                 Assert.IsTrue(completedA);
@@ -141,7 +143,7 @@ namespace Neatoo.UnitTest
                 throw exception;
             };
 
-            Func<Task> funcC = async () =>
+            Func<Task, Task> funcC = async (t) =>
             {
                 await Task.Delay(5);
                 Assert.IsTrue(completedA);
@@ -150,9 +152,19 @@ namespace Neatoo.UnitTest
                 completedC = true;
             };
 
+            Func<Task, Task> funcD = async (t) =>
+            {
+                await Task.Delay(5);
+                Assert.IsTrue(completedA);
+                Assert.IsTrue(completedB);
+                Assert.IsFalse(completedC);
+                completedD = true;
+            };
+
             sequencer.AddTask(funcA);
             sequencer.AddTask(funcB);
             sequencer.AddTask(funcC);
+            sequencer.AddTask(funcD, true);
 
             try
             {
@@ -162,6 +174,11 @@ namespace Neatoo.UnitTest
             {
                 Assert.AreEqual(ex.InnerException, exception);
             }
+
+            Assert.IsTrue(completedA);
+            Assert.IsTrue(completedB);
+            Assert.IsFalse(completedC);
+            Assert.IsTrue(completedD);
         }
 
 
@@ -180,7 +197,7 @@ namespace Neatoo.UnitTest
             bool completedB = false;
             bool completedC = false;
 
-            Func<Task> funcC = async () =>
+            Func<Task, Task> funcC = async (t) =>
             {
                 await Task.Delay(5);
                 Assert.IsTrue(completedA);
@@ -189,7 +206,7 @@ namespace Neatoo.UnitTest
                 completedC = true;
             };
 
-            Func<Task> funcB = async () =>
+            Func<Task, Task> funcB = async (t) =>
             {
                 await Task.Delay(5);
                 sequencer.AddTask(funcC);
@@ -231,7 +248,7 @@ namespace Neatoo.UnitTest
             bool completedB = false;
             bool completedC = false;
 
-            Func<Task> funcA = () =>
+            Func<Task, Task> funcA = (t) =>
             {
                 Assert.IsFalse(completedA);
                 Assert.IsFalse(completedB);
@@ -240,7 +257,7 @@ namespace Neatoo.UnitTest
                 return Task.CompletedTask;
             };
 
-            Func<Task> funcB = () =>
+            Func<Task, Task> funcB = (t) =>
             {
                 Assert.IsTrue(completedA);
                 Assert.IsFalse(completedB);
@@ -249,7 +266,7 @@ namespace Neatoo.UnitTest
                 return Task.CompletedTask;
             };
 
-            Func<Task> funcC = () =>
+            Func<Task, Task> funcC = (t) =>
             {
                 Assert.IsTrue(completedA);
                 Assert.IsTrue(completedB);
@@ -280,7 +297,7 @@ namespace Neatoo.UnitTest
             bool completedB = false;
             bool completedC = false;
 
-            Func<Task> funcA = async () =>
+            Func<Task, Task> funcA = async (t) =>
             {
                 await Task.Delay(5);
                 Assert.IsFalse(completedA);
@@ -289,7 +306,7 @@ namespace Neatoo.UnitTest
                 completedA = true;
             };
 
-            Func<Task> funcB = async () =>
+            Func<Task, Task> funcB = async (t) =>
             {
                 await Task.Delay(10);
                 Assert.IsTrue(completedA);
@@ -298,7 +315,7 @@ namespace Neatoo.UnitTest
                 completedB = true;
             };
 
-            Func<Task> funcC = async () =>
+            Func<Task, Task> funcC = async (t) =>
             {
                 await Task.Delay(15);
                 Assert.IsTrue(completedA);

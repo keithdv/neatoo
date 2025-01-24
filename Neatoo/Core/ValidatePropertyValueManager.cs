@@ -18,7 +18,6 @@ namespace Neatoo.Core
         Task CheckAllRules(CancellationToken token);
         Task WaitForRules();
 
-
         new IValidatePropertyValue GetProperty(string propertyName);
         new IValidatePropertyValue GetProperty(IRegisteredProperty registeredProperty);
 
@@ -37,6 +36,9 @@ namespace Neatoo.Core
         bool IsBusy { get; }
         Task CheckAllRules(CancellationToken token);
         Task WaitForRules();
+        bool IsError { get; internal set; }
+        IReadOnlyList<string> ErrorMessages { get; internal set; }
+        Exception RuleException { get; internal set; }
 
         void LoadProperty(object value);
     }
@@ -56,10 +58,15 @@ namespace Neatoo.Core
         }
 
         public bool IsValid => (Child?.IsValid ?? true);
-        public bool IsBusy => (Child?.IsBusy ?? false);
+        public bool IsBusy => IsSelfBusy || (Child?.IsBusy ?? false);
+        public bool IsSelfBusy { get; private set; } = false;
 
         public Task WaitForRules() { return Child?.WaitForRules() ?? Task.CompletedTask; }
         public Task CheckAllRules(CancellationToken token) { return Child?.CheckAllRules(token) ?? Task.CompletedTask; }
+
+        public bool IsError { get; set; }
+        public IReadOnlyList<string> ErrorMessages { get; set; }
+        public Exception RuleException { get; set; }
 
         public virtual void LoadProperty(object value)
         {
@@ -73,6 +80,41 @@ namespace Neatoo.Core
             }
         }
 
+        protected override Task HandlePropertyChanged(string propertyName, IBase source)
+        {
+            try
+            {
+                var task = base.HandlePropertyChanged(propertyName, source);
+
+                if (!task.IsCompleted && Parent is IValidateBase validateBase)
+                {
+                    IsSelfBusy = true;
+
+                    OnPropertyChanged(nameof(IsBusy));
+                    OnPropertyChanged(nameof(IsSelfBusy));
+
+                    validateBase.AddSequencedTask((t) =>
+                    {
+                        IsSelfBusy = false;
+                        if (!t.IsFaulted)
+                        {
+                            OnPropertyChanged(nameof(IsBusy));
+                            OnPropertyChanged(nameof(IsSelfBusy));
+                        }
+                        return Task.CompletedTask;
+                    }, true);
+                }
+
+                return task;
+            }
+            catch
+            {
+
+                IsSelfBusy = false;
+
+                throw;
+            }
+        }
     }
 
     public class ValidatePropertyValueManager<T> : ValidatePropertyValueManagerBase<T, IValidatePropertyValue>, IValidatePropertyValueManager<T>
