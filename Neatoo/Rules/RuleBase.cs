@@ -72,6 +72,10 @@ namespace Neatoo.Rules
             TriggerProperties.AddRange(triggerProperties.Select(t => t.Name));
         }
 
+        /// TODO: Lol, this is not going to work with serialization...
+        /// <summary>
+        /// 
+        /// </summary>
         public uint UniqueIndex { get; }
 
         IReadOnlyList<string> IRule.TriggerProperties => TriggerProperties.AsReadOnly();
@@ -173,6 +177,22 @@ namespace Neatoo.Rules
         }
 
         public override IRuleResult Execute(T target)
+        {
+            return ExecuteFunc(target);
+        }
+    }
+
+    public class AsyncFluentRule<T> : AsyncRuleBase<T>
+    where T : IBase
+    {
+        private Func<T, Task<IRuleResult>> ExecuteFunc { get; }
+
+        public AsyncFluentRule(Func<T, Task<IRuleResult>> execute, params string[] triggerProperties) : base(triggerProperties)
+        {
+            this.ExecuteFunc = execute;
+        }
+
+        public override Task<IRuleResult> Execute(T target, CancellationToken token)
         {
             return ExecuteFunc(target);
         }

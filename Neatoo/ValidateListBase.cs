@@ -216,8 +216,17 @@ namespace Neatoo
 
 
         IRuleResultReadOnlyList IValidateBase.RuleResultList => RuleManager.Results;
-        IEnumerable<string> IValidateBase.BrokenRuleMessages => RuleManager.Results.Where(x => x.IsError).SelectMany(x => x.PropertyErrorMessages).Select(x => x.Value);
+        public IReadOnlyList<string> BrokenRuleMessages => RuleManager.Results.Where(x => x.IsError).SelectMany(x => x.PropertyErrorMessages).Select(x => x.Value).ToList().AsReadOnly();
 
+        IValidatePropertyValue IValidateBase.GetProperty(string propertyName)
+        {
+            return GetProperty(propertyName);
+        }
+
+        IValidatePropertyValue IValidateBase.GetProperty(IRegisteredProperty registeredProperty)
+        {
+            return GetProperty(registeredProperty);
+        }
 
     }
 }

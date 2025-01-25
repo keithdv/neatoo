@@ -24,7 +24,7 @@ namespace Neatoo
         Task CheckAllRules(CancellationToken token = new CancellationToken());
         Task CheckAllSelfRules(CancellationToken token = new CancellationToken());
         IRuleResultReadOnlyList RuleResultList { get; }
-        IEnumerable<string> BrokenRuleMessages { get; }
+        IReadOnlyList<string> BrokenRuleMessages { get; }
 
         /// <summary>
         /// Stop events, rules and ismodified
@@ -34,6 +34,12 @@ namespace Neatoo
         bool IsStopped { get; }
 
         internal Task AddSequencedTask(Func<Task, Task> task, bool runOnException = false);
+
+        internal new IValidatePropertyValue GetProperty(string propertyName);
+        internal new IValidatePropertyValue GetProperty(IRegisteredProperty registeredProperty);
+
+        new internal IValidatePropertyValue this[string propertyName] { get => GetProperty(propertyName); }
+        new internal IValidatePropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 
     [PortalDataContract]
@@ -133,7 +139,7 @@ namespace Neatoo
 
         public IRuleResultReadOnlyList RuleResultList => RuleManager.Results;
 
-        public IEnumerable<string> BrokenRuleMessages => RuleManager.Results.Where(x => x.IsError).SelectMany(x => x.PropertyErrorMessages).Select(x => x.Value);
+        public IReadOnlyList<string> BrokenRuleMessages => RuleManager.Results.Where(x => x.IsError).SelectMany(x => x.PropertyErrorMessages).Select(x => x.Value).ToList().AsReadOnly();
 
         /// <summary>
         /// Permantatly mark invalid
@@ -223,6 +229,16 @@ namespace Neatoo
         protected async Task CreateChild()
         {
             await CheckAllSelfRules();
+        }
+
+        IValidatePropertyValue IValidateBase.GetProperty(string propertyName)
+        {
+            return GetProperty(propertyName);
+        }
+
+        IValidatePropertyValue IValidateBase.GetProperty(IRegisteredProperty registeredProperty)
+        {
+            return GetProperty(registeredProperty);
         }
     }
 }

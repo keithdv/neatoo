@@ -19,6 +19,8 @@ namespace Neatoo.Rules
         IReadOnlyList<string> TriggerProperties { get; set; }
 
         Exception Exception { get; }
+
+        void AddPropertyError(string propertyName, string message);
     }
 
     [PortalDataContract]
@@ -53,7 +55,7 @@ namespace Neatoo.Rules
             return result;
         }
 
-        internal void AddPropertyErrorMessage(string propertyName, string message)
+        public void AddPropertyError(string propertyName, string message)
         {
             PropertyErrorMessages.Add(propertyName, message);
         }
@@ -67,14 +69,5 @@ namespace Neatoo.Rules
 
     }
 
-    public static class RuleResultExtensions
-    {
-        public static RuleResult AddPropertyError(this RuleResult rr, string propertyName, string message)
-        {
-            rr.AddPropertyErrorMessage(propertyName, message);
-            return rr;
-        }
-
-    }
 
 }

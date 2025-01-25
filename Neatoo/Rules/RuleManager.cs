@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -39,16 +40,17 @@ namespace Neatoo.Rules
     }
 
     public interface IRuleManager<T> : IRuleManager
-        where T : IBase
+        where T : IValidateBase
     {
         FluentRule<T> AddRule(Func<T, IRuleResult> func, params string[] triggerProperty);
+        AsyncFluentRule<T> AddRule(Func<T, Task<IRuleResult>> func, params string[] triggerProperty);
 
     }
 
 
     [PortalDataContract]
     public class RuleManager<T> : IRuleManager<T>, ISetTarget
-        where T : IBase
+        where T : IValidateBase
     {
 
         protected T Target { get; set; }
@@ -117,6 +119,13 @@ namespace Neatoo.Rules
             return rule;
         }
 
+        public AsyncFluentRule<T> AddRule(Func<T, Task<IRuleResult>> func, params string[] triggerProperty)
+        {
+            AsyncFluentRule<T> rule = new AsyncFluentRule<T>(func, triggerProperty); // TODO - DI
+            Rules.Add(rule.UniqueIndex, rule);
+            return rule;
+        }
+
         public async Task CheckRulesForProperty(string propertyName)
         {
 
@@ -150,8 +159,6 @@ namespace Neatoo.Rules
 
             if (OverrideResult == null)
             {
-                var isValidAtStart = IsValid;
-
                 Results.Clear(); // Cover in case something unexpected has happened like a weird Serialization cover or maybe a Rule that exists on the client or not the server
 
                 foreach (var ruleIndex in Rules.ToList())
@@ -181,7 +188,7 @@ namespace Neatoo.Rules
 
         private async Task RunRule(IRule r, CancellationToken token)
         {
-            IRuleResult result = null;
+            IRuleResult result = RuleResult.Empty();
 
             try
             {
@@ -200,13 +207,12 @@ namespace Neatoo.Rules
                 }
 
             }
-
             catch (Exception ex)
             {
                 // If there is an error mark all properties as failed
                 foreach (var p in r.TriggerProperties)
                 {
-                    result = RuleResult.PropertyError(p, ex.Message, ex);
+                    result.AddPropertyError(p, ex.Message);
                 }
 
                 throw;
@@ -217,11 +223,26 @@ namespace Neatoo.Rules
                 {
                     result.TriggerProperties = r.TriggerProperties;
                     Results[(int)r.UniqueIndex] = result;
+
+                    foreach (var p in r.TriggerProperties)
+                    {
+                        var propertyValue = Target[p];
+
+                        propertyValue.SetError(r.UniqueIndex, result.PropertyErrorMessages.Where(pem => pem.Key == p).Select(p => p.Value).ToList());
+
+                    }
                 }
                 else if (Results.ContainsKey((int)r.UniqueIndex))
                 {
                     // Optimized approach for when/if this is serialized
                     Results.Remove((int)r.UniqueIndex);
+
+                    foreach (var p in r.TriggerProperties)
+                    {
+                        var propertyValue = Target[p];
+                        propertyValue.NoError(r.UniqueIndex);
+                    }
+
                 }
             }
         }
