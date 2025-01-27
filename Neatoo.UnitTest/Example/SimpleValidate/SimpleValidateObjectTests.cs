@@ -45,8 +45,8 @@ namespace Neatoo.UnitTest.Example.SimpleValidate
             validateObject.LastName = "Smith";
 
             Assert.IsFalse(validateObject.IsValid);
-            Assert.AreEqual(string.Empty, validateObject.ShortName);
-            Assert.AreEqual(1, validateObject.RuleResultList.Where(r => r.IsError).Count());
+            Assert.AreEqual(" Smith", validateObject.ShortName);
+            Assert.IsFalse(validateObject[nameof(validateObject.FirstName)].IsValid);
         }
 
         [TestMethod]

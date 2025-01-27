@@ -135,14 +135,14 @@ namespace Neatoo.Core
 
         public virtual IEditPropertyValue GetProperty(IRegisteredProperty registeredProperty)
         {
-            if (fieldData.TryGetValue(registeredProperty.Index, out var fd))
+            if (fieldData.TryGetValue(registeredProperty.Name, out var fd))
             {
                 return fd;
             }
 
             var newPropertyValue = (IEditPropertyValue)this.GetType().GetMethod(nameof(this.CreatePropertyValue), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty, Target });
 
-            fieldData[registeredProperty.Index] = newPropertyValue;
+            fieldData[registeredProperty.Name] = newPropertyValue;
 
             return newPropertyValue;
         }

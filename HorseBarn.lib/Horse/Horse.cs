@@ -30,15 +30,13 @@ namespace HorseBarn.lib.Horse
 
         private static void AddRules(IRuleManager<H> ruleManager)
         {
-            ruleManager.AddRule(hc =>
+            ruleManager.AddValidation(hc =>
             {
                 if (hc.BirthDate != null && hc.BirthDate.Value > DateOnly.FromDateTime(DateTime.Now))
                 {
-                    RuleResult.PropertyError(nameof(BirthDate), "Birth date cannot be a future date.");
+                    return "Birth date cannot be a future date.";
                 }
-
-                return RuleResult.Empty();
-
+                return string.Empty;
             }, nameof(BirthDate));
         }
 

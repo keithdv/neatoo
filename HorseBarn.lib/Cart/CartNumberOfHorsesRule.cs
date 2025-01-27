@@ -16,9 +16,9 @@ namespace HorseBarn.lib.Cart
     {
         public CartNumberOfHorsesRule()
         {
-            TriggerProperties.AddRange([nameof(ICart.NumberOfHorses), nameof(ICart<IHorse>.HorseList)]);
+            AddTriggerProperties(nameof(ICart.NumberOfHorses), nameof(ICart<IHorse>.HorseList));
         }
-        public override IRuleResult Execute(ICart cart)
+        public override PropertyErrors Execute(ICart cart)
         {
             var horseCount = cart.Horses.Count();
             if (cart.Horses.Count() > cart.NumberOfHorses)
@@ -31,9 +31,10 @@ namespace HorseBarn.lib.Cart
             }
             else if (horseCount != 0 && cart.NumberOfHorses != horseCount)
             {
-                return RuleResult.PropertyError(nameof(ICart.NumberOfHorses), $"There are {horseCount} but there need to be {cart.NumberOfHorses}");
+                return nameof(ICart.NumberOfHorses).PropertyError($"There are {horseCount} but there need to be {cart.NumberOfHorses}");
             }
-            return RuleResult.Empty();
+
+            return PropertyErrors.None;
         }
     }
 }

@@ -28,15 +28,15 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             this.lastName = lastName;
         }
 
-        public override async Task<IRuleResult> Execute(IValidateBase target, CancellationToken token)
+        public override async Task<PropertyErrors> Execute(IValidateBase target, CancellationToken token)
         {
             await Task.Delay(10);
 
-            var sn = $"{ReadProperty<string>(target, firstName)} {ReadProperty<string>(target, lastName)}";
+            var sn = $"{ReadProperty<string>(firstName)} {ReadProperty<string>(lastName)}";
 
-            LoadProperty(target, shortName, sn);
+            LoadProperty(shortName, sn);
 
-            return RuleResult.Empty();
+            return PropertyErrors.None;
 
         }
     }

@@ -23,7 +23,6 @@ namespace Neatoo
         Task WaitForRules();
         Task CheckAllRules(CancellationToken token = new CancellationToken());
         Task CheckAllSelfRules(CancellationToken token = new CancellationToken());
-        IRuleResultReadOnlyList RuleResultList { get; }
         IReadOnlyList<string> BrokenRuleMessages { get; }
 
         /// <summary>
@@ -32,6 +31,8 @@ namespace Neatoo
         /// Not SetProperty or LoadProperty
         /// </summary>
         bool IsStopped { get; }
+
+        internal string ObjectInvalid { get; }
 
         internal Task AddSequencedTask(Func<Task, Task> task, bool runOnException = false);
 
@@ -61,9 +62,9 @@ namespace Neatoo
             ResetMetaState();
         }
 
-        public bool IsValid => RuleManager.IsValid && PropertyValueManager.IsValid;
+        public bool IsValid => PropertyValueManager.IsValid;
 
-        public bool IsSelfValid => RuleManager.IsValid;
+        public bool IsSelfValid => PropertyValueManager.IsSelfValid;
 
         public bool IsSelfBusy => !AsyncTaskSequencer.AllDone.IsCompleted;
 
@@ -137,20 +138,22 @@ namespace Neatoo
             return Task.WhenAll([AsyncTaskSequencer.AllDone, PropertyValueManager.WaitForRules()]);
         }
 
-        public IRuleResultReadOnlyList RuleResultList => RuleManager.Results;
 
-        public IReadOnlyList<string> BrokenRuleMessages => RuleManager.Results.Where(x => x.IsError).SelectMany(x => x.PropertyErrorMessages).Select(x => x.Value).ToList().AsReadOnly();
+        public IReadOnlyList<string> BrokenRuleMessages => PropertyValueManager.ErrorMessages;
 
         /// <summary>
         /// Permantatly mark invalid
-        /// Note: not associated with any specific property
+        /// Running all rules will reset this
         /// </summary>
         /// <param name="message"></param>
         protected virtual void MarkInvalid(string message)
         {
-            RuleManager.MarkInvalid(message);
+            ObjectInvalid = message;
+            this[nameof(ObjectInvalid)].SetErrorsForRule(0, new ReadOnlyCollection<string>(new List<string> { message }));
             RaiseMetaPropertiesChanged();
         }
+
+        public string ObjectInvalid { get => Getter<string>(); protected set => Setter(value); }
 
         new protected IValidatePropertyValue GetProperty(string propertyName)
         {
@@ -195,24 +198,32 @@ namespace Neatoo
 
         public Task CheckRules(string propertyName)
         {
-            var t = AddAsyncMethod((t) => RuleManager.CheckRulesForProperty(propertyName));
-
-            if (!t.IsCompleted || t.IsFaulted)
+            if (this[nameof(ObjectInvalid)].IsSelfValid)
             {
-                RaiseMetaPropertiesChanged();
+                var t = AddAsyncMethod((t) => RuleManager.CheckRulesForProperty(propertyName));
+
+                if (!t.IsCompleted || t.IsFaulted)
+                {
+                    RaiseMetaPropertiesChanged();
+                }
+                return t;
             }
-            return t;
+            return Task.CompletedTask;
         }
 
 
         public Task CheckAllSelfRules(CancellationToken token = new CancellationToken())
         {
+            this[nameof(ObjectInvalid)].ClearAllErrors();
+
             AddAsyncMethod((t) => RuleManager.CheckAllRules(token));
             return AsyncTaskSequencer.AllDone;
         }
 
         public Task CheckAllRules(CancellationToken token = new CancellationToken())
         {
+            this[nameof(ObjectInvalid)].ClearAllErrors();
+
             AddAsyncMethod((t) => RuleManager.CheckAllRules(token));
             AddAsyncMethod((t) => PropertyValueManager.CheckAllRules(token));
             // TODO - This isn't raising the 'IsValid' property changed event

@@ -115,7 +115,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             await List.WaitForRules();
 
             Assert.IsFalse(List.IsValid);
-            Assert.AreEqual(1, List.RuleResultList.Where(r => r.IsError && r.PropertyErrorMessages.Any(p => p.Key == nameof(IValidateObject.FirstName))).Count());
+            Assert.IsFalse(List[nameof(IValidateObject.FirstName)].IsValid);
         }
 
         [TestMethod]
@@ -131,7 +131,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             List.FirstName = "John";
 
             Assert.IsTrue(List.IsValid);
-            Assert.AreEqual(0, List.RuleResultList.Where(r => r.IsError && r.PropertyErrorMessages.Any(p => p.Key == nameof(IValidateObject.FirstName))).Count());
+            Assert.IsTrue(List[nameof(IValidateObject.FirstName)].IsValid);
 
         }
 

@@ -1,6 +1,7 @@
 ﻿using Neatoo.Core;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Neatoo.Rules.Rules
@@ -12,14 +13,14 @@ namespace Neatoo.Rules.Rules
 
     public delegate IRequiredRule CreateRequiredRule(string name);
 
-    internal class RequiredRule : RuleBase<IBase>, IRequiredRule
+    internal class RequiredRule : RuleBase<IValidateBase>, IRequiredRule
     {
         public RequiredRule(string propertyName) : base(propertyName) { }
         public RequiredRule(IRegisteredProperty registeredProperty) : base(registeredProperty) { }
 
-        public override IRuleResult Execute(IBase target)
+        public override PropertyErrors Execute(IValidateBase target)
         {
-            var value = ReadProperty(target, TriggerProperties[0]);
+            var value = ReadProperty(TriggerProperties[0]);
 
             bool isError = false;
 
@@ -38,12 +39,9 @@ namespace Neatoo.Rules.Rules
 
             if (isError)
             {
-                return RuleResult.PropertyError(TriggerProperties[0], $"{TriggerProperties[0]} is required.");
+                return TriggerProperties.Single().PropertyError($"{TriggerProperties[0]} is required.");
             }
-            else
-            {
-                return RuleResult.Empty();
-            }
+            return PropertyErrors.None;
         }
 
     }

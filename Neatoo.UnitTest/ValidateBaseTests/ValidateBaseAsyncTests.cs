@@ -144,7 +144,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             await validate.WaitForRules();
 
             Assert.IsFalse(validate.IsValid);
-            Assert.IsTrue(validate.RuleResultList[nameof(validate.FirstName)].IsError);
+            Assert.IsFalse(validate[nameof(validate.FirstName)].IsValid);
         }
 
         [TestMethod]
@@ -163,7 +163,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             await validate.WaitForRules();
 
             Assert.IsTrue(validate.IsValid);
-            Assert.IsNull(validate.RuleResultList[nameof(validate.FirstName)]);
+            Assert.AreEqual(0, validate.BrokenRuleMessages.Count);
             Assert.IsTrue(propertyChanged.Contains(nameof(validate.IsValid)));
         }
 
@@ -220,7 +220,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.ThrowException = "Throw";
             await Assert.ThrowsExceptionAsync<AggregateException>(validate.WaitForRules);
             Assert.IsFalse(validate.IsValid);
-            Assert.IsTrue(validate.RuleResultList[nameof(validate.ThrowException)].IsError);
+            Assert.IsFalse(validate[nameof(validate.ThrowException)].IsValid);
         }
 
         [TestMethod]

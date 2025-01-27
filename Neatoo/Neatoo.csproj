@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
@@ -22,19 +22,11 @@
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-      <_Parameter1>Neatoo.Autofac</_Parameter1>
-    </AssemblyAttribute>
-  </ItemGroup>
-    <ItemGroup>
-	    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-		    <_Parameter1>DynamicProxyGenAssembly2</_Parameter1>
-	    </AssemblyAttribute>
-    </ItemGroup>
 	<ItemGroup>
-		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-			<_Parameter1>Neatoo.Newtonsoft.Json</_Parameter1>
-		</AssemblyAttribute>
+		<InternalsVisibleTo Include="Neatoo.Autofac" />
+		<InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+		<InternalsVisibleTo Include="Neatoo.Newtonsoft.Json" />
+		<InternalsVisibleTo Include="Neatoo.Netwonsoft.Json.Test" />
+		<InternalsVisibleTo Include="Neatoo.UnitTest" />
 	</ItemGroup>
-</Project>
+  </Project>

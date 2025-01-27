@@ -31,10 +31,6 @@ namespace Neatoo.Newtonsoft.Json
         /// </summary>
         public IPropertyValueManager PropertyValueManager { get; }
 
-        public IRuleResultList RuleResultList { get; set; }
-
-        public IRuleResult OverrideResult { get; set; }
-
         public bool IsNew { get; set; }
         public bool IsChild { get; set; }
         public bool IsDeleted { get; set; }
@@ -96,7 +92,6 @@ namespace Neatoo.Newtonsoft.Json
             {
                 var ruleProp = validateType.GetProperty("RuleManager", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 var ruleManager = (IRuleManager)ruleProp.GetValue(list);
-                ruleManager.GetType().InvokeMember("SetSerializedResults", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.InvokeMethod | System.Reflection.BindingFlags.FlattenHierarchy, null, ruleManager, new object[] { surrogate.RuleResultList, surrogate.OverrideResult });
             }
 
             var editType = GetEditListBase(list.GetType());
@@ -177,9 +172,6 @@ namespace Neatoo.Newtonsoft.Json
                 var ruleProp = validateType.GetProperty("RuleManager", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 var ruleManager = (IRuleManager)ruleProp.GetValue(value);
                 var ruleResultsProp = ruleManager.GetType().GetProperty("Results", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                var ruleResults = (IRuleResultList)ruleResultsProp.GetValue(ruleManager);
-                surrogate.OverrideResult = ruleResults.OverrideResult;
-                surrogate.RuleResultList = ruleResults;
             }
 
 

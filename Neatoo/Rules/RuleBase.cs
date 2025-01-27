@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,7 +17,7 @@ namespace Neatoo.Rules
         /// Must be unique for every rule across all types
         /// </summary>
         uint UniqueIndex { get; }
-        IReadOnlyList<string> TriggerProperties { get; } 
+        IReadOnlyList<ITriggerProperty> TriggerProperties { get; }
 
     }
 
@@ -25,7 +27,7 @@ namespace Neatoo.Rules
     /// <typeparam name="T"></typeparam>
     public interface IRule<in T> : IRule
     {
-        Task<IRuleResult> Execute(T target, CancellationToken token);
+        Task<PropertyErrors> RunRule(T target, CancellationToken token);
     }
 
     internal static class RuleIndexer
@@ -41,8 +43,11 @@ namespace Neatoo.Rules
         }
     }
 
+
+
+
     public abstract class AsyncRuleBase<T> : IRule<T>
-        where T : IBase
+        where T : IValidateBase
     {
 
 
@@ -52,14 +57,14 @@ namespace Neatoo.Rules
             UniqueIndex = RuleIndexer.StaticIndex;
         }
 
-        public AsyncRuleBase(params string[] triggerProperties) : this(triggerProperties.AsEnumerable()) { }
+        public AsyncRuleBase(params string[] triggerOnPropertyNames) : this(triggerOnPropertyNames.AsEnumerable()) { }
 
-        public AsyncRuleBase(IEnumerable<string> triggerProperties) : this()
+        public AsyncRuleBase(IEnumerable<string> triggerOnPropertyNames) : this()
         {
-            TriggerProperties.AddRange(triggerProperties);
+            TriggerProperties.AddRange(triggerOnPropertyNames.Select(propertyName => new TriggerProperty(propertyName)));
         }
 
-        public AsyncRuleBase(params IRegisteredProperty[] triggerProperties) : this(triggerProperties.Select(t => t.Name).AsEnumerable()) { }
+        public AsyncRuleBase(params IRegisteredProperty[] triggerOnProperty) : this(triggerOnProperty.Select(t => t.Name).AsEnumerable()) { }
 
         /// <summary>
         /// Define the properties without using nameof()
@@ -67,60 +72,90 @@ namespace Neatoo.Rules
         /// I don't know that I am going to support this long term. 
         /// </summary>
         /// <param name="triggerProperties"></param>
-        public AsyncRuleBase(IEnumerable<IRegisteredProperty> triggerProperties) : this()
+        public AsyncRuleBase(IEnumerable<IRegisteredProperty> triggerOnProperty) : this(triggerOnProperty.Select(t => t.Name))
         {
-            TriggerProperties.AddRange(triggerProperties.Select(t => t.Name));
         }
 
-        /// TODO: Lol, this is not going to work with serialization...
         /// <summary>
         /// 
         /// </summary>
         public uint UniqueIndex { get; }
 
-        IReadOnlyList<string> IRule.TriggerProperties => TriggerProperties.AsReadOnly();
-        protected List<string> TriggerProperties { get; } = new List<string>();
+        protected PropertyErrors None = PropertyErrors.None;
 
+        IReadOnlyList<ITriggerProperty> IRule.TriggerProperties => TriggerProperties.AsReadOnly();
+        protected List<ITriggerProperty> TriggerProperties { get; } = new List<ITriggerProperty>();
 
-        // TODO - Pass Cancellation Token and Cancel if we reach this 
-        // rule again and it is currently running
+        protected AsyncLocal<T> runRuleTarget = new AsyncLocal<T>();
 
-        public abstract Task<IRuleResult> Execute(T target, CancellationToken token);
+        protected T RunRuleTarget { get => runRuleTarget.Value; set { runRuleTarget.Value = value; } }
 
-        //protected IPropertyValue ReadPropertyValue(T target, IRegisteredProperty registeredProperty)
-        //{
-        //    return target[registeredProperty];
-        //}
-
-        /// <summary>
-        /// Allows rule to get the meta properties (IsValid, IsModified)
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="propertyName"></param>
-        /// <returns></returns>
-        //protected IPropertyValue ReadPropertyValue(T target, string propertyName)
-        //{
-        //    return ToPropertyAccessor(target).ReadPropertyValue(propertyName);
-        //}
-
-        protected IPropertyValue ReadPropertyValue(T target, string propertyName)
+        protected virtual void AddTriggerProperties(params string[] triggerOnPropertyNames)
         {
-            return target[propertyName];
+            TriggerProperties.AddRange(triggerOnPropertyNames.Select(propertyName => new TriggerProperty(propertyName)));
         }
 
-        protected object ReadProperty(T target, string propertyName)
+        public abstract Task<PropertyErrors> Execute(T t, CancellationToken token);
+
+
+        public async Task<PropertyErrors> RunRule(T target, CancellationToken token)
         {
-            return target[propertyName].Value;
+            // I want to allow registering rules as static
+
+            RunRuleTarget = target;
+            try
+            {
+                var propertyErrors = await Execute(target, token);
+
+                foreach (var property in TriggerProperties)
+                {
+                    if (propertyErrors.TryGetValue(property.PropertyName, out var errors))
+                    {
+                        target[property.PropertyName].SetErrorsForRule(UniqueIndex, errors);
+                    }
+                    else
+                    {
+                        target[property.PropertyName].ClearErrorsForRule(UniqueIndex);
+                    }
+                }
+
+                return propertyErrors;
+            }
+            catch (Exception ex)
+            {
+                TriggerProperties.ForEach(p =>
+                    {
+                        var propertyValue = target[p.PropertyName];
+                        propertyValue.SetErrorsForRule(UniqueIndex, [ex.Message]);
+                    });
+
+                throw;
+            }
+            finally
+            {
+                runRuleTarget.Value = default;
+            }
         }
 
-        protected P ReadProperty<P>(T target, IRegisteredProperty registeredProperty)
+
+        protected object ReadProperty(string propertyName)
         {
-            return (P)target[registeredProperty].Value;
+            return RunRuleTarget[propertyName].Value;
         }
 
-        protected void SetProperty<P>(T target, IRegisteredProperty registeredProperty, P value)
+        protected object ReadProperty(ITriggerProperty triggerProperty)
         {
-            target[registeredProperty].SetValue(value);
+            return RunRuleTarget[triggerProperty.PropertyName].Value;
+        }
+
+        protected P ReadProperty<P>(IRegisteredProperty registeredProperty)
+        {
+            return (P)RunRuleTarget[registeredProperty].Value;
+        }
+
+        protected void SetProperty<P>(IRegisteredProperty registeredProperty, P value)
+        {
+            RunRuleTarget[registeredProperty].SetValue(value);
         }
 
         /// <summary>
@@ -130,15 +165,15 @@ namespace Neatoo.Rules
         /// <param name="target"></param>
         /// <param name="registeredProperty"></param>
         /// <param name="value"></param>
-        protected void LoadProperty<P>(T target, IRegisteredProperty registeredProperty, P value)
+        protected void LoadProperty<P>(IRegisteredProperty registeredProperty, P value)
         {
-            if (target[registeredProperty] is IValidatePropertyValue editPropertyValue)
+            if (RunRuleTarget[registeredProperty] is IValidatePropertyValue editPropertyValue)
             {
                 editPropertyValue.LoadProperty(value);
             }
             else
             {
-                target[registeredProperty].SetValue(value);
+                RunRuleTarget[registeredProperty].SetValue(value);
             }
         }
 
@@ -146,55 +181,157 @@ namespace Neatoo.Rules
 
 
     public abstract class RuleBase<T> : AsyncRuleBase<T>
-        where T : IBase
+        where T : IValidateBase
     {
-        protected RuleBase() : base() { }
+        protected RuleBase() { }
 
-        public RuleBase(IEnumerable<string> triggerProperties) : base(triggerProperties) { }
+        protected RuleBase(params string[] triggerOnPropertyNames) : base(triggerOnPropertyNames) { }
 
-        public RuleBase(params string[] triggerProperties) : this(triggerProperties.AsEnumerable()) { }
-        public RuleBase(IEnumerable<IRegisteredProperty> triggerProperties) : base(triggerProperties) { }
+        protected RuleBase(IEnumerable<string> triggerOnPropertyNames) : base(triggerOnPropertyNames) { }
 
-        public RuleBase(params IRegisteredProperty[] triggerProperties) : this(triggerProperties.AsEnumerable()) { }
+        protected RuleBase(params IRegisteredProperty[] triggerOnProperty) : base(triggerOnProperty) { }
 
-        public abstract IRuleResult Execute(T target);
+        protected RuleBase(IEnumerable<IRegisteredProperty> triggerOnProperty) : base(triggerOnProperty) { }
 
-        public sealed override Task<IRuleResult> Execute(T target, CancellationToken token)
+        public abstract PropertyErrors Execute(T target);
+
+        public sealed override Task<PropertyErrors> Execute(T target, CancellationToken token)
         {
             return Task.FromResult(Execute(target));
         }
 
-
     }
 
-    public class FluentRule<T> : RuleBase<T>
-        where T : IBase
+    public class ActionFluentRule<T> : RuleBase<T>
+    where T : IValidateBase
     {
-        private Func<T, IRuleResult> ExecuteFunc { get; }
-        public FluentRule(Func<T, IRuleResult> execute, params string[] triggerProperties) : base(triggerProperties)
+        private Action<T> ExecuteFunc { get; }
+        public ActionFluentRule(Action<T> execute, string triggerProperty) : base([triggerProperty])
         {
             this.ExecuteFunc = execute;
         }
 
-        public override IRuleResult Execute(T target)
+        public override PropertyErrors Execute(T target)
         {
-            return ExecuteFunc(target);
+            ExecuteFunc(target);
+            return PropertyErrors.None;
+        }
+    }
+
+    public class ActionAsyncFluentRule<T> : AsyncRuleBase<T>
+where T : IValidateBase
+    {
+        private Func<T, Task> ExecuteFunc { get; }
+        public ActionAsyncFluentRule(Func<T, Task> execute, string triggerProperty) : base([triggerProperty])
+        {
+            this.ExecuteFunc = execute;
+        }
+
+        override public async Task<PropertyErrors> Execute(T target, CancellationToken token)
+        {
+            await ExecuteFunc(target);
+            return PropertyErrors.None;
+        }
+    }
+
+    public class ValidationFluentRule<T> : RuleBase<T>
+        where T : IValidateBase
+    {
+        private Func<T, string> ExecuteFunc { get; }
+        public ValidationFluentRule(Func<T, string> execute, string triggerProperty) : base([triggerProperty])
+        {
+            this.ExecuteFunc = execute;
+        }
+
+        public override PropertyErrors Execute(T target)
+        {
+            var result = ExecuteFunc(target);
+
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                return PropertyErrors.None;
+            }
+            else
+            {
+                return TriggerProperties.Single().PropertyError(result);
+            }
         }
     }
 
     public class AsyncFluentRule<T> : AsyncRuleBase<T>
-    where T : IBase
+    where T : IValidateBase
     {
-        private Func<T, Task<IRuleResult>> ExecuteFunc { get; }
+        private Func<T, Task<string>> ExecuteFunc { get; }
 
-        public AsyncFluentRule(Func<T, Task<IRuleResult>> execute, params string[] triggerProperties) : base(triggerProperties)
+        public AsyncFluentRule(Func<T, Task<string>> execute, string triggerProperties) : base(triggerProperties)
         {
             this.ExecuteFunc = execute;
         }
 
-        public override Task<IRuleResult> Execute(T target, CancellationToken token)
+        public override async Task<PropertyErrors> Execute(T target, CancellationToken token)
         {
-            return ExecuteFunc(target);
+            var result = await ExecuteFunc(target);
+
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                return PropertyErrors.None;
+            }
+            else
+            {
+                return TriggerProperties.Single().PropertyError(result);
+            }
+        }
+    }
+
+    public class PropertyErrors : Dictionary<string, List<string>>
+    {
+
+        public static PropertyErrors None = new PropertyErrors();
+
+        public void Add(string propertyName, string message)
+        {
+            if (TryGetValue(propertyName, out var messages))
+            {
+                messages.Add(message);
+            }
+            else
+            {
+                Add(propertyName, new List<string> { message });
+            }
+        }
+
+        public static implicit operator PropertyErrors(PropertyError error)
+        {
+            return new PropertyErrors { [error.PropertyName] = new List<string> { error.Message } };
+        }
+        public static implicit operator PropertyErrors((string name, string errorMessage) propertyError)
+        {
+            return new PropertyError(propertyError.name, propertyError.errorMessage);
+        }
+    }
+
+    public class PropertyError
+    {
+        public string PropertyName { get; }
+        public string Message { get; }
+        public PropertyError(string propertyName, string message)
+        {
+            PropertyName = propertyName;
+            Message = message;
+        }
+
+        public static implicit operator PropertyError((string name, string errorMessage) propertyError)
+        {
+            return new PropertyError(propertyError.name, propertyError.errorMessage);
+        }
+
+    }
+
+    public static class PropertyErrorExtension
+    {
+        public static PropertyError PropertyError(this string propertyName, string message)
+        {
+            return new PropertyError(propertyName, message);
         }
     }
 }

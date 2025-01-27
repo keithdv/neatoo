@@ -15,17 +15,17 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public FullNameRule() : base()
         {
-            TriggerProperties.Add(nameof(IPersonBase.Title));
-            TriggerProperties.Add(nameof(IPersonBase.ShortName));
+            AddTriggerProperties(nameof(IPersonBase.Title));
+            AddTriggerProperties(nameof(IPersonBase.ShortName));
         }
 
-        public override IRuleResult Execute(T target)
+        public override PropertyErrors Execute(T target)
         {
             RunCount++;
 
             target.FullName = $"{target.Title} {target.ShortName}";
 
-            return RuleResult.Empty();
+            return PropertyErrors.None;
         }
     }
 }

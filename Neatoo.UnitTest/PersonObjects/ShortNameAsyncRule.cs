@@ -16,13 +16,13 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public ShortNameAsyncRule() : base()
         {
-            TriggerProperties.Add(nameof(IPersonBase.FirstName));
-            TriggerProperties.Add(nameof(IPersonBase.LastName));
+            AddTriggerProperties(nameof(IPersonBase.FirstName));
+            AddTriggerProperties(nameof(IPersonBase.LastName));
         }
 
         public int RunCount { get; private set; }
 
-        public override async Task<IRuleResult> Execute(T target, CancellationToken token)
+        public override async Task<PropertyErrors> Execute(T target, CancellationToken token)
         {
             RunCount++;
 
@@ -34,13 +34,13 @@ namespace Neatoo.UnitTest.PersonObjects
 
             if (target.FirstName?.StartsWith("Error") ?? false)
             {
-                return RuleResult.PropertyError(nameof(IPersonBase.FirstName), target.FirstName);
+                return nameof(IPersonBase.FirstName).PropertyError(target.FirstName);
             }
 
 
             target.ShortName = $"{target.FirstName} {target.LastName}";
 
-            return RuleResult.Empty();
+            return PropertyErrors.None;
         }
 
     }

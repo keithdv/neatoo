@@ -32,10 +32,9 @@ namespace HorseBarn.lib.Cart.Tests
             mockCart.Setup(c => c.NumberOfHorses).Returns(1);
 
             // Act
-            var result = rule.Execute(mockCart.Object);
+            rule.Execute(mockCart.Object);
 
             // Assert
-            Assert.IsFalse(result.IsError);
             mockCart.VerifySet(c => c.NumberOfHorses = horses.Count, Times.Once);
         }
 
@@ -51,7 +50,7 @@ namespace HorseBarn.lib.Cart.Tests
             var result = rule.Execute(mockCart.Object);
 
             // Assert
-            Assert.IsFalse(result.IsError);
+            Assert.IsTrue(result.Count == 0);
             mockCart.VerifySet(c => c.NumberOfHorses = 1, Times.Once);
         }
 
@@ -67,8 +66,8 @@ namespace HorseBarn.lib.Cart.Tests
             var result = rule.Execute(mockCart.Object);
 
             // Assert
-            Assert.IsTrue(result.IsError);
-            Assert.AreEqual($"There are {horses.Count} but there need to be {mockCart.Object.NumberOfHorses}", result.PropertyErrorMessages[nameof(ICart.NumberOfHorses)]);
+            Assert.IsTrue(result.Count == 1);
+            Assert.AreEqual($"There are {horses.Count} but there need to be {mockCart.Object.NumberOfHorses}", result[nameof(ICart.NumberOfHorses)].Single());
         }
 
         [TestMethod]
@@ -83,7 +82,7 @@ namespace HorseBarn.lib.Cart.Tests
             var result = rule.Execute(mockCart.Object);
 
             // Assert
-            Assert.IsFalse(result.IsError);
+            Assert.IsTrue(result.Count == 0);
         }
     }
 }

@@ -16,16 +16,16 @@ namespace Neatoo.UnitTest.PersonObjects
     {
         public RuleThrowsException() : base()
         {
-            TriggerProperties.Add(nameof(IPersonBase.FirstName));
+            AddTriggerProperties(nameof(IPersonBase.FirstName));
         }
 
-        public override IRuleResult Execute(IPersonBase target)
+        public override PropertyErrors Execute(IPersonBase target)
         {
             if (target.FirstName == "Throw")
             {
                 throw new Exception("Rule Failed");
             }
-            return RuleResult.Empty();
+            return PropertyErrors.None;
         }
     }
 }

@@ -125,7 +125,8 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             List.LastName = "Smith";
 
             Assert.IsFalse(List.IsValid);
-            Assert.IsTrue(List.RuleResultList[nameof(List.FirstName)].IsError);
+            Assert.IsFalse(List[nameof(List.FirstName)].IsValid);
+            Assert.AreEqual(1, List.BrokenRuleMessages.Count());
 
             Assert.IsTrue(propertyChangedCalls.Contains(nameof(List.IsValid)));
             Assert.IsTrue(propertyChangedCalls.Contains(nameof(List.IsSelfValid)));
@@ -143,9 +144,6 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             List.FirstName = "John";
 
             Assert.IsTrue(List.IsValid);
-            Assert.IsNull(List.RuleResultList[nameof(List.FirstName)]);
-
-
         }
 
 

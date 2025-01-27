@@ -15,9 +15,9 @@ namespace Neatoo.UnitTest.PersonObjects
     {
         public RecursiveAsyncRule() : base()
         {
-            TriggerProperties.Add(nameof(IPersonBase.ShortName));
+            AddTriggerProperties(nameof(IPersonBase.ShortName));
         }
-        public override async Task<IRuleResult> Execute(IPersonBase target, CancellationToken token)
+        public override async Task<PropertyErrors> Execute(IPersonBase target, CancellationToken token)
         {
 
             await Task.Delay(10, token);
@@ -31,7 +31,7 @@ namespace Neatoo.UnitTest.PersonObjects
                 target.FirstName = "Error"; // trigger the ShortNameRule error
             }
 
-            return RuleResult.Empty();
+            return PropertyErrors.None;
         }
     }
 }

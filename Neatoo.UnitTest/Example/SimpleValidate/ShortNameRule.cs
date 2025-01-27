@@ -11,35 +11,28 @@ namespace Neatoo.UnitTest.Example.SimpleValidate
     {
         public ShortNameRule() : base()
         {
-            TriggerProperties.Add(nameof(ISimpleValidateObject.FirstName));
-            TriggerProperties.Add(nameof(ISimpleValidateObject.LastName));
+            AddTriggerProperties(nameof(ISimpleValidateObject.FirstName));
+            AddTriggerProperties(nameof(ISimpleValidateObject.LastName));
         }
 
-        public override IRuleResult Execute(ISimpleValidateObject target)
+        public override PropertyErrors Execute(ISimpleValidateObject target)
         {
 
-            var result = RuleResult.Empty();
+            var propertyErrors = new PropertyErrors();
 
             if (string.IsNullOrWhiteSpace(target.FirstName))
             {
-                result.AddPropertyError(nameof(ISimpleValidateObject.FirstName), $"{nameof(ISimpleValidateObject.FirstName)} is required.");
+                propertyErrors.Add(nameof(ISimpleValidateObject.FirstName), $"{nameof(ISimpleValidateObject.FirstName)} is required.");
             }
 
             if (string.IsNullOrWhiteSpace(target.LastName))
             {
-                result.AddPropertyError(nameof(ISimpleValidateObject.LastName), $"{nameof(ISimpleValidateObject.LastName)} is required.");
+                propertyErrors.Add(nameof(ISimpleValidateObject.LastName), $"{nameof(ISimpleValidateObject.LastName)} is required.");
             }
 
-            if (!result.IsError)
-            {
-                target.ShortName = $"{target.FirstName} {target.LastName}";
-            }
-            else
-            {
-                target.ShortName = string.Empty;
-            }
+            target.ShortName = $"{target.FirstName} {target.LastName}";
 
-            return result;
+            return propertyErrors;
         }
 
     }

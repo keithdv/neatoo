@@ -83,6 +83,7 @@ namespace Neatoo.Core
 
         public virtual T Value {
             get => _value;
+            // TODO - Don't allow if the property setting on the ValidateBase<> is private set
             set
             {
                 SetValue(value);
@@ -203,14 +204,14 @@ namespace Neatoo.Core
 
         public virtual IPropertyValue GetProperty(IRegisteredProperty registeredProperty)
         {
-            if (fieldData.TryGetValue(registeredProperty.Index, out var fd))
+            if (fieldData.TryGetValue(registeredProperty.Name, out var fd))
             {
                 return fd;
             }
 
             var newPropertyValue = (IPropertyValue) this.GetType().GetMethod(nameof(this.CreatePropertyValue), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty, Target });
 
-            fieldData[registeredProperty.Index] = newPropertyValue;
+            fieldData[registeredProperty.Name] = newPropertyValue;
 
             return newPropertyValue;
         }
@@ -235,7 +236,7 @@ namespace Neatoo.Core
         }
 
         [PortalDataMember]
-        protected IDictionary<uint, P> fieldData = new ConcurrentDictionary<uint, P>();
+        protected IDictionary<string, P> fieldData = new ConcurrentDictionary<string, P>();
 
         public event PropertyChangedEventHandler PropertyChanged;
 

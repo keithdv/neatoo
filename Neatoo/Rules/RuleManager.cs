@@ -4,12 +4,8 @@ using Neatoo.Rules.Rules;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,70 +15,47 @@ namespace Neatoo.Rules
 
     public interface IRuleManager
     {
-
-        bool IsValid { get; }
         IEnumerable<IRule> Rules { get; }
-        IRuleResult OverrideResult { get; }
-
-        /// <summary>
-        /// Set OverrideResult and permenantly mark as invalid
-        /// </summary>
-        /// <param name="message"></param>
-        void MarkInvalid(string message);
-
         void AddRule(IRule rule);
         void AddRules(params IRule[] rules);
-        IRuleResult this[string propertyName] { get; }
-        IRuleResultReadOnlyList Results { get; }
         Task CheckRulesForProperty(string propertyName);
         Task CheckAllRules(CancellationToken token = new CancellationToken());
-
     }
 
     public interface IRuleManager<T> : IRuleManager
         where T : IValidateBase
     {
-        FluentRule<T> AddRule(Func<T, IRuleResult> func, params string[] triggerProperty);
-        AsyncFluentRule<T> AddRule(Func<T, Task<IRuleResult>> func, params string[] triggerProperty);
 
+        ActionFluentRule<T> AddAction(Action<T> func, string triggerProperty);
+        ValidationFluentRule<T> AddValidation(Func<T, string> func, string triggerProperty);
+        ActionAsyncFluentRule<T> AddActionAsync(Func<T, Task> func, string triggerProperty);
+        AsyncFluentRule<T> AddValidationAsync(Func<T, Task<string>> func, string triggerProperty);
     }
 
 
-    [PortalDataContract]
     public class RuleManager<T> : IRuleManager<T>, ISetTarget
         where T : IValidateBase
     {
 
         protected T Target { get; set; }
 
-        [PortalDataMember]
-        protected IRuleResultList Results { get; private set; }
-
-        IRuleResultReadOnlyList IRuleManager.Results => Results.RuleResultList;
-
-        protected bool TransferredResults = false;
-        public bool IsValid => !Results.Values.Where(r => r.IsError).Any();
-
+        /// <summary>
+        /// For no DI (Unit testing)
+        /// </summary>
+        /// <param name="registeredPropertyManager"></param>
         public RuleManager(IRegisteredPropertyManager<T> registeredPropertyManager)
         {
-            Results = new RuleResultList();
             AddAttributeRules(new AttributeToRule(rp => new RequiredRule(rp)), registeredPropertyManager);
         }
 
-        public RuleManager(IRuleResultList results, IAttributeToRule attributeToRule, IRegisteredPropertyManager<T> registeredPropertyManager)
+        public RuleManager(IAttributeToRule attributeToRule, IRegisteredPropertyManager<T> registeredPropertyManager)
         {
-            Results = results;
             AddAttributeRules(attributeToRule, registeredPropertyManager);
         }
 
         IEnumerable<IRule> IRuleManager.Rules => Rules.Values;
 
         private IDictionary<uint, IRule> Rules { get; } = new ConcurrentDictionary<uint, IRule>();
-
-        IRuleResult IRuleManager.this[string propertyName]
-        {
-            get { return Results[propertyName]; }
-        }
 
         protected virtual void AddAttributeRules(IAttributeToRule attributeToRule, IRegisteredPropertyManager<T> registeredPropertyManager)
         {
@@ -112,14 +85,28 @@ namespace Neatoo.Rules
             Rules.Add(rule.UniqueIndex, rule ?? throw new ArgumentNullException(nameof(rule)));
         }
 
-        public FluentRule<T> AddRule(Func<T, IRuleResult> func, params string[] triggerProperty)
+        public ActionAsyncFluentRule<T> AddActionAsync(Func<T, Task> func, string triggerProperty)
         {
-            FluentRule<T> rule = new FluentRule<T>(func, triggerProperty); // TODO - DI
+            ActionAsyncFluentRule<T> rule = new ActionAsyncFluentRule<T>(func, triggerProperty); // TODO - DI
             Rules.Add(rule.UniqueIndex, rule);
             return rule;
         }
 
-        public AsyncFluentRule<T> AddRule(Func<T, Task<IRuleResult>> func, params string[] triggerProperty)
+        public ActionFluentRule<T> AddAction(Action<T> func, string triggerProperty)
+        {
+            ActionFluentRule<T> rule = new ActionFluentRule<T>(func, triggerProperty); // TODO - DI
+            Rules.Add(rule.UniqueIndex, rule);
+            return rule;
+        }
+
+        public ValidationFluentRule<T> AddValidation(Func<T, string> func, string triggerProperty)
+        {
+            ValidationFluentRule<T> rule = new ValidationFluentRule<T>(func, triggerProperty); // TODO - DI
+            Rules.Add(rule.UniqueIndex, rule);
+            return rule;
+        }
+
+        public AsyncFluentRule<T> AddValidationAsync(Func<T, Task<string>> func, string triggerProperty)
         {
             AsyncFluentRule<T> rule = new AsyncFluentRule<T>(func, triggerProperty); // TODO - DI
             Rules.Add(rule.UniqueIndex, rule);
@@ -128,132 +115,37 @@ namespace Neatoo.Rules
 
         public async Task CheckRulesForProperty(string propertyName)
         {
-
-            if (OverrideResult == null)
+            foreach (var rule in Rules.Values.Where(r => r.TriggerProperties.Any(t => t.IsMatch(Target, propertyName))).ToList())
             {
-                if (TransferredResults)
-                {
-                    var oldResults = Results.Where(x => x.Key < 0 && x.Value.TriggerProperties.Contains(propertyName)).ToList();
-                    oldResults.ForEach(r => Results.Remove(r.Key));
-
-                    if (!Results.Where(x => x.Key < 0).Any())
-                    {
-                        TransferredResults = false;
-                    }
-                }
-
-                foreach (var rule in Rules.Values.Where(r => r.TriggerProperties.Contains(propertyName)).ToList())
-                {
-                    // System.Diagnostics.Debug.WriteLine($"Enqueue {propertyName}");
-                    await RunRule(rule, CancellationToken.None);
-                }
-            }
-            else
-            {
-                await Task.CompletedTask;
+                // System.Diagnostics.Debug.WriteLine($"Enqueue {propertyName}");
+                await RunRule(rule, CancellationToken.None);
             }
         }
 
         public async Task CheckAllRules(CancellationToken token = new CancellationToken())
         {
-
-            if (OverrideResult == null)
+            foreach (var ruleIndex in Rules.ToList())
             {
-                Results.Clear(); // Cover in case something unexpected has happened like a weird Serialization cover or maybe a Rule that exists on the client or not the server
-
-                foreach (var ruleIndex in Rules.ToList())
-                {
-                    await RunRule(ruleIndex.Value, token);
-                }
+                await RunRule(ruleIndex.Value, token);
             }
-            else
-            {
-                await Task.CompletedTask;
-            }
-        }
-
-
-
-        [PortalDataMember]
-        public IRuleResult OverrideResult
-        {
-            get { return Results.OverrideResult; }
-            set { Results.OverrideResult = value; }
-        }
-
-        public void MarkInvalid(string message)
-        {
-            Results.OverrideResult = RuleResult.PropertyError(typeof(T).FullName, message);
         }
 
         private async Task RunRule(IRule r, CancellationToken token)
         {
-            IRuleResult result = RuleResult.Empty();
-
-            try
+            if (r is IRule<T> rule)
             {
-                if (r is IRule<T> rule)
-                {
-                    result = await rule.Execute(Target, token);
-                }
-                else
-                {
-                    throw new InvalidRuleTypeException($"{r.GetType().FullName} cannot be executed for {typeof(T).FullName}");
-                }
-
-                if (token.IsCancellationRequested)
-                {
-                    return;
-                }
-
+                await rule.RunRule(Target, token);
             }
-            catch (Exception ex)
+            else
             {
-                // If there is an error mark all properties as failed
-                foreach (var p in r.TriggerProperties)
-                {
-                    result.AddPropertyError(p, ex.Message);
-                }
-
-                throw;
+                throw new InvalidRuleTypeException($"{r.GetType().FullName} cannot be executed for {typeof(T).FullName}");
             }
-            finally
+
+            if (token.IsCancellationRequested)
             {
-                if (result.IsError)
-                {
-                    result.TriggerProperties = r.TriggerProperties;
-                    Results[(int)r.UniqueIndex] = result;
-
-                    foreach (var p in r.TriggerProperties)
-                    {
-                        var propertyValue = Target[p];
-
-                        propertyValue.SetError(r.UniqueIndex, result.PropertyErrorMessages.Where(pem => pem.Key == p).Select(p => p.Value).ToList());
-
-                    }
-                }
-                else if (Results.ContainsKey((int)r.UniqueIndex))
-                {
-                    // Optimized approach for when/if this is serialized
-                    Results.Remove((int)r.UniqueIndex);
-
-                    foreach (var p in r.TriggerProperties)
-                    {
-                        var propertyValue = Target[p];
-                        propertyValue.NoError(r.UniqueIndex);
-                    }
-
-                }
+                return;
             }
         }
-
-
-        //public event PropertyChangedEventHandler PropertyChanged;
-
-        //protected virtual void OnPropertyChanged(string propertyName)
-        //{
-        //    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        //}
 
         void ISetTarget.SetTarget(IBase target)
         {
@@ -264,33 +156,6 @@ namespace Neatoo.Rules
             else
             {
                 throw new InvalidTargetTypeException(target.GetType().FullName);
-            }
-        }
-
-        [OnDeserialized]
-        private void OnDeserialized(StreamingContext context)
-        {
-            if (Results.Any())
-            {
-                Results.SetKeysToNegative();
-                TransferredResults = true;
-            }
-        }
-
-        private void SetSerializedResults(IRuleResultList transfferedResults, IRuleResult overrideResult)
-        {
-            if (transfferedResults.Any())
-            {
-                if (overrideResult == null)
-                {
-                    Results = transfferedResults;
-                    Results.SetKeysToNegative();
-                    TransferredResults = true;
-                }
-                else
-                {
-                    OverrideResult = overrideResult;
-                }
             }
         }
     }

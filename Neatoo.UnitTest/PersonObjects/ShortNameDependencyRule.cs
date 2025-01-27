@@ -13,14 +13,14 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public ShortNameDependencyRule(IDisposableDependency dd) : base()
         {
-            TriggerProperties.Add(nameof(IPersonBase.FirstName));
-            TriggerProperties.Add(nameof(IPersonBase.LastName));
+            AddTriggerProperties(nameof(IPersonBase.FirstName));
+            AddTriggerProperties(nameof(IPersonBase.LastName));
             DisposableDependency = dd;
         }
 
         private IDisposableDependency DisposableDependency { get; }
 
-        public override IRuleResult Execute(T target)
+        public override PropertyErrors Execute(T target)
         {
 
             // System.Diagnostics.Debug.WriteLine($"Run Rule {target.FirstName} {target.LastName}");
@@ -29,13 +29,13 @@ namespace Neatoo.UnitTest.PersonObjects
 
             if (target.FirstName?.StartsWith("Error") ?? false)
             {
-                return RuleResult.PropertyError(nameof(IPersonBase.FirstName), target.FirstName);
+                return (nameof(IPersonBase.FirstName), target.FirstName);
             }
 
 
             target.ShortName = $"{target.FirstName} {target.LastName}";
 
-            return RuleResult.Empty();
+            return PropertyErrors.None;
         }
 
     }

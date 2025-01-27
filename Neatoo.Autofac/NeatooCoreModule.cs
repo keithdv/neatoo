@@ -62,7 +62,6 @@ namespace Neatoo.Autofac
             // Should not be singleinstance because AuthorizationRules can have constructor dependencies
             builder.RegisterGeneric(typeof(AuthorizationRuleManager<>)).As(typeof(IAuthorizationRuleManager<>)).InstancePerLifetimeScope();
             builder.RegisterGeneric(typeof(RuleManager<>)).As(typeof(IRuleManager<>)).AsSelf();
-            builder.RegisterType<RuleResultList>().As<IRuleResultList>();
             builder.RegisterType<RequiredRule>().As<IRequiredRule>();
             builder.RegisterType<AttributeToRule>().As<IAttributeToRule>().SingleInstance(); // SingleInstance is safe as long as it only resolves Func<>s
             builder.Register<CreateRequiredRule>(cc =>

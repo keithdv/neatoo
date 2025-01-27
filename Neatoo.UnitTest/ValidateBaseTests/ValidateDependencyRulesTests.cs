@@ -117,7 +117,8 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.LastName = "Smith";
 
             Assert.IsFalse(validate.IsValid);
-            Assert.IsTrue(validate.RuleResultList[nameof(validate.FirstName)].IsError);
+            Assert.IsFalse(validate[nameof(validate.FirstName)].IsValid);
+            Assert.AreEqual(1, validate.BrokenRuleMessages.Count);
         }
 
         [TestMethod]
@@ -132,7 +133,6 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.FirstName = "John";
 
             Assert.IsTrue(validate.IsValid);
-            Assert.IsNull(validate.RuleResultList[nameof(validate.FirstName)]);
 
         }
 

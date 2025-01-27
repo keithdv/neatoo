@@ -1,4 +1,5 @@
-﻿using Neatoo.Core;
+﻿using Neatoo.Attributes;
+using Neatoo.Core;
 using Neatoo.Portal;
 using Neatoo.Rules;
 using System;
@@ -43,8 +44,8 @@ namespace Neatoo
             ResetMetaState();
         }
 
-        public bool IsValid => RuleManager.IsValid && PropertyValueManager.IsValid && !this.Any(c => !c.IsValid);
-        public bool IsSelfValid => RuleManager.IsValid;
+        public bool IsValid => PropertyValueManager.IsValid && !this.Any(c => !c.IsValid);
+        public bool IsSelfValid => PropertyValueManager.IsSelfValid;
         public bool IsBusy => AsyncTaskSequencer.IsRunning ||  PropertyValueManager.IsBusy || this.Any(c => c.IsBusy);
         public bool IsSelfBusy => AsyncTaskSequencer.IsRunning || PropertyValueManager.IsBusy;
 
@@ -162,17 +163,31 @@ namespace Neatoo
 
         public Task CheckRules(string propertyName)
         {
-            return AddAsyncMethod((t) => RuleManager.CheckRulesForProperty(propertyName));
+            if (this[nameof(ObjectInvalid)].IsSelfValid)
+            {
+                var t = AddAsyncMethod((t) => RuleManager.CheckRulesForProperty(propertyName));
+
+                if (!t.IsCompleted || t.IsFaulted)
+                {
+                    RaiseMetaPropertiesChanged();
+                }
+                return t;
+            }
+            return Task.CompletedTask;
         }
 
         public virtual Task CheckAllSelfRules(CancellationToken token = new CancellationToken())
         {
+            PropertyValueManager.GetProperty(nameof(ObjectInvalid)).ClearAllErrors();
+
             AddAsyncMethod((t) => RuleManager.CheckAllRules());
             return AsyncTaskSequencer.AllDone;
         }
 
         public virtual Task CheckAllRules(CancellationToken token = new CancellationToken())
         {
+            PropertyValueManager.GetProperty(nameof(ObjectInvalid)).ClearAllErrors();
+
             AddAsyncMethod((t) => RuleManager.CheckAllRules(token));
             AddAsyncMethod((t) => PropertyValueManager.CheckAllRules(token));
             foreach (var item in this)
@@ -206,17 +221,19 @@ namespace Neatoo
 
         /// <summary>
         /// Permantatly mark invalid
-        /// Note: not associated with any specific property
+        /// Running all rules will reset this
         /// </summary>
         /// <param name="message"></param>
         protected virtual void MarkInvalid(string message)
         {
-            RuleManager.MarkInvalid(message);
+            ObjectInvalid = message;
+            this[nameof(ObjectInvalid)].SetErrorsForRule(0, new ReadOnlyCollection<string>(new List<string> { message }));
+            RaiseMetaPropertiesChanged();
         }
 
+        public string ObjectInvalid { get => Getter<string>(); protected set => Setter(value); }
 
-        IRuleResultReadOnlyList IValidateBase.RuleResultList => RuleManager.Results;
-        public IReadOnlyList<string> BrokenRuleMessages => RuleManager.Results.Where(x => x.IsError).SelectMany(x => x.PropertyErrorMessages).Select(x => x.Value).ToList().AsReadOnly();
+        public IReadOnlyList<string> BrokenRuleMessages => PropertyValueManager.ErrorMessages;
 
         IValidatePropertyValue IValidateBase.GetProperty(string propertyName)
         {

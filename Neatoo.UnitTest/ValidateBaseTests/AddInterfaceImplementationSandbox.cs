@@ -90,7 +90,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         }
 
 
-        public interface IShortNameRuleTarget : IBase
+        public interface IShortNameRuleTarget : IValidateBase
         {
             string FirstName { get; }
             string LastName { get; }
@@ -101,17 +101,17 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public class ShortNameRule : RuleBase<IShortNameRuleTarget>
         {
 
-            public override IRuleResult Execute(IShortNameRuleTarget target)
+            public override PropertyErrors Execute(IShortNameRuleTarget target)
             {
 
                 if (string.IsNullOrWhiteSpace(target.FirstName))
                 {
-                    return (IRuleResult)RuleResult.PropertyError(nameof(IShortNameRuleTarget.FirstName), "FirstName is required");
+                    return nameof(IShortNameRuleTarget.FirstName).PropertyError("FirstName is required");
                 }
 
                 if (string.IsNullOrWhiteSpace(target.LastName))
                 {
-                    return (IRuleResult)RuleResult.PropertyError(nameof(IShortNameRuleTarget.LastName), "LastName is required");
+                    return nameof(IShortNameRuleTarget.LastName).PropertyError("LastName is required");
                 }
 
                 target.ShortName = $"{target.FirstName} {target.LastName}";
@@ -119,7 +119,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
                 // No support for overloaded methods
                 target.ToUpperCase();
 
-                return (IRuleResult)RuleResult.Empty();
+                return None;
 
             }
 

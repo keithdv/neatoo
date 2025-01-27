@@ -178,7 +178,7 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
 
             Assert.IsFalse(target.IsValid);
             Assert.IsFalse(newTarget.IsValid);
-            Assert.IsNotNull(newTarget.OverrideResult);
+            Assert.IsNotNull(newTarget.ObjectInvalid);
         }
     }
 }

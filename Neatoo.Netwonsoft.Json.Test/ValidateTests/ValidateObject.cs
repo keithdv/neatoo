@@ -1,4 +1,5 @@
-﻿using Neatoo.Portal;
+﻿using Neatoo.Core;
+using Neatoo.Portal;
 using Neatoo.Rules;
 using System;
 using System.Collections.Generic;
@@ -16,19 +17,20 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         IValidateObject Child { get; set; }
         IEnumerable<IRule> Rules { get; }
         void MarkInvalid(string message);
-        IRuleResult OverrideResult { get; }
 
+        new string ObjectInvalid { get; }
+        //new IValidatePropertyValue this[string propertyName] { get => GetProperty(propertyName); }
     }
 
     public class ValidateObject : ValidateBase<ValidateObject>, IValidateObject
     {
         public ValidateObject(IValidateBaseServices<ValidateObject> services) : base(services)
         {
-            RuleManager.AddRule(t =>
+            RuleManager.AddValidation(t =>
             {
                 t.RuleRunCount++;
-                if (t.Name == "Error") { return RuleResult.PropertyError(nameof(Name), "Error"); }
-                return RuleResult.Empty();
+                if (t.Name == "Error") { return "Error"; }
+                return string.Empty;
             }, nameof(Name));
         }
 
@@ -42,8 +44,6 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         {
             base.MarkInvalid(message);
         }
-
-        IRuleResult IValidateObject.OverrideResult => RuleManager.OverrideResult;
 
         [Create]
         public void Create(Guid ID, string Name)
@@ -66,18 +66,19 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         int RuleRunCount { get; }
         IEnumerable<IRule> Rules { get; }
         void MarkInvalid(string message);
-        IRuleResult OverrideResult { get; }
+
+        new string ObjectInvalid { get; }
     }
 
     public class ValidateObjectList : ValidateListBase<ValidateObjectList, IValidateObject>, IValidateObjectList
     {
         public ValidateObjectList(IValidateListBaseServices<ValidateObjectList, IValidateObject> services) : base(services)
         {
-            RuleManager.AddRule(t =>
+            RuleManager.AddValidation(t =>
             {
                 t.RuleRunCount++;
-                if (t.Name == "Error") { return RuleResult.PropertyError(nameof(Name), "Error"); }
-                return RuleResult.Empty();
+                if (t.Name == "Error") { return "Error"; }
+                return string.Empty;
             }, nameof(Name));
 
         }
@@ -91,8 +92,6 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         {
             base.MarkInvalid(message);
         }
-
-        IRuleResult IValidateObjectList.OverrideResult => RuleManager.OverrideResult;
 
     }
 }

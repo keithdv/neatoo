@@ -90,7 +90,7 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
             Assert.AreEqual(1, newTarget.Rules.Count());
             Assert.IsFalse(newTarget.IsValid);
 
-            Assert.IsTrue(newTarget.RuleResultList[nameof(IValidateObject.Name)].IsError);
+            Assert.IsTrue(newTarget[nameof(IValidateObject.Name)].IsValid);
 
         }
 
@@ -195,7 +195,7 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
 
             Assert.IsFalse(target.IsValid);
             Assert.IsFalse(newTarget.IsValid);
-            Assert.IsNotNull(newTarget.OverrideResult);
+            Assert.IsNotNull(newTarget.ObjectInvalid);
         }
     }
 }

@@ -15,23 +15,23 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public ShortNameRule() : base()
         {
-            TriggerProperties.Add(nameof(IPersonBase.FirstName));
-            TriggerProperties.Add(nameof(IPersonBase.LastName));
+            AddTriggerProperties(nameof(IPersonBase.FirstName));
+            AddTriggerProperties(nameof(IPersonBase.LastName));
         }
 
-        public override IRuleResult Execute(T target)
+        public override PropertyErrors Execute(T target)
         {
             RunCount++;
             // System.Diagnostics.Debug.WriteLine($"Run Rule {target.FirstName} {target.LastName}");
 
             if (target.FirstName?.StartsWith("Error") ?? false)
             {
-                return RuleResult.PropertyError(nameof(IPersonBase.FirstName), target.FirstName);
+                return (nameof(IPersonBase.FirstName), target.FirstName);
             }
 
             target.ShortName = $"{target.FirstName} {target.LastName}";
 
-            return RuleResult.Empty();
+            return PropertyErrors.None;
         }
 
     }

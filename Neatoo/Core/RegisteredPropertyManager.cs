@@ -48,11 +48,21 @@ namespace Neatoo.Core
 
                 type = type.BaseType;
 
-            } while (!type.IsGenericType || !neatooTypes.Contains(type.GetGenericTypeDefinition()));
+            } while (type != null && (!type.IsGenericType || !neatooTypes.Contains(type.GetGenericTypeDefinition())));
 
+            do
+            {
+                var objProp = type.GetProperty(nameof(IValidateBase.ObjectInvalid), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | BindingFlags.DeclaredOnly);
 
+                if (objProp != null)
+                {
+                    RegisteredProperties.Add(nameof(IValidateBase.ObjectInvalid), CreateRegisteredProperty(objProp));
+                    break;
+                }
 
-
+                type = type.BaseType;
+            }
+            while (type != null && (!type.IsGenericType || neatooTypes.Contains(type.GetGenericTypeDefinition())));
 
         }
 

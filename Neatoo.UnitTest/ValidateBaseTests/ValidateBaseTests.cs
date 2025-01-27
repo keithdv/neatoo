@@ -146,7 +146,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.LastName = "Smith";
 
             Assert.IsFalse(validate.IsValid);
-            Assert.IsTrue(validate.RuleResultList[nameof(validate.FirstName)].IsError);
+            Assert.IsFalse(validate[nameof(validate.FirstName)].IsValid);
         }
 
         [TestMethod]
@@ -162,7 +162,6 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
             Assert.IsFalse(validate.IsBusy);
             Assert.IsTrue(validate.IsValid);
-            Assert.IsNull(validate.RuleResultList[nameof(validate.FirstName)]);
             Assert.IsTrue(propertyChangedCalls.Contains(nameof(validate.IsValid)));
             Assert.IsTrue(propertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
         }
@@ -232,8 +231,8 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.TestMarkInvalid(message = Guid.NewGuid().ToString());
             Assert.IsFalse(validate.IsValid);
             Assert.IsFalse(validate.IsSelfValid);
-            Assert.AreEqual(1, validate.RuleResultList.Count());
-            Assert.AreEqual(message, validate.RuleResultList.Single().PropertyErrorMessages.Single().Value);
+            Assert.AreEqual(1, validate.BrokenRuleMessages.Count);
+            Assert.AreEqual(message, validate.BrokenRuleMessages.Single());
         }
 
         [TestMethod]

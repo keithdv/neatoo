@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -14,10 +15,13 @@ namespace Neatoo.Core
 {
     public interface IValidatePropertyValueManager : IPropertyValueManager
     {
+        // Valid without looking at Children that are IValidateBase
+        bool IsSelfValid { get; }
         bool IsValid { get; }
         bool IsBusy { get; }
         Task CheckAllRules(CancellationToken token);
         Task WaitForRules();
+        IReadOnlyList<string> ErrorMessages { get; }
 
         new IValidatePropertyValue GetProperty(string propertyName);
         new IValidatePropertyValue GetProperty(IRegisteredProperty registeredProperty);
@@ -33,15 +37,16 @@ namespace Neatoo.Core
 
     public interface IValidatePropertyValue : IPropertyValue, INotifyPropertyChanged
     {
+        bool IsSelfValid { get; }
         bool IsValid { get; }
         bool IsBusy { get; }
         Task CheckAllRules(CancellationToken token);
         Task WaitForRules();
         IReadOnlyList<string> ErrorMessages { get; }
         void LoadProperty(object value);
-        internal void SetError(uint ruleIndex, IReadOnlyList<string> errorMessages);
-        internal void NoError(uint ruleIndex);
-        internal void ClearErrors();
+        internal void SetErrorsForRule(uint ruleIndex, IReadOnlyList<string> errorMessages);
+        internal void ClearErrorsForRule(uint ruleIndex);
+        internal void ClearAllErrors();
     }
 
     public interface IValidatePropertyValue<T> : IValidatePropertyValue, IPropertyValue<T>
@@ -58,7 +63,8 @@ namespace Neatoo.Core
         {
         }
 
-        public bool IsValid => Child != null ? Child.IsValid : !ruleResults.Any();
+        public bool IsSelfValid => Child != null ? true : !ruleErrorMessages.Any();
+        public bool IsValid => Child != null ? Child.IsValid : !ruleErrorMessages.Any();
         public bool IsBusy => Child != null ? (Child?.IsBusy ?? false) : IsSelfBusy;
 
         public bool IsSelfBusy { get; private set; } = false;
@@ -66,7 +72,7 @@ namespace Neatoo.Core
         public Task WaitForRules() { return Child?.WaitForRules() ?? Task.CompletedTask; }
         public Task CheckAllRules(CancellationToken token) { return Child?.CheckAllRules(token) ?? Task.CompletedTask; }
 
-        public IReadOnlyList<string> ErrorMessages => ruleResults.SelectMany(r => r.Value).ToList().AsReadOnly();
+        public IReadOnlyList<string> ErrorMessages => ruleErrorMessages.SelectMany(r => r.Value).ToList().AsReadOnly();
 
         public virtual void LoadProperty(object value)
         {
@@ -86,28 +92,25 @@ namespace Neatoo.Core
             {
                 var task = base.HandlePropertyChanged(propertyName, source);
 
-                if (Child == null) // If this is holding for a child ValidateBase it will raise all the events
+                if (!task.IsCompleted && Parent is IValidateBase validateBase)
                 {
-                    if (!task.IsCompleted && Parent is IValidateBase validateBase)
+                    IsSelfBusy = true;
+
+                    OnPropertyChanged(nameof(IsBusy));
+                    OnPropertyChanged(nameof(IsSelfBusy));
+
+                    validateBase.AddSequencedTask((t) =>
                     {
-                        IsSelfBusy = true;
-
-                        OnPropertyChanged(nameof(IsBusy));
-                        OnPropertyChanged(nameof(IsSelfBusy));
-
-                        validateBase.AddSequencedTask((t) =>
+                        IsSelfBusy = false;
+                        if (!t.IsFaulted)
                         {
-                            IsSelfBusy = false;
-                            if (!t.IsFaulted)
-                            {
-                                OnPropertyChanged(nameof(IsBusy));
-                                OnPropertyChanged(nameof(IsSelfBusy));
-                            }
-                            return Task.CompletedTask;
-                        }, true);
-                    }
-
+                            OnPropertyChanged(nameof(IsBusy));
+                            OnPropertyChanged(nameof(IsSelfBusy));
+                        }
+                        return Task.CompletedTask;
+                    }, true);
                 }
+
                 return task;
             }
             catch
@@ -120,31 +123,32 @@ namespace Neatoo.Core
         }
 
         // [PortalDataMember] Ummm...ising the RuleIndex going to be different...
-        protected Dictionary<uint, IReadOnlyList<string>> ruleResults = new Dictionary<uint, IReadOnlyList<string>>();
+        protected Dictionary<uint, IReadOnlyList<string>> ruleErrorMessages = new Dictionary<uint, IReadOnlyList<string>>();
 
         protected void SetError(uint ruleIndex, IReadOnlyList<string> errorMessages)
         {
-            ruleResults[ruleIndex] = errorMessages;
+            Debug.Assert(Child == null, "If the Child is IValidateBase then it should be handling the errors");
+            ruleErrorMessages[ruleIndex] = errorMessages;
             OnPropertyChanged(nameof(IsValid));
             OnPropertyChanged(nameof(ErrorMessages));
         }
 
 
-        void IValidatePropertyValue.SetError(uint ruleIndex, IReadOnlyList<string> errorMessages)
+        void IValidatePropertyValue.SetErrorsForRule(uint ruleIndex, IReadOnlyList<string> errorMessages)
         {
             SetError(ruleIndex, errorMessages);
         }
 
-        void IValidatePropertyValue.NoError(uint ruleIndex)
+        void IValidatePropertyValue.ClearErrorsForRule(uint ruleIndex)
         {
-            ruleResults.Remove(ruleIndex);
+            ruleErrorMessages.Remove(ruleIndex);
             OnPropertyChanged(nameof(IsValid));
             OnPropertyChanged(nameof(ErrorMessages));
         }
 
-        void IValidatePropertyValue.ClearErrors()
+        void IValidatePropertyValue.ClearAllErrors()
         {
-            ruleResults.Clear();
+            ruleErrorMessages.Clear();
             OnPropertyChanged(nameof(IsValid));
             OnPropertyChanged(nameof(ErrorMessages));
         }
@@ -184,14 +188,14 @@ namespace Neatoo.Core
 
         public virtual IValidatePropertyValue GetProperty(IRegisteredProperty registeredProperty)
         {
-            if (fieldData.TryGetValue(registeredProperty.Index, out var fd))
+            if (fieldData.TryGetValue(registeredProperty.Name, out var fd))
             {
                 return fd;
             }
 
             var newPropertyValue = (IValidatePropertyValue)this.GetType().GetMethod(nameof(this.CreatePropertyValue), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty, Target });
 
-            fieldData[registeredProperty.Index] = newPropertyValue;
+            fieldData[registeredProperty.Name] = newPropertyValue;
 
             return newPropertyValue;
         }
@@ -215,10 +219,12 @@ namespace Neatoo.Core
         {
         }
 
+        public bool IsSelfValid => !fieldData.Values.Any(_ => !_.IsSelfValid);
         public bool IsValid => !fieldData.Values.Any(_ => !_.IsValid);
 
         public bool IsBusy => fieldData.Values.Any(_ => _.IsBusy);
 
+        public IReadOnlyList<string> ErrorMessages => fieldData.Values.SelectMany(_ => _.ErrorMessages).ToList().AsReadOnly();
 
         public Task WaitForRules()
         {

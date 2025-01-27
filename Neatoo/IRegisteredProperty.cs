@@ -9,6 +9,5 @@ namespace Neatoo
         string Name { get; }
         Type Type { get; }
         string Key { get; }
-        uint Index { get; }
     }
 }

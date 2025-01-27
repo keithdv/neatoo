@@ -13,22 +13,22 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public FullNameDependencyRule(IDisposableDependency dd) : base()
         {
-            TriggerProperties.Add(nameof(IPersonBase.Title));
-            TriggerProperties.Add(nameof(IPersonBase.ShortName));
+            AddTriggerProperties(nameof(IPersonBase.Title));
+            AddTriggerProperties(nameof(IPersonBase.ShortName));
 
             this.DisposableDependency = dd;
         }
 
         private IDisposableDependency DisposableDependency { get; }
 
-        public override IRuleResult Execute(T target)
+        public override PropertyErrors Execute(T target)
         {
 
             var dd = DisposableDependency ?? throw new ArgumentNullException(nameof(DisposableDependency));
 
             target.FullName = $"{target.Title} {target.ShortName}";
 
-            return RuleResult.Empty();
+            return PropertyErrors.None;
 
         }
 

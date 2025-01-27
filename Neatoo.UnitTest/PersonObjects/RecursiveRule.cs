@@ -14,9 +14,9 @@ namespace Neatoo.UnitTest.PersonObjects
     {
         public RecursiveRule() : base()
         {
-            TriggerProperties.Add(nameof(IPersonBase.ShortName));
+            AddTriggerProperties(nameof(IPersonBase.ShortName));
         }
-        public override IRuleResult Execute(IPersonBase target)
+        public override PropertyErrors Execute(IPersonBase target)
         {
             if (target.ShortName == "Recursive")
             {
@@ -26,7 +26,7 @@ namespace Neatoo.UnitTest.PersonObjects
             {
                 target.FirstName = "Error"; // trigger the ShortNameRule error
             }
-            return RuleResult.Empty();
+            return PropertyErrors.None;
         }
     }
 }
