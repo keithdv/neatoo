@@ -119,33 +119,5 @@ namespace Neatoo.UnitTest.ObjectPortal
             Assert.IsFalse(editObjectList.IsChild);
             Assert.IsFalse(editObjectList.IsModified);
         }
-
-
-
-        [TestMethod]
-        public async Task ReadWritePortalList_Delete()
-        {
-            editObjectList = await portal.Fetch();
-            editObjectList.Delete();
-            await portal.Update(editObjectList);
-            Assert.IsTrue(editObjectList.DeleteCalled);
-        }
-
-
-        [TestMethod]
-        public async Task ReadWritePortalList_Remove_Save_IsModified()
-        {
-            editObjectList = await portal.Fetch();
-            var child = await editObjectList.CreateAdd();
-
-            child.MarkOld();
-
-            editObjectList.Remove(child);
-            await editObjectList.Save();
-
-            Assert.IsFalse(editObjectList.IsModified);
-            Assert.IsTrue(child.DeleteChildCalled);
-        }
-
     }
 }

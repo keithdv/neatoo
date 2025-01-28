@@ -10,7 +10,7 @@ namespace Neatoo.UnitTest.PersonObjects
         where T : PersonValidateBase<T>
     {
 
-        public PersonValidateBase(IValidateBaseServices<T> services) : base(services)
+        public PersonValidateBase(ValidateBaseServices<T> services) : base(services)
         {
         }
 

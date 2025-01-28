@@ -16,7 +16,7 @@ namespace HorseBarn.lib.Cart
     {
         public CartNumberOfHorsesRule()
         {
-            AddTriggerProperties(nameof(ICart.NumberOfHorses), nameof(ICart<IHorse>.HorseList));
+            AddTriggerProperties(nameof(ICart.NumberOfHorses), nameof(ICart.HorseList));
         }
         public override PropertyErrors Execute(ICart cart)
         {

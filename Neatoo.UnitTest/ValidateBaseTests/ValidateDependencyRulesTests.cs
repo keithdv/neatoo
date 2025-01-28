@@ -15,7 +15,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     public class ValidateDependencyRules : PersonValidateBase<ValidateDependencyRules>, IValidateDependencyRules
     {
 
-        public ValidateDependencyRules(IValidateBaseServices<ValidateDependencyRules> services,
+        public ValidateDependencyRules(ValidateBaseServices<ValidateDependencyRules> services,
                 IShortNameDependencyRule<ValidateDependencyRules> shortNameRule,
                 IFullNameDependencyRule<ValidateDependencyRules> fullNameRule) : base(services)
         {

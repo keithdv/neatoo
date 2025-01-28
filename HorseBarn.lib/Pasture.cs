@@ -21,7 +21,7 @@ namespace HorseBarn.lib
 {
     internal class Pasture : CustomEditBase<Pasture>, IPasture
     {
-        public Pasture(IEditBaseServices<Pasture> services) : base(services)
+        public Pasture(EditBaseServices<Pasture> services) : base(services)
         {
         }
 

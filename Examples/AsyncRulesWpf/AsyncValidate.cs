@@ -78,7 +78,7 @@ namespace AsyncRulesWpf
             }, nameof(AsyncPropertyD));
         }
 
-        new public IValidatePropertyValue this[string propertyName] => base[propertyName];
+        new public IValidateProperty this[string propertyName] => base[propertyName];
 
         public uint AsyncPropertyA        {            get => Getter<uint>();            set => Setter(value);        }
 

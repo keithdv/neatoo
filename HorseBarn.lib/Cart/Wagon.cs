@@ -9,14 +9,14 @@ using System.Threading.Tasks;
 
 namespace HorseBarn.lib.Cart
 {
-    public interface IWagon : ICart<IHeavyHorse>
+    public interface IWagon : ICart
     {
 
     }
 
     internal class Wagon : Cart<Wagon, IHeavyHorse>, IWagon
     {
-        public Wagon(IEditBaseServices<Wagon> services, ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services, cartNumberOfHorsesRule)
+        public Wagon(EditBaseServices<Wagon> services, ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services, cartNumberOfHorsesRule)
         {
         }
 

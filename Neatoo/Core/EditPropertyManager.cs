@@ -1,5 +1,6 @@
 ﻿using Neatoo.Attributes;
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Neatoo.Core
 {
-    public interface IEditPropertyValueManager : IValidatePropertyValueManager
+    public interface IEditPropertyManager : IValidatePropertyManager
     {
         bool IsModified { get; }
         bool IsSelfModified { get; }
@@ -18,20 +19,17 @@ namespace Neatoo.Core
         void MarkSelfUnmodified();
 
 
-        new IEditPropertyValue GetProperty(string propertyName);
-        new IEditPropertyValue GetProperty(IRegisteredProperty registeredProperty);
+        new IEditProperty GetProperty(string propertyName);
+        new IEditProperty GetProperty(IRegisteredProperty registeredProperty);
 
-        public new IEditPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
-        public new IEditPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
-    }
-
-    public interface IEditPropertyValueManager<T> : IEditPropertyValueManager, IValidatePropertyValueManager<T>
-    {
+        public new IEditProperty this[string propertyName] { get => GetProperty(propertyName); }
+        public new IEditProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
 
     }
 
-    public interface IEditPropertyValue : IValidatePropertyValue
+    public interface IEditProperty : IValidateProperty
     {
+        bool IsStopped { get; }
         bool IsModified { get; }
         bool IsSelfModified { get; }
         void MarkSelfUnmodified();
@@ -39,20 +37,20 @@ namespace Neatoo.Core
 
     }
 
-    public interface IEditPropertyValue<T> : IEditPropertyValue, IValidatePropertyValue<T>
+    public interface IEditProperty<T> : IEditProperty, IValidateProperty<T>
     {
 
     }
 
     [PortalDataContract]
-    public class EditPropertyValue<T> : ValidatePropertyValue<T>, IEditPropertyValue<T>
+    public class EditProperty<T> : ValidateProperty<T>, IEditProperty<T>
     {
 
-        public EditPropertyValue(string name) : base(name)
+        public EditProperty(string name) : base(name)
         {
         }
 
-        public IEditBase EditChild => Value as IEditBase;
+        public IEditMetaProperties EditChild => Value as IEditMetaProperties;
 
         protected override void OnPropertyChanged(string propertyName)
         {
@@ -60,21 +58,19 @@ namespace Neatoo.Core
 
             if (propertyName == nameof(Value))
             {
-                if (Parent is IEditBase edit)
+                if (!IsStopped)
                 {
-                    if (!edit.IsStopped)
-                    {
-                        IsSelfModified = true && EditChild == null; // Never consider ourself modified if holding a Neatoo object
-                    }
+                    IsSelfModified = true && EditChild == null; // Never consider ourself modified if holding a Neatoo object
                 }
             }
         }
-
 
         public bool IsModified => IsSelfModified || (EditChild?.IsModified ?? false);
 
         [PortalDataMember]
         public bool IsSelfModified { get; private set; } = false;
+
+        public bool IsStopped { get; set; } = false;
 
         public void MarkSelfUnmodified()
         {
@@ -88,20 +84,19 @@ namespace Neatoo.Core
         }
     }
 
-    public class EditPropertyValueManager<T> : ValidatePropertyValueManagerBase<T, IEditPropertyValue>, IEditPropertyValueManager<T>
-        where T : IBase
+    public class EditPropertyManager : ValidatePropertyManagerBase<IEditProperty>, IEditPropertyManager
     {
 
-        IRegisteredPropertyManager<T> IPropertyValueManager<T>.RegisteredPropertyManager => RegisteredPropertyManager;
+        IRegisteredPropertyManager IPropertyManager.RegisteredPropertyManager => RegisteredPropertyManager;
 
-        public EditPropertyValueManager(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
+        public EditPropertyManager(IRegisteredPropertyManager registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
         {
 
         }
 
-        protected override IEditPropertyValue CreatePropertyValue<PV>(IRegisteredProperty registeredProperty, IBase parent)
+        protected override IEditProperty CreateProperty<PV>(IRegisteredProperty registeredProperty)
         {
-            return Factory.CreateEditPropertyValue<PV>(registeredProperty, parent);
+            return Factory.CreateEditProperty<PV>(registeredProperty);
         }
 
         public bool IsModified => fieldData.Values.Any(p => p.IsModified);
@@ -117,52 +112,55 @@ namespace Neatoo.Core
             }
         }
 
-        public IEditPropertyValue this[string propertyName]
+        public IEditProperty this[string propertyName]
         {
             get => GetProperty(propertyName);
         }
 
-        public IEditPropertyValue this[IRegisteredProperty registeredProperty]
+        public IEditProperty this[IRegisteredProperty registeredProperty]
         {
             get => GetProperty(registeredProperty);
         }
 
 
-        public virtual IEditPropertyValue GetProperty(string propertyName)
+        public virtual IEditProperty GetProperty(string propertyName)
         {
             return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
         }
 
-        public virtual IEditPropertyValue GetProperty(IRegisteredProperty registeredProperty)
+        public virtual IEditProperty GetProperty(IRegisteredProperty registeredProperty)
         {
             if (fieldData.TryGetValue(registeredProperty.Name, out var fd))
             {
                 return fd;
             }
 
-            var newPropertyValue = (IEditPropertyValue)this.GetType().GetMethod(nameof(this.CreatePropertyValue), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty, Target });
+            var newProperty = (IEditProperty)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty });
 
-            fieldData[registeredProperty.Name] = newPropertyValue;
+            newProperty.PropertyChanged += OnPropertyChanged;
+            newProperty.NeatooPropertyChanged += OnNeatooPropertyChanged;
 
-            return newPropertyValue;
+            fieldData[registeredProperty.Name] = newProperty;
+
+            return newProperty;
         }
 
-        IValidatePropertyValue IValidatePropertyValueManager.GetProperty(string propertyName)
+        IValidateProperty IValidatePropertyManager.GetProperty(string propertyName)
         {
             return GetProperty(propertyName);
         }
 
-        IValidatePropertyValue IValidatePropertyValueManager.GetProperty(IRegisteredProperty registeredProperty)
+        IValidateProperty IValidatePropertyManager.GetProperty(IRegisteredProperty registeredProperty)
         {
             return GetProperty(registeredProperty);
         }
 
-        IPropertyValue IPropertyValueManager.GetProperty(string propertyName)
+        IProperty IPropertyManager.GetProperty(string propertyName)
         {
             return GetProperty(propertyName);
         }
 
-        IPropertyValue IPropertyValueManager.GetProperty(IRegisteredProperty registeredProperty)
+        IProperty IPropertyManager.GetProperty(IRegisteredProperty registeredProperty)
         {
             return GetProperty(registeredProperty);
         }

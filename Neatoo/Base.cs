@@ -13,34 +13,35 @@ using System.Threading.Tasks;
 namespace Neatoo
 {
 
-    public interface IBase : INeatooObject
+    public interface IBase : INeatooObject, INotifyPropertyChanged, INotifyNeatooPropertyChanged
     {
-
-
         IBase Parent { get; }
 
-        internal Task HandlePropertyChanged(string propertyName, IBase source);
+        internal IProperty GetProperty(string propertyName);
+        internal IProperty GetProperty(IRegisteredProperty registeredProperty);
 
-        internal IPropertyValue GetProperty(string propertyName);
-        internal IPropertyValue GetProperty(IRegisteredProperty registeredProperty);
-
-        internal IPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
-        internal IPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
-
+        internal IProperty this[string propertyName] { get => GetProperty(propertyName); }
+        internal IProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 
     [PortalDataContract]
     public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent
-        where T : Base<T>
+        where T : IBase
     {
-
+        
         [PortalDataMember]
-        protected IPropertyValueManager<T> PropertyValueManager { get; }
+        protected IPropertyManager PropertyManager { get; set; }
 
-        public Base(IBaseServices<T> services)
+        public Base(BaseServices<T> services)
         {
-            PropertyValueManager = services.PropertyValueManager;
-            ((ISetTarget)PropertyValueManager).SetTarget(this);
+            PropertyManager = services.PropertyManager ?? throw new ArgumentNullException("PropertyManager");
+            PropertyManager.RegisteredPropertyManager.SetType(this.GetType());
+
+            if (PropertyManager is IPropertyManager)
+            {
+                PropertyManager.NeatooPropertyChanged += PropertyManagerNeatooPropertyChange;
+                PropertyManager.PropertyChanged += PropertyManager_PropertyChanged;
+            }
         }
 
         [PortalDataMember]
@@ -54,41 +55,74 @@ namespace Neatoo
         {
             SetParent(parent);
         }
+        protected AsyncTaskSequencer AsyncTaskSequencer { get; set; } = new AsyncTaskSequencer();
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public event NeatooPropertyChanged NeatooPropertyChanged;
+
+        protected virtual void RaisePropertyChanged(string propertyName, object source = null)
+        {
+            PropertyChanged?.Invoke(source ?? this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected virtual void PropertyManager_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            // TODO - if an object isn't assigned to another IBase
+            // it will still consider us to be the Parent
+
+            if (sender == this.PropertyManager && this[e.PropertyName].Value is IBase child)
+            {
+                ((ISetParent)child).SetParent(this);
+                // TODO - This is never getting removed..which is not good
+                child.PropertyChanged += Child_PropertyChanged;
+                // NOTE: Neatoo property changes only come thru the Property and PropertyManager
+            }
+
+            if (sender == this.PropertyManager && PropertyManager.HasProperty(e.PropertyName))
+            {
+                RaisePropertyChanged(e.PropertyName, this);
+            }
+
+        }
+
+        protected virtual void Child_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+
+        }
+
+        protected Task RaiseNeatooPropertyChanged(string propertyName, object source)
+        {
+            return NeatooPropertyChanged?.Invoke(propertyName, source);
+        }
+
+        protected Task PropertyManagerNeatooPropertyChange(string propertyName, object source)
+        {
+            return AsyncTaskSequencer.AddTask((t) => NeatooPropertyChanged?.Invoke(propertyName, source) ?? Task.CompletedTask);
+        }
 
         protected virtual P Getter<P>([System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
         {
-            return (P) PropertyValueManager[propertyName].Value;
+            return (P)PropertyManager[propertyName].Value;
         }
 
         protected virtual void Setter<P>(P value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
         {
-            PropertyValueManager[propertyName].SetValue(value);
-        }
-
-        protected virtual Task HandlePropertyChanged(string propertyName, IBase source)
-        {
-            Parent?.HandlePropertyChanged(propertyName, this);
-            return Task.CompletedTask;
-        }
-
-        Task IBase.HandlePropertyChanged(string propertyName, IBase source)
-        {
-            return HandlePropertyChanged(propertyName, source);
+            PropertyManager[propertyName].SetValue(value);
         }
 
         protected IRegisteredProperty GetRegisteredProperty(string propertyName)
         {
-            return PropertyValueManager.RegisteredPropertyManager.GetRegisteredProperty(propertyName);
+            return PropertyManager.RegisteredPropertyManager.GetRegisteredProperty(propertyName);
         }
 
-        public IPropertyValue GetProperty(string propertyName)
+        public IProperty GetProperty(string propertyName)
         {
-            return PropertyValueManager[propertyName];
+            return PropertyManager[propertyName];
         }
 
-        public IPropertyValue GetProperty(IRegisteredProperty registeredProperty)
+        public IProperty GetProperty(IRegisteredProperty registeredProperty)
         {
-            return PropertyValueManager[registeredProperty];
+            return PropertyManager[registeredProperty];
         }
 
         IDisposable IPortalTarget.StopAllActions()
@@ -110,8 +144,8 @@ namespace Neatoo
             return Task.CompletedTask;
         }
 
-        protected IPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
-        protected IPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
+        protected IProperty this[string propertyName] { get => GetProperty(propertyName); }
+        protected IProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 
 }

@@ -12,26 +12,32 @@ namespace Neatoo
 {
 
     public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, IPortalEditTarget, IEditMetaProperties
-        where T : EditBase<T>
+        where T : IEditBase
     {
         [PortalDataMember]
-        protected new IEditPropertyValueManager<T> PropertyValueManager => (IEditPropertyValueManager<T>)base.PropertyValueManager;
+        protected new IEditPropertyManager PropertyManager => (IEditPropertyManager)  base.PropertyManager;
 
-        public EditBase(IEditBaseServices<T> services) : base(services)
+        public EditBase(EditBaseServices<T> services) : base(services)
         {
+            if(PropertyManager is IEditPropertyManager)
+            {
+                PropertyManager.NeatooPropertyChanged += PropertyManagerNeatooPropertyChange;
+                PropertyManager.PropertyChanged += PropertyManager_PropertyChanged;
+            }
+
             ReadWritePortal = services.ReadWritePortal;
         }
 
         [PortalDataMember]
-        protected bool SetModified { get; set; } = false;
-        public bool IsModified => PropertyValueManager.IsModified || IsDeleted || IsNew || IsSelfModified;
-        public bool IsSelfModified => PropertyValueManager.IsSelfModified || IsDeleted || SetModified;
+        public bool IsMarkedModified { get; protected set; } = false;
+        public bool IsModified => PropertyManager.IsModified || IsDeleted || IsNew || IsSelfModified;
+        public bool IsSelfModified { get => PropertyManager.IsSelfModified || IsDeleted || IsMarkedModified; protected set => IsMarkedModified = value; }
         public bool IsSavable => IsModified && IsValid && !IsBusy && !IsChild;
         [PortalDataMember]
         public bool IsNew { get; protected set; }
         [PortalDataMember]
         public bool IsDeleted { get; protected set; }
-        public IEnumerable<string> ModifiedProperties => PropertyValueManager.ModifiedProperties;
+        public IEnumerable<string> ModifiedProperties => PropertyManager.ModifiedProperties;
         [PortalDataMember]
         public bool IsChild { get; protected set; }
         protected IReadWritePortal<T> ReadWritePortal { get; }
@@ -40,24 +46,23 @@ namespace Neatoo
 
         protected override void RaiseMetaPropertiesChanged(bool raiseBusy = true)
         {
-
             if (!IsStopped)
             {
                 if (EditMetaState.IsModified != IsModified)
                 {
-                    PropertyHasChanged(nameof(IsModified));
+                    RaisePropertyChanged(nameof(IsModified));
                 }
                 if (EditMetaState.IsSelfModified != IsSelfModified)
                 {
-                    PropertyHasChanged(nameof(IsSelfModified));
+                    RaisePropertyChanged(nameof(IsSelfModified));
                 }
                 if (EditMetaState.IsSavable != IsSavable)
                 {
-                    PropertyHasChanged(nameof(IsSavable));
+                    RaisePropertyChanged(nameof(IsSavable));
                 }
                 if (EditMetaState.IsDeleted != IsDeleted)
                 {
-                    PropertyHasChanged(nameof(IsDeleted));
+                    RaisePropertyChanged(nameof(IsDeleted));
                 }
             }
 
@@ -70,7 +75,7 @@ namespace Neatoo
             EditMetaState = (IsModified, IsSelfModified, IsSavable, IsDeleted);
         }
 
-        bool IEditBase.SetModified => SetModified;
+        bool IEditBase.IsMarkedModified => IsMarkedModified;
 
         protected virtual void MarkAsChild()
         {
@@ -86,8 +91,8 @@ namespace Neatoo
         protected virtual void MarkUnmodified()
         {
             // TODO : What if busy??
-            PropertyValueManager.MarkSelfUnmodified();
-            SetModified = false;
+            PropertyManager.MarkSelfUnmodified();
+            IsMarkedModified = false;
             RaiseMetaPropertiesChanged(); // Really shouldn't be anything listening to this
         }
 
@@ -98,7 +103,7 @@ namespace Neatoo
 
         protected virtual void MarkModified()
         {
-            SetModified = true;
+            IsMarkedModified = true;
             RaiseMetaPropertiesChanged();
         }
 
@@ -152,17 +157,9 @@ namespace Neatoo
             }
         }
         
-        async Task<I> IEditBase.SaveRetrieve<I>()
-        {
-            return await Task.FromResult((await DoSave()) as I);
-        }
 
-        public Task Save()
-        {
-            return DoSave();
-        }
 
-        protected virtual async Task<T> DoSave()
+        public virtual async Task<IEditBase> Save()
         {
             if (!IsSavable)
             {
@@ -185,20 +182,20 @@ namespace Neatoo
                 }
             }
 
-            return await ReadWritePortal.Update((T)this);
+            return await ReadWritePortal.Update((T) (IEditBase) this);
         }
 
-        new protected IEditPropertyValue GetProperty(string propertyName)
+        new protected IEditProperty GetProperty(string propertyName)
         {
-            return PropertyValueManager[propertyName];
+            return PropertyManager[propertyName];
         }
 
-        new protected IEditPropertyValue GetProperty(IRegisteredProperty registeredProperty)
+        new protected IEditProperty GetProperty(IRegisteredProperty registeredProperty)
         {
-            return PropertyValueManager[registeredProperty];
+            return PropertyManager[registeredProperty];
         }
 
-        new protected IEditPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
-        new protected IEditPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
+        new protected IEditProperty this[string propertyName] { get => GetProperty(propertyName); }
+        new protected IEditProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 }

@@ -23,7 +23,7 @@ namespace HorseBarn.lib.Horse
     internal class Horse<H> : CustomEditBase<H>, IHorse
         where H : Horse<H>
     {
-        public Horse(IEditBaseServices<H> services) : base(services)
+        public Horse(EditBaseServices<H> services) : base(services)
         {
             AddRules(RuleManager);
         }

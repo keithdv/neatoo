@@ -159,7 +159,7 @@ namespace Neatoo.Rules
         }
 
         /// <summary>
-        /// Write a property without re-runnning any rules
+        /// Write a property without re-running any rules
         /// </summary>
         /// <typeparam name="P"></typeparam>
         /// <param name="target"></param>
@@ -167,9 +167,9 @@ namespace Neatoo.Rules
         /// <param name="value"></param>
         protected void LoadProperty<P>(IRegisteredProperty registeredProperty, P value)
         {
-            if (RunRuleTarget[registeredProperty] is IValidatePropertyValue editPropertyValue)
+            if (RunRuleTarget[registeredProperty] is IValidateProperty editProperty)
             {
-                editPropertyValue.LoadProperty(value);
+                editProperty.LoadProperty(value);
             }
             else
             {

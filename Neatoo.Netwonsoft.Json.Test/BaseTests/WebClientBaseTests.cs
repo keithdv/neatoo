@@ -18,7 +18,7 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
         string Name = Guid.NewGuid().ToString();
 
         [TestInitialize]
-        public void TestInitailize()
+        public void TestInitialize()
         {
             scope = AutofacContainer.GetLifetimeScope().Resolve<IServiceScope>();
             target = scope.Resolve<IBaseObject>();
@@ -53,7 +53,7 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
 
             Assert.IsTrue(result.Contains(Id.ToString()));
             Assert.IsTrue(result.Contains(Name));
-            Assert.IsFalse(result.Contains(nameof(PropertyValueManager<BaseObject>)));
+            Assert.IsFalse(result.Contains(nameof(PropertyManager)));
 
         }
 

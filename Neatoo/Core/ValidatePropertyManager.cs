@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Neatoo.Core
 {
-    public interface IValidatePropertyValueManager : IPropertyValueManager
+    public interface IValidatePropertyManager : IPropertyManager
     {
         // Valid without looking at Children that are IValidateBase
         bool IsSelfValid { get; }
@@ -21,21 +21,17 @@ namespace Neatoo.Core
         bool IsBusy { get; }
         Task CheckAllRules(CancellationToken token);
         Task WaitForRules();
+        Task WaitForTasks();
         IReadOnlyList<string> ErrorMessages { get; }
 
-        new IValidatePropertyValue GetProperty(string propertyName);
-        new IValidatePropertyValue GetProperty(IRegisteredProperty registeredProperty);
+        new IValidateProperty GetProperty(string propertyName);
+        new IValidateProperty GetProperty(IRegisteredProperty registeredProperty);
 
-        public new IValidatePropertyValue this[string propertyName] { get => GetProperty(propertyName); }
-        public new IValidatePropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
+        public new IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
+        public new IValidateProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 
-    public interface IValidatePropertyValueManager<T> : IValidatePropertyValueManager, IPropertyValueManager<T>
-    {
-
-    }
-
-    public interface IValidatePropertyValue : IPropertyValue, INotifyPropertyChanged
+    public interface IValidateProperty : IProperty, INotifyPropertyChanged
     {
         bool IsSelfValid { get; }
         bool IsValid { get; }
@@ -49,28 +45,28 @@ namespace Neatoo.Core
         internal void ClearAllErrors();
     }
 
-    public interface IValidatePropertyValue<T> : IValidatePropertyValue, IPropertyValue<T>
+    public interface IValidateProperty<T> : IValidateProperty, IProperty<T>
     {
 
     }
 
-    public class ValidatePropertyValue<T> : PropertyValue<T>, IValidatePropertyValue<T>
+    public class ValidateProperty<T> : Property<T>, IValidateProperty<T>
     {
 
-        public virtual IValidateBase Child => Value as IValidateBase;
+        public virtual IValidateMetaProperties ValueIsValidateBase => Value as IValidateMetaProperties;
 
-        public ValidatePropertyValue(string name) : base(name)
+        public ValidateProperty(string name) : base(name)
         {
         }
 
-        public bool IsSelfValid => Child != null ? true : !ruleErrorMessages.Any();
-        public bool IsValid => Child != null ? Child.IsValid : !ruleErrorMessages.Any();
-        public bool IsBusy => Child != null ? (Child?.IsBusy ?? false) : IsSelfBusy;
+        public bool IsSelfValid => ValueIsValidateBase != null ? true : !ruleErrorMessages.Any();
+        public bool IsValid => ValueIsValidateBase != null ? ValueIsValidateBase.IsValid : !ruleErrorMessages.Any();
+        public bool IsBusy => ValueIsValidateBase != null ? (ValueIsValidateBase?.IsBusy ?? false) : IsSelfBusy;
 
         public bool IsSelfBusy { get; private set; } = false;
 
-        public Task WaitForRules() { return Child?.WaitForRules() ?? Task.CompletedTask; }
-        public Task CheckAllRules(CancellationToken token) { return Child?.CheckAllRules(token) ?? Task.CompletedTask; }
+        public Task WaitForRules() { return ValueIsValidateBase?.WaitForRules() ?? Task.CompletedTask; }
+        public Task CheckAllRules(CancellationToken token) { return ValueIsValidateBase?.CheckAllRules(token) ?? Task.CompletedTask; }
 
         public IReadOnlyList<string> ErrorMessages => ruleErrorMessages.SelectMany(r => r.Value).ToList().AsReadOnly();
 
@@ -86,32 +82,30 @@ namespace Neatoo.Core
             }
         }
 
-        protected override Task HandlePropertyChanged(string propertyName, IBase source)
+        protected override Task OnValueNeatooPropertyChanged(string propertyName, object source)
         {
             try
             {
-                var task = base.HandlePropertyChanged(propertyName, source);
+                // ValidateBase sticks Task into AsyncTaskSequencer for us
+                // so that it will be awaited by WaitForRules
+                Task = base.OnValueNeatooPropertyChanged(propertyName, source);
 
-                if (!task.IsCompleted && Parent is IValidateBase validateBase)
+                if (!Task.IsCompleted)
                 {
                     IsSelfBusy = true;
 
                     OnPropertyChanged(nameof(IsBusy));
                     OnPropertyChanged(nameof(IsSelfBusy));
 
-                    validateBase.AddSequencedTask((t) =>
+                    Task.ContinueWith(_ =>
                     {
                         IsSelfBusy = false;
-                        if (!t.IsFaulted)
-                        {
-                            OnPropertyChanged(nameof(IsBusy));
-                            OnPropertyChanged(nameof(IsSelfBusy));
-                        }
-                        return Task.CompletedTask;
-                    }, true);
+                        OnPropertyChanged(nameof(IsBusy));
+                        OnPropertyChanged(nameof(IsSelfBusy));
+                    });
                 }
 
-                return task;
+                return Task;
             }
             catch
             {
@@ -127,26 +121,26 @@ namespace Neatoo.Core
 
         protected void SetError(uint ruleIndex, IReadOnlyList<string> errorMessages)
         {
-            Debug.Assert(Child == null, "If the Child is IValidateBase then it should be handling the errors");
+            Debug.Assert(ValueIsValidateBase == null, "If the Child is IValidateBase then it should be handling the errors");
             ruleErrorMessages[ruleIndex] = errorMessages;
             OnPropertyChanged(nameof(IsValid));
             OnPropertyChanged(nameof(ErrorMessages));
         }
 
 
-        void IValidatePropertyValue.SetErrorsForRule(uint ruleIndex, IReadOnlyList<string> errorMessages)
+        void IValidateProperty.SetErrorsForRule(uint ruleIndex, IReadOnlyList<string> errorMessages)
         {
             SetError(ruleIndex, errorMessages);
         }
 
-        void IValidatePropertyValue.ClearErrorsForRule(uint ruleIndex)
+        void IValidateProperty.ClearErrorsForRule(uint ruleIndex)
         {
             ruleErrorMessages.Remove(ruleIndex);
             OnPropertyChanged(nameof(IsValid));
             OnPropertyChanged(nameof(ErrorMessages));
         }
 
-        void IValidatePropertyValue.ClearAllErrors()
+        void IValidateProperty.ClearAllErrors()
         {
             ruleErrorMessages.Clear();
             OnPropertyChanged(nameof(IsValid));
@@ -154,68 +148,71 @@ namespace Neatoo.Core
         }
     }
 
-    public class ValidatePropertyValueManager<T> : ValidatePropertyValueManagerBase<T, IValidatePropertyValue>, IValidatePropertyValueManager<T>
-        where T : IBase
+    public class ValidatePropertyManager : ValidatePropertyManagerBase<IValidateProperty>, IValidatePropertyManager
     {
 
-        IRegisteredPropertyManager<T> IPropertyValueManager<T>.RegisteredPropertyManager => RegisteredPropertyManager;
+        IRegisteredPropertyManager IPropertyManager.RegisteredPropertyManager => RegisteredPropertyManager;
 
-        public ValidatePropertyValueManager(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
+
+        public ValidatePropertyManager(IRegisteredPropertyManager registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
         {
 
         }
 
-        protected override IValidatePropertyValue CreatePropertyValue<PV>(IRegisteredProperty registeredProperty, IBase parent)
+        protected override IValidateProperty CreateProperty<PV>(IRegisteredProperty registeredProperty)
         {
-            return Factory.CreateValidatePropertyValue<PV>(registeredProperty, parent);
+            return Factory.CreateValidateProperty<PV>(registeredProperty);
         }
 
-        public IValidatePropertyValue this[string propertyName]
+        public IValidateProperty this[string propertyName]
         {
             get => GetProperty(propertyName);
         }
 
-        public IValidatePropertyValue this[IRegisteredProperty registeredProperty]
+        public IValidateProperty this[IRegisteredProperty registeredProperty]
         {
             get => GetProperty(registeredProperty);
         }
 
 
-        public virtual IValidatePropertyValue GetProperty(string propertyName)
+        public virtual IValidateProperty GetProperty(string propertyName)
         {
             return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
         }
 
-        public virtual IValidatePropertyValue GetProperty(IRegisteredProperty registeredProperty)
+        public virtual IValidateProperty GetProperty(IRegisteredProperty registeredProperty)
         {
             if (fieldData.TryGetValue(registeredProperty.Name, out var fd))
             {
                 return fd;
             }
 
-            var newPropertyValue = (IValidatePropertyValue)this.GetType().GetMethod(nameof(this.CreatePropertyValue), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty, Target });
+            var newProperty = (IValidateProperty)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty });
 
-            fieldData[registeredProperty.Name] = newPropertyValue;
+            newProperty.PropertyChanged += OnPropertyChanged;
+            newProperty.NeatooPropertyChanged += OnNeatooPropertyChanged;
 
-            return newPropertyValue;
+            fieldData[registeredProperty.Name] = newProperty;
+
+            return newProperty;
         }
 
-        IPropertyValue IPropertyValueManager.GetProperty(string propertyName)
+        IProperty IPropertyManager.GetProperty(string propertyName)
         {
             return GetProperty(propertyName);
         }
 
-        IPropertyValue IPropertyValueManager.GetProperty(IRegisteredProperty registeredProperty)
+        IProperty IPropertyManager.GetProperty(IRegisteredProperty registeredProperty)
         {
             return GetProperty(registeredProperty);
         }
     }
 
-    public abstract class ValidatePropertyValueManagerBase<T, P> : PropertyValueManagerBase<T, P>
-        where T : IBase
-        where P : IValidatePropertyValue
+    public abstract class ValidatePropertyManagerBase<P> : PropertyManagerBase<P>
+        where P : IValidateProperty
     {
-        public ValidatePropertyValueManagerBase(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
+
+        public ValidatePropertyManagerBase(IRegisteredPropertyManager registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
         {
         }
 
@@ -231,12 +228,16 @@ namespace Neatoo.Core
             return Task.WhenAll(fieldData.Values.Select(x => x.WaitForRules()));
         }
 
+        public Task WaitForTasks()
+        {
+            return Task.WhenAll(fieldData.Values.Select(x => x.Task));
+        }
+
         public Task CheckAllRules(CancellationToken token)
         {
             var tasks = fieldData.Values.Select(x => x.CheckAllRules(token)).ToList();
             return Task.WhenAll(tasks.Where(t => t != null));
         }
-
     }
 
 

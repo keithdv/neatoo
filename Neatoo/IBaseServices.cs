@@ -14,35 +14,35 @@ namespace Neatoo
     /// the inheriting classes don't need to list all services
     /// and services can be added
     /// </summary>
-    public interface IBaseServices<T> where T : IBase
-    {
-        IPropertyValueManager<T> PropertyValueManager { get; }
+    //public interface IBaseServices<out T>
+    //{
+    //    IPropertyManager PropertyManager { get; }
+    //    IRegisteredPropertyManager RegisteredPropertyManager { get; }
+    //}
 
-        IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
-    }
 
-
-    public class BaseServices<T> : IBaseServices<T>
-        where T : Base<T>
+    public class BaseServices<T>
     {
         public BaseServices()
         {
-            RegisteredPropertyManager = new RegisteredPropertyManager<T>(CreateRegisteredProperty);
-            PropertyValueManager = new PropertyValueManager<T>(RegisteredPropertyManager, new DefaultFactory());
+            RegisteredPropertyManager = new RegisteredPropertyManager((PropertyInfo pi) => new RegisteredProperty(pi));
+            PropertyManager = new PropertyManager(RegisteredPropertyManager, new DefaultFactory());
         }
 
-        public BaseServices(IPropertyValueManager<T> registeredPropertyDataManager, IRegisteredPropertyManager<T> registeredPropertyManager)
+        public BaseServices(IRegisteredPropertyManager<T> registeredPropertyManager)
         {
-            PropertyValueManager = registeredPropertyDataManager;
             RegisteredPropertyManager = registeredPropertyManager;
         }
 
-        private IRegisteredProperty CreateRegisteredProperty(PropertyInfo propertyInfo)
+        public BaseServices(Func<IRegisteredPropertyManager, IPropertyManager> propertyManager, IRegisteredPropertyManager<T> registeredPropertyManager)
         {
-            return (IRegisteredProperty)Activator.CreateInstance(typeof(RegisteredProperty), propertyInfo);
+            RegisteredPropertyManager = registeredPropertyManager;
+            PropertyManager = propertyManager(RegisteredPropertyManager);
         }
 
-        public IPropertyValueManager<T> PropertyValueManager { get; }
-        public IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
+
+        public IPropertyManager PropertyManager { get; protected set; }
+        public IRegisteredPropertyManager RegisteredPropertyManager { get; }
+
     }
 }

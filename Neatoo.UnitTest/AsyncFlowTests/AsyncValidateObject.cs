@@ -103,7 +103,7 @@ namespace Neatoo.UnitTest.AsyncFlowTests
 
     internal class AsyncValidateObject : ValidateBase<AsyncValidateObject>
     {
-        public AsyncValidateObject(IValidateBaseServices<AsyncValidateObject> services) : base(services)
+        public AsyncValidateObject(ValidateBaseServices<AsyncValidateObject> services) : base(services)
         {
             RuleManager.AddRule(AsyncDelayRule = new AsyncDelayRule());
             RuleManager.AddRule(SyncRuleA = new SyncRuleA());
@@ -124,7 +124,7 @@ namespace Neatoo.UnitTest.AsyncFlowTests
 
         public string AsyncDelayRuleValue { get => Getter<string>(); set => Setter(value); }
 
-        public IPropertyValue AsyncRuleCanWaitPropertyValue => this[nameof(AsyncRulesCanWait)];
+        public IProperty AsyncRuleCanWaitProperty => this[nameof(AsyncRulesCanWait)];
 
         public string AsyncRulesCanWait { get => Getter<string>(); set => Setter(value); }
         public string AsyncRulesCanWaitNested { get => Getter<string>(); set => Setter(value); }

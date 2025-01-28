@@ -139,9 +139,9 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         }
 
         [TestMethod]
-        public void FatClientValidate_Deserialize_ValidatePropertyValue_Child()
+        public void FatClientValidate_Deserialize_ValidateProperty_Child()
         {
-            // Ensure ValidatePropertyValue.Child is a reference to the Child 
+            // Ensure ValidateProperty.Child is a reference to the Child 
 
             var child = target.Child = scope.Resolve<IValidateObject>();
 

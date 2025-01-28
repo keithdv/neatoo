@@ -14,27 +14,21 @@ namespace Neatoo.Newtonsoft.Json
     // and contains the same data as ListBaseCollection
     public class ListBaseSurrogate
     {
-        public ListBaseSurrogate(Type listType, ICollection collection, IPropertyValueManager propertyValueManager)
+        public ListBaseSurrogate(Type listType, ICollection collection)
         {
             ListType = listType;
             Collection = collection;
-            PropertyValueManager = propertyValueManager;
         }
 
         public Type ListType { get; }
 
         // the collection of ListBase elements
         public ICollection Collection { get; }
-        // the properties of ListBaseCollection to serialize
-        /// <summary>
-        /// Relying on Newtosoft the resolve this so it has it's dependencies
-        /// </summary>
-        public IPropertyValueManager PropertyValueManager { get; }
 
         public bool IsNew { get; set; }
         public bool IsChild { get; set; }
         public bool IsDeleted { get; set; }
-        public bool SetModified { get; set; }
+        public bool IsMarkedModified { get; set; }
         public IBase Parent { get; set; }
     }
 
@@ -75,32 +69,21 @@ namespace Neatoo.Newtonsoft.Json
                     list.Add(i);
                     if(i is ISetParent setParent)
                     {
-                        setParent.SetParent(list);
+                        setParent.SetParent(list.Parent);
                     }
                 }
                 ((ISetParent) list).SetParent(surrogate.Parent);
             }
 
-            surrogate.PropertyValueManager.SetParent(list);
-
-
-            GetListBase(list.GetType()).InvokeMember("PropertyValueManager", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.PropertyValueManager });
-
             // ValidateListBase
-            var validateType = GetValidateListBase(list.GetType());
-            if (validateType != null)
-            {
-                var ruleProp = validateType.GetProperty("RuleManager", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                var ruleManager = (IRuleManager)ruleProp.GetValue(list);
-            }
 
             var editType = GetEditListBase(list.GetType());
             if (editType != null)
             {
-                editType.InvokeMember(nameof(IEditBase.IsNew), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsNew });
-                editType.InvokeMember(nameof(IEditBase.IsChild), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsChild });
-                editType.InvokeMember(nameof(IEditBase.IsDeleted), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsDeleted });
-                editType.InvokeMember(nameof(ListBaseSurrogate.SetModified), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.SetModified });
+                editType.InvokeMember(nameof(IEditMetaProperties.IsNew), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsNew });
+                editType.InvokeMember(nameof(IEditMetaProperties.IsChild), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsChild });
+                editType.InvokeMember(nameof(IEditMetaProperties.IsDeleted), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsDeleted });
+                editType.InvokeMember(nameof(ListBaseSurrogate.IsMarkedModified), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsMarkedModified });
             }
 
             return list;
@@ -110,7 +93,7 @@ namespace Neatoo.Newtonsoft.Json
         {
             do
             {
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ListBase<,>))
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ListBase<>))
                 {
                     return type;
                 }
@@ -123,7 +106,7 @@ namespace Neatoo.Newtonsoft.Json
         {
             do
             {
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ValidateListBase<,>))
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ValidateListBase<>))
                 {
                     return type;
                 }
@@ -136,7 +119,7 @@ namespace Neatoo.Newtonsoft.Json
         {
             do
             {
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(EditListBase<,>))
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(EditListBase<>))
                 {
                     return type;
                 }
@@ -149,7 +132,7 @@ namespace Neatoo.Newtonsoft.Json
                                        JsonSerializer serializer)
         {
 
-            var itemType = GetListBase(value.GetType()).GetGenericArguments()[1];
+            var itemType = GetListBase(value.GetType()).GetGenericArguments()[0];
             var listType = typeof(List<>).MakeGenericType(itemType);
             var list = (IList)Activator.CreateInstance(listType, value);
 
@@ -157,30 +140,17 @@ namespace Neatoo.Newtonsoft.Json
             // Set back in ReadJson
             list.OfType<ISetParent>().ToList().ForEach(i => i.SetParent(null));
 
-            // Get PropertyValueManager property
-            var pvmProp = GetListBase(value.GetType()).GetProperty("PropertyValueManager", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            var pvm = (IPropertyValueManager)pvmProp.GetValue(value);
-            var surrogate = new ListBaseSurrogate(value.GetType(), list, pvm);
+            // Get PropertyManager property
+            var surrogate = new ListBaseSurrogate(value.GetType(), list);
 
-            pvm.SetParent(null);
             surrogate.Parent = (value as IBase)?.Parent;
 
-            // ValidateListBase
-            var validateType = GetValidateListBase(value.GetType());
-            if (validateType != null)
-            {
-                var ruleProp = validateType.GetProperty("RuleManager", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                var ruleManager = (IRuleManager)ruleProp.GetValue(value);
-                var ruleResultsProp = ruleManager.GetType().GetProperty("Results", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            }
-
-
-            if (value is IEditBase edit)
+            if (value is IEditMetaProperties edit)
             {
                 surrogate.IsNew = edit.IsNew;
                 surrogate.IsChild = edit.IsChild;
                 surrogate.IsDeleted = edit.IsDeleted;
-                surrogate.SetModified = edit.SetModified;
+                surrogate.IsMarkedModified = edit.IsMarkedModified;
             }
 
 

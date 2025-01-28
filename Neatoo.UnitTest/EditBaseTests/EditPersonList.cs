@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Neatoo.UnitTest.EditBaseTests
 {
 
-    public interface IEditPersonList : IEditListBase<IEditPerson>, IPersonBase
+    public interface IEditPersonList : IEditListBase<IEditPerson>
     {
         int DeletedCount { get; }
 
@@ -24,35 +24,30 @@ namespace Neatoo.UnitTest.EditBaseTests
         void MarkDeleted();
     }
 
-    public class EditPersonList : EditListBase<EditPersonList, IEditPerson>, IEditPersonList
+    public class EditPersonList : EditListBase<IEditPerson>, IEditPersonList
     {
-        public EditPersonList(IEditListBaseServices<EditPersonList, IEditPerson> services,
-            IShortNameRule<EditPersonList> shortNameRule,
-            IFullNameRule<EditPersonList> fullNameRule) : base(services)
+        public EditPersonList(EditListBaseServices<IEditPerson> services) : base(services)
         {
-            RuleManager.AddRules(shortNameRule, fullNameRule);
         }
 
         public int DeletedCount => DeletedList.Count;
-        private IRegisteredProperty IdProperty => GetRegisteredProperty(nameof(Id));
-        public Guid Id { get { return Getter<Guid>(); } }
+        public Guid Id { get; set; }
 
-        public string FirstName { get { return Getter<string>(); } set { Setter(value); } }
+        public string FirstName { get; set; }
 
-        public string LastName { get { return Getter<string>(); } set { Setter(value); } }
+        public string LastName { get; set; }
 
-        public string ShortName { get { return Getter<string>(); } set { Setter(value); } }
+        public string ShortName { get; set; }
 
-        public string Title { get { return Getter<string>(); } set { Setter(value); } }
+        public string Title { get; set; }
 
-        public string FullName { get { return Getter<string>(); } set { Setter(value); } }
+        public string FullName { get; set; }
 
-        public uint? Age { get => Getter<uint?>(); set => Setter(value); }
+        public uint? Age { get; set; }
 
         public void FillFromDto(PersonDto dto)
         {
-            this[IdProperty].LoadProperty(dto.PersonId);
-
+            Id = dto.PersonId;
             // These will not mark IsModified to true
             // as long as within ObjectPortal operation
             FirstName = dto.FirstName;
@@ -63,8 +58,7 @@ namespace Neatoo.UnitTest.EditBaseTests
         [Fetch]
         private async Task FillFromDto(PersonDto dto, IReadOnlyList<PersonDto> personTable)
         {
-            this[IdProperty].LoadProperty(dto.PersonId);
-
+            Id = dto.PersonId;
             // These will not mark IsModified to true
             // as long as within ObjectPortal operation
             FirstName = dto.FirstName;

@@ -23,4 +23,5 @@ namespace HorseBarn.lib.Horse
             return HeavyHorses.Contains(breed);
         }
     }
+
 }

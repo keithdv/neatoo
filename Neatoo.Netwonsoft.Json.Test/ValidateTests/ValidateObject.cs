@@ -12,19 +12,20 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
     {
         Guid ID { get; set; }
         string Name { get; set; }
-        int RuleRunCount { get; }
+        int RuleRunCount { get; internal set; }
 
         IValidateObject Child { get; set; }
         IEnumerable<IRule> Rules { get; }
         void MarkInvalid(string message);
 
         new string ObjectInvalid { get; }
-        //new IValidatePropertyValue this[string propertyName] { get => GetProperty(propertyName); }
+
+        //new IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
     }
 
     public class ValidateObject : ValidateBase<ValidateObject>, IValidateObject
     {
-        public ValidateObject(IValidateBaseServices<ValidateObject> services) : base(services)
+        public ValidateObject(ValidateBaseServices<ValidateObject> services) : base(services)
         {
             RuleManager.AddValidation(t =>
             {
@@ -61,37 +62,15 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
 
     public interface IValidateObjectList : IValidateListBase<IValidateObject>
     {
-        Guid ID { get; set; }
-        string Name { get; set; }
-        int RuleRunCount { get; }
-        IEnumerable<IRule> Rules { get; }
-        void MarkInvalid(string message);
 
-        new string ObjectInvalid { get; }
     }
 
-    public class ValidateObjectList : ValidateListBase<ValidateObjectList, IValidateObject>, IValidateObjectList
+    public class ValidateObjectList : ValidateListBase<IValidateObject>, IValidateObjectList
     {
-        public ValidateObjectList(IValidateListBaseServices<ValidateObjectList, IValidateObject> services) : base(services)
+        public ValidateObjectList(ValidateListBaseServices<IValidateObject> services) : base(services)
         {
-            RuleManager.AddValidation(t =>
-            {
-                t.RuleRunCount++;
-                if (t.Name == "Error") { return "Error"; }
-                return string.Empty;
-            }, nameof(Name));
-
         }
 
-        public int RuleRunCount { get => Getter<int>(); set => Setter(value); }
-        public Guid ID { get => Getter<Guid>(); set => Setter(value); }
-        public string Name { get => Getter<string>(); set => Setter(value); }
-        public IEnumerable<IRule> Rules => RuleManager.Rules;
-
-        void IValidateObjectList.MarkInvalid(string message)
-        {
-            base.MarkInvalid(message);
-        }
 
     }
 }

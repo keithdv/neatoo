@@ -11,29 +11,17 @@ using System.Threading.Tasks;
 namespace HorseBarn.lib.Cart
 {
 
-    public interface IRacingChariot : ICart<ILightHorse>, ICart
+    public interface IRacingChariot : ICart
     {
 
     }
 
     internal class RacingChariot : Cart<RacingChariot, ILightHorse>, IRacingChariot
     {
-        public RacingChariot(IEditBaseServices<RacingChariot> services, ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services, cartNumberOfHorsesRule)
+        public RacingChariot(EditBaseServices<RacingChariot> services, ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services, cartNumberOfHorsesRule)
         {
         }
 
         protected override CartType CartType => CartType.RacingChariot;
-    }
-
-    public interface IRacingChariotList : ICartList<IRacingChariot>
-    {
-
-    }
-
-    internal class RacingChariotList : CartList<RacingChariotList, IRacingChariot>, IRacingChariotList
-    {
-        public RacingChariotList(IEditListBaseServices<RacingChariotList, IRacingChariot> services) : base(services)
-        {
-        }
     }
 }

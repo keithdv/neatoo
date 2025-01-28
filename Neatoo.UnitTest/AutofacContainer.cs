@@ -15,6 +15,7 @@ using Neatoo.Rules;
 using Neatoo.UnitTest.Portal;
 using Neatoo.Autofac;
 using System.Reflection;
+using Neatoo.UnitTest.EditBaseTests;
 
 namespace Neatoo.UnitTest
 {

@@ -20,7 +20,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public IShortNameRule<ValidateObject> ShortNameRule { get; }
         public IFullNameRule<ValidateObject> FullNameRule { get; }
 
-        public ValidateObject(IValidateBaseServices<ValidateObject> services,
+        public ValidateObject(ValidateBaseServices<ValidateObject> services,
             IShortNameRule<ValidateObject> shortNameRule,
             IFullNameRule<ValidateObject> fullNameRule,
             IRecursiveRule recursiveRule,
@@ -57,34 +57,20 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     }
 
 
-    public interface IValidateObjectList : IValidateListBase<IValidateObject>, IPersonBase
+    public interface IValidateObjectList : IValidateListBase<IValidateObject>
     {
-        int RuleRunCount { get; }
         void Add(IValidateObject obj);
-        void TestMarkInvalid(string message);
 
     }
 
-    public class ValidateObjectList : PersonValidateListBase<ValidateObjectList, IValidateObject>, IValidateObjectList
+    public class ValidateObjectList : ValidateListBase<IValidateObject>, IValidateObjectList
     {
 
-        public ValidateObjectList(IValidateListBaseServices<ValidateObjectList, IValidateObject> services,
-            IShortNameRule<ValidateObjectList> shortNameRule,
-            IFullNameRule<ValidateObjectList> fullNameRule
+        public ValidateObjectList(ValidateListBaseServices<IValidateObject> services
             ) : base(services)
         {
-            RuleManager.AddRules(shortNameRule, fullNameRule);
-            ShortNameRule = shortNameRule;
-            FullNameRule = fullNameRule;
         }
 
-        public int RuleRunCount => ShortNameRule.RunCount + FullNameRule.RunCount + this.Select(v => v.RuleRunCount).Sum();
-        public IShortNameRule<ValidateObjectList> ShortNameRule { get; }
-        public IFullNameRule<ValidateObjectList> FullNameRule { get; }
-        public void TestMarkInvalid(string message)
-        {
-            MarkInvalid(message);
-        }
     }
 
 }

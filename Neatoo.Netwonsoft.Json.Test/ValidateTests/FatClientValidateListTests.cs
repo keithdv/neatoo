@@ -25,8 +25,6 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         {
             scope = AutofacContainer.GetLifetimeScope().Resolve<IServiceScope>();
             target = scope.Resolve<IValidateObjectList>();
-            target.ID = Id;
-            target.Name = Name;
             resolver = scope.Resolve<FatClientContractResolver>();
 
             child = scope.Resolve<IValidateObject>();
@@ -48,7 +46,6 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         [TestMethod]
         public void FatClientListValidate_Serialize_Invalid()
         {
-            target.Name = "Error";
             var result = Serialize(target);
 
             Assert.IsFalse(target.IsValid);
@@ -85,28 +82,6 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
             var json = Serialize(target);
 
             var newTarget = Deserialize(json);
-
-            Assert.AreEqual(target.ID, newTarget.ID);
-            Assert.AreEqual(target.Name, newTarget.Name);
-        }
-
-        [TestMethod]
-        public void FatClientListValidate_Deserialize_RuleManager()
-        {
-            target.Name = "Error";
-            Assert.IsFalse(target.IsValid);
-
-            var json = Serialize(target);
-
-            var newTarget = Deserialize(json);
-
-            Assert.AreEqual(2, newTarget.RuleRunCount); // Ensure that RuleManager was deserialized, not run
-            Assert.AreEqual(1, newTarget.Rules.Count());
-            Assert.IsFalse(newTarget.IsValid);
-
-            Assert.AreEqual(1, newTarget.BrokenRuleMessages.Count());
-            Assert.AreEqual("Error", newTarget.BrokenRuleMessages.Single());
-
         }
 
 
@@ -136,7 +111,6 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
 
             Assert.IsFalse(newTarget.IsValid);
             Assert.IsTrue(newTarget.IsSelfValid);
-            Assert.AreEqual(1, newTarget.RuleRunCount);
 
             Assert.IsFalse(newTarget.Single().IsValid);
             Assert.IsFalse(newTarget.Single().IsSelfValid);
@@ -144,42 +118,7 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
 
         }
 
-        [TestMethod]
-        public void FatClientListValidate_Deserialize_IsValid_False_Fix()
-        {
-            // This caught a really critical issue that lead to the RuleManager.TransferredResults logic
-            // After being transferred the RuleIndex values would not match up
-            // So the object would be stuck in InValid
 
-            target.Name = "Error";
-
-            var json = Serialize(target);
-            var newTarget = Deserialize(json);
-
-            Assert.IsFalse(target.IsValid);
-            Assert.IsFalse(newTarget.IsValid);
-
-            newTarget.Name = "Fine";
-            Assert.IsTrue(newTarget.IsValid);
-
-        }
-
-        [TestMethod]
-        public void FatClientListValidate_Deserialize_MarkInvalid()
-        {
-            // This caught a really critical issue that lead to the RuleManager.TransferredResults logic
-            // After being transferred the RuleIndex values would not match up
-            // So the object would be stuck in InValid
-
-            target.MarkInvalid(Guid.NewGuid().ToString());
-
-            var json = Serialize(target);
-            var newTarget = Deserialize(json);
-
-            Assert.IsFalse(target.IsValid);
-            Assert.IsFalse(newTarget.IsValid);
-            Assert.IsNotNull(newTarget.ObjectInvalid);
-        }
     }
 }
 

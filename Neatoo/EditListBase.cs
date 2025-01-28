@@ -10,44 +10,35 @@ using System.Threading.Tasks;
 namespace Neatoo
 {
 
-    public interface IEditListBase : IValidateListBase, IEditBase, IEditMetaProperties, IPortalEditTarget
+    public interface IEditListBase : IValidateListBase, IEditMetaProperties, IPortalEditTarget
     {
     }
 
-    public interface IEditListBase<I> : IValidateListBase<I>, IEditBase, IEditMetaProperties, IPortalEditTarget
+    public interface IEditListBase<I> : IEditListBase, IValidateListBase<I>, IEditMetaProperties, IPortalEditTarget
         where I : IEditBase
     {
         new void RemoveAt(int index);
-
     }
 
-    public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject, IEditListBase<I>, IEditListBase
-        where T : EditListBase<T, I>
+    public abstract class EditListBase<I> : ValidateListBase<I>, INeatooObject, IEditListBase<I>, IEditListBase
         where I : IEditBase
     {
 
-        protected new IEditPropertyValueManager<T> PropertyValueManager => (IEditPropertyValueManager<T>)base.PropertyValueManager;
-
         protected new IReadWritePortalChild<I> ItemPortal { get; }
-        public IReadWritePortal<T> ReadWritePortal { get; }
 
-        public EditListBase(IEditListBaseServices<T, I> services) : base(services)
+        public EditListBase(EditListBaseServices<I> services) : base(services)
         {
             this.ItemPortal = services.ReadWritePortalChild;
-            this.ReadWritePortal = services.ReadWritePortal;
         }
 
-        protected bool SetModified { get; set; } = false;
-        public bool IsModified => PropertyValueManager.IsModified || IsNew || this.Any(c => c.IsModified) || IsDeleted || DeletedList.Any() || IsSelfModified;
-        public bool IsSelfModified => PropertyValueManager.IsSelfModified || IsDeleted || SetModified;
-        public bool IsSavable => IsModified && IsValid && !IsBusy && !IsChild;
+        public bool IsMarkedModified { get; protected set; } = false;
+        public bool IsModified => IsNew || this.Any(c => c.IsModified) || IsDeleted || DeletedList.Any() || IsSelfModified;
+        public bool IsSelfModified => IsDeleted || IsMarkedModified;
+        public bool IsSavable => false;
         public bool IsNew { get; protected set; }
         public bool IsDeleted { get; protected set; }
-        public IEnumerable<string> ModifiedProperties => PropertyValueManager.ModifiedProperties;
         public bool IsChild { get; protected set; }
         protected List<I> DeletedList { get; } = new List<I>();
-
-        bool IEditBase.SetModified => SetModified;
 
         protected (bool IsModified, bool IsSelfModified, bool IsSavable) EditMetaState { get; private set; }
 
@@ -57,15 +48,15 @@ namespace Neatoo
 
             if (EditMetaState.IsModified != IsModified)
             {
-                PropertyHasChanged(nameof(IsModified));
+                OnPropertyChanged(new PropertyChangedEventArgs(nameof(IsModified)));
             }
             if (EditMetaState.IsSelfModified != IsSelfModified)
             {
-                PropertyHasChanged(nameof(IsSelfModified));
+                OnPropertyChanged(new PropertyChangedEventArgs(nameof(IsSelfModified)));
             }
             if (EditMetaState.IsSavable != IsSavable)
             {
-                PropertyHasChanged(nameof(IsSavable));
+                OnPropertyChanged(new PropertyChangedEventArgs(nameof(IsSavable)));
             }
 
             ResetMetaState();
@@ -76,19 +67,6 @@ namespace Neatoo
             base.ResetMetaState();
             EditMetaState = (IsModified, IsSelfModified, IsSavable);
         }
-
-        new protected IEditPropertyValue GetProperty(string propertyName)
-        {
-            return PropertyValueManager[propertyName];
-        }
-
-        new protected IEditPropertyValue GetProperty(IRegisteredProperty registeredProperty)
-        {
-            return PropertyValueManager[registeredProperty];
-        }
-
-        new protected IEditPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
-        new protected IEditPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
 
         protected virtual void MarkAsChild()
         {
@@ -102,7 +80,7 @@ namespace Neatoo
 
         protected virtual void MarkUnmodified()
         {
-            PropertyValueManager.MarkSelfUnmodified();
+            IsNew = false;
         }
 
         void IPortalEditTarget.MarkUnmodified()
@@ -112,7 +90,7 @@ namespace Neatoo
 
         protected virtual void MarkModified()
         {
-            SetModified = true;
+            IsMarkedModified = true;
         }
 
         void IPortalEditTarget.MarkModified()
@@ -191,44 +169,13 @@ namespace Neatoo
             base.RemoveItem(index);
         }
 
-        async Task<I> IEditBase.SaveRetrieve<I>()
-        {
-            return await Task.FromResult((await DoSave()) as I);
-        }
-
-        public Task Save()
-        {
-            return DoSave();
-        }
-
-        public virtual async Task<T> DoSave()
-        {
-            if (!IsSavable)
-            {
-                if (IsChild)
-                {
-                    throw new Exception("Child objects cannot be saved");
-                }
-                if (!IsValid)
-                {
-                    throw new Exception("Object is not valid and cannot be saved.");
-                }
-                if (!IsModified)
-                {
-                    throw new Exception("Object has not been modified.");
-                }
-            }
-
-            return await ReadWritePortal.Update((T)this);
-        }
-
         [Update]
         [UpdateChild]
         protected virtual async Task Update()
         {
             if (IsSelfModified)
             {
-                throw new Exception($"{typeof(T).FullName} is modified you must override and define Update().");
+                throw new Exception($"{this.GetType().FullName} is modified you must override and define Update().");
             }
             await UpdateList();
         }
@@ -239,7 +186,7 @@ namespace Neatoo
         {
             if (IsSelfModified)
             {
-                throw new Exception($"{typeof(T).FullName} is modified you must override and define Update().");
+                throw new Exception($"{this.GetType().FullName} is modified you must override and define Update().");
             }
             await UpdateList(criteria);
         }

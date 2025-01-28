@@ -14,11 +14,10 @@ namespace Neatoo
         /// </summary>
         void Delete();
         void UnDelete();
-        Task Save();
 
-        Task<I> SaveRetrieve<I>() where I : class, IEditBase;
+        internal bool IsMarkedModified { get; }
 
-        internal bool SetModified { get; }
+        Task<IEditBase> Save();
     }
 
 }

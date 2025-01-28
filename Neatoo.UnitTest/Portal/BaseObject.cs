@@ -11,7 +11,7 @@ namespace Neatoo.UnitTest.ObjectPortal
     public class BaseObject : Base<BaseObject>, IBaseObject
     {
 
-        public BaseObject(IBaseServices<BaseObject> baseServices) : base(baseServices)
+        public BaseObject(BaseServices<BaseObject> baseServices) : base(baseServices)
         {
         }
 

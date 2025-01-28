@@ -12,7 +12,7 @@ namespace HorseBarn.lib.Horse
 
     internal class LightHorse : Horse<LightHorse>, ILightHorse
     {
-        public LightHorse(IEditBaseServices<LightHorse> services) : base(services)
+        public LightHorse(EditBaseServices<LightHorse> services) : base(services)
         {
         }
 

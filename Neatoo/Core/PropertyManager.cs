@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
@@ -16,7 +17,7 @@ namespace Neatoo.Core
     /// <summary>
     /// DO NOT REGISTER IN THE CONTAINER
     /// </summary>
-    public interface IPropertyValueManager : INotifyPropertyChanged
+    public interface IPropertyManager : INotifyPropertyChanged, INotifyNeatooPropertyChanged
     {
         IRegisteredProperty GetRegisteredProperty(string name);
 
@@ -25,58 +26,49 @@ namespace Neatoo.Core
         // This isn't possible without some nasty reflection or static backing fields
         // If the property is being loaded for the first time you need the type
         //void LoadProperty(IRegisteredProperty registeredProperty, object newValue);
-        IPropertyValue GetProperty(string propertyName);
-        IPropertyValue GetProperty(IRegisteredProperty registeredProperty);
+        IProperty GetProperty(string propertyName);
+        IProperty GetProperty(IRegisteredProperty registeredProperty);
 
-        public IPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
-        public IPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
+        public IProperty this[string propertyName] { get => GetProperty(propertyName); }
+        public IProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
 
-        /// <summary>
-        /// Set the parent for all of the properties
-        /// Needed for serialization and deserialization
-        /// </summary>
-        internal void SetParent(IBase Parent); 
+        internal IRegisteredPropertyManager RegisteredPropertyManager { get; }
     }
 
 
-    /// <summary>
-    /// This is what is registered from the container so that it is Type specific
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public interface IPropertyValueManager<T> : IPropertyValueManager
+    public delegate Task NeatooPropertyChanged(string propertyName, object source);
+
+    public interface  INotifyNeatooPropertyChanged
     {
-        internal IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
+        event NeatooPropertyChanged NeatooPropertyChanged;
     }
 
-    public interface IPropertyValue : INotifyPropertyChanged
+
+    public interface IProperty : INotifyPropertyChanged, INotifyNeatooPropertyChanged
     {
         string Name { get; }
         object Value { get; set; }
 
         void SetValue(object newValue);
 
-        IBase Parent { get; protected internal set; }
-
         Task Task { get; }
 
         TaskAwaiter GetAwaiter() => Task.GetAwaiter();
+
     }
 
-    public interface IPropertyValue<T> : IPropertyValue
+    public interface IProperty<T> : IProperty
     {
         new T Value { get; set; }
 
     }
 
     [PortalDataContract]
-    public class PropertyValue<T> : IPropertyValue<T>, IPropertyValue, INotifyPropertyChanged
+    public class Property<T> : IProperty<T>, IProperty, INotifyPropertyChanged
     {
         // TODO: Shouldn't be modified from the outside
         [PortalDataMember]
         public string Name { get; } // Setter for Deserialization of Edit
-
-        [PortalDataMember]
-        public IBase Parent { get; set; }
 
         [PortalDataMember]
         protected T _value = default;
@@ -90,10 +82,9 @@ namespace Neatoo.Core
             }
         }
 
-        object IPropertyValue.Value { get => Value; set => SetValue(value); }
+        object IProperty.Value { get => Value; set => SetValue(value); }
 
-        public Task Task { get; protected set; }
-
+        public Task Task { get; protected set; } = Task.CompletedTask;
         public virtual void SetValue(object newValue)
         {
             if(newValue == null && _value == null) { return; }
@@ -104,18 +95,31 @@ namespace Neatoo.Core
             {
                 _value = default;
                 OnPropertyChanged(nameof(Value));
-                Task = HandlePropertyChanged(Name, Parent);
+                Task = OnValueNeatooPropertyChanged(nameof(Value), this);
             }
             else if (newValue is T value)
             {
-                SetParentOfValue(newValue);
                 var isDiff = AreSame(_value, value);
 
-                _value = value;
                 if (isDiff)
                 {
+                    if (value is INotifyNeatooPropertyChanged neatooPropertyChanged)
+                    {
+                        neatooPropertyChanged.NeatooPropertyChanged -= OnValueNeatooPropertyChanged;
+                    }
+                }
+
+                _value = value;
+
+                if (isDiff)
+                {
+                    if (value is INotifyNeatooPropertyChanged neatooPropertyChanged)
+                    {
+                        neatooPropertyChanged.NeatooPropertyChanged += OnValueNeatooPropertyChanged;
+                    }
+
                     OnPropertyChanged(nameof(Value));
-                    Task = HandlePropertyChanged(Name, Parent);
+                    Task = OnValueNeatooPropertyChanged(nameof(Value), this);
                 }
             }
             else
@@ -134,23 +138,14 @@ namespace Neatoo.Core
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        protected virtual Task HandlePropertyChanged(string propertyName, IBase source)
+        protected virtual Task OnValueNeatooPropertyChanged(string propertyName, object source)
         {
-            return Parent?.HandlePropertyChanged(Name, Parent);
+            return NeatooPropertyChanged?.Invoke(this.Name, source) ?? Task.CompletedTask;
         }
 
-        public PropertyValue(string name)
+        public Property(string name)
         {
             this.Name = name;
-        }
-
-        protected void SetParentOfValue(object newValue)
-        {
-            if (newValue is ISetParent x)
-            {
-                if (Parent == null) { throw new ArgumentNullException(nameof(Parent)); }
-                x.SetParent(Parent);
-            }
         }
 
         protected virtual bool AreSame<P>(P oldValue, P newValue)
@@ -170,65 +165,66 @@ namespace Neatoo.Core
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+        public event NeatooPropertyChanged NeatooPropertyChanged;
     }
 
-    public class PropertyValueManager<T> : PropertyValueManagerBase<T, IPropertyValue>, IPropertyValueManager<T>
-        where T : IBase
+    public class PropertyManager : PropertyManagerBase<IProperty>, IPropertyManager
     {
-        public PropertyValueManager(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
-        {
 
+        public PropertyManager(IRegisteredPropertyManager registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
+        {
         }
 
-        IRegisteredPropertyManager<T> IPropertyValueManager<T>.RegisteredPropertyManager => RegisteredPropertyManager;
+        IRegisteredPropertyManager IPropertyManager.RegisteredPropertyManager => RegisteredPropertyManager;
 
-        protected override IPropertyValue CreatePropertyValue<PV>(IRegisteredProperty registeredProperty, IBase parent)
+
+        protected override IProperty CreateProperty<PV>(IRegisteredProperty registeredProperty)
         {
-            return Factory.CreatePropertyValue<PV>(registeredProperty, parent);
+            return Factory.CreateProperty<PV>(registeredProperty);
         }
 
-        public IPropertyValue this[string propertyName]
+        public IProperty this[string propertyName]
         {
             get => GetProperty(propertyName);
         }
 
-        public IPropertyValue this[IRegisteredProperty registeredProperty]
+        public IProperty this[IRegisteredProperty registeredProperty]
         {
             get => GetProperty(registeredProperty);
         }
 
-        public virtual IPropertyValue GetProperty(string propertyName)
+        public virtual IProperty GetProperty(string propertyName)
         {
             return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
         }
 
-        public virtual IPropertyValue GetProperty(IRegisteredProperty registeredProperty)
+        public virtual IProperty GetProperty(IRegisteredProperty registeredProperty)
         {
             if (fieldData.TryGetValue(registeredProperty.Name, out var fd))
             {
                 return fd;
             }
 
-            var newPropertyValue = (IPropertyValue) this.GetType().GetMethod(nameof(this.CreatePropertyValue), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty, Target });
+            var newProperty = (IProperty) this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty });
 
-            fieldData[registeredProperty.Name] = newPropertyValue;
+            newProperty.PropertyChanged += OnPropertyChanged;
+            newProperty.NeatooPropertyChanged += OnNeatooPropertyChanged;
 
-            return newPropertyValue;
+            fieldData[registeredProperty.Name] = newProperty;
+
+            return newProperty;
         }
 
 
     }
 
     [PortalDataContract]
-    public abstract class PropertyValueManagerBase<T, P> : ISetTarget
-        where T : IBase
-        where P : IPropertyValue
+    public abstract class PropertyManagerBase<P>
+        where P : IProperty
     {
-        protected T Target { get; set; }
-
         protected IFactory Factory { get; }
 
-        protected readonly IRegisteredPropertyManager<T> RegisteredPropertyManager;
+        protected readonly IRegisteredPropertyManager RegisteredPropertyManager;
 
         public bool HasProperty(string propertyName)
         {
@@ -239,37 +235,35 @@ namespace Neatoo.Core
         protected IDictionary<string, P> fieldData = new ConcurrentDictionary<string, P>();
 
         public event PropertyChangedEventHandler PropertyChanged;
+        public event NeatooPropertyChanged NeatooPropertyChanged;
 
-        protected virtual void OnPropertyChanged(string propertyName)
+        protected virtual void OnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            if(e.PropertyName == nameof(IProperty.Value))
+            {
+                // Switch it from the IProperty.Name to IPropertyManager.PropertyName
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(((IProperty)sender).Name));
+            }
         }
 
-        public PropertyValueManagerBase(IRegisteredPropertyManager<T> registeredPropertyManager, IFactory factory)
+        public PropertyManagerBase(IRegisteredPropertyManager registeredPropertyManager, IFactory factory)
         {
             this.RegisteredPropertyManager = registeredPropertyManager;
             Factory = factory;
         }
 
-        protected abstract P CreatePropertyValue<PV>(IRegisteredProperty registeredProperty, IBase parent);
+        protected abstract P CreateProperty<PV>(IRegisteredProperty registeredProperty);
 
         public IRegisteredProperty GetRegisteredProperty(string name)
         {
             return RegisteredPropertyManager.GetRegisteredProperty(name);
         }
 
-        void ISetTarget.SetTarget(IBase target)
+        protected Task OnNeatooPropertyChanged(string propertyName, object source)
         {
-            this.Target = (T)(target ?? throw new ArgumentNullException(nameof(target)));
+            return NeatooPropertyChanged?.Invoke(propertyName, this); // Switch source on purpose
         }
 
-        public void SetParent(IBase Parent)
-        {
-            foreach (var item in fieldData.Values)
-            {
-                item.Parent = Parent;
-            }
-        }
     }
 
 

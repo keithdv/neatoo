@@ -35,7 +35,7 @@ namespace Neatoo.Netwonsoft.Json.Test
 
             Assert.IsInstanceOfType<EditObject>(editObject);
 
-            var newEditObject = await editObject.SaveRetrieve<IEditObject>();
+            var newEditObject = await editObject.Save();
         }
 
         [TestMethod]
@@ -47,7 +47,7 @@ namespace Neatoo.Netwonsoft.Json.Test
 
             Assert.IsInstanceOfType<EditObject>(editObject);
 
-            var newEditObject = await editObject.SaveRetrieve<IEditObject>();
+            var newEditObject = (IEditObject) await editObject.Save();
 
             Assert.AreEqual("Updated", newEditObject.Name);
 

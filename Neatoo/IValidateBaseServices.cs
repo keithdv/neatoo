@@ -2,8 +2,10 @@
 using Neatoo.Core;
 using Neatoo.Portal;
 using Neatoo.Rules;
+using Neatoo.Rules.Rules;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace Neatoo
@@ -13,39 +15,42 @@ namespace Neatoo
     /// the inheriting classes don't need to list all services
     /// and services can be added
     /// </summary>
-    public interface IValidateBaseServices<T> : IBaseServices<T>
-        where T : ValidateBase<T>
-    {
-        IValidatePropertyValueManager<T> ValidatePropertyValueManager { get; }
+    //public interface ValidateBaseServices : IBaseServices
+    //{
+    //    IRuleManager<T> CreateRuleManager<T>(T target);
 
-        IRuleManager<T> RuleManager { get; }
+    //    IValidatePropertyManager ValidatePropertyManager => (IValidatePropertyManager)PropertyManager;
+    //}
 
-    }
-
-
-    public class ValidateBaseServices<T> : BaseServices<T>, IValidateBaseServices<T>
-        where T : ValidateBase<T>
+    public class ValidateBaseServices<T> : BaseServices<T>
+        where T : IValidateBase
     {
         public ValidateBaseServices() : base()
         {
-            this.ValidatePropertyValueManager = new ValidatePropertyValueManager<T>(RegisteredPropertyManager, new DefaultFactory());
-            this.RuleManager = new RuleManager<T>(RegisteredPropertyManager);
+            this.PropertyManager = new ValidatePropertyManager(RegisteredPropertyManager, new DefaultFactory());
+            this.CreateRuleManagerDI = (t, r) => new RuleManager<T>(t, r, new AttributeToRule(rp => new RequiredRule(rp)));
         }
 
-        public ValidateBaseServices(IValidatePropertyValueManager<T> registeredPropertyValueManager, IRegisteredPropertyManager<T> registeredPropertyManager, IRuleManager<T> ruleManager)
-            : base(registeredPropertyValueManager, registeredPropertyManager)
+        public ValidateBaseServices(IRegisteredPropertyManager<T> registeredPropertyManager, CreateRuleManager<T> createRuleManager)
+    : base(registeredPropertyManager)
         {
-            this.ValidatePropertyValueManager = registeredPropertyValueManager;
-            RuleManager = ruleManager;
-
+            this.CreateRuleManagerDI = createRuleManager;
         }
 
-        public IValidatePropertyValueManager<T> ValidatePropertyValueManager { get; }
-        public IRuleManager<T> RuleManager { get; }
-
-        IPropertyValueManager<T> IBaseServices<T>.PropertyValueManager
+        public ValidateBaseServices(Func<IRegisteredPropertyManager, IValidatePropertyManager>  validatePropertyManager, IRegisteredPropertyManager<T> registeredPropertyManager, CreateRuleManager<T> createRuleManager)
+            : base(registeredPropertyManager)
         {
-            get { return ValidatePropertyValueManager; }
+            this.PropertyManager = validatePropertyManager(RegisteredPropertyManager);
+            this.CreateRuleManagerDI = createRuleManager;
+        }
+
+
+        
+        public CreateRuleManager<T> CreateRuleManagerDI { get; }
+
+        public IRuleManager<T> CreateRuleManager(T target)
+        {
+            return CreateRuleManagerDI(target, this.RegisteredPropertyManager);
         }
 
     }

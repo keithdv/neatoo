@@ -16,19 +16,19 @@ using System.Threading.Tasks;
 namespace Neatoo
 {
 
-    public interface IReadOnlyListBase<I> : IBase, INeatooObject, INotifyCollectionChanged, INotifyPropertyChanged, IReadOnlyCollection<I>, IReadOnlyList<I>
+    public interface IReadOnlyListBase<I> : INeatooObject, INotifyCollectionChanged, INotifyPropertyChanged, IReadOnlyCollection<I>, IReadOnlyList<I>
         where I : IBase
     {
-        
+
     }
 
 
-    public interface IListBase : IBase, INeatooObject, INotifyCollectionChanged, INotifyPropertyChanged, IEnumerable, ICollection, IList
+    public interface IListBase : INeatooObject, INotifyCollectionChanged, INotifyPropertyChanged, IEnumerable, ICollection, IList
     {
-
+        IBase Parent { get; }
     }
 
-    public interface IListBase<I> : IReadOnlyListBase<I>, IEnumerable<I>, ICollection<I>, IList<I>
+    public interface IListBase<I> : IListBase, IReadOnlyListBase<I>, IEnumerable<I>, ICollection<I>, IList<I>
         where I : IBase
     {
         Task<I> CreateAdd();
@@ -37,24 +37,18 @@ namespace Neatoo
         new int Count { get; }
     }
 
-    public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, IPortalTarget, ISetParent
-        where T : ListBase<T, I>
+
+    public abstract class ListBase<I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, IPortalTarget, ISetParent
         where I : IBase
     {
-
-        protected IPropertyValueManager<T> PropertyValueManager { get; private set; } // Private setter for Deserialization
-
         protected IReadPortalChild<I> ItemPortal { get; }
 
-        public ListBase(IListBaseServices<T, I> services)
+        public ListBase(ListBaseServices<I> services)
         {
-            PropertyValueManager = services.PropertyValueManager;
-            ((ISetTarget)PropertyValueManager).SetTarget(this);
             ItemPortal = services.ReadPortal;
         }
 
         public IBase Parent { get; protected set; }
-
 
         #region "Match Base"
         void ISetParent.SetParent(IBase parent)
@@ -62,51 +56,12 @@ namespace Neatoo
             Parent = parent;
         }
 
-
-        protected virtual P Getter<P>([System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
-        {
-            return (P)PropertyValueManager[propertyName].Value;
-        }
-
-
-        protected virtual void Setter<P>(P value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
-        {
-            PropertyValueManager[propertyName].SetValue(value);
-        }
-
-        protected virtual Task HandlePropertyChanged(string propertyName, IBase source)
-        {
-            Parent?.HandlePropertyChanged(propertyName, this);
-            return Task.CompletedTask;
-        }
-
-        Task IBase.HandlePropertyChanged(string propertyName, IBase source)
-        {
-            return HandlePropertyChanged(propertyName, source);
-        }
-        protected IRegisteredProperty GetRegisteredProperty(string propertyName)
-        {
-            return PropertyValueManager.RegisteredPropertyManager.GetRegisteredProperty(propertyName);
-        }
-
-        public IPropertyValue GetProperty(string propertyName)
-        {
-            return PropertyValueManager[propertyName];
-        }
-
-        public IPropertyValue GetProperty(IRegisteredProperty registeredProperty)
-        {
-            return PropertyValueManager[registeredProperty];
-        }
-
         IDisposable IPortalTarget.StopAllActions()
         {
             return null;
         }
 
-        void IPortalTarget.StartAllActions()
-        {
-        }
+        void IPortalTarget.StartAllActions() { }
 
         Task IPortalTarget.PostPortalConstruct()
         {
@@ -118,26 +73,45 @@ namespace Neatoo
             return Task.CompletedTask;
         }
 
-        protected IPropertyValue this[string propertyName] { get => GetProperty(propertyName); }
-        protected IPropertyValue this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
-
         #endregion
+
+
+        protected override void InsertItem(int index, I item)
+        {
+            ((ISetParent)item).SetParent(this.Parent);
+
+            base.InsertItem(index, item);
+
+            OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
+            item.PropertyChanged += Child_PropertyChanged;
+        }
+
+        protected override void RemoveItem(int index)
+        {
+            this[index].PropertyChanged -= Child_PropertyChanged;
+
+            base.RemoveItem(index);
+
+            OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
+        }
 
         public async Task<I> CreateAdd()
         {
             var item = await ItemPortal.CreateChild();
-            base.Add(item);
+            Add(item);
             return item;
         }
 
         public async Task<I> CreateAdd(params object[] criteria)
         {
             var item = await ItemPortal.CreateChild(criteria);
-            base.Add(item);
+            Add(item);
             return item;
         }
 
-
+        protected virtual void Child_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+        }
 
     }
 

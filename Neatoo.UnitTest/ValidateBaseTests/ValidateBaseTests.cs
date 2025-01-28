@@ -211,6 +211,8 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsTrue(propertyChangedCalls.Contains(nameof(validate.IsValid)));
             Assert.IsFalse(propertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
 
+            CollectionAssert.Contains(childPropertyChangedCalls, nameof(child.FirstName));
+
             Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsValid)));
             Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
             // No async rules - so never busy

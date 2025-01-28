@@ -16,8 +16,6 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
     {
         IServiceScope scope;
         IEditObjectList target;
-        Guid Id = Guid.NewGuid();
-        string Name = Guid.NewGuid().ToString();
         FatClientContractResolver resolver;
 
         [TestInitialize]
@@ -25,8 +23,6 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
         {
             scope = AutofacContainer.GetLifetimeScope().Resolve<IServiceScope>();
             target = scope.Resolve<IEditObjectList>();
-            target.ID = Id;
-            target.Name = Name;
             resolver = scope.Resolve<FatClientContractResolver>();
         }
 
@@ -59,9 +55,6 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
         {
 
             var result = Serialize(target);
-
-            Assert.IsTrue(result.Contains(Id.ToString()));
-            Assert.IsTrue(result.Contains(Name));
         }
 
         [TestMethod]
@@ -71,9 +64,6 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
             var json = Serialize(target);
 
             var newTarget = Deserialize(json);
-
-            Assert.AreEqual(target.ID, newTarget.ID);
-            Assert.AreEqual(target.Name, newTarget.Name);
         }
 
         //[TestMethod]
@@ -197,38 +187,6 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
 
         }
 
-        [TestMethod]
-        public void FatClientEditList_ModifiedProperties()
-        {
-
-            var orig = target.ModifiedProperties.ToList();
-
-            var json = Serialize(target);
-
-            var newTarget = Deserialize(json);
-
-            var result = newTarget.ModifiedProperties.ToList();
-
-            CollectionAssert.AreEquivalent(orig, result);
-
-        }
-
-        [TestMethod]
-        public void FatClientEditList_IsDeleted()
-        {
-            target.Delete();
-
-            var json = Serialize(target);
-
-            var newTarget = Deserialize(json);
-
-            Assert.IsTrue(target.IsDeleted);
-            Assert.IsTrue(target.IsModified);
-            Assert.IsTrue(target.IsSelfModified);
-            Assert.IsTrue(newTarget.IsDeleted);
-            Assert.IsTrue(newTarget.IsModified);
-            Assert.IsTrue(newTarget.IsSelfModified);
-        }
     }
 }
 

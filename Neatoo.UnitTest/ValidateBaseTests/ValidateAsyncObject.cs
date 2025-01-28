@@ -19,7 +19,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public IShortNameAsyncRule<ValidateAsyncObject> ShortNameRule { get; }
         public IFullNameAsyncRule<ValidateAsyncObject> FullNameRule { get; }
 
-        public ValidateAsyncObject(IValidateBaseServices<ValidateAsyncObject> services,
+        public ValidateAsyncObject(ValidateBaseServices<ValidateAsyncObject> services,
             IShortNameAsyncRule<ValidateAsyncObject> shortNameRule,
             IFullNameAsyncRule<ValidateAsyncObject> fullNameRule,
             IAsyncRuleThrowsException asyncRuleThrowsException,
@@ -56,29 +56,19 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     }
 
 
-    public interface IValidateAsyncObjectList : IValidateListBase<IValidateAsyncObject>, IPersonBase
+    public interface IValidateAsyncObjectList : IValidateListBase<IValidateAsyncObject>
     {
-        int RuleRunCount { get; }
         void Add(IValidateAsyncObject o);
     }
 
-    public class ValidateAsyncObjectList : PersonValidateListBase<ValidateAsyncObjectList, IValidateAsyncObject>, IValidateAsyncObjectList
+    public class ValidateAsyncObjectList : ValidateListBase<IValidateAsyncObject>, IValidateAsyncObjectList
     {
 
-        public ValidateAsyncObjectList(IValidateListBaseServices<ValidateAsyncObjectList, IValidateAsyncObject> services,
-            IShortNameRule<ValidateAsyncObjectList> shortNameRule,
-            IFullNameRule<ValidateAsyncObjectList> fullNameRule
-            ) : base(services)
+        public ValidateAsyncObjectList(ValidateListBaseServices< IValidateAsyncObject> services) : base(services)
         {
-            RuleManager.AddRules(shortNameRule, fullNameRule);
-            ShortNameRule = shortNameRule;
-            FullNameRule = fullNameRule;
 
         }
 
-        public int RuleRunCount => ShortNameRule.RunCount + FullNameRule.RunCount + this.Select(v => v.RuleRunCount).Sum();
-        public IShortNameRule<ValidateAsyncObjectList> ShortNameRule { get; }
-        public IFullNameRule<ValidateAsyncObjectList> FullNameRule { get; }
     }
 
 }

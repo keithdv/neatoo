@@ -96,7 +96,7 @@ namespace HorseBarn.WPF.ViewModels
                 cart.Name = "Wagon A";
 
 
-                HorseBarn = await HorseBarn.SaveRetrieve<IHorseBarn>();
+                HorseBarn = (IHorseBarn) await HorseBarn.Save();
             }
 
             LoadHorseBarn();
@@ -148,12 +148,12 @@ namespace HorseBarn.WPF.ViewModels
             Carts.Add(createCartViewModel(HorseBarn, await HorseBarn.AddWagon()));
         }
 
-        public void HandleDragDrop(object source, DragEventArgs e)
+        public async void HandleDragDrop(object source, DragEventArgs e)
         {
             var horseViewModel = e.Data.GetData(typeof(HorseViewModel)) as HorseViewModel;
             if (horseViewModel != null && horseViewModel.Horse != null)
             {
-                HorseBarn.MoveHorseToPasture(horseViewModel.Horse);
+                await HorseBarn.MoveHorseToPasture(horseViewModel.Horse);
             }
         }
 
@@ -161,7 +161,7 @@ namespace HorseBarn.WPF.ViewModels
         {
             HorseBarn.Pasture.Horses.CollectionChanged -= Horses_CollectionChanged;
             HorseBarn.Carts.CollectionChanged -= Carts_CollectionChanged;
-            HorseBarn = await HorseBarn.SaveRetrieve<IHorseBarn>();
+            HorseBarn = (IHorseBarn) await HorseBarn.Save();
             LoadHorseBarn();
         }
 

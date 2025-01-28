@@ -6,17 +6,16 @@ using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ObjectPortal
 {
-    public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditObjectList
+    public class EditObjectList : EditListBase<IEditObject>, IEditObjectList
     {
 
-        public EditObjectList(IEditListBaseServices<EditObjectList, IEditObject> baseServices) : base(baseServices)
+        public EditObjectList(EditListBaseServices<IEditObject> baseServices) : base(baseServices)
         {
         }
 
-        private IRegisteredProperty IDProperty => GetRegisteredProperty(nameof(ID));
-        public Guid? ID { get => Getter<Guid?>(); set => Setter(value); }
-        public Guid GuidCriteria { get => Getter<Guid>(); set => Setter(value); }
-        public int IntCriteria { get => Getter<int>(); set => Setter(value); }
+        public Guid? ID { get; set; }
+        public Guid GuidCriteria { get; set; }
+        public int IntCriteria { get; set; }
 
         public bool CreateCalled { get; set; } = false;
 
@@ -171,11 +170,7 @@ namespace Neatoo.UnitTest.ObjectPortal
 
         protected override async Task Update()
         {
-            if (IsSelfModified)
-            {
-                ID = Guid.NewGuid();
-                UpdateCalled = true;
-            }
+            UpdateCalled = true;
             await UpdateList();
         }
 

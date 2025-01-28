@@ -22,6 +22,8 @@ namespace Neatoo.Rules
         Task CheckAllRules(CancellationToken token = new CancellationToken());
     }
 
+    public delegate IRuleManager<T> CreateRuleManager<T>(T target, IRegisteredPropertyManager registeredPropertyManager) where T : IValidateBase;
+
     public interface IRuleManager<T> : IRuleManager
         where T : IValidateBase
     {
@@ -33,23 +35,15 @@ namespace Neatoo.Rules
     }
 
 
-    public class RuleManager<T> : IRuleManager<T>, ISetTarget
+    public class RuleManager<T> : IRuleManager<T>
         where T : IValidateBase
     {
 
-        protected T Target { get; set; }
+        protected T Target { get; }
 
-        /// <summary>
-        /// For no DI (Unit testing)
-        /// </summary>
-        /// <param name="registeredPropertyManager"></param>
-        public RuleManager(IRegisteredPropertyManager<T> registeredPropertyManager)
+        public RuleManager(T target, IRegisteredPropertyManager registeredPropertyManager, IAttributeToRule attributeToRule)
         {
-            AddAttributeRules(new AttributeToRule(rp => new RequiredRule(rp)), registeredPropertyManager);
-        }
-
-        public RuleManager(IAttributeToRule attributeToRule, IRegisteredPropertyManager<T> registeredPropertyManager)
-        {
+            this.Target = target ?? throw new TargetIsNullException();
             AddAttributeRules(attributeToRule, registeredPropertyManager);
         }
 
@@ -57,7 +51,9 @@ namespace Neatoo.Rules
 
         private IDictionary<uint, IRule> Rules { get; } = new ConcurrentDictionary<uint, IRule>();
 
-        protected virtual void AddAttributeRules(IAttributeToRule attributeToRule, IRegisteredPropertyManager<T> registeredPropertyManager)
+
+        // TODO - Move Out doesn'tneed to be here, only need for IRegisteredPropertyManager which is silly
+        protected virtual void AddAttributeRules(IAttributeToRule attributeToRule, IRegisteredPropertyManager registeredPropertyManager)
         {
             var requiredRegisteredProp = registeredPropertyManager.GetRegisteredProperties();
 
@@ -144,18 +140,6 @@ namespace Neatoo.Rules
             if (token.IsCancellationRequested)
             {
                 return;
-            }
-        }
-
-        void ISetTarget.SetTarget(IBase target)
-        {
-            if (target is T tt)
-            {
-                Target = tt;
-            }
-            else
-            {
-                throw new InvalidTargetTypeException(target.GetType().FullName);
             }
         }
     }

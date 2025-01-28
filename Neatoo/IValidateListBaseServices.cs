@@ -13,38 +13,19 @@ namespace Neatoo
     /// the inheriting classes don't need to list all services
     /// and services can be added
     /// </summary>
-    public interface IValidateListBaseServices<T, I> : IListBaseServices<T, I>
-        where T : ValidateListBase<T, I>
-        where I : IValidateBase
-    {
-        IValidatePropertyValueManager<T> ValidatePropertyValueManager { get; }
-        IRuleManager<T> RuleManager { get; }
-
-    }
+    //public interface IValidateListBaseServices<I> : ListBaseServices<I>
+    //    where I : IValidateBase
+    //{
+    //}
 
 
 
-    public class ValidateListBaseServices<T, I> : ListBaseServices<T, I>, IValidateListBaseServices<T, I>
-        where T : ValidateListBase<T, I>
+    public class ValidateListBaseServices<I> : ListBaseServices<I>
         where I : IValidateBase
     {
 
-        public ValidateListBaseServices(IValidatePropertyValueManager<T> registeredPropertyManager,
-            IReadPortalChild<I> portal,
-            IRuleManager<T> ruleManager) : base(registeredPropertyManager, portal)
+        public ValidateListBaseServices(IReadPortalChild<I> portal) : base(portal)
         {
-            this.ValidatePropertyValueManager = registeredPropertyManager;
-            RuleManager = ruleManager;
         }
-
-        public IValidatePropertyValueManager<T> ValidatePropertyValueManager { get; }
-        public IRuleManager<T> RuleManager { get; }
-
-        IPropertyValueManager<T> IListBaseServices<T, I>.PropertyValueManager
-        {
-            get { return ValidatePropertyValueManager; }
-        }
-
-
     }
 }

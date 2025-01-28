@@ -4,6 +4,8 @@ using System.Collections.Generic;
 namespace Neatoo
 {
 
+    public delegate IRegisteredPropertyManager CreateRegisteredPropertyManager(Type type);
+
     /// <summary>
     /// DO NOT REGISTER IN DI CONTAINER
     /// </summary>
@@ -13,6 +15,8 @@ namespace Neatoo
         IRegisteredProperty GetRegisteredProperty(string name);
         IEnumerable<IRegisteredProperty> GetRegisteredProperties();
         bool HasProperty(string propertyName);
+
+        void SetType(Type type);
     }
 
     /// <summary>

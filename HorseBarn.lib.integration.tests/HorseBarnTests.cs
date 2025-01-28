@@ -21,9 +21,16 @@ namespace HorseBarn.lib.integration.tests
         [TestInitialize]
         public async Task TestInitialize()
         {
+
             scope = AutofacContainer.GetLifetimeScope();
             portal = scope.Resolve<IReadWritePortal<IHorseBarn>>();
             horseBarnContext = scope.Resolve<HorseBarnContext>();
+
+            await horseBarnContext.Horses.ExecuteDeleteAsync();
+            await horseBarnContext.Carts.ExecuteDeleteAsync();
+            await horseBarnContext.Pastures.ExecuteDeleteAsync();
+            await horseBarnContext.HorseBarns.ExecuteDeleteAsync();
+
             transaction = await horseBarnContext.Database.BeginTransactionAsync();
         }
 
@@ -77,7 +84,7 @@ namespace HorseBarn.lib.integration.tests
 
                 // Key: Cannot add an ILightHorse to the wagon 
                 // No validation, no if statements
-                horseBarn.MoveHorseToCart(heavyHorse, wagon);
+                await horseBarn.MoveHorseToCart(heavyHorse, wagon);
 
                 Assert.IsFalse(horseBarn.IsValid);
 
@@ -86,14 +93,14 @@ namespace HorseBarn.lib.integration.tests
 
                 heavyHorse = (IHeavyHorse)await horseBarn.AddNewHorse(criteria);
 
-                horseBarn.MoveHorseToCart(heavyHorse, wagon);
+                await horseBarn.MoveHorseToCart(heavyHorse, wagon);
 
                 Assert.IsTrue(horseBarn.IsValid);
             }
 
             await AddCartToHorseBarch();
 
-            horseBarn = await horseBarn.SaveRetrieve<IHorseBarn>();
+            horseBarn = (IHorseBarn) await horseBarn.Save();
 
             var horseBarnContext = scope.Resolve<IHorseBarnContext>();
 
@@ -120,7 +127,7 @@ namespace HorseBarn.lib.integration.tests
             var horseNames = horseBarn.Horses.Select(h => h.Name).ToList();
 
             // Mix of Inserts and Updates
-            horseBarn = await horseBarn.SaveRetrieve<IHorseBarn>();
+            horseBarn = (IHorseBarn) await horseBarn.Save();
 
             Assert.IsFalse(horseBarn.IsModified); // TODO
             CollectionAssert.AreEquivalent(horseNames, horseBarnContext.Horses.Select(h => h.Name).ToList());
@@ -202,7 +209,7 @@ namespace HorseBarn.lib.integration.tests
             var heavyHorse = (IHeavyHorse)await horseBarn.AddNewHorse(criteria);
             var wagon = await horseBarn.AddWagon();
 
-            horseBarn.MoveHorseToCart(heavyHorse, wagon);
+            await horseBarn.MoveHorseToCart(heavyHorse, wagon);
 
             Assert.IsFalse(horseBarn.Pasture.Horses.Contains(heavyHorse));
             Assert.IsTrue(wagon.Horses.Contains(heavyHorse));

@@ -17,7 +17,7 @@ namespace HorseBarn.lib
         private readonly IReadWritePortalChild<IRacingChariot> racingChariotPortal;
         private readonly IReadWritePortalChild<IWagon> wagonPortal;
 
-        public HorseBarn(IEditBaseServices<HorseBarn> services,
+        public HorseBarn(EditBaseServices<HorseBarn> services,
                             IReadWritePortalChild<ILightHorse> lightHorsePortal,
                             IReadWritePortalChild<IHeavyHorse> heavyHorsePortal,
                             IReadWritePortalChild<IRacingChariot> racingChariotPortal,
@@ -71,17 +71,17 @@ namespace HorseBarn.lib
             return horse;
         }
 
-        public void MoveHorseToCart(IHorse horse, ICart cart)
+        public async Task MoveHorseToCart(IHorse horse, ICart cart)
         {
             Pasture.RemoveHorse(horse);
-            Carts.RemoveHorse(horse);
+            await Carts.RemoveHorse(horse);
 
-            cart.AddHorse(horse);
+            await cart.AddHorse(horse);
         }
 
-        public void MoveHorseToPasture(IHorse horse)
+        public async Task MoveHorseToPasture(IHorse horse)
         {
-            Carts.RemoveHorse(horse);
+            await Carts.RemoveHorse(horse);
 
             if (!Pasture.HorseList.Contains(horse))
             {
@@ -104,11 +104,7 @@ namespace HorseBarn.lib
                                 IReadPortalChild<IPasture> pasturePortal,
                                 IReadPortalChild<ICartList> cartPortal)
         {
-            //await horseBarnContext.Horses.ExecuteDeleteAsync();
-            //await horseBarnContext.Carts.ExecuteDeleteAsync();
-            //await horseBarnContext.Pastures.ExecuteDeleteAsync();
-            //await horseBarnContext.HorseBarns.ExecuteDeleteAsync();
-            //return;
+
             var horseBarn = await horseBarnContext.HorseBarns.FirstOrDefaultAsync();
             if (horseBarn != null)
             {

@@ -23,9 +23,9 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
         void MarkDeleted();
     }
 
-    public class EditObject : EditBase<EditObject>, IEditObject
+    public class EditObject : EditBase<IEditObject>, IEditObject
     {
-        public EditObject(IEditBaseServices<EditObject> services) : base(services)
+        public EditObject(EditBaseServices<IEditObject> services) : base(services)
         {
         }
 
@@ -75,8 +75,6 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
 
     public interface IEditObjectList : IEditListBase<IEditObject>
     {
-        Guid ID { get; set; }
-        string Name { get; set; }
 
         internal void MarkAsChild();
 
@@ -89,15 +87,12 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
         internal void MarkDeleted();
     }
 
-    public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditObjectList
+    public class EditObjectList : EditListBase<IEditObject>, IEditObjectList
     {
-        public EditObjectList(IEditListBaseServices<EditObjectList, IEditObject> services) : base(services)
+        public EditObjectList(EditListBaseServices<IEditObject> services) : base(services)
         {
 
         }
-
-        public Guid ID { get => Getter<Guid>(); set => Setter(value); }
-        public string Name { get => Getter<string>(); set => Setter(value); }
 
         void IEditObjectList.MarkAsChild()
         {

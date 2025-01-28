@@ -13,10 +13,15 @@ using HorseBarn.Dal.Ef;
 
 namespace HorseBarn.lib
 {
-    internal abstract class CustomEditBase<T> : EditBase<T>
-        where T : CustomEditBase<T>
+    internal interface ICustomEditBase<T>
     {
-        public CustomEditBase(IEditBaseServices<T> services) : base(services)
+        int? Id { get; }
+    }
+
+    internal abstract class CustomEditBase<T> : EditBase<T>
+        where T : IEditBase
+    {
+        public CustomEditBase(EditBaseServices<T> services) : base(services)
         {
         }
 

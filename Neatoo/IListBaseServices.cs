@@ -12,27 +12,23 @@ namespace Neatoo
     /// the inheriting classes don't need to list all services
     /// and services can be added
     /// </summary>
-    public interface IListBaseServices<T, I>
-        where T : ListBase<T, I>
-        where I : IBase
-    {
-        IPropertyValueManager<T> PropertyValueManager { get; }
-        IReadPortalChild<I> ReadPortal { get; }
-    }
+    //public interface ListBaseServices<I>
+    //    where I : IBase
+    //{
+    //    IReadPortalChild<I> ReadPortal { get; }
+    //}
 
-    public class ListBaseServices<T, I> : IListBaseServices<T, I>
-        where T : ListBase<T, I>
+    public class ListBaseServices<I>
         where I : IBase
     {
 
-        public ListBaseServices(IPropertyValueManager<T> registeredPropertyDataManager, IReadPortalChild<I> readPortal)
+        public ListBaseServices()        {        }
+
+        public ListBaseServices(IReadPortalChild<I> readPortal)
         {
-            PropertyValueManager = registeredPropertyDataManager;
             ReadPortal = readPortal;
         }
 
-        public IPropertyValueManager<T> PropertyValueManager { get; }
         public IReadPortalChild<I> ReadPortal { get; }
-
     }
 }

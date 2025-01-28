@@ -8,10 +8,10 @@ namespace Neatoo.UnitTest.PersonObjects
 
 {
     public abstract class PersonEditBase<T> : EditBase<T>, IPersonBase
-        where T : PersonEditBase<T>
+        where T : IPersonEdit
     {
 
-        public PersonEditBase(IEditBaseServices<T> services) : base(services)
+        public PersonEditBase(EditBaseServices<T> services) : base(services)
         {
         }
 

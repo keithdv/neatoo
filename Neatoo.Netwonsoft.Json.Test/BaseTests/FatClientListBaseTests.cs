@@ -15,8 +15,6 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
     {
         IServiceScope scope;
         IBaseObjectList target;
-        Guid Id = Guid.NewGuid();
-        string Name = Guid.NewGuid().ToString();
         FatClientContractResolver resolver;
         IBaseObject child;
 
@@ -25,8 +23,6 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
         {
             scope = AutofacContainer.GetLifetimeScope().Resolve<IServiceScope>();
             target = scope.Resolve<IBaseObjectList>();
-            target.ID = Id;
-            target.Name = Name;
             resolver = scope.Resolve<FatClientContractResolver>();
 
             child = scope.Resolve<IBaseObject>();
@@ -64,8 +60,6 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
 
             var result = Serialize(target);
 
-            Assert.IsTrue(result.Contains(Id.ToString()));
-            Assert.IsTrue(result.Contains(Name));
             Assert.IsTrue(result.Contains(child.ID.ToString()));
             Assert.IsTrue(result.Contains(child.Name));
         }
@@ -78,8 +72,6 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
 
             var newTarget = Deserialize(json);
 
-            Assert.AreEqual(target.ID, newTarget.ID);
-            Assert.AreEqual(target.Name, newTarget.Name);
         }
 
         [TestMethod]
@@ -108,8 +100,6 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
             var newTarget = Deserialize(json);
 
             var newId = Guid.NewGuid();
-            newTarget.ID = newId;
-            Assert.AreEqual(newId, newTarget.ID);
         }
 
     }

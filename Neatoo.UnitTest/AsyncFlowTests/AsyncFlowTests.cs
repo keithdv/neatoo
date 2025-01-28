@@ -48,7 +48,7 @@ namespace Neatoo.UnitTest.AsyncFlowTests
         [TestMethod]
         public void AsyncFlowTests_NoAwait_IsBusy()
         {
-            // Need to implement PropertyValueManager.IsBusy
+            // Need to implement PropertyManager.IsBusy
             // in the same way it is implemented for RulesManager
 
             asyncValidateObject.AsyncDelayRuleValue = "test";
@@ -76,12 +76,12 @@ namespace Neatoo.UnitTest.AsyncFlowTests
         [TestMethod]
         public async Task AsyncFlowTests_CallerCanWaitForPropertyUpdate_NotAllOnly()
         {
-            asyncValidateObject.AsyncRuleCanWaitPropertyValue.Value = "test";
+            asyncValidateObject.AsyncRuleCanWaitProperty.Value = "test";
 
             Assert.IsTrue(asyncValidateObject.IsBusy);
             Assert.AreNotEqual("Ran", asyncValidateObject.AsyncRulesCanWaitNested);
 
-            await asyncValidateObject.AsyncRuleCanWaitPropertyValue.Task;
+            await asyncValidateObject.AsyncRuleCanWaitProperty.Task;
 
             Assert.IsTrue(asyncValidateObject.IsBusy);
             Assert.AreEqual("Ran", asyncValidateObject.AsyncRulesCanWaitNested);
@@ -93,12 +93,12 @@ namespace Neatoo.UnitTest.AsyncFlowTests
         [TestMethod]
         public async Task AsyncFlowTests_RuleCanWaitForAnotherRule()
         {
-            asyncValidateObject.AsyncRuleCanWaitPropertyValue.Value = "Wait";
+            asyncValidateObject.AsyncRuleCanWaitProperty.Value = "Wait";
 
             Assert.IsTrue(asyncValidateObject.IsBusy);
             Assert.AreNotEqual("Ran", asyncValidateObject.AsyncRulesCanWaitNested);
 
-            await asyncValidateObject.AsyncRuleCanWaitPropertyValue.Task;
+            await asyncValidateObject.AsyncRuleCanWaitProperty.Task;
 
             Assert.IsTrue(asyncValidateObject.IsBusy);
             Assert.AreEqual("Ran", asyncValidateObject.AsyncRulesCanWaitNested);
@@ -108,7 +108,7 @@ namespace Neatoo.UnitTest.AsyncFlowTests
         }
 
         [TestMethod]
-        public async Task AsyncFlowTests_PropertyValue_PropertyChangedEvents()
+        public async Task AsyncFlowTests_Property_PropertyChangedEvents()
         {
 
             PropertyChangedEventHandler propertyChanged = (s, e) =>
@@ -118,9 +118,9 @@ namespace Neatoo.UnitTest.AsyncFlowTests
 
             try
             {
-                asyncValidateObject.AsyncRuleCanWaitPropertyValue.PropertyChanged += propertyChanged;
+                asyncValidateObject.AsyncRuleCanWaitProperty.PropertyChanged += propertyChanged;
 
-                asyncValidateObject.AsyncRuleCanWaitPropertyValue.Value = "Wait";
+                asyncValidateObject.AsyncRuleCanWaitProperty.Value = "Wait";
 
                 await Task.Delay(2);
 
@@ -135,7 +135,7 @@ namespace Neatoo.UnitTest.AsyncFlowTests
                 propertyChangedCalls.Clear();
                 propertyValuePropertyChangedCalls.Clear();
 
-                await asyncValidateObject.AsyncRuleCanWaitPropertyValue.Task;
+                await asyncValidateObject.AsyncRuleCanWaitProperty.Task;
 
                 Assert.IsTrue(asyncValidateObject.IsBusy);
                 Assert.AreEqual("Ran", asyncValidateObject.AsyncRulesCanWaitNested);
@@ -154,7 +154,7 @@ namespace Neatoo.UnitTest.AsyncFlowTests
             }
             finally
             {
-                asyncValidateObject.AsyncRuleCanWaitPropertyValue.PropertyChanged -= propertyChanged;
+                asyncValidateObject.AsyncRuleCanWaitProperty.PropertyChanged -= propertyChanged;
             }
 
 

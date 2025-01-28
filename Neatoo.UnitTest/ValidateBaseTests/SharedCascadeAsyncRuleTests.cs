@@ -46,7 +46,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     public class SharedAsyncRuleObject : PersonValidateBase<SharedAsyncRuleObject>, ISharedAsyncRuleObject
     {
 
-        public SharedAsyncRuleObject(IValidateBaseServices<SharedAsyncRuleObject> services) : base(services)
+        public SharedAsyncRuleObject(ValidateBaseServices<SharedAsyncRuleObject> services) : base(services)
         {
 
             var fn = services.RegisteredPropertyManager.GetRegisteredProperty(nameof(FirstName));

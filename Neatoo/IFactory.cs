@@ -5,9 +5,9 @@ namespace Neatoo
 {
     public interface IFactory
     {
-        PropertyValue<P> CreatePropertyValue<P>(IRegisteredProperty registeredProperty, IBase parent);
-        ValidatePropertyValue<P> CreateValidatePropertyValue<P>(IRegisteredProperty registeredProperty, IBase parent);
-        EditPropertyValue<P> CreateEditPropertyValue<P>(IRegisteredProperty registeredProperty, IBase parent);
+        Property<P> CreateProperty<P>(IRegisteredProperty registeredProperty);
+        ValidateProperty<P> CreateValidateProperty<P>(IRegisteredProperty registeredProperty);
+        EditProperty<P> CreateEditProperty<P>(IRegisteredProperty registeredProperty);
     }
 
 }

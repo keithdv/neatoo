@@ -14,30 +14,29 @@ namespace Neatoo
     /// and services can be added
     /// REGISTERED IN DI CONTAINER
     /// </summary>
-    public interface IEditBaseServices<T> : IValidateBaseServices<T>
-        where T : EditBase<T>
+    //public interface EditBaseServices<out T> : ValidateBaseServices<T>
+    //    where T : IEditBase
+    //{
+
+    //    IEditPropertyManager EditPropertyManager => (IEditPropertyManager)PropertyManager;
+    //    IReadWritePortal<T> ReadWritePortal { get; }
+    //}
+
+    public class EditBaseServices<T> : ValidateBaseServices<T>
+        where T : IEditBase
     {
 
-        IEditPropertyValueManager<T> EditPropertyValueManager { get; }
-        IReadWritePortal<T> ReadWritePortal { get; }
-    }
-
-    public class EditBaseServices<T> : ValidateBaseServices<T>, IEditBaseServices<T>
-        where T : EditBase<T>
-    {
-
-        public IEditPropertyValueManager<T> EditPropertyValueManager { get; }
         public IReadWritePortal<T> ReadWritePortal { get; }
 
         public EditBaseServices(IReadWritePortal<T> readWritePortal) : base(){
-            EditPropertyValueManager = new EditPropertyValueManager<T>(RegisteredPropertyManager, new DefaultFactory());
+            PropertyManager = new EditPropertyManager(RegisteredPropertyManager, new DefaultFactory());
             ReadWritePortal = readWritePortal;  
         }
 
-        public EditBaseServices(IEditPropertyValueManager<T> registeredPropertyValueManager, IRegisteredPropertyManager<T> registeredPropertyManager, IRuleManager<T> ruleManager, IReadWritePortal<T> readWritePortal)
-            : base(registeredPropertyValueManager, registeredPropertyManager, ruleManager)
+        public EditBaseServices(Func<IRegisteredPropertyManager, IEditPropertyManager> propertyManager, IRegisteredPropertyManager<T> registeredPropertyManager, CreateRuleManager<T> ruleManager, IReadWritePortal<T> readWritePortal)
+            : base(registeredPropertyManager, ruleManager)
         {
-            EditPropertyValueManager = registeredPropertyValueManager;
+            PropertyManager = propertyManager(registeredPropertyManager);
             ReadWritePortal = readWritePortal;
         }
     }
