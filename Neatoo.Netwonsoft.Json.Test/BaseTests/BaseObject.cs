@@ -15,7 +15,7 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
 
     public class BaseObject : Base<BaseObject>, IBaseObject
     {
-        public BaseObject(BaseServices<BaseObject> services) : base(services)
+        public BaseObject(IBaseServices<BaseObject> services) : base(services)
         {
         }
 
@@ -31,9 +31,9 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
 
     }
 
-    public class BaseObjectList : ListBase<IBaseObject>, IBaseObjectList
+    public class BaseObjectList : ListBase<BaseObjectList, IBaseObject>, IBaseObjectList
     {
-        public BaseObjectList(ListBaseServices<IBaseObject> services) : base(services)
+        public BaseObjectList(ListBaseServices<BaseObjectList, IBaseObject> services) : base(services)
         {
         }
 

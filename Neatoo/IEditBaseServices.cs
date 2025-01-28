@@ -14,16 +14,16 @@ namespace Neatoo
     /// and services can be added
     /// REGISTERED IN DI CONTAINER
     /// </summary>
-    //public interface EditBaseServices<out T> : ValidateBaseServices<T>
-    //    where T : IEditBase
-    //{
+    public interface IEditBaseServices<T> : IValidateBaseServices<T>
+        where T : EditBase<T>
+    {
 
-    //    IEditPropertyManager EditPropertyManager => (IEditPropertyManager)PropertyManager;
-    //    IReadWritePortal<T> ReadWritePortal { get; }
-    //}
+        IEditPropertyManager EditPropertyManager => (IEditPropertyManager)PropertyManager;
+        IReadWritePortal<T> ReadWritePortal { get; }
+    }
 
-    public class EditBaseServices<T> : ValidateBaseServices<T>
-        where T : IEditBase
+    public class EditBaseServices<T> : ValidateBaseServices<T>, IEditBaseServices<T>
+        where T : EditBase<T>
     {
 
         public IReadWritePortal<T> ReadWritePortal { get; }

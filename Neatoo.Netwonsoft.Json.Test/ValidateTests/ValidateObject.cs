@@ -25,7 +25,7 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
 
     public class ValidateObject : ValidateBase<ValidateObject>, IValidateObject
     {
-        public ValidateObject(ValidateBaseServices<ValidateObject> services) : base(services)
+        public ValidateObject(IValidateBaseServices<ValidateObject> services) : base(services)
         {
             RuleManager.AddValidation(t =>
             {
@@ -65,9 +65,9 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
 
     }
 
-    public class ValidateObjectList : ValidateListBase<IValidateObject>, IValidateObjectList
+    public class ValidateObjectList : ValidateListBase<ValidateObjectList, IValidateObject>, IValidateObjectList
     {
-        public ValidateObjectList(ValidateListBaseServices<IValidateObject> services) : base(services)
+        public ValidateObjectList(IValidateListBaseServices<ValidateObjectList, IValidateObject> services) : base(services)
         {
         }
 

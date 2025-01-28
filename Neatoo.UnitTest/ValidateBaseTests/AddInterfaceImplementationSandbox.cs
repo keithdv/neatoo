@@ -33,7 +33,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             private IDictionary<string, MethodInfo> Methods { get; } = new Dictionary<string, MethodInfo>();
             public T Target { get; }
 
-            private static Type[] neatooTypes = new Type[] { typeof(Base<>), typeof(ListBase<>), typeof(ValidateBase<>), typeof(ValidateListBase<>), typeof(EditBase<>), typeof(EditListBase<>) };
+            private static Type[] neatooTypes = new Type[] { typeof(Base<>), typeof(ListBase<,>), typeof(ValidateBase<>), typeof(ValidateListBase<,>), typeof(EditBase<>), typeof(EditListBase<,>) };
 
             private void RegisterMethods()
             {
@@ -135,7 +135,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
         public class ValidateObject : ValidateBase<ValidateObject>, IValidateObject
         {
-            public ValidateObject(ValidateBaseServices<ValidateObject> services) : base(services)
+            public ValidateObject(IValidateBaseServices<ValidateObject> services) : base(services)
             {
             }
 

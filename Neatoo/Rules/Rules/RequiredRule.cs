@@ -39,7 +39,7 @@ namespace Neatoo.Rules.Rules
 
             if (isError)
             {
-                return TriggerProperties.Single().PropertyError($"{TriggerProperties[0]} is required.");
+                return TriggerProperties.Single().PropertyError($"{TriggerProperties[0].PropertyName} is required.");
             }
             return PropertyErrors.None;
         }

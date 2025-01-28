@@ -17,7 +17,7 @@ namespace HorseBarn.lib
         private readonly IReadWritePortalChild<IRacingChariot> racingChariotPortal;
         private readonly IReadWritePortalChild<IWagon> wagonPortal;
 
-        public HorseBarn(EditBaseServices<HorseBarn> services,
+        public HorseBarn(IEditBaseServices<HorseBarn> services,
                             IReadWritePortalChild<ILightHorse> lightHorsePortal,
                             IReadWritePortalChild<IHeavyHorse> heavyHorsePortal,
                             IReadWritePortalChild<IRacingChariot> racingChariotPortal,

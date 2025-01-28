@@ -38,12 +38,13 @@ namespace Neatoo
     }
 
 
-    public abstract class ListBase<I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, IPortalTarget, ISetParent
+    public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, IPortalTarget, ISetParent
+        where T : ListBase<T, I>
         where I : IBase
     {
         protected IReadPortalChild<I> ItemPortal { get; }
 
-        public ListBase(ListBaseServices<I> services)
+        public ListBase(IListBaseServices<T, I> services)
         {
             ItemPortal = services.ReadPortal;
         }
@@ -83,12 +84,12 @@ namespace Neatoo
             base.InsertItem(index, item);
 
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
-            item.PropertyChanged += Child_PropertyChanged;
+            item.PropertyChanged += _ChildPropertyChanged;
         }
 
         protected override void RemoveItem(int index)
         {
-            this[index].PropertyChanged -= Child_PropertyChanged;
+            this[index].PropertyChanged -= _ChildPropertyChanged;
 
             base.RemoveItem(index);
 
@@ -109,10 +110,33 @@ namespace Neatoo
             return item;
         }
 
-        protected virtual void Child_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        [OnSerialized]
+        protected void OnSerialized(StreamingContext context)
         {
+            foreach (var item in this)
+            {
+                item.PropertyChanged -= _ChildPropertyChanged;
+            }
         }
 
+        [OnDeserialized]
+        protected void OnDeserialized(StreamingContext context)
+        {
+            foreach (var item in this)
+            {
+                item.PropertyChanged += _ChildPropertyChanged;
+            }
+        }
+
+        private void _ChildPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            ChildPropertyChanged(sender, e);
+        }
+
+        protected virtual void ChildPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+
+        }
     }
 
 }

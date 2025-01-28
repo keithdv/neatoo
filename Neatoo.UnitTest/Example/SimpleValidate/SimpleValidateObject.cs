@@ -9,7 +9,7 @@ namespace Neatoo.UnitTest.Example.SimpleValidate
 
     public class SimpleValidateObject : ValidateBase<SimpleValidateObject>, ISimpleValidateObject
     {
-        public SimpleValidateObject(ValidateBaseServices<SimpleValidateObject> services,
+        public SimpleValidateObject(IValidateBaseServices<SimpleValidateObject> services,
                                     IShortNameRule shortNameRule) : base(services)
         {
             RuleManager.AddRule(shortNameRule);

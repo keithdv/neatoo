@@ -17,10 +17,10 @@ using System.Threading.Tasks;
 namespace HorseBarn.lib.Cart
 {
     internal class Cart<C, H> : CustomEditBase<C>, ICart
-        where C : ICart
+        where C : Cart<C, H>
         where H : IHorse
     {
-        public Cart(EditBaseServices<C> services,
+        public Cart(IEditBaseServices<C> services,
                     ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services)
         {
             RuleManager.AddRule(cartNumberOfHorsesRule);

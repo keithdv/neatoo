@@ -26,21 +26,20 @@ namespace Neatoo
 
     [PortalDataContract]
     public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent
-        where T : IBase
+        where T : Base<T>
     {
         
         [PortalDataMember]
         protected IPropertyManager PropertyManager { get; set; }
 
-        public Base(BaseServices<T> services)
+        public Base(IBaseServices<T> services)
         {
             PropertyManager = services.PropertyManager ?? throw new ArgumentNullException("PropertyManager");
-            PropertyManager.RegisteredPropertyManager.SetType(this.GetType());
 
             if (PropertyManager is IPropertyManager)
             {
-                PropertyManager.NeatooPropertyChanged += PropertyManagerNeatooPropertyChange;
-                PropertyManager.PropertyChanged += PropertyManager_PropertyChanged;
+                PropertyManager.NeatooPropertyChanged += _PropertyManagerNeatooPropertyChange;
+                PropertyManager.PropertyChanged += _PropertyManagerPropertyChanged;
             }
         }
 
@@ -65,7 +64,22 @@ namespace Neatoo
             PropertyChanged?.Invoke(source ?? this, new PropertyChangedEventArgs(propertyName));
         }
 
-        protected virtual void PropertyManager_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        protected Task RaiseNeatooPropertyChanged(string propertyName, object source)
+        {
+            return NeatooPropertyChanged?.Invoke(propertyName, source);
+        }
+
+        protected virtual Task PropertyManagerNeatooPropertyChange(string propertyName, object source)
+        {
+            return AsyncTaskSequencer.AddTask((t) => NeatooPropertyChanged?.Invoke(propertyName, source) ?? Task.CompletedTask);
+        }
+
+        private Task _PropertyManagerNeatooPropertyChange(string propertyName, object source)
+        {
+            return PropertyManagerNeatooPropertyChange(propertyName, source);
+        }
+
+        protected virtual void PropertyManagerPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             // TODO - if an object isn't assigned to another IBase
             // it will still consider us to be the Parent
@@ -82,23 +96,38 @@ namespace Neatoo
             {
                 RaisePropertyChanged(e.PropertyName, this);
             }
-
         }
 
-        protected virtual void Child_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void _PropertyManagerPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            PropertyManagerPropertyChanged(sender, e);
+        }
+
+        protected virtual void ChildPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
 
         }
 
-        protected Task RaiseNeatooPropertyChanged(string propertyName, object source)
+        private void Child_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            return NeatooPropertyChanged?.Invoke(propertyName, source);
+            ChildPropertyChanged(sender, e);
         }
 
-        protected Task PropertyManagerNeatooPropertyChange(string propertyName, object source)
+        [OnSerialized]
+        protected void OnSerialized(StreamingContext context)
         {
-            return AsyncTaskSequencer.AddTask((t) => NeatooPropertyChanged?.Invoke(propertyName, source) ?? Task.CompletedTask);
+            PropertyManager.NeatooPropertyChanged -= _PropertyManagerNeatooPropertyChange;
+            PropertyManager.PropertyChanged -= _PropertyManagerPropertyChanged;
         }
+
+        [OnDeserialized]
+        protected void OnDeserialized(StreamingContext context)
+        {
+            PropertyManager.NeatooPropertyChanged += _PropertyManagerNeatooPropertyChange;
+            PropertyManager.PropertyChanged += _PropertyManagerPropertyChanged;
+        }
+
+
 
         protected virtual P Getter<P>([System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
         {

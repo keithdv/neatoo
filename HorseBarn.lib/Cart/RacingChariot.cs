@@ -18,7 +18,7 @@ namespace HorseBarn.lib.Cart
 
     internal class RacingChariot : Cart<RacingChariot, ILightHorse>, IRacingChariot
     {
-        public RacingChariot(EditBaseServices<RacingChariot> services, ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services, cartNumberOfHorsesRule)
+        public RacingChariot(IEditBaseServices<RacingChariot> services, ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services, cartNumberOfHorsesRule)
         {
         }
 

@@ -49,7 +49,7 @@ namespace Neatoo.Autofac
             // Meta Data about the properties and methods of Classes
             // This will not change during runtime
             // So SingleInstance
-            builder.RegisterType<RegisteredPropertyManager>().AsSelf().As<IRegisteredPropertyManager>();
+            builder.RegisterGeneric(typeof(RegisteredPropertyManager<>)).As(typeof(IRegisteredPropertyManager<>)).SingleInstance();
 
 
             // This was single instance; but now it resolves the Authorization Rules 
@@ -76,14 +76,6 @@ namespace Neatoo.Autofac
                 return (propertyInfo) =>
                 {
                     return scope().Resolve<Func<System.Reflection.PropertyInfo, IRegisteredProperty>>()(propertyInfo);
-                };
-            });
-
-            builder.Register<CreateRegisteredPropertyManager>(cc =>
-            {
-                return (Type type) =>
-                {
-                    return (IRegisteredPropertyManager)cc.Resolve(typeof(IRegisteredPropertyManager<>).MakeGenericType(type));
                 };
             });
 
@@ -140,12 +132,12 @@ namespace Neatoo.Autofac
             }
 
             // Simple wrapper - Always InstancePerDependency
-            builder.RegisterGeneric(typeof(BaseServices<>)).AsSelf();
-            builder.RegisterGeneric(typeof(ListBaseServices<>)).AsSelf();
-            builder.RegisterGeneric(typeof(ValidateBaseServices<>)).AsSelf();
-            builder.RegisterGeneric(typeof(ValidateListBaseServices<>)).AsSelf();
-            builder.RegisterGeneric(typeof(EditBaseServices<>)).AsSelf();
-            builder.RegisterGeneric(typeof(EditListBaseServices<>)).AsSelf();
+            builder.RegisterGeneric(typeof(BaseServices<>)).As(typeof(IBaseServices<>)) .AsSelf();
+            builder.RegisterGeneric(typeof(ListBaseServices<,>)).As(typeof(IListBaseServices<,>)).AsSelf();
+            builder.RegisterGeneric(typeof(ValidateBaseServices<>)).As(typeof(IValidateBaseServices<>)) .AsSelf();
+            builder.RegisterGeneric(typeof(ValidateListBaseServices<,>)).As(typeof(IValidateListBaseServices<,>)).AsSelf();
+            builder.RegisterGeneric(typeof(EditBaseServices<>)).As(typeof(IEditBaseServices<>)) .AsSelf();
+            builder.RegisterGeneric(typeof(EditListBaseServices<,>)).As(typeof(IEditListBaseServices<,>)) .AsSelf();
 
             builder.Register<RequestFromServerDelegate>(cc => {
 

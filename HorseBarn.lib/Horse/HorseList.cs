@@ -18,9 +18,9 @@ namespace HorseBarn.lib.Horse
 
     //}
 
-    internal class HorseList : EditListBase<IHorse>, IHorseList
+    internal class HorseList : EditListBase<HorseList, IHorse>, IHorseList
     {
-        public HorseList(EditListBaseServices<IHorse> services) : base(services)
+        public HorseList(IEditListBaseServices<HorseList, IHorse> services) : base(services)
         {
         }
 

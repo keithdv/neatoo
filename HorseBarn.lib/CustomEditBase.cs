@@ -19,9 +19,9 @@ namespace HorseBarn.lib
     }
 
     internal abstract class CustomEditBase<T> : EditBase<T>
-        where T : IEditBase
+        where T : CustomEditBase<T>
     {
-        public CustomEditBase(EditBaseServices<T> services) : base(services)
+        public CustomEditBase(IEditBaseServices<T> services) : base(services)
         {
         }
 

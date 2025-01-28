@@ -13,13 +13,15 @@ namespace Neatoo
     /// the inheriting classes don't need to list all services
     /// and services can be added
     /// </summary>
-    //public interface EditListBaseServices<I> : IValidateListBaseServices<I>
-    //    where I : IEditBase
-    //{
-    //    IReadWritePortalChild<I> ReadWritePortalChild { get; }
-    //}
+    public interface IEditListBaseServices<T, I> : IValidateListBaseServices<T, I>
+        where T : EditListBase<T, I>
+        where I : IEditBase
+    {
+        IReadWritePortalChild<I> ReadWritePortalChild { get; }
+    }
 
-    public class EditListBaseServices<I> : ValidateListBaseServices<I>
+    public class EditListBaseServices<T, I> : ValidateListBaseServices<T, I>, IEditListBaseServices<T, I>
+        where T : EditListBase<T, I>
         where I : IEditBase
     {
 

@@ -26,10 +26,11 @@ namespace Neatoo
 
     }
 
-    public abstract class ValidateListBase<I> : ListBase<I>, IValidateListBase<I>, IValidateListBase, INotifyPropertyChanged, IPortalTarget
+    public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase<I>, IValidateListBase, INotifyPropertyChanged, IPortalTarget
+        where T : ValidateListBase<T, I>
         where I : IValidateBase
     {
-        public ValidateListBase(ValidateListBaseServices<I> services) : base(services)
+        public ValidateListBase(IValidateListBaseServices<T, I> services) : base(services)
         {
 
             AsyncTaskSequencer.OnFullSequenceComplete = (t) =>
@@ -78,10 +79,10 @@ namespace Neatoo
         // TODO: Inject
         protected AsyncTaskSequencer AsyncTaskSequencer { get; set; } = new AsyncTaskSequencer();
 
-        protected override void Child_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        protected override void ChildPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             RaiseMetaPropertiesChanged();
-            base.Child_PropertyChanged(sender, e);
+            base.ChildPropertyChanged(sender, e);
         }
 
         protected virtual Task AddAsyncMethod(Func<Task, Task> method, bool runOnException = false)
@@ -116,8 +117,6 @@ namespace Neatoo
         {
             StartAllActions();
         }
-
-
 
         public virtual Task WaitForRules()
         {

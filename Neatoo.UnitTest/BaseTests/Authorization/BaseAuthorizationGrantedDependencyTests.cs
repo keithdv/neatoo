@@ -90,7 +90,7 @@ namespace Neatoo.UnitTest.BaseTests.Authorization
     public class BaseAuthorizationGrantedDependencyObject : Base<BaseAuthorizationGrantedDependencyObject>, IBaseAuthorizationGrantedDependencyObject
     {
 
-        public BaseAuthorizationGrantedDependencyObject(BaseServices<BaseAuthorizationGrantedDependencyObject> services) : base(services)
+        public BaseAuthorizationGrantedDependencyObject(IBaseServices<BaseAuthorizationGrantedDependencyObject> services) : base(services)
         {
 
         }

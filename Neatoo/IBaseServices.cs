@@ -14,18 +14,19 @@ namespace Neatoo
     /// the inheriting classes don't need to list all services
     /// and services can be added
     /// </summary>
-    //public interface IBaseServices<out T>
-    //{
-    //    IPropertyManager PropertyManager { get; }
-    //    IRegisteredPropertyManager RegisteredPropertyManager { get; }
-    //}
+    public interface IBaseServices<T>
+    {
+        IPropertyManager PropertyManager { get; }
+        IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
+    }
 
 
-    public class BaseServices<T>
+    public class BaseServices<T> : IBaseServices<T>
+        where T : Base<T> // Important - I need the concrete type at least once. This is where I get it
     {
         public BaseServices()
         {
-            RegisteredPropertyManager = new RegisteredPropertyManager((PropertyInfo pi) => new RegisteredProperty(pi));
+            RegisteredPropertyManager = new RegisteredPropertyManager<T>((PropertyInfo pi) => new RegisteredProperty(pi));
             PropertyManager = new PropertyManager(RegisteredPropertyManager, new DefaultFactory());
         }
 
@@ -42,7 +43,7 @@ namespace Neatoo
 
 
         public IPropertyManager PropertyManager { get; protected set; }
-        public IRegisteredPropertyManager RegisteredPropertyManager { get; }
+        public IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
 
     }
 }

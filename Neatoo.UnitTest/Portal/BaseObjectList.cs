@@ -10,10 +10,10 @@ namespace Neatoo.UnitTest.ObjectPortal
     /// I don't know that this is really neccessary
     /// Testing that the portal logic works on Base<> should be enough
     /// </summary>
-    public class BaseObjectList : ListBase<IBaseObject>, IBaseObjectList
+    public class BaseObjectList : ListBase<BaseObjectList, IBaseObject>, IBaseObjectList
     {
 
-        public BaseObjectList(ListBaseServices<IBaseObject> baseServices) : base(baseServices)
+        public BaseObjectList(ListBaseServices<BaseObjectList, IBaseObject> baseServices) : base(baseServices)
         {
         }
 

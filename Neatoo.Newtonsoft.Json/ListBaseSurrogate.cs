@@ -93,7 +93,7 @@ namespace Neatoo.Newtonsoft.Json
         {
             do
             {
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ListBase<>))
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ListBase<,>))
                 {
                     return type;
                 }
@@ -106,7 +106,7 @@ namespace Neatoo.Newtonsoft.Json
         {
             do
             {
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ValidateListBase<>))
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ValidateListBase<,>))
                 {
                     return type;
                 }
@@ -119,7 +119,7 @@ namespace Neatoo.Newtonsoft.Json
         {
             do
             {
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(EditListBase<>))
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(EditListBase<,>))
                 {
                     return type;
                 }
@@ -132,7 +132,7 @@ namespace Neatoo.Newtonsoft.Json
                                        JsonSerializer serializer)
         {
 
-            var itemType = GetListBase(value.GetType()).GetGenericArguments()[0];
+            var itemType = GetListBase(value.GetType()).GetGenericArguments()[1];
             var listType = typeof(List<>).MakeGenericType(itemType);
             var list = (IList)Activator.CreateInstance(listType, value);
 

@@ -15,15 +15,16 @@ namespace Neatoo
     /// the inheriting classes don't need to list all services
     /// and services can be added
     /// </summary>
-    //public interface ValidateBaseServices : IBaseServices
-    //{
-    //    IRuleManager<T> CreateRuleManager<T>(T target);
+    public interface IValidateBaseServices<T> : IBaseServices<T>
+        where T : ValidateBase<T>
+    {
+        IRuleManager<T> CreateRuleManager(T target);
 
-    //    IValidatePropertyManager ValidatePropertyManager => (IValidatePropertyManager)PropertyManager;
-    //}
+        IValidatePropertyManager ValidatePropertyManager => (IValidatePropertyManager)PropertyManager;
+    }
 
-    public class ValidateBaseServices<T> : BaseServices<T>
-        where T : IValidateBase
+    public class ValidateBaseServices<T> : BaseServices<T>, IValidateBaseServices<T>
+        where T : ValidateBase<T>
     {
         public ValidateBaseServices() : base()
         {

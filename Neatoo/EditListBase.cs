@@ -20,13 +20,14 @@ namespace Neatoo
         new void RemoveAt(int index);
     }
 
-    public abstract class EditListBase<I> : ValidateListBase<I>, INeatooObject, IEditListBase<I>, IEditListBase
+    public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject, IEditListBase<I>, IEditListBase
+        where T : EditListBase<T, I>
         where I : IEditBase
     {
 
         protected new IReadWritePortalChild<I> ItemPortal { get; }
 
-        public EditListBase(EditListBaseServices<I> services) : base(services)
+        public EditListBase(IEditListBaseServices<T, I> services) : base(services)
         {
             this.ItemPortal = services.ReadWritePortalChild;
         }

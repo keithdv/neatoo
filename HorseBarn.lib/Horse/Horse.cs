@@ -23,7 +23,7 @@ namespace HorseBarn.lib.Horse
     internal class Horse<H> : CustomEditBase<H>, IHorse
         where H : Horse<H>
     {
-        public Horse(EditBaseServices<H> services) : base(services)
+        public Horse(IEditBaseServices<H> services) : base(services)
         {
             AddRules(RuleManager);
         }
@@ -59,6 +59,12 @@ namespace HorseBarn.lib.Horse
         }
 
 #if !CLIENT
+
+        [Create]
+        protected void Create()
+        {
+            throw new Exception("This method should not be called.");
+        }
 
         [FetchChild]
         protected void Fetch(Dal.Ef.Horse horse)

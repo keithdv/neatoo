@@ -181,23 +181,6 @@ namespace Neatoo.Core
             return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
         }
 
-        public virtual IValidateProperty GetProperty(IRegisteredProperty registeredProperty)
-        {
-            if (fieldData.TryGetValue(registeredProperty.Name, out var fd))
-            {
-                return fd;
-            }
-
-            var newProperty = (IValidateProperty)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty });
-
-            newProperty.PropertyChanged += OnPropertyChanged;
-            newProperty.NeatooPropertyChanged += OnNeatooPropertyChanged;
-
-            fieldData[registeredProperty.Name] = newProperty;
-
-            return newProperty;
-        }
-
         IProperty IPropertyManager.GetProperty(string propertyName)
         {
             return GetProperty(propertyName);

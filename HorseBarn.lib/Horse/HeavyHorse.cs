@@ -11,7 +11,7 @@ namespace HorseBarn.lib.Horse
 {
     internal class HeavyHorse : Horse<HeavyHorse>, IHeavyHorse
     {
-        public HeavyHorse(EditBaseServices<HeavyHorse> services) : base(services)
+        public HeavyHorse(IEditBaseServices<HeavyHorse> services) : base(services)
         {
         }
 

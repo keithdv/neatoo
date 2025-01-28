@@ -24,9 +24,9 @@ namespace Neatoo.UnitTest.EditBaseTests
         void MarkDeleted();
     }
 
-    public class EditPersonList : EditListBase<IEditPerson>, IEditPersonList
+    public class EditPersonList : EditListBase<EditPersonList, IEditPerson>, IEditPersonList
     {
-        public EditPersonList(EditListBaseServices<IEditPerson> services) : base(services)
+        public EditPersonList(IEditListBaseServices<EditPersonList, IEditPerson> services) : base(services)
         {
         }
 

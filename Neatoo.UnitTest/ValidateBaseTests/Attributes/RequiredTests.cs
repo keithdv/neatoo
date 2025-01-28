@@ -10,7 +10,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests.Attributes
     public interface IRequiredObject : IValidateBase { }
     public class RequiredObject : ValidateBase<RequiredObject>, IRequiredObject
     {
-        public RequiredObject(ValidateBaseServices<RequiredObject> services) : base(services)
+        public RequiredObject(IValidateBaseServices<RequiredObject> services) : base(services)
         {
         }
 

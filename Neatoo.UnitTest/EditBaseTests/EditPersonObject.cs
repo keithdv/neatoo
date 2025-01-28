@@ -31,7 +31,7 @@ namespace Neatoo.UnitTest.EditBaseTests
 
     public class EditPerson : PersonEditBase<EditPerson>, IEditPerson
     {
-        public EditPerson(EditBaseServices<EditPerson> services,
+        public EditPerson(IEditBaseServices<EditPerson> services,
             IShortNameRule<EditPerson> shortNameRule,
             IFullNameRule<EditPerson> fullNameRule) : base(services)
         {

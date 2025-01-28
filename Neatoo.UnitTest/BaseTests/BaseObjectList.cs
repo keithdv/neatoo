@@ -12,10 +12,10 @@ namespace Neatoo.UnitTest.BaseTests
         string LastName { get; set; }
 
     }
-    public class BaseObjectList : ListBase<IBaseObject>, IBaseObjectList
+    public class BaseObjectList : ListBase<BaseObjectList, IBaseObject>, IBaseObjectList
     {
 
-        public BaseObjectList(ListBaseServices<IBaseObject> services) : base(services) { }
+        public BaseObjectList(ListBaseServices<BaseObjectList, IBaseObject> services) : base(services) { }
 
         public Guid Id { get; set; }
 

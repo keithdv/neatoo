@@ -12,14 +12,16 @@ namespace Neatoo
     /// the inheriting classes don't need to list all services
     /// and services can be added
     /// </summary>
-    //public interface ListBaseServices<I>
-    //    where I : IBase
-    //{
-    //    IReadPortalChild<I> ReadPortal { get; }
-    //}
-
-    public class ListBaseServices<I>
+    public interface IListBaseServices<T, I>
+        where T : ListBase<T, I>
         where I : IBase
+    {
+        IReadPortalChild<I> ReadPortal { get; }
+    }
+
+    public class ListBaseServices<T, I> : IListBaseServices<T, I>
+        where T : ListBase<T, I>
+        where I : IBase 
     {
 
         public ListBaseServices()        {        }

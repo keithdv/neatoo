@@ -23,7 +23,7 @@ namespace Neatoo.UnitTest.BaseTests
     public class BaseObject : Base<BaseObject>, IBaseObject
     {
 
-        public BaseObject(BaseServices<BaseObject> services) : base(services) { }
+        public BaseObject(IBaseServices<BaseObject> services) : base(services) { }
 
         public Guid Id
         {

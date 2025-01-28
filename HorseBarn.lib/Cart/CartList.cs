@@ -19,9 +19,9 @@ namespace HorseBarn.lib.Cart
         internal Task RemoveHorse(IHorse horse);
     }
 
-    internal class CartList : EditListBase<ICart>, ICartList
+    internal class CartList : EditListBase<CartList, ICart>, ICartList
     {
-        public CartList(EditListBaseServices<ICart> services) : base(services)
+        public CartList(IEditListBaseServices<CartList, ICart> services) : base(services)
         {
 
         }

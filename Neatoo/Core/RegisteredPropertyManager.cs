@@ -8,7 +8,7 @@ using System.Text;
 namespace Neatoo.Core
 {
 
-    public class RegisteredPropertyManager : IRegisteredPropertyManager
+    public class RegisteredPropertyManager<T> : IRegisteredPropertyManager<T>
     {
 
         protected CreateRegisteredProperty CreateRegisteredProperty { get; }
@@ -28,17 +28,16 @@ protected static object lockRegisteredProperties = new object();
 
         public RegisteredPropertyManager(CreateRegisteredProperty createRegisteredProperty)
         {
+
             CreateRegisteredProperty = createRegisteredProperty;
 
-        }
+            Type = typeof(T);
 
-        public void SetType(Type type)
-        {
-            Type = type;
             RegisterProperties();
         }
 
-        private static Type[] neatooTypes = new Type[] { typeof(Base<>), typeof(ListBase<>), typeof(ValidateBase<>), typeof(ValidateListBase<>), typeof(EditBase<>), typeof(EditListBase<>) };
+
+        private static Type[] neatooTypes = new Type[] { typeof(Base<>), typeof(ListBase<,>), typeof(ValidateBase<>), typeof(ValidateListBase<,>), typeof(EditBase<>), typeof(EditListBase<,>) };
 
         protected void RegisterProperties()
         {

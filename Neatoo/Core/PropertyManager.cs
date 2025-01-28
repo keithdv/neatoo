@@ -94,6 +94,11 @@ namespace Neatoo.Core
 
             if (newValue == null)
             {
+                if (_value is INotifyNeatooPropertyChanged neatooPropertyChanged)
+                {
+                    neatooPropertyChanged.NeatooPropertyChanged -= _OnValueNeatooPropertyChanged;
+                }
+
                 _value = default;
                 OnPropertyChanged(nameof(Value));
                 Task = OnValueNeatooPropertyChanged(nameof(Value), this);
@@ -106,7 +111,7 @@ namespace Neatoo.Core
                 {
                     if (value is INotifyNeatooPropertyChanged neatooPropertyChanged)
                     {
-                        neatooPropertyChanged.NeatooPropertyChanged -= OnValueNeatooPropertyChanged;
+                        neatooPropertyChanged.NeatooPropertyChanged -= _OnValueNeatooPropertyChanged;
                     }
                 }
 
@@ -116,7 +121,7 @@ namespace Neatoo.Core
                 {
                     if (value is INotifyNeatooPropertyChanged neatooPropertyChanged)
                     {
-                        neatooPropertyChanged.NeatooPropertyChanged += OnValueNeatooPropertyChanged;
+                        neatooPropertyChanged.NeatooPropertyChanged += _OnValueNeatooPropertyChanged;
                     }
 
                     OnPropertyChanged(nameof(Value));
@@ -139,10 +144,16 @@ namespace Neatoo.Core
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        private Task _OnValueNeatooPropertyChanged(string propertyName, object source)
+        {
+            return OnValueNeatooPropertyChanged(propertyName, source);
+        }
+
         protected virtual Task OnValueNeatooPropertyChanged(string propertyName, object source)
         {
             return NeatooPropertyChanged?.Invoke(this.Name, source) ?? Task.CompletedTask;
         }
+
 
         public Property(string name)
         {
@@ -167,6 +178,24 @@ namespace Neatoo.Core
 
         public event PropertyChangedEventHandler PropertyChanged;
         public event NeatooPropertyChanged NeatooPropertyChanged;
+
+        [OnSerialized]
+        private void OnSerialized(StreamingContext context)
+        {
+            if (Value is INotifyNeatooPropertyChanged neatooPropertyChanged)
+            {
+                neatooPropertyChanged.NeatooPropertyChanged -= OnValueNeatooPropertyChanged;
+            }
+        }
+
+        [OnDeserialized]
+        private void OnDeserialized(StreamingContext context)
+        {
+            if (Value is INotifyNeatooPropertyChanged neatooPropertyChanged)
+            {
+                neatooPropertyChanged.NeatooPropertyChanged += OnValueNeatooPropertyChanged;
+            }
+        }
     }
 
     public class PropertyManager : PropertyManagerBase<IProperty>, IPropertyManager
@@ -198,24 +227,6 @@ namespace Neatoo.Core
         {
             return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
         }
-
-        public virtual IProperty GetProperty(IRegisteredProperty registeredProperty)
-        {
-            if (fieldData.TryGetValue(registeredProperty.Name, out var fd))
-            {
-                return fd;
-            }
-
-            var newProperty = (IProperty)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty });
-
-            newProperty.PropertyChanged += OnPropertyChanged;
-            newProperty.NeatooPropertyChanged += OnNeatooPropertyChanged;
-
-            fieldData[registeredProperty.Name] = newProperty;
-
-            return newProperty;
-        }
-
 
     }
 
@@ -249,8 +260,8 @@ namespace Neatoo.Core
         {
             foreach (var p in fieldData.Values)
             {
-                p.PropertyChanged += OnPropertyChanged;
-                p.NeatooPropertyChanged += OnNeatooPropertyChanged;
+                p.PropertyChanged += _OnPropertyChanged;
+                p.NeatooPropertyChanged += _OnNeatooPropertyChanged;
             }
         }
 
@@ -258,13 +269,18 @@ namespace Neatoo.Core
         public event PropertyChangedEventHandler PropertyChanged;
         public event NeatooPropertyChanged NeatooPropertyChanged;
 
-        protected virtual void OnPropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void _OnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(IProperty.Value))
             {
                 // Switch it from the IProperty.Name to IPropertyManager.PropertyName
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(((IProperty)sender).Name));
             }
+        }
+
+        private Task _OnNeatooPropertyChanged(string propertyName, object source)
+        {
+            return NeatooPropertyChanged?.Invoke(propertyName, this); // Switch source on purpose
         }
 
         public PropertyManagerBase(IRegisteredPropertyManager registeredPropertyManager, IFactory factory)
@@ -280,11 +296,22 @@ namespace Neatoo.Core
             return RegisteredPropertyManager.GetRegisteredProperty(name);
         }
 
-        protected Task OnNeatooPropertyChanged(string propertyName, object source)
+        public virtual P GetProperty(IRegisteredProperty registeredProperty)
         {
-            return NeatooPropertyChanged?.Invoke(propertyName, this); // Switch source on purpose
-        }
+            if (fieldData.TryGetValue(registeredProperty.Name, out var fd))
+            {
+                return fd;
+            }
 
+            var newProperty = (P)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty });
+
+            newProperty.PropertyChanged += _OnPropertyChanged;
+            newProperty.NeatooPropertyChanged += _OnNeatooPropertyChanged;
+
+            fieldData[registeredProperty.Name] = newProperty;
+
+            return newProperty;
+        }
     }
 
 

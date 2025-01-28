@@ -43,7 +43,7 @@ namespace Neatoo
 
     [PortalDataContract]
     public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IPortalTarget
-        where T : IValidateBase
+        where T : ValidateBase<T>
     {
 
         [PortalDataMember]
@@ -52,15 +52,8 @@ namespace Neatoo
         [PortalDataMember]
         protected IRuleManager<T> RuleManager { get; }
 
-        public ValidateBase(ValidateBaseServices<T> services) : base(services)
+        public ValidateBase(IValidateBaseServices<T> services) : base(services)
         {
-
-            if (PropertyManager is IValidatePropertyManager)
-            {
-                PropertyManager.NeatooPropertyChanged += PropertyManagerNeatooPropertyChange;
-                PropertyManager.PropertyChanged += PropertyManager_PropertyChanged;
-            }
-
             this.RuleManager = services.CreateRuleManager((T)(IValidateBase)this);
 
             AsyncTaskSequencer.OnFullSequenceComplete = async (t) =>
@@ -71,8 +64,6 @@ namespace Neatoo
 
             ResetMetaState();
         }
-
-
 
         public bool IsValid => PropertyManager.IsValid;
 
@@ -111,13 +102,13 @@ namespace Neatoo
             MetaState = (IsValid, IsSelfValid, IsBusy, IsSelfBusy);
         }
 
-        protected override void PropertyManager_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        protected override void PropertyManagerPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            base.PropertyManager_PropertyChanged(sender, e);
+            base.PropertyManagerPropertyChanged(sender, e);
             RaiseMetaPropertiesChanged();
         }
 
-        protected new Task PropertyManagerNeatooPropertyChange(string propertyName, object source)
+        protected override Task PropertyManagerNeatooPropertyChange(string propertyName, object source)
         {
             if (source == this.PropertyManager)
             {
@@ -136,8 +127,9 @@ namespace Neatoo
             return Task.CompletedTask;
         }
 
-        protected override void Child_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        protected override void ChildPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            base.ChildPropertyChanged(sender, e);
             RaiseMetaPropertiesChanged();
         }
 

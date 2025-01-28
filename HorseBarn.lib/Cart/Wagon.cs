@@ -16,7 +16,7 @@ namespace HorseBarn.lib.Cart
 
     internal class Wagon : Cart<Wagon, IHeavyHorse>, IWagon
     {
-        public Wagon(EditBaseServices<Wagon> services, ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services, cartNumberOfHorsesRule)
+        public Wagon(IEditBaseServices<Wagon> services, ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services, cartNumberOfHorsesRule)
         {
         }
 

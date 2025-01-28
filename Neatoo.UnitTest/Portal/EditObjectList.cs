@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ObjectPortal
 {
-    public class EditObjectList : EditListBase<IEditObject>, IEditObjectList
+    public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditObjectList
     {
 
-        public EditObjectList(EditListBaseServices<IEditObject> baseServices) : base(baseServices)
+        public EditObjectList(IEditListBaseServices<EditObjectList, IEditObject> baseServices) : base(baseServices)
         {
         }
 

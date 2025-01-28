@@ -19,7 +19,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public IShortNameAsyncRule<ValidateAsyncObject> ShortNameRule { get; }
         public IFullNameAsyncRule<ValidateAsyncObject> FullNameRule { get; }
 
-        public ValidateAsyncObject(ValidateBaseServices<ValidateAsyncObject> services,
+        public ValidateAsyncObject(IValidateBaseServices<ValidateAsyncObject> services,
             IShortNameAsyncRule<ValidateAsyncObject> shortNameRule,
             IFullNameAsyncRule<ValidateAsyncObject> fullNameRule,
             IAsyncRuleThrowsException asyncRuleThrowsException,
@@ -61,10 +61,10 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         void Add(IValidateAsyncObject o);
     }
 
-    public class ValidateAsyncObjectList : ValidateListBase<IValidateAsyncObject>, IValidateAsyncObjectList
+    public class ValidateAsyncObjectList : ValidateListBase<ValidateAsyncObjectList, IValidateAsyncObject>, IValidateAsyncObjectList
     {
 
-        public ValidateAsyncObjectList(ValidateListBaseServices< IValidateAsyncObject> services) : base(services)
+        public ValidateAsyncObjectList(IValidateListBaseServices<ValidateAsyncObjectList, IValidateAsyncObject> services) : base(services)
         {
 
         }

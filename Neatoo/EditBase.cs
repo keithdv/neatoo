@@ -6,25 +6,20 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
 namespace Neatoo
 {
 
     public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, IPortalEditTarget, IEditMetaProperties
-        where T : IEditBase
+        where T : EditBase<T>
     {
         [PortalDataMember]
         protected new IEditPropertyManager PropertyManager => (IEditPropertyManager)  base.PropertyManager;
 
-        public EditBase(EditBaseServices<T> services) : base(services)
+        public EditBase(IEditBaseServices<T> services) : base(services)
         {
-            if(PropertyManager is IEditPropertyManager)
-            {
-                PropertyManager.NeatooPropertyChanged += PropertyManagerNeatooPropertyChange;
-                PropertyManager.PropertyChanged += PropertyManager_PropertyChanged;
-            }
-
             ReadWritePortal = services.ReadWritePortal;
         }
 

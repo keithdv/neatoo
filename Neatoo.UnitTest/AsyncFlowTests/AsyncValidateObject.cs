@@ -103,7 +103,7 @@ namespace Neatoo.UnitTest.AsyncFlowTests
 
     internal class AsyncValidateObject : ValidateBase<AsyncValidateObject>
     {
-        public AsyncValidateObject(ValidateBaseServices<AsyncValidateObject> services) : base(services)
+        public AsyncValidateObject(IValidateBaseServices<AsyncValidateObject> services) : base(services)
         {
             RuleManager.AddRule(AsyncDelayRule = new AsyncDelayRule());
             RuleManager.AddRule(SyncRuleA = new SyncRuleA());

@@ -18,7 +18,7 @@ namespace HorseBarn.lib.Horse
 
     internal class HorseCriteria : ValidateBase<HorseCriteria>, IHorseCriteria
     {
-        public HorseCriteria(ValidateBaseServices<HorseCriteria> services) : base(services)
+        public HorseCriteria(IValidateBaseServices<HorseCriteria> services) : base(services)
         {
         }
 

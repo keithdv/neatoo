@@ -20,7 +20,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public IShortNameRule<ValidateObject> ShortNameRule { get; }
         public IFullNameRule<ValidateObject> FullNameRule { get; }
 
-        public ValidateObject(ValidateBaseServices<ValidateObject> services,
+        public ValidateObject(IValidateBaseServices<ValidateObject> services,
             IShortNameRule<ValidateObject> shortNameRule,
             IFullNameRule<ValidateObject> fullNameRule,
             IRecursiveRule recursiveRule,
@@ -63,10 +63,10 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
     }
 
-    public class ValidateObjectList : ValidateListBase<IValidateObject>, IValidateObjectList
+    public class ValidateObjectList : ValidateListBase<ValidateObjectList, IValidateObject>, IValidateObjectList
     {
 
-        public ValidateObjectList(ValidateListBaseServices<IValidateObject> services
+        public ValidateObjectList(ValidateListBaseServices<ValidateObjectList, IValidateObject> services
             ) : base(services)
         {
         }
