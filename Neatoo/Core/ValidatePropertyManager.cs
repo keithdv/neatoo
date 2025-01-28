@@ -117,6 +117,7 @@ namespace Neatoo.Core
         }
 
         // [PortalDataMember] Ummm...ising the RuleIndex going to be different...
+        [PortalDataMember]
         protected Dictionary<uint, IReadOnlyList<string>> ruleErrorMessages = new Dictionary<uint, IReadOnlyList<string>>();
 
         protected void SetError(uint ruleIndex, IReadOnlyList<string> errorMessages)

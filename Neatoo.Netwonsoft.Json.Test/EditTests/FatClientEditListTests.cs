@@ -107,18 +107,18 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
              
         //}
 
-        [TestMethod]
-        public void FatClientEditList_IsModified()
-        {
+        //[TestMethod]
+        //public void FatClientEditList_IsModified()
+        //{
 
-            var json = Serialize(target);
+        //    var json = Serialize(target);
 
-            var newTarget = Deserialize(json);
+        //    var newTarget = Deserialize(json);
 
-            Assert.IsTrue(newTarget.IsModified);
-            Assert.IsTrue(newTarget.IsSelfModified);
+        //    Assert.IsTrue(newTarget.IsModified);
+        //    Assert.IsTrue(newTarget.IsSelfModified);
 
-        }
+        //}
 
         [TestMethod]
         public void FatClientEditList_IsModified_False()

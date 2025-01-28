@@ -16,8 +16,6 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         IServiceScope scope;
         IValidateObjectList target;
         IValidateObject child;
-        Guid Id = Guid.NewGuid();
-        string Name = Guid.NewGuid().ToString();
         FatClientContractResolver resolver;
 
         [TestInitialize]
@@ -39,8 +37,8 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
 
             var result = Serialize(target);
 
-            Assert.IsTrue(result.Contains(Id.ToString()));
-            Assert.IsTrue(result.Contains(Name));
+            Assert.IsTrue(result.Contains(child.ID.ToString()));
+            Assert.IsTrue(result.Contains(child.Name));
         }
 
         [TestMethod]
@@ -103,11 +101,11 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         {
 
             child.Name = "Error";
+            Assert.IsFalse(child.IsValid);
 
             var json = Serialize(target);
             var newTarget = Deserialize(json);
 
-            Assert.IsFalse(child.IsValid);
 
             Assert.IsFalse(newTarget.IsValid);
             Assert.IsTrue(newTarget.IsSelfValid);

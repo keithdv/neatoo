@@ -38,7 +38,7 @@ namespace Neatoo.Core
 
     public delegate Task NeatooPropertyChanged(string propertyName, object source);
 
-    public interface  INotifyNeatooPropertyChanged
+    public interface INotifyNeatooPropertyChanged
     {
         event NeatooPropertyChanged NeatooPropertyChanged;
     }
@@ -73,7 +73,8 @@ namespace Neatoo.Core
         [PortalDataMember]
         protected T _value = default;
 
-        public virtual T Value {
+        public virtual T Value
+        {
             get => _value;
             // TODO - Don't allow if the property setting on the ValidateBase<> is private set
             set
@@ -87,11 +88,11 @@ namespace Neatoo.Core
         public Task Task { get; protected set; } = Task.CompletedTask;
         public virtual void SetValue(object newValue)
         {
-            if(newValue == null && _value == null) { return; }
+            if (newValue == null && _value == null) { return; }
 
             Task = Task.CompletedTask;
 
-            if(newValue == null)
+            if (newValue == null)
             {
                 _value = default;
                 OnPropertyChanged(nameof(Value));
@@ -127,7 +128,7 @@ namespace Neatoo.Core
                 throw new PropertyTypeMismatchException($"Type {newValue.GetType()} is not type {typeof(T).FullName}");
             }
 
-            if(Task.IsCompleted && Task.IsFaulted)
+            if (Task.IsCompleted && Task.IsFaulted)
             {
                 throw Task.Exception;
             }
@@ -205,7 +206,7 @@ namespace Neatoo.Core
                 return fd;
             }
 
-            var newProperty = (IProperty) this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty });
+            var newProperty = (IProperty)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty });
 
             newProperty.PropertyChanged += OnPropertyChanged;
             newProperty.NeatooPropertyChanged += OnNeatooPropertyChanged;
@@ -231,15 +232,35 @@ namespace Neatoo.Core
             return RegisteredPropertyManager.HasProperty(propertyName);
         }
 
+        protected IDictionary<string, P> propertyValueStore = new Dictionary<string, P>();
+
         [PortalDataMember]
-        protected IDictionary<string, P> fieldData = new ConcurrentDictionary<string, P>();
+        protected IDictionary<string, P> fieldData
+        {
+            get => propertyValueStore;
+            set
+            {
+                propertyValueStore = value;
+            }
+        }
+
+        [OnDeserialized]
+        private void OnDeserialized(StreamingContext context)
+        {
+            foreach (var p in fieldData.Values)
+            {
+                p.PropertyChanged += OnPropertyChanged;
+                p.NeatooPropertyChanged += OnNeatooPropertyChanged;
+            }
+        }
+
 
         public event PropertyChangedEventHandler PropertyChanged;
         public event NeatooPropertyChanged NeatooPropertyChanged;
 
         protected virtual void OnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if(e.PropertyName == nameof(IProperty.Value))
+            if (e.PropertyName == nameof(IProperty.Value))
             {
                 // Switch it from the IProperty.Name to IPropertyManager.PropertyName
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(((IProperty)sender).Name));
