@@ -10,11 +10,11 @@ using System.Threading.Tasks;
 namespace Neatoo
 {
 
-    public interface IEditListBase : IValidateListBase, IEditMetaProperties, IPortalEditTarget
+    public interface IEditListBase : IValidateListBase, IEditMetaProperties
     {
     }
 
-    public interface IEditListBase<I> : IEditListBase, IValidateListBase<I>, IEditMetaProperties, IPortalEditTarget
+    public interface IEditListBase<I> : IEditListBase, IValidateListBase<I>, IEditMetaProperties
         where I : IEditBase
     {
         new void RemoveAt(int index);
@@ -32,13 +32,13 @@ namespace Neatoo
             this.ItemPortal = services.ReadWritePortalChild;
         }
 
-        public bool IsMarkedModified { get; protected set; } = false;
-        public bool IsModified => IsNew || this.Any(c => c.IsModified) || IsDeleted || DeletedList.Any() || IsSelfModified;
-        public bool IsSelfModified => IsDeleted || IsMarkedModified;
+        public bool IsModified => this.Any(c => c.IsModified) || DeletedList.Any();
+        public bool IsSelfModified => false;
+        public bool IsMarkedModified => false;
         public bool IsSavable => false;
-        public bool IsNew { get; protected set; }
-        public bool IsDeleted { get; protected set; }
-        public bool IsChild { get; protected set; }
+        public bool IsNew => false;
+        public bool IsDeleted => false;
+        public bool IsChild => false;
         protected List<I> DeletedList { get; } = new List<I>();
 
         protected (bool IsModified, bool IsSelfModified, bool IsSavable) EditMetaState { get; private set; }
@@ -69,80 +69,6 @@ namespace Neatoo
             EditMetaState = (IsModified, IsSelfModified, IsSavable);
         }
 
-        protected virtual void MarkAsChild()
-        {
-            IsChild = true;
-        }
-
-        void IPortalEditTarget.MarkAsChild()
-        {
-            MarkAsChild();
-        }
-
-        protected virtual void MarkUnmodified()
-        {
-            IsNew = false;
-        }
-
-        void IPortalEditTarget.MarkUnmodified()
-        {
-            MarkUnmodified();
-        }
-
-        protected virtual void MarkModified()
-        {
-            IsMarkedModified = true;
-        }
-
-        void IPortalEditTarget.MarkModified()
-        {
-            MarkModified();
-        }
-
-        protected virtual void MarkNew()
-        {
-            IsNew = true;
-        }
-
-        void IPortalEditTarget.MarkNew()
-        {
-            MarkNew();
-        }
-
-        protected virtual void MarkOld()
-        {
-            IsNew = false;
-        }
-
-        void IPortalEditTarget.MarkOld()
-        {
-            MarkOld();
-        }
-
-        protected virtual void MarkDeleted()
-        {
-            // TODO
-            // THis concept is a little blurry
-            // I suppose I should delete all of my children??
-            IsDeleted = true;
-        }
-
-        void IPortalEditTarget.MarkDeleted()
-        {
-            MarkDeleted();
-        }
-
-        public void Delete()
-        {
-            MarkDeleted();
-        }
-
-        public void UnDelete()
-        {
-            // TODO : Blurry here too...should I delete all of my children?
-            IsDeleted = false;
-        }
-
         protected override void InsertItem(int index, I item)
         {
             if (item.IsDeleted)
@@ -150,7 +76,7 @@ namespace Neatoo
                 item.UnDelete();
             }
 
-            if (!IsStopped && !item.IsNew)
+            if (!item.IsNew)
             {
                 ((IPortalEditTarget)item).MarkModified();
             }
@@ -161,14 +87,14 @@ namespace Neatoo
         protected override void RemoveItem(int index)
         {
             var item = this[index];
-            if (!item.IsNew)
-            {
-                item.Delete();
-                DeletedList.Add(item);
-            }
+
+            item.Delete();
+
+            DeletedList.Add(item);
 
             base.RemoveItem(index);
         }
+
 
         [Update]
         [UpdateChild]

@@ -66,24 +66,16 @@ namespace Neatoo.Newtonsoft.Json
             {
                 foreach (var i in surrogate.Collection)
                 {
-                    list.Add(i);
-                    if(i is ISetParent setParent)
+                    using ((i as IPortalEditTarget)?.StopAllActions())
                     {
-                        setParent.SetParent(list.Parent);
+                        list.Add(i);
+                        if (i is ISetParent setParent)
+                        {
+                            setParent.SetParent(list.Parent);
+                        }
                     }
                 }
                 ((ISetParent) list).SetParent(surrogate.Parent);
-            }
-
-            // ValidateListBase
-
-            var editType = GetEditListBase(list.GetType());
-            if (editType != null)
-            {
-                editType.InvokeMember(nameof(IEditMetaProperties.IsNew), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsNew });
-                editType.InvokeMember(nameof(IEditMetaProperties.IsChild), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsChild });
-                editType.InvokeMember(nameof(IEditMetaProperties.IsDeleted), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsDeleted });
-                editType.InvokeMember(nameof(ListBaseSurrogate.IsMarkedModified), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.FlattenHierarchy, null, list, new object[] { surrogate.IsMarkedModified });
             }
 
             return list;

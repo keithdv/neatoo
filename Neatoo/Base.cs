@@ -84,12 +84,20 @@ namespace Neatoo
             // TODO - if an object isn't assigned to another IBase
             // it will still consider us to be the Parent
 
-            if (sender == this.PropertyManager && this[e.PropertyName].Value is IBase child)
+            if (sender == this.PropertyManager)
             {
-                ((ISetParent)child).SetParent(this);
-                // TODO - This is never getting removed..which is not good
-                child.PropertyChanged += Child_PropertyChanged;
-                // NOTE: Neatoo property changes only come thru the Property and PropertyManager
+                if (this[e.PropertyName].Value is ISetParent child)
+                {
+                    child.SetParent(this);
+                }
+
+                if (this[e.PropertyName].Value is INotifyPropertyChanged notifyPropertyChanged)
+                {
+                    // TODO - This is never getting removed..which is not good
+                    notifyPropertyChanged.PropertyChanged += Child_PropertyChanged;
+                }
+
+                // NOTE: Neatoo property changes only come thru the Property and PropertyManager - Don't connect directly to the object
             }
 
             if (sender == this.PropertyManager && PropertyManager.HasProperty(e.PropertyName))

@@ -176,6 +176,7 @@ namespace Neatoo.Portal.Core
         {
             await CheckAccess(operation.ToAuthorizationOperation());
 
+            var invoked = false;
             var methods = MethodsForOperation(operation) ?? new List<MethodInfo>();
 
             IDisposable stopAllActions = null;
@@ -187,7 +188,6 @@ namespace Neatoo.Portal.Core
 
             using (stopAllActions)
             {
-                var invoked = false;
 
                 foreach (var method in methods)
                 {
@@ -224,14 +224,15 @@ namespace Neatoo.Portal.Core
                             await (Task)result;
                         }
 
-                        PostOperation(target, operation);
-
                         break;
                     }
                 }
-
-                return invoked;
             }
+
+            PostOperation(target, operation);
+
+            return invoked;
+            
         }
         public async Task<bool> TryCallOperation(object target, PortalOperation operation, object[] criteria)
         {
@@ -247,54 +248,54 @@ namespace Neatoo.Portal.Core
             {
                 var method = MethodForOperation(operation, criteria.Select(c => c.GetType()).ToArray());
 
-                if (method != null)
+                if (method == null)
+                {
+                    return false;
+                }
+
+                var parameters = method.GetParameters().ToList();
+                var parameterValues = new object[parameters.Count()];
+
+                if (parameters.Count == 1 && parameters[0].ParameterType == typeof(object[]))
+                {
+                    parameterValues = [criteria];
+                }
+                else
                 {
 
-                    var parameters = method.GetParameters().ToList();
-                    var parameterValues = new object[parameters.Count()];
 
-                    if (parameters.Count == 1 && parameters[0].ParameterType == typeof(object[]))
+                    var criteriaE = criteria.GetEnumerator();
+
+                    for (var i = 0; i < parameterValues.Length; i++)
                     {
-                        parameterValues = [ criteria ];
-                    }
-                    else
-                    {
-
-
-                        var criteriaE = criteria.GetEnumerator();
-
-                        for (var i = 0; i < parameterValues.Length; i++)
+                        if (criteriaE.MoveNext())
                         {
-                            if (criteriaE.MoveNext())
+                            // Use up the criteria values first
+                            // Assume MethodForOperation got the types right
+                            parameterValues[i] = criteriaE.Current;
+                        }
+                        else
+                        {
+                            var parameter = parameters[i];
+                            if (Scope.TryResolve(parameter.ParameterType, out var pv))
                             {
-                                // Use up the criteria values first
-                                // Assume MethodForOperation got the types right
-                                parameterValues[i] = criteriaE.Current;
-                            }
-                            else
-                            {
-                                var parameter = parameters[i];
-                                if (Scope.TryResolve(parameter.ParameterType, out var pv))
-                                {
-                                    parameterValues[i] = pv;
-                                }
+                                parameterValues[i] = pv;
                             }
                         }
                     }
-                    var result = method.Invoke(target, parameterValues);
+                }
+                var result = method.Invoke(target, parameterValues);
 
-                    if (method.ReturnType == typeof(Task))
-                    {
-                        await (Task)result;
-                    }
-
-                    PostOperation(target, operation);
-
-                    return true;
+                if (method.ReturnType == typeof(Task))
+                {
+                    await (Task)result;
                 }
 
-                return false;
             }
+
+            PostOperation(target, operation);
+
+            return true;
         }
 
         protected virtual void PostOperation(object target, PortalOperation operation)

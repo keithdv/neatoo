@@ -45,8 +45,12 @@ namespace HorseBarn.lib.integration.tests
         public async Task HorseBarn_FullRun()
         {
             var horseBarn = await portal.Create();
-            
-            async Task AddCartToHorseBarch()
+
+            Assert.IsTrue(horseBarn.IsValid);
+            Assert.IsTrue(horseBarn.IsNew);
+            Assert.IsTrue(horseBarn.IsModified);
+
+            async Task AddCartToHorseBarn()
             {
                 var criteria = Mock.Of<IHorseCriteria>();
 
@@ -98,7 +102,7 @@ namespace HorseBarn.lib.integration.tests
                 Assert.IsTrue(horseBarn.IsValid);
             }
 
-            await AddCartToHorseBarch();
+            await AddCartToHorseBarn();
 
             horseBarn = (IHorseBarn) await horseBarn.Save();
 
@@ -117,7 +121,7 @@ namespace HorseBarn.lib.integration.tests
 
             horseBarn = await portal.Fetch();
 
-            await AddCartToHorseBarch();
+            await AddCartToHorseBarn();
 
             foreach (var item in horseBarn.Horses)
             {

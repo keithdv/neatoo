@@ -13,15 +13,6 @@ namespace Neatoo.UnitTest.EditBaseTests
     {
         int DeletedCount { get; }
 
-        void MarkAsChild();
-
-        void MarkNew();
-
-        void MarkOld();
-
-        void MarkUnmodified();
-
-        void MarkDeleted();
     }
 
     public class EditPersonList : EditListBase<EditPersonList, IEditPerson>, IEditPersonList
@@ -71,31 +62,6 @@ namespace Neatoo.UnitTest.EditBaseTests
             {
                 Add(await ItemPortal.FetchChild(child));
             }
-        }
-
-        void IEditPersonList.MarkAsChild()
-        {
-            this.MarkAsChild();
-        }
-
-        void IEditPersonList.MarkDeleted()
-        {
-            this.MarkDeleted();
-        }
-
-        void IEditPersonList.MarkNew()
-        {
-            this.MarkNew();
-        }
-
-        void IEditPersonList.MarkOld()
-        {
-            this.MarkOld();
-        }
-
-        void IEditPersonList.MarkUnmodified()
-        {
-            this.MarkUnmodified();
         }
 
     }

@@ -27,8 +27,6 @@ namespace Neatoo.UnitTest.EditBaseTests
             var parentDto = scope.Resolve<IReadOnlyList<PersonDto>>().Where(p => !p.FatherId.HasValue && !p.MotherId.HasValue).First();
 
             list = scope.Resolve<IEditPersonList>();
-            list.MarkUnmodified();
-            list.MarkOld();
 
             child = scope.Resolve<IEditPerson>();
             list.Add(child);
@@ -54,22 +52,20 @@ namespace Neatoo.UnitTest.EditBaseTests
         }
 
         [TestMethod]
-        public async Task EditListBaseTest_ModifyChild_IsModified()
+        public void EditListBaseTest_ModifyChild_IsModified()
         {
 
             child.FirstName = Guid.NewGuid().ToString();
-            await list.WaitForRules();
             Assert.IsTrue(list.IsModified);
             Assert.IsTrue(child.IsModified);
 
         }
 
         [TestMethod]
-        public async Task EditListBaseTest_ModifyChild_IsSelfModified()
+        public void EditListBaseTest_ModifyChild_IsSelfModified()
         {
 
             child.FirstName = Guid.NewGuid().ToString();
-            await list.WaitForRules();
 
             Assert.IsFalse(list.IsSelfModified);
             Assert.IsTrue(child.IsSelfModified);
@@ -77,15 +73,13 @@ namespace Neatoo.UnitTest.EditBaseTests
         }
 
         [TestMethod]
-        public async Task EditListBaseTest_ModifyChild_IsSavable()
+        public void EditListBaseTest_ModifyChild_IsSavable()
         {
 
             child.FirstName = Guid.NewGuid().ToString();
-            await list.WaitForRules();
 
-            Assert.IsTrue(list.IsSavable);
+            Assert.IsFalse(list.IsSavable);
             Assert.IsFalse(child.IsSavable);
-
         }
 
         [TestMethod]

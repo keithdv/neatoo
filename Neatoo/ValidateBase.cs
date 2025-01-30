@@ -108,14 +108,16 @@ namespace Neatoo
             RaiseMetaPropertiesChanged();
         }
 
-        protected override Task PropertyManagerNeatooPropertyChange(string propertyName, object source)
+        protected override async Task PropertyManagerNeatooPropertyChange(string propertyName, object source)
         {
+            await base.PropertyManagerNeatooPropertyChange(propertyName, source);
+
             if (source == this.PropertyManager)
             {
                 if (!IsStopped)
                 {
                     RaisePropertyChanged(propertyName);
-                    return CheckRules(propertyName);
+                    await CheckRules(propertyName);
                 }
 
                 // TODO - Support async PropertyChanged
@@ -123,8 +125,6 @@ namespace Neatoo
             }
 
             RaiseMetaPropertiesChanged();
-
-            return Task.CompletedTask;
         }
 
         protected override void ChildPropertyChanged(object sender, PropertyChangedEventArgs e)

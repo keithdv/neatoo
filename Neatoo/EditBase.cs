@@ -16,7 +16,7 @@ namespace Neatoo
         where T : EditBase<T>
     {
         [PortalDataMember]
-        protected new IEditPropertyManager PropertyManager => (IEditPropertyManager)  base.PropertyManager;
+        protected new IEditPropertyManager PropertyManager => (IEditPropertyManager)base.PropertyManager;
 
         public EditBase(IEditBaseServices<T> services) : base(services)
         {
@@ -70,11 +70,14 @@ namespace Neatoo
             EditMetaState = (IsModified, IsSelfModified, IsSavable, IsDeleted);
         }
 
-        bool IEditBase.IsMarkedModified => IsMarkedModified;
+        bool IEditMetaProperties.IsMarkedModified => IsMarkedModified;
 
         protected virtual void MarkAsChild()
         {
-            IsChild = true;
+            if (!IsStopped)
+            {
+                IsChild = true;
+            }
         }
 
         void IPortalEditTarget.MarkAsChild()
@@ -85,10 +88,13 @@ namespace Neatoo
         // TODO - Recursive set clean for all children
         protected virtual void MarkUnmodified()
         {
-            // TODO : What if busy??
-            PropertyManager.MarkSelfUnmodified();
-            IsMarkedModified = false;
-            RaiseMetaPropertiesChanged(); // Really shouldn't be anything listening to this
+            if (!IsStopped)
+            {
+                // TODO : What if busy??
+                PropertyManager.MarkSelfUnmodified();
+                IsMarkedModified = false;
+                RaiseMetaPropertiesChanged(); // Really shouldn't be anything listening to this
+            }
         }
 
         void IPortalEditTarget.MarkUnmodified()
@@ -98,8 +104,11 @@ namespace Neatoo
 
         protected virtual void MarkModified()
         {
-            IsMarkedModified = true;
-            RaiseMetaPropertiesChanged();
+            if (!IsStopped)
+            {
+                IsMarkedModified = true;
+                RaiseMetaPropertiesChanged();
+            }
         }
 
         void IPortalEditTarget.MarkModified()
@@ -109,7 +118,10 @@ namespace Neatoo
 
         protected virtual void MarkNew()
         {
-            IsNew = true;
+            if (!IsStopped)
+            {
+                IsNew = true;
+            }
         }
 
         void IPortalEditTarget.MarkNew()
@@ -119,9 +131,11 @@ namespace Neatoo
 
         protected virtual void MarkOld()
         {
-            IsNew = false;
+            if (!IsStopped)
+            {
+                IsNew = false;
+            }
         }
-
         void IPortalEditTarget.MarkOld()
         {
             MarkOld();
@@ -129,8 +143,11 @@ namespace Neatoo
 
         protected virtual void MarkDeleted()
         {
-            IsDeleted = true;
-            RaiseMetaPropertiesChanged();
+            if (!IsStopped)
+            {
+                IsDeleted = true;
+                RaiseMetaPropertiesChanged();
+            }
         }
 
         void IPortalEditTarget.MarkDeleted()
@@ -145,14 +162,29 @@ namespace Neatoo
 
         public void UnDelete()
         {
-            if (IsDeleted)
+            if (!IsStopped)
             {
-                IsDeleted = false;
-                RaiseMetaPropertiesChanged();
+
+                if (IsDeleted)
+                {
+                    IsDeleted = false;
+                    RaiseMetaPropertiesChanged();
+                }
             }
         }
-        
 
+        protected override void PropertyManagerPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            base.PropertyManagerPropertyChanged(sender, e);
+
+            // TODO - if an object isn't assigned to another IBase
+            // it will still consider us to be the Parent
+
+            if (sender == this.PropertyManager && this[e.PropertyName].Value is IEditBase child)
+            {
+                child.UnDelete();
+            }
+        }
 
         public virtual async Task<IEditBase> Save()
         {
@@ -177,7 +209,7 @@ namespace Neatoo
                 }
             }
 
-            return await ReadWritePortal.Update((T) (IEditBase) this);
+            return await ReadWritePortal.Update((T)(IEditBase)this);
         }
 
         new protected IEditProperty GetProperty(string propertyName)

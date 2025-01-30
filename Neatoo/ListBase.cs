@@ -38,7 +38,7 @@ namespace Neatoo
     }
 
 
-    public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, IPortalTarget, ISetParent
+    public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, ISetParent
         where T : ListBase<T, I>
         where I : IBase
     {
@@ -57,22 +57,6 @@ namespace Neatoo
             Parent = parent;
         }
 
-        IDisposable IPortalTarget.StopAllActions()
-        {
-            return null;
-        }
-
-        void IPortalTarget.StartAllActions() { }
-
-        Task IPortalTarget.PostPortalConstruct()
-        {
-            return this.PostPortalConstruct();
-        }
-
-        protected virtual Task PostPortalConstruct()
-        {
-            return Task.CompletedTask;
-        }
 
         #endregion
 

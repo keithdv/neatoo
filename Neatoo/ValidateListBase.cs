@@ -26,7 +26,7 @@ namespace Neatoo
 
     }
 
-    public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase<I>, IValidateListBase, INotifyPropertyChanged, IPortalTarget
+    public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase<I>, IValidateListBase, INotifyPropertyChanged
         where T : ValidateListBase<T, I>
         where I : IValidateBase
     {
@@ -88,34 +88,6 @@ namespace Neatoo
         protected virtual Task AddAsyncMethod(Func<Task, Task> method, bool runOnException = false)
         {
             return AsyncTaskSequencer.AddTask(method, runOnException);
-        }
-
-        public bool IsStopped { get; protected set; }
-
-        public virtual IDisposable StopAllActions()
-        {
-            if (IsStopped) { return null; } // You are a nested using; You get nothing!!
-            IsStopped = true;
-            return new Core.Stopped(this);
-        }
-
-        public void StartAllActions()
-        {
-            if (IsStopped)
-            {
-                IsStopped = false;
-                ResetMetaState();
-            }
-        }
-
-        IDisposable IPortalTarget.StopAllActions()
-        {
-            return StopAllActions();
-        }
-
-        void IPortalTarget.StartAllActions()
-        {
-            StartAllActions();
         }
 
         public virtual Task WaitForRules()
