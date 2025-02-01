@@ -346,7 +346,7 @@ namespace Neatoo.Portal.Core
             if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Read) == (int)PortalOperationType.Read)
             {
                 Debug.Assert(string.IsNullOrEmpty(portalRequest.Target.Json), "PortalRequest.Target.Json should not be defined for PortalOperationType.Create");
-                target = Scope.Resolve(portalRequest.Target.Type()) ?? throw new InvalidOperationException("Type is not an IPortalTarget");
+                target = Scope.Resolve(IPortalJsonSerializer.ToType(portalRequest.Target.AssemblyType)) ?? throw new InvalidOperationException("Type is not an IPortalTarget");
             }
             else
             {

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Neatoo.Netwonsoft.Json.Test.EditTests
+namespace Neatoo.UnitTest.SystemTextJson.EditTests
 {
 
     [TestClass]
@@ -17,7 +17,7 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
         IEditObject target;
         Guid Id = Guid.NewGuid();
         string Name = Guid.NewGuid().ToString();
-        FatClientContractResolver resolver;
+        NeatooJsonSerializer resolver;
 
         [TestInitialize]
         public void TestInitailize()
@@ -26,34 +26,22 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
             target = scope.Resolve<IEditObject>();
             target.ID = Id;
             target.Name = Name;
-            resolver = scope.Resolve<FatClientContractResolver>();
+            resolver = scope.Resolve<NeatooJsonSerializer>();
         }
 
         private string Serialize(object target)
         {
-            return JsonConvert.SerializeObject(target, new JsonSerializerSettings()
-            {
-                ContractResolver = resolver,
-                TypeNameHandling = TypeNameHandling.All,
-                PreserveReferencesHandling = PreserveReferencesHandling.All,
-                Formatting = Formatting.Indented
-            });
+            return resolver.Serialize(target);
         }
 
         private IEditObject Deserialize(string json)
         {
-            return JsonConvert.DeserializeObject<IEditObject>(json, new JsonSerializerSettings
-            {
-                ContractResolver = resolver,
-                TypeNameHandling = TypeNameHandling.All,
-                PreserveReferencesHandling = PreserveReferencesHandling.All
-            });
+            return resolver.Deserialize<IEditObject>(json);
         }
 
         [TestMethod]
         public void FatClientEdit_Serialize()
         {
-
             var result = Serialize(target);
 
             Assert.IsTrue(result.Contains(Id.ToString()));
@@ -63,21 +51,18 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
         [TestMethod]
         public void FatClientEdit_Deserialize()
         {
-
             var json = Serialize(target);
 
             var newTarget = Deserialize(json);
 
             Assert.AreEqual(target.ID, newTarget.ID);
             Assert.AreEqual(target.Name, newTarget.Name);
-
         }
 
 
         [TestMethod]
         public void FatClientEdit_Deserialize_Modify()
         {
-
             var json = Serialize(target);
 
             var newTarget = Deserialize(json);
@@ -91,7 +76,6 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
         [TestMethod]
         public void FatClientEdit_Deserialize_Child()
         {
-
             var child = target.Child = scope.Resolve<IEditObject>();
 
             child.ID = Guid.NewGuid();
@@ -104,13 +88,11 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
             Assert.IsNotNull(newTarget.Child);
             Assert.AreEqual(child.ID, newTarget.Child.ID);
             Assert.AreEqual(child.Name, newTarget.Child.Name);
-
         }
 
         [TestMethod]
         public void FatClientEdit_Deserialize_Child_ParentRef()
         {
-
             var child = target.Child = scope.Resolve<IEditObject>();
 
             child.ID = Guid.NewGuid();
@@ -125,20 +107,17 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
             Assert.AreEqual(child.ID, newTarget.Child.ID);
             Assert.AreEqual(child.Name, newTarget.Child.Name);
             Assert.AreSame(newTarget.Child.Parent, newTarget);
-             
         }
 
         [TestMethod]
         public void FatClientEdit_IsModified()
         {
-
             var json = Serialize(target);
 
             var newTarget = Deserialize(json);
 
             Assert.IsTrue(newTarget.IsModified);
             Assert.IsTrue(newTarget.IsSelfModified);
-
         }
 
         [TestMethod]

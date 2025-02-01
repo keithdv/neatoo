@@ -24,17 +24,4 @@ namespace Neatoo.Portal
         public string AssemblyType { get; set; }
     }
 
-    /// <summary>
-    /// Can't use Newtonsoft IgnoreJson attribute
-    /// </summary>
-    public static class ObjectTypeJsonExtensions
-    {
-        public static Type Type(this ObjectTypeJson objectTypeJson)
-        {
-            var types = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType(objectTypeJson.AssemblyType));
-            var type = types.FirstOrDefault(t => t != null);
-
-            return type;
-        }
-    }
 }

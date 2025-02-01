@@ -1,13 +1,13 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using Neatoo.Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Neatoo.Portal;
 
-namespace Neatoo.Netwonsoft.Json.Test.BaseTests
+namespace Neatoo.UnitTest.SystemTextJson.BaseTests
 {
 
     [TestClass]
@@ -15,7 +15,7 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
     {
         IServiceScope scope;
         IBaseObjectList target;
-        FatClientContractResolver resolver;
+        NeatooJsonSerializer resolver;
         IBaseObject child;
 
         [TestInitialize]
@@ -23,7 +23,7 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
         {
             scope = AutofacContainer.GetLifetimeScope().Resolve<IServiceScope>();
             target = scope.Resolve<IBaseObjectList>();
-            resolver = scope.Resolve<FatClientContractResolver>();
+            resolver = scope.Resolve<NeatooJsonSerializer>();
 
             child = scope.Resolve<IBaseObject>();
             child.ID = Guid.NewGuid();
@@ -33,25 +33,12 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
 
         private string Serialize(object target)
         {
-            return JsonConvert.SerializeObject(target, new JsonSerializerSettings()
-            {
-                ContractResolver = resolver,
-                TypeNameHandling = TypeNameHandling.All,
-                PreserveReferencesHandling = PreserveReferencesHandling.All,
-                Formatting = Formatting.Indented,
-                Converters = new List<JsonConverter>() { scope.Resolve<ListBaseCollectionConverter>() }
-            });
+            return resolver.Serialize(target);
         }
 
         private IBaseObjectList Deserialize(string json)
         {
-            return JsonConvert.DeserializeObject<IBaseObjectList>(json, new JsonSerializerSettings
-            {
-                ContractResolver = resolver,
-                TypeNameHandling = TypeNameHandling.All,
-                PreserveReferencesHandling = PreserveReferencesHandling.All,
-                Converters = new List<JsonConverter>() { scope.Resolve<ListBaseCollectionConverter>() }
-            });
+            return resolver.Deserialize<IBaseObjectList>(json);
         }
 
         [TestMethod]

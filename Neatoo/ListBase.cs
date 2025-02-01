@@ -1,5 +1,4 @@
-﻿using Neatoo.Attributes;
-using Neatoo.AuthorizationRules;
+﻿using Neatoo.AuthorizationRules;
 using Neatoo.Core;
 using Neatoo.Portal;
 using System;
@@ -11,6 +10,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Neatoo
@@ -38,7 +38,7 @@ namespace Neatoo
     }
 
 
-    public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, ISetParent
+    public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, ISetParent, IJsonOnDeserialized, IJsonOnDeserializing
         where T : ListBase<T, I>
         where I : IBase
     {
@@ -94,24 +94,6 @@ namespace Neatoo
             return item;
         }
 
-        [OnSerialized]
-        protected void OnSerialized(StreamingContext context)
-        {
-            foreach (var item in this)
-            {
-                item.PropertyChanged -= _ChildPropertyChanged;
-            }
-        }
-
-        [OnDeserialized]
-        protected void OnDeserialized(StreamingContext context)
-        {
-            foreach (var item in this)
-            {
-                item.PropertyChanged += _ChildPropertyChanged;
-            }
-        }
-
         private void _ChildPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             ChildPropertyChanged(sender, e);
@@ -120,6 +102,23 @@ namespace Neatoo
         protected virtual void ChildPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
 
+        }
+
+        public virtual void OnDeserialized()
+        {
+            foreach (var item in this)
+            {
+                item.PropertyChanged += _ChildPropertyChanged;
+                if(item is ISetParent setParent)
+                {
+                    setParent.SetParent(this.Parent);
+                }
+            }
+        }
+
+        public virtual void OnDeserializing()
+        {
+            
         }
     }
 

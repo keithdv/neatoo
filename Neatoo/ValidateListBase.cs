@@ -1,5 +1,4 @@
-﻿using Neatoo.Attributes;
-using Neatoo.Core;
+﻿using Neatoo.Core;
 using Neatoo.Portal;
 using Neatoo.Rules;
 using System;

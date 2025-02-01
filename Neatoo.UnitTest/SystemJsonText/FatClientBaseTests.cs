@@ -1,12 +1,12 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using Neatoo.Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Neatoo.Portal;
 
-namespace Neatoo.Netwonsoft.Json.Test.BaseTests
+namespace Neatoo.UnitTest.SystemTextJson.BaseTests
 {
 
     [TestClass]
@@ -16,7 +16,7 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
         IBaseObject target;
         Guid Id = Guid.NewGuid();
         string Name = Guid.NewGuid().ToString();
-        FatClientContractResolver resolver;
+        NeatooJsonSerializer resolver;
 
         [TestInitialize]
         public void TestInitailize()
@@ -25,30 +25,17 @@ namespace Neatoo.Netwonsoft.Json.Test.BaseTests
             target = scope.Resolve<IBaseObject>();
             target.ID = Id;
             target.Name = Name;
-            resolver = scope.Resolve<FatClientContractResolver>();
+            resolver = scope.Resolve<NeatooJsonSerializer>();
         }
 
         private string Serialize(object target)
         {
-            return JsonConvert.SerializeObject(target, new JsonSerializerSettings()
-            {
-                ContractResolver = resolver,
-                TypeNameHandling = TypeNameHandling.All,
-                PreserveReferencesHandling = PreserveReferencesHandling.All,
-                Converters = new List<JsonConverter>() { scope.Resolve<ListBaseCollectionConverter>() },
-                Formatting = Formatting.Indented
-            });
+            return resolver.Serialize(target);
         }
 
         private IBaseObject Deserialize(string json)
         {
-            return JsonConvert.DeserializeObject<IBaseObject>(json, new JsonSerializerSettings
-            {
-                ContractResolver = resolver,
-                TypeNameHandling = TypeNameHandling.All,
-                PreserveReferencesHandling = PreserveReferencesHandling.All,
-                Converters = new List<JsonConverter>() { scope.Resolve<ListBaseCollectionConverter>() }
-            });
+            return resolver.Deserialize<IBaseObject>(json);
         }
 
         [TestMethod]

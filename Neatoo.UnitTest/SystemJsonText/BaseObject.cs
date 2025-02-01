@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
 
-namespace Neatoo.Netwonsoft.Json.Test.BaseTests
+namespace Neatoo.UnitTest.SystemTextJson.BaseTests
 {
     public interface IBaseObject : IBase
     {

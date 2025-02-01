@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
 
-namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
+namespace Neatoo.UnitTest.SystemTextJson
 {
     public interface IValidateObject : IValidateBase
     {

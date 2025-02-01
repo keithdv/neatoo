@@ -1,5 +1,4 @@
-﻿using Neatoo.Attributes;
-using Neatoo.Core;
+﻿using Neatoo.Core;
 using Neatoo.Portal;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
@@ -12,6 +11,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -41,15 +41,12 @@ namespace Neatoo
         new internal IValidateProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 
-    [PortalDataContract]
     public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IPortalTarget
         where T : ValidateBase<T>
     {
 
-        [PortalDataMember]
-        protected new IValidatePropertyManager PropertyManager => (IValidatePropertyManager)base.PropertyManager;
+        protected new IValidatePropertyManager<IValidateProperty> PropertyManager => (IValidatePropertyManager<IValidateProperty>) base.PropertyManager;
 
-        [PortalDataMember]
         protected IRuleManager<T> RuleManager { get; }
 
         public ValidateBase(IValidateBaseServices<T> services) : base(services)

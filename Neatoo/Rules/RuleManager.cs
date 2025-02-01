@@ -1,5 +1,4 @@
-﻿using Neatoo.Attributes;
-using Neatoo.Core;
+﻿using Neatoo.Core;
 using Neatoo.Rules.Rules;
 using System;
 using System.Collections.Concurrent;

@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Neatoo
@@ -41,6 +42,9 @@ namespace Neatoo
         public bool IsChild => false;
         protected List<I> DeletedList { get; } = new List<I>();
 
+        [JsonIgnore]
+        protected bool IsStopped { get; set; }
+
         protected (bool IsModified, bool IsSelfModified, bool IsSavable) EditMetaState { get; private set; }
 
         protected override void RaiseMetaPropertiesChanged(bool resetBusy = false)
@@ -71,14 +75,17 @@ namespace Neatoo
 
         protected override void InsertItem(int index, I item)
         {
-            if (item.IsDeleted)
+            if (!IsStopped)
             {
-                item.UnDelete();
-            }
+                if (item.IsDeleted)
+                {
+                    item.UnDelete();
+                }
 
-            if (!item.IsNew)
-            {
-                ((IPortalEditTarget)item).MarkModified();
+                if (!item.IsNew)
+                {
+                    ((IPortalEditTarget)item).MarkModified();
+                }
             }
 
             base.InsertItem(index, item);
@@ -86,11 +93,15 @@ namespace Neatoo
 
         protected override void RemoveItem(int index)
         {
-            var item = this[index];
+            if (!IsStopped)
+            {
+                var item = this[index];
 
-            item.Delete();
+                item.Delete();
 
-            DeletedList.Add(item);
+                DeletedList.Add(item);
+
+            }
 
             base.RemoveItem(index);
         }
@@ -149,6 +160,18 @@ namespace Neatoo
             {
                 await ItemPortal.UpdateChild(i, criteria);
             }
+        }
+
+        public override void OnDeserializing()
+        {
+            base.OnDeserializing();
+            IsStopped = true;
+        }
+
+        public override void OnDeserialized()
+        {
+            base.OnDeserialized();
+            IsStopped = false;
         }
     }
 

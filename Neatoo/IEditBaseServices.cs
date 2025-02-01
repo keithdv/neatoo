@@ -18,26 +18,44 @@ namespace Neatoo
         where T : EditBase<T>
     {
 
-        IEditPropertyManager EditPropertyManager => (IEditPropertyManager)PropertyManager;
+        IEditPropertyManager EditPropertyManager { get; }
         IReadWritePortal<T> ReadWritePortal { get; }
     }
 
-    public class EditBaseServices<T> : ValidateBaseServices<T>, IEditBaseServices<T>
+    public class EditBaseServices<T> : IEditBaseServices<T>
         where T : EditBase<T>
     {
+        private readonly CreateRuleManager<T> ruleManager;
 
         public IReadWritePortal<T> ReadWritePortal { get; }
 
-        public EditBaseServices(IReadWritePortal<T> readWritePortal) : base(){
-            PropertyManager = new EditPropertyManager(RegisteredPropertyManager, new DefaultFactory());
+        public IEditPropertyManager EditPropertyManager { get; }
+
+        public IValidatePropertyManager<IValidateProperty> ValidatePropertyManager => EditPropertyManager;
+
+        public IPropertyManager<IProperty> PropertyManager => EditPropertyManager;
+
+        public IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
+
+        public EditBaseServices(IReadWritePortal<T> readWritePortal) : base() {
+
+            RegisteredPropertyManager = new RegisteredPropertyManager<T>((System.Reflection.PropertyInfo pi) => new RegisteredProperty(pi));
+
+            EditPropertyManager = new EditPropertyManager(RegisteredPropertyManager, new DefaultFactory());
             ReadWritePortal = readWritePortal;  
         }
 
         public EditBaseServices(Func<IRegisteredPropertyManager, IEditPropertyManager> propertyManager, IRegisteredPropertyManager<T> registeredPropertyManager, CreateRuleManager<T> ruleManager, IReadWritePortal<T> readWritePortal)
-            : base(registeredPropertyManager, ruleManager)
         {
-            PropertyManager = propertyManager(registeredPropertyManager);
+            RegisteredPropertyManager = registeredPropertyManager;
+            this.ruleManager = ruleManager;
+            EditPropertyManager = propertyManager(registeredPropertyManager);
             ReadWritePortal = readWritePortal;
+        }
+
+        public IRuleManager<T> CreateRuleManager(T target)
+        {
+            return ruleManager(target, this.RegisteredPropertyManager);
         }
     }
 }

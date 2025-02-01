@@ -42,7 +42,6 @@ namespace Neatoo.UnitTest
 
                         builder.RegisterModule(new Neatoo.Autofac.NeatooCoreModule(portal));
 
-
                         if (portal == Autofac.Portal.NoPortal)
                         {
                             builder.RegisterGeneric(typeof(MockReadPortal<>)).As(typeof(IReadPortal<>)).AsSelf().InstancePerLifetimeScope();

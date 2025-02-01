@@ -27,7 +27,7 @@ namespace HorseBarn.Server.Controllers
         [HttpPost]
         public async Task<PortalResponse> Post(PortalRequest portalRequest)
         {
-            var t = portalRequest.Target.Type() ?? throw new Exception($"Type {portalRequest.Target.Type} not found");
+            var t = IPortalJsonSerializer.ToType(portalRequest.Target.AssemblyType) ?? throw new Exception($"Type {portalRequest.Target.AssemblyType} not found");
 
             if (t.IsInterface)
             {

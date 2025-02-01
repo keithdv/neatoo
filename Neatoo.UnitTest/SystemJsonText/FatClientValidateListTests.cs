@@ -1,13 +1,13 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using Neatoo.Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Neatoo.Portal;
 
-namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
+namespace Neatoo.UnitTest.SystemTextJson.ValidateTests
 {
 
     [TestClass]
@@ -16,14 +16,14 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         IServiceScope scope;
         IValidateObjectList target;
         IValidateObject child;
-        FatClientContractResolver resolver;
+        NeatooJsonSerializer resolver;
 
         [TestInitialize]
         public void TestInitailize()
         {
             scope = AutofacContainer.GetLifetimeScope().Resolve<IServiceScope>();
             target = scope.Resolve<IValidateObjectList>();
-            resolver = scope.Resolve<FatClientContractResolver>();
+            resolver = scope.Resolve<NeatooJsonSerializer>();
 
             child = scope.Resolve<IValidateObject>();
             child.ID = Guid.NewGuid();
@@ -44,6 +44,9 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         [TestMethod]
         public void FatClientListValidate_Serialize_Invalid()
         {
+
+            child.Name = "Error";
+
             var result = Serialize(target);
 
             Assert.IsFalse(target.IsValid);
@@ -52,25 +55,12 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
 
         private string Serialize(object target)
         {
-            return JsonConvert.SerializeObject(target, new JsonSerializerSettings()
-            {
-                ContractResolver = resolver,
-                TypeNameHandling = TypeNameHandling.All,
-                PreserveReferencesHandling = PreserveReferencesHandling.All,
-                Formatting = Formatting.Indented,
-                Converters = new List<JsonConverter>() { scope.Resolve<ListBaseCollectionConverter>() }
-            });
+            return resolver.Serialize(target);
         }
 
         private IValidateObjectList Deserialize(string json)
         {
-            return JsonConvert.DeserializeObject<IValidateObjectList>(json, new JsonSerializerSettings
-            {
-                ContractResolver = resolver,
-                TypeNameHandling = TypeNameHandling.All,
-                PreserveReferencesHandling = PreserveReferencesHandling.All,
-                Converters = new List<JsonConverter>() { scope.Resolve<ListBaseCollectionConverter>() }
-            });
+            return resolver.Deserialize<IValidateObjectList>(json);
         }
 
         [TestMethod]

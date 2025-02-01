@@ -23,6 +23,7 @@ namespace HorseBarn.lib
     {
         public Pasture(IEditBaseServices<Pasture> services) : base(services)
         {
+
         }
 
         public IHorseList HorseList {  get => Getter<IHorseList>(); private set => Setter(value); }

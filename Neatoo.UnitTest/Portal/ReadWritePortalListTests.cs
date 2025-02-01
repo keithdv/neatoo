@@ -34,7 +34,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         {
             editObjectList = await portal.Create();
             Assert.IsTrue(editObjectList.CreateCalled);
-            Assert.IsTrue(editObjectList.IsNew);
+            Assert.IsFalse(editObjectList.IsNew);
             Assert.IsFalse(editObjectList.IsChild);
         }
 

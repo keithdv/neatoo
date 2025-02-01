@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
 
-namespace Neatoo.Netwonsoft.Json.Test.EditTests
+namespace Neatoo.UnitTest.SystemTextJson.EditTests
 {
     public interface IEditObject : IEditBase
     {

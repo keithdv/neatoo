@@ -1,29 +1,22 @@
-﻿using Neatoo.Attributes;
-using System;
+﻿using System;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Neatoo.Core
 {
-    public interface IEditPropertyManager : IValidatePropertyManager
+    public interface IEditPropertyManager : IValidatePropertyManager<IEditProperty>
     {
         bool IsModified { get; }
         bool IsSelfModified { get; }
 
         IEnumerable<string> ModifiedProperties { get; }
         void MarkSelfUnmodified();
-
-
-        new IEditProperty GetProperty(string propertyName);
-        new IEditProperty GetProperty(IRegisteredProperty registeredProperty);
-
-        public new IEditProperty this[string propertyName] { get => GetProperty(propertyName); }
-        public new IEditProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
 
     }
 
@@ -33,8 +26,6 @@ namespace Neatoo.Core
         bool IsModified { get; }
         bool IsSelfModified { get; }
         void MarkSelfUnmodified();
-
-
     }
 
     public interface IEditProperty<T> : IEditProperty, IValidateProperty<T>
@@ -42,7 +33,6 @@ namespace Neatoo.Core
 
     }
 
-    [PortalDataContract]
     public class EditProperty<T> : ValidateProperty<T>, IEditProperty<T>
     {
 
@@ -50,6 +40,13 @@ namespace Neatoo.Core
         {
         }
 
+        [JsonConstructor]
+        public EditProperty(string name, T value, bool isSelfModified, string[] serializedErrorMessages) : base(name, value, serializedErrorMessages)
+        {
+            IsSelfModified = isSelfModified;
+        }
+
+        [JsonIgnore]
         public IEditMetaProperties EditChild => Value as IEditMetaProperties;
 
         protected override void OnPropertyChanged(string propertyName)
@@ -67,8 +64,7 @@ namespace Neatoo.Core
 
         public bool IsModified => IsSelfModified || (EditChild?.IsModified ?? false);
 
-        [PortalDataMember]
-        public bool IsSelfModified { get; private set; } = false;
+        public bool IsSelfModified { get; protected set; } = false;
 
         public bool IsStopped { get; set; } = false;
 
@@ -84,17 +80,16 @@ namespace Neatoo.Core
         }
     }
 
-    public class EditPropertyManager : ValidatePropertyManagerBase<IEditProperty>, IEditPropertyManager
+    public class EditPropertyManager : ValidatePropertyManager<IEditProperty>, IEditPropertyManager
     {
 
-        IRegisteredPropertyManager IPropertyManager.RegisteredPropertyManager => RegisteredPropertyManager;
 
         public EditPropertyManager(IRegisteredPropertyManager registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
         {
 
         }
 
-        protected override IEditProperty CreateProperty<PV>(IRegisteredProperty registeredProperty)
+        protected new IProperty CreateProperty<PV>(IRegisteredProperty registeredProperty)
         {
             return Factory.CreateEditProperty<PV>(registeredProperty);
         }
@@ -112,41 +107,41 @@ namespace Neatoo.Core
             }
         }
 
-        public IEditProperty this[string propertyName]
-        {
-            get => GetProperty(propertyName);
-        }
+        //public IEditProperty this[string propertyName]
+        //{
+        //    get => GetProperty(propertyName);
+        //}
 
-        public IEditProperty this[IRegisteredProperty registeredProperty]
-        {
-            get => GetProperty(registeredProperty);
-        }
+        //public IEditProperty this[IRegisteredProperty registeredProperty]
+        //{
+        //    get => GetProperty(registeredProperty);
+        //}
 
 
-        public virtual IEditProperty GetProperty(string propertyName)
-        {
-            return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
-        }
+        //public virtual IEditProperty GetProperty(string propertyName)
+        //{
+        //    return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
+        //}
 
-        IValidateProperty IValidatePropertyManager.GetProperty(string propertyName)
-        {
-            return GetProperty(propertyName);
-        }
+        //IValidateProperty IValidatePropertyManager.GetProperty(string propertyName)
+        //{
+        //    return GetProperty(propertyName);
+        //}
 
-        IValidateProperty IValidatePropertyManager.GetProperty(IRegisteredProperty registeredProperty)
-        {
-            return GetProperty(registeredProperty);
-        }
+        //IValidateProperty IValidatePropertyManager.GetProperty(IRegisteredProperty registeredProperty)
+        //{
+        //    return GetProperty(registeredProperty);
+        //}
 
-        IProperty IPropertyManager.GetProperty(string propertyName)
-        {
-            return GetProperty(propertyName);
-        }
+        //IProperty IPropertyManager.GetProperty(string propertyName)
+        //{
+        //    return GetProperty(propertyName);
+        //}
 
-        IProperty IPropertyManager.GetProperty(IRegisteredProperty registeredProperty)
-        {
-            return GetProperty(registeredProperty);
-        }
+        //IProperty IPropertyManager.GetProperty(IRegisteredProperty registeredProperty)
+        //{
+        //    return GetProperty(registeredProperty);
+        //}
     }
 
 

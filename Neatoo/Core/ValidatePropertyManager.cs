@@ -1,5 +1,4 @@
-﻿using Neatoo.Attributes;
-using Neatoo.Rules;
+﻿using Neatoo.Rules;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,12 +7,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neatoo.Core
 {
-    public interface IValidatePropertyManager : IPropertyManager
+    public interface IValidatePropertyManager<out P> : IPropertyManager<P>
+        where P : IProperty
     {
         // Valid without looking at Children that are IValidateBase
         bool IsSelfValid { get; }
@@ -24,11 +25,6 @@ namespace Neatoo.Core
         Task WaitForTasks();
         IReadOnlyList<string> ErrorMessages { get; }
 
-        new IValidateProperty GetProperty(string propertyName);
-        new IValidateProperty GetProperty(IRegisteredProperty registeredProperty);
-
-        public new IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
-        public new IValidateProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 
     public interface IValidateProperty : IProperty, INotifyPropertyChanged
@@ -52,15 +48,24 @@ namespace Neatoo.Core
 
     public class ValidateProperty<T> : Property<T>, IValidateProperty<T>
     {
-
+        [JsonIgnore]
         public virtual IValidateMetaProperties ValueIsValidateBase => Value as IValidateMetaProperties;
 
         public ValidateProperty(string name) : base(name)
         {
         }
 
-        public bool IsSelfValid => ValueIsValidateBase != null ? true : !ruleErrorMessages.Any();
-        public bool IsValid => ValueIsValidateBase != null ? ValueIsValidateBase.IsValid : !ruleErrorMessages.Any();
+        [JsonConstructor]
+        public ValidateProperty(string name, T value, string[] serializedErrorMessages) : base(name, value)
+        {
+            for(int i = 0; i < serializedErrorMessages.Length; i++)
+            {
+                SetError((uint)i, new List<string> { serializedErrorMessages[i].ToString() });
+            }
+        }
+
+        public bool IsSelfValid => ValueIsValidateBase != null ? true : !RuleErrorMessages.Any();
+        public bool IsValid => ValueIsValidateBase != null ? ValueIsValidateBase.IsValid : !RuleErrorMessages.Any();
         public bool IsBusy => ValueIsValidateBase != null ? (ValueIsValidateBase?.IsBusy ?? false) : IsSelfBusy;
 
         public bool IsSelfBusy { get; private set; } = false;
@@ -68,7 +73,8 @@ namespace Neatoo.Core
         public Task WaitForRules() { return ValueIsValidateBase?.WaitForRules() ?? Task.CompletedTask; }
         public Task CheckAllRules(CancellationToken token) { return ValueIsValidateBase?.CheckAllRules(token) ?? Task.CompletedTask; }
 
-        public IReadOnlyList<string> ErrorMessages => ruleErrorMessages.SelectMany(r => r.Value).ToList().AsReadOnly();
+        [JsonIgnore]
+        public IReadOnlyList<string> ErrorMessages => RuleErrorMessages.SelectMany(r => r.Value).ToList().AsReadOnly();
 
         public virtual void LoadProperty(object value)
         {
@@ -117,13 +123,14 @@ namespace Neatoo.Core
         }
 
         // [PortalDataMember] Ummm...ising the RuleIndex going to be different...
-        [PortalDataMember]
-        protected Dictionary<uint, IReadOnlyList<string>> ruleErrorMessages = new Dictionary<uint, IReadOnlyList<string>>();
+        protected Dictionary<uint, List<string>> RuleErrorMessages { get; } = new Dictionary<uint, List<string>>();
+
+        public string[] SerializedErrorMessages => RuleErrorMessages.SelectMany(r => r.Value).ToArray();
 
         protected void SetError(uint ruleIndex, IReadOnlyList<string> errorMessages)
         {
             Debug.Assert(ValueIsValidateBase == null, "If the Child is IValidateBase then it should be handling the errors");
-            ruleErrorMessages[ruleIndex] = errorMessages;
+            RuleErrorMessages[ruleIndex] = errorMessages.ToList();
             OnPropertyChanged(nameof(IsValid));
             OnPropertyChanged(nameof(ErrorMessages));
         }
@@ -136,68 +143,31 @@ namespace Neatoo.Core
 
         void IValidateProperty.ClearErrorsForRule(uint ruleIndex)
         {
-            ruleErrorMessages.Remove(ruleIndex);
+            RuleErrorMessages.Remove(ruleIndex);
             OnPropertyChanged(nameof(IsValid));
             OnPropertyChanged(nameof(ErrorMessages));
         }
 
         void IValidateProperty.ClearAllErrors()
         {
-            ruleErrorMessages.Clear();
+            RuleErrorMessages.Clear();
             OnPropertyChanged(nameof(IsValid));
             OnPropertyChanged(nameof(ErrorMessages));
         }
     }
 
-    public class ValidatePropertyManager : ValidatePropertyManagerBase<IValidateProperty>, IValidatePropertyManager
-    {
-
-        IRegisteredPropertyManager IPropertyManager.RegisteredPropertyManager => RegisteredPropertyManager;
-
-
-        public ValidatePropertyManager(IRegisteredPropertyManager registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
-        {
-
-        }
-
-        protected override IValidateProperty CreateProperty<PV>(IRegisteredProperty registeredProperty)
-        {
-            return Factory.CreateValidateProperty<PV>(registeredProperty);
-        }
-
-        public IValidateProperty this[string propertyName]
-        {
-            get => GetProperty(propertyName);
-        }
-
-        public IValidateProperty this[IRegisteredProperty registeredProperty]
-        {
-            get => GetProperty(registeredProperty);
-        }
-
-
-        public virtual IValidateProperty GetProperty(string propertyName)
-        {
-            return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
-        }
-
-        IProperty IPropertyManager.GetProperty(string propertyName)
-        {
-            return GetProperty(propertyName);
-        }
-
-        IProperty IPropertyManager.GetProperty(IRegisteredProperty registeredProperty)
-        {
-            return GetProperty(registeredProperty);
-        }
-    }
-
-    public abstract class ValidatePropertyManagerBase<P> : PropertyManagerBase<P>
+    public class ValidatePropertyManager<P> : PropertyManager<P>, IValidatePropertyManager<P>
         where P : IValidateProperty
     {
 
-        public ValidatePropertyManagerBase(IRegisteredPropertyManager registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
+        public ValidatePropertyManager(IRegisteredPropertyManager registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
         {
+        }
+
+
+        protected new IProperty CreateProperty<PV>(IRegisteredProperty registeredProperty)
+        {
+            return Factory.CreateValidateProperty<PV>(registeredProperty);
         }
 
         public bool IsSelfValid => !fieldData.Values.Any(_ => !_.IsSelfValid);

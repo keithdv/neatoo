@@ -1,14 +1,13 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using Neatoo.Newtonsoft.Json;
 using Neatoo.Portal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Neatoo.Netwonsoft.Json.Test.EditTests
+namespace Neatoo.UnitTest.SystemTextJson.EditTests
 {
 
     [TestClass]
@@ -16,38 +15,24 @@ namespace Neatoo.Netwonsoft.Json.Test.EditTests
     {
         IServiceScope scope;
         IEditObjectList target;
-        FatClientContractResolver resolver;
+        NeatooJsonSerializer resolver;
 
         [TestInitialize]
         public void TestInitailize()
         {
             scope = AutofacContainer.GetLifetimeScope().Resolve<IServiceScope>();
             target = scope.Resolve<IEditObjectList>();
-            resolver = scope.Resolve<FatClientContractResolver>();
+            resolver = scope.Resolve<NeatooJsonSerializer>();
         }
 
         private string Serialize(object target)
         {
-            return JsonConvert.SerializeObject(target, new JsonSerializerSettings()
-            {
-                ContractResolver = resolver,
-                TypeNameHandling = TypeNameHandling.All,
-                PreserveReferencesHandling = PreserveReferencesHandling.All,
-                Formatting = Formatting.Indented,
-                Converters = new List<JsonConverter>() { scope.Resolve<ListBaseCollectionConverter>() }
-            });
+            return resolver.Serialize(target);
         }
 
         private T Deserialize<T>(string json)
         {
-            return JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
-            {
-                ContractResolver = resolver,
-                TypeNameHandling = TypeNameHandling.All,
-                PreserveReferencesHandling = PreserveReferencesHandling.All,
-                Formatting = Formatting.Indented,
-                Converters = new List<JsonConverter>() { scope.Resolve<ListBaseCollectionConverter>() }
-            });
+            return resolver.Deserialize<T>(json);
         }
 
         [TestMethod]

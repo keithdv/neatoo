@@ -1,5 +1,4 @@
-﻿using Neatoo.Attributes;
-using Neatoo.AuthorizationRules;
+﻿using Neatoo.AuthorizationRules;
 using Neatoo.Core;
 using Neatoo.Portal;
 using System;
@@ -8,6 +7,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Neatoo
@@ -22,28 +22,29 @@ namespace Neatoo
 
         internal IProperty this[string propertyName] { get => GetProperty(propertyName); }
         internal IProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
+
+        internal IPropertyManager<IProperty> PropertyManager { get; }
     }
 
-    [PortalDataContract]
-    public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent
+    public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent, IJsonOnDeserialized
         where T : Base<T>
     {
         
-        [PortalDataMember]
-        protected IPropertyManager PropertyManager { get; set; }
+        protected IPropertyManager<IProperty> PropertyManager { get; set; }
+
+        IPropertyManager<IProperty> IBase.PropertyManager => PropertyManager;
 
         public Base(IBaseServices<T> services)
         {
             PropertyManager = services.PropertyManager ?? throw new ArgumentNullException("PropertyManager");
 
-            if (PropertyManager is IPropertyManager)
+            if (PropertyManager is IPropertyManager<IProperty>)
             {
                 PropertyManager.NeatooPropertyChanged += _PropertyManagerNeatooPropertyChange;
                 PropertyManager.PropertyChanged += _PropertyManagerPropertyChanged;
             }
         }
 
-        [PortalDataMember]
         public IBase Parent { get; protected set; }
 
         protected virtual void SetParent(IBase parent)
@@ -121,22 +122,6 @@ namespace Neatoo
             ChildPropertyChanged(sender, e);
         }
 
-        [OnSerialized]
-        protected void OnSerialized(StreamingContext context)
-        {
-            PropertyManager.NeatooPropertyChanged -= _PropertyManagerNeatooPropertyChange;
-            PropertyManager.PropertyChanged -= _PropertyManagerPropertyChanged;
-        }
-
-        [OnDeserialized]
-        protected void OnDeserialized(StreamingContext context)
-        {
-            PropertyManager.NeatooPropertyChanged += _PropertyManagerNeatooPropertyChange;
-            PropertyManager.PropertyChanged += _PropertyManagerPropertyChanged;
-        }
-
-
-
         protected virtual P Getter<P>([System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
         {
             return (P)PropertyManager[propertyName].Value;
@@ -179,6 +164,21 @@ namespace Neatoo
         protected virtual Task PostPortalConstruct()
         {
             return Task.CompletedTask;
+        }
+
+        public virtual void OnDeserialized()
+        {
+            PropertyManager.NeatooPropertyChanged += _PropertyManagerNeatooPropertyChange;
+            PropertyManager.PropertyChanged += _PropertyManagerPropertyChanged;
+
+            foreach (var property in PropertyManager.GetProperties)
+            {
+                if (property.Value is ISetParent setParent)
+                {
+                    setParent.SetParent(this);
+                }
+            }
+
         }
 
         protected IProperty this[string propertyName] { get => GetProperty(propertyName); }

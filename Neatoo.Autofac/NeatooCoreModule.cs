@@ -13,8 +13,6 @@ using Autofac.Builder;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
 using System.Reflection.Metadata.Ecma335;
-using Neatoo.Netwonsoft.Json;
-using Neatoo.Newtonsoft.Json;
 using System.Net.Http;
 using System.Net.Mime;
 
@@ -27,7 +25,6 @@ namespace Neatoo.Autofac
 
     public class NeatooCoreModule : Module
     {
-
         public NeatooCoreModule(Portal portal)
         {
             Portal = portal;
@@ -56,8 +53,10 @@ namespace Neatoo.Autofac
             // When single instance it receives the root scopewhich is no good
             builder.RegisterGeneric(typeof(PortalOperationManager<>)).As(typeof(IPortalOperationManager<>)).InstancePerLifetimeScope();
 
-            builder.RegisterType<FatClientContractResolver>().AsSelf().As<IPortalJsonSerializer>();
-            builder.RegisterType<ListBaseCollectionConverter>().AsSelf();
+            builder.RegisterType<NeatooJsonSerializer>().AsSelf().As<IPortalJsonSerializer>();
+            builder.RegisterType<NeatooJsonConverterFactory>().AsSelf();
+            builder.RegisterGeneric(typeof(NeatooBaseJsonTypeConverter<>)).AsSelf();
+            builder.RegisterGeneric(typeof(NeatooListBaseJsonTypeConverter<>)).AsSelf();
 
             // Should not be singleinstance because AuthorizationRules can have constructor dependencies
             builder.RegisterGeneric(typeof(AuthorizationRuleManager<>)).As(typeof(IAuthorizationRuleManager<>)).InstancePerLifetimeScope();
@@ -81,8 +80,8 @@ namespace Neatoo.Autofac
 
             // Stored values for each Domain Object instance
             // MUST BE per instance
-            builder.RegisterType<PropertyManager>().As<IPropertyManager>().AsSelf();
-            builder.RegisterType<ValidatePropertyManager>().As<IValidatePropertyManager>().AsSelf();
+            builder.RegisterType<PropertyManager<IProperty>>().As<IPropertyManager<IProperty>>().AsSelf();
+            builder.RegisterType<ValidatePropertyManager<IValidateProperty>>().As<IValidatePropertyManager<IValidateProperty>>().AsSelf();
             builder.RegisterType<EditPropertyManager>().As<IEditPropertyManager>().AsSelf();
 
             builder.RegisterGeneric(typeof(LocalReadPortal<>))

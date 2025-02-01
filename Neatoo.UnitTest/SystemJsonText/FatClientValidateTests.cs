@@ -1,13 +1,13 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using Neatoo.Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Neatoo.Portal;
 
-namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
+namespace Neatoo.UnitTest.SystemTextJson
 {
 
     [TestClass]
@@ -17,7 +17,7 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         IValidateObject target;
         Guid Id = Guid.NewGuid();
         string Name = Guid.NewGuid().ToString();
-        FatClientContractResolver resolver;
+        NeatooJsonSerializer resolver;
 
         [TestInitialize]
         public void TestInitailize()
@@ -26,7 +26,7 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
             target = scope.Resolve<IValidateObject>();
             target.ID = Id;
             target.Name = Name;
-            resolver = scope.Resolve<FatClientContractResolver>();
+            resolver = scope.Resolve<NeatooJsonSerializer>();
         }
 
         [TestMethod]
@@ -65,6 +65,7 @@ namespace Neatoo.Netwonsoft.Json.Test.ValidateTests
         [TestMethod]
         public void FatClientValidate_Deserialize_Modify()
         {
+            Assert.IsTrue(target.IsValid);
 
             var json = Serialize(target);
 

@@ -1,5 +1,4 @@
-﻿using Neatoo.Attributes;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,30 +8,29 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Neatoo.Core
 {
 
-    /// <summary>
-    /// DO NOT REGISTER IN THE CONTAINER
-    /// </summary>
-    public interface IPropertyManager : INotifyPropertyChanged, INotifyNeatooPropertyChanged
+    public interface IPropertyManager<out P> : INotifyPropertyChanged, INotifyNeatooPropertyChanged
+        where P : IProperty
     {
         IRegisteredProperty GetRegisteredProperty(string name);
-
         bool HasProperty(string propertyName);
 
-        // This isn't possible without some nasty reflection or static backing fields
-        // If the property is being loaded for the first time you need the type
-        //void LoadProperty(IRegisteredProperty registeredProperty, object newValue);
-        IProperty GetProperty(string propertyName);
-        IProperty GetProperty(IRegisteredProperty registeredProperty);
+        P GetProperty(string propertyName);
+        P GetProperty(IRegisteredProperty registeredProperty);
 
-        public IProperty this[string propertyName] { get => GetProperty(propertyName); }
-        public IProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
+        public P this[string propertyName] { get => GetProperty(propertyName); }
+        public P this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
 
         internal IRegisteredPropertyManager RegisteredPropertyManager { get; }
+
+        internal IEnumerable<P> GetProperties { get; }
+
+        void SetProperties(IEnumerable<IProperty> properties);
     }
 
 
@@ -63,14 +61,11 @@ namespace Neatoo.Core
 
     }
 
-    [PortalDataContract]
-    public class Property<T> : IProperty<T>, IProperty, INotifyPropertyChanged
+    public class Property<T> : IProperty<T>, IProperty, INotifyPropertyChanged, IJsonOnDeserialized
     {
         // TODO: Shouldn't be modified from the outside
-        [PortalDataMember]
         public string Name { get; } // Setter for Deserialization of Edit
 
-        [PortalDataMember]
         protected T _value = default;
 
         public virtual T Value
@@ -85,7 +80,9 @@ namespace Neatoo.Core
 
         object IProperty.Value { get => Value; set => SetValue(value); }
 
+        [JsonIgnore]
         public Task Task { get; protected set; } = Task.CompletedTask;
+
         public virtual void SetValue(object newValue)
         {
             if (newValue == null && _value == null) { return; }
@@ -154,10 +151,15 @@ namespace Neatoo.Core
             return NeatooPropertyChanged?.Invoke(this.Name, source) ?? Task.CompletedTask;
         }
 
-
         public Property(string name)
         {
             this.Name = name;
+        }
+
+        [JsonConstructor]
+        public Property(string name, T value) : this(name)
+        {
+            _value = value;
         }
 
         protected virtual bool AreSame<P>(P oldValue, P newValue)
@@ -179,17 +181,7 @@ namespace Neatoo.Core
         public event PropertyChangedEventHandler PropertyChanged;
         public event NeatooPropertyChanged NeatooPropertyChanged;
 
-        [OnSerialized]
-        private void OnSerialized(StreamingContext context)
-        {
-            if (Value is INotifyNeatooPropertyChanged neatooPropertyChanged)
-            {
-                neatooPropertyChanged.NeatooPropertyChanged -= OnValueNeatooPropertyChanged;
-            }
-        }
-
-        [OnDeserialized]
-        private void OnDeserialized(StreamingContext context)
+        public void OnDeserialized()
         {
             if (Value is INotifyNeatooPropertyChanged neatooPropertyChanged)
             {
@@ -198,45 +190,14 @@ namespace Neatoo.Core
         }
     }
 
-    public class PropertyManager : PropertyManagerBase<IProperty>, IPropertyManager
-    {
-
-        public PropertyManager(IRegisteredPropertyManager registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
-        {
-        }
-
-        IRegisteredPropertyManager IPropertyManager.RegisteredPropertyManager => RegisteredPropertyManager;
-
-
-        protected override IProperty CreateProperty<PV>(IRegisteredProperty registeredProperty)
-        {
-            return Factory.CreateProperty<PV>(registeredProperty);
-        }
-
-        public IProperty this[string propertyName]
-        {
-            get => GetProperty(propertyName);
-        }
-
-        public IProperty this[IRegisteredProperty registeredProperty]
-        {
-            get => GetProperty(registeredProperty);
-        }
-
-        public virtual IProperty GetProperty(string propertyName)
-        {
-            return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
-        }
-
-    }
-
-    [PortalDataContract]
-    public abstract class PropertyManagerBase<P>
+    public class PropertyManager<P> : IPropertyManager<P>, IJsonOnDeserialized
         where P : IProperty
     {
         protected IFactory Factory { get; }
 
         protected readonly IRegisteredPropertyManager RegisteredPropertyManager;
+
+        IRegisteredPropertyManager IPropertyManager<P>.RegisteredPropertyManager => RegisteredPropertyManager;
 
         public bool HasProperty(string propertyName)
         {
@@ -245,7 +206,6 @@ namespace Neatoo.Core
 
         protected IDictionary<string, P> propertyValueStore = new Dictionary<string, P>();
 
-        [PortalDataMember]
         protected IDictionary<string, P> fieldData
         {
             get => propertyValueStore;
@@ -254,17 +214,6 @@ namespace Neatoo.Core
                 propertyValueStore = value;
             }
         }
-
-        [OnDeserialized]
-        private void OnDeserialized(StreamingContext context)
-        {
-            foreach (var p in fieldData.Values)
-            {
-                p.PropertyChanged += _OnPropertyChanged;
-                p.NeatooPropertyChanged += _OnNeatooPropertyChanged;
-            }
-        }
-
 
         public event PropertyChangedEventHandler PropertyChanged;
         public event NeatooPropertyChanged NeatooPropertyChanged;
@@ -283,13 +232,16 @@ namespace Neatoo.Core
             return NeatooPropertyChanged?.Invoke(propertyName, this); // Switch source on purpose
         }
 
-        public PropertyManagerBase(IRegisteredPropertyManager registeredPropertyManager, IFactory factory)
+        public PropertyManager(IRegisteredPropertyManager registeredPropertyManager, IFactory factory)
         {
             this.RegisteredPropertyManager = registeredPropertyManager;
             Factory = factory;
         }
 
-        protected abstract P CreateProperty<PV>(IRegisteredProperty registeredProperty);
+        protected IProperty CreateProperty<PV>(IRegisteredProperty registeredProperty)
+        {
+            return Factory.CreateProperty<PV>(registeredProperty);
+        }
 
         public IRegisteredProperty GetRegisteredProperty(string name)
         {
@@ -312,6 +264,58 @@ namespace Neatoo.Core
 
             return newProperty;
         }
+
+        public P this[string propertyName]
+        {
+            get => GetProperty(propertyName);
+        }
+
+        public P this[IRegisteredProperty registeredProperty]
+        {
+            get => GetProperty(registeredProperty);
+        }
+
+        public virtual P GetProperty(string propertyName)
+        {
+            return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
+        }
+
+        void IPropertyManager<P>.SetProperties(IEnumerable<IProperty> properties)
+        {
+            
+            foreach(var p in properties.Cast<P>())
+            {
+                if (fieldData.TryGetValue(p.Name, out var fd))
+                {
+                    throw new InvalidOperationException("Property already set");
+                }
+                fieldData[p.Name] = p;
+            }
+
+        }
+
+        public void OnDeserialized()
+        {
+            foreach (var p in fieldData.Values)
+            {
+                p.PropertyChanged += _OnPropertyChanged;
+                p.NeatooPropertyChanged += _OnNeatooPropertyChanged;
+            }
+        }
+
+
+        IEnumerable<P>  IPropertyManager<P>.GetProperties => fieldData.Values.AsEnumerable();
+
+        //void IPropertyManager<P>.SetProperties(IEnumerable<P> properties)
+        //{
+        //    if (fieldData.Count > 0)
+        //    {
+        //        throw new InvalidOperationException("Properties already set");
+        //    }
+
+        //    fieldData = properties.ToDictionary(p => p.Name);
+        //}
+
     }
 
 

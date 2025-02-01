@@ -1,5 +1,4 @@
-﻿using Neatoo.Attributes;
-using Neatoo.Core;
+﻿using Neatoo.Core;
 using Neatoo.Portal;
 using System;
 using System.Collections.Generic;
@@ -7,15 +6,15 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Neatoo
 {
 
-    public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, IPortalEditTarget, IEditMetaProperties
+    public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, IPortalEditTarget, IEditMetaProperties, IJsonOnDeserializing, IJsonOnDeserialized
         where T : EditBase<T>
     {
-        [PortalDataMember]
         protected new IEditPropertyManager PropertyManager => (IEditPropertyManager)base.PropertyManager;
 
         public EditBase(IEditBaseServices<T> services) : base(services)
@@ -23,17 +22,13 @@ namespace Neatoo
             ReadWritePortal = services.ReadWritePortal;
         }
 
-        [PortalDataMember]
         public bool IsMarkedModified { get; protected set; } = false;
         public bool IsModified => PropertyManager.IsModified || IsDeleted || IsNew || IsSelfModified;
         public bool IsSelfModified { get => PropertyManager.IsSelfModified || IsDeleted || IsMarkedModified; protected set => IsMarkedModified = value; }
         public bool IsSavable => IsModified && IsValid && !IsBusy && !IsChild;
-        [PortalDataMember]
         public bool IsNew { get; protected set; }
-        [PortalDataMember]
         public bool IsDeleted { get; protected set; }
         public IEnumerable<string> ModifiedProperties => PropertyManager.ModifiedProperties;
-        [PortalDataMember]
         public bool IsChild { get; protected set; }
         protected IReadWritePortal<T> ReadWritePortal { get; }
 
@@ -222,7 +217,18 @@ namespace Neatoo
             return PropertyManager[registeredProperty];
         }
 
-        new protected IEditProperty this[string propertyName] { get => GetProperty(propertyName); }
+        public void OnDeserializing()
+        {
+            IsStopped = true;
+        }
+
+        override public void OnDeserialized()
+        {
+            base.OnDeserialized();
+            IsStopped = false;
+        }
+
+            new protected IEditProperty this[string propertyName] { get => GetProperty(propertyName); }
         new protected IEditProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 }
