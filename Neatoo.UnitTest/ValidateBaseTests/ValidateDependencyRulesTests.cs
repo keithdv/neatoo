@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Rules;
 using Neatoo.UnitTest.Objects;
@@ -31,13 +31,13 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
 
         IValidateDependencyRules validate;
-        ILifetimeScope scope;
+        IServiceScope scope;
 
         [TestInitialize]
         public void TestInitailize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
-            validate = scope.Resolve<IValidateDependencyRules>();
+            scope = UnitTestServices.GetLifetimeScope();
+            validate = scope.GetRequiredService<IValidateDependencyRules>();
         }
 
         [TestCleanup]
@@ -140,7 +140,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         [TestMethod]
         public void ValidateDependencyRules_DisposableDependency_Count()
         {
-            var dependencies = scope.Resolve<DisposableDependencyList>();
+            var dependencies = scope.GetRequiredService<DisposableDependencyList>();
 
             Assert.AreEqual(2, dependencies.Count);
             Assert.AreEqual(2, dependencies.Select(x => x.UniqueId).Distinct().Count());
@@ -150,7 +150,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         [TestMethod]
         public void ValidateDependencyRules_DisposableDependency_Unique()
         {
-            var dependencies = scope.Resolve<DisposableDependencyList>();
+            var dependencies = scope.GetRequiredService<DisposableDependencyList>();
 
             Assert.AreEqual(2, dependencies.Select(x => x.UniqueId).Distinct().Count());
         }
@@ -158,7 +158,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         [TestMethod]
         public void ValidateDependencyRules_DisposableDependency_NotDisposed()
         {
-            var dependencies = scope.Resolve<DisposableDependencyList>();
+            var dependencies = scope.GetRequiredService<DisposableDependencyList>();
 
             Assert.IsFalse(dependencies.Where(x => x.IsDisposed).Any());
         }
@@ -166,7 +166,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         [TestMethod]
         public void ValidateDependencyRules_DisposableDependency_Dispose()
         {
-            var dependencies = scope.Resolve<DisposableDependencyList>();
+            var dependencies = scope.GetRequiredService<DisposableDependencyList>();
 
             scope.Dispose();
 

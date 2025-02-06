@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Castle.DynamicProxy;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Rules;
@@ -155,18 +155,18 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         [TestClass]
         public class AddInterfaceImplementationSandbox
         {
-            private ILifetimeScope scope;
+            private IServiceScope scope;
 
             [TestInitialize]
             public void TestInitialize()
             {
-                scope = AutofacContainer.GetLifetimeScope();
+                scope = UnitTestServices.GetLifetimeScope();
             }
             [TestMethod]
 
             public async Task AddInterfaceImplementationSandbox_Test()
             {
-                var validateObject = scope.Resolve<ValidateObject>();
+                var validateObject = scope.GetRequiredService<ValidateObject>();
                 var rule = new ShortNameRule();
 
                 // In practice this will be the concrete type

@@ -25,7 +25,7 @@ namespace Neatoo
     public class EditBaseServices<T> : IEditBaseServices<T>
         where T : EditBase<T>
     {
-        private readonly CreateRuleManager<T> ruleManager;
+        private readonly RuleManagerFactory<T> ruleManager;
 
         public IReadWritePortal<T> ReadWritePortal { get; }
 
@@ -45,7 +45,7 @@ namespace Neatoo
             ReadWritePortal = readWritePortal;  
         }
 
-        public EditBaseServices(Func<IRegisteredPropertyManager, IEditPropertyManager> propertyManager, IRegisteredPropertyManager<T> registeredPropertyManager, CreateRuleManager<T> ruleManager, IReadWritePortal<T> readWritePortal)
+        public EditBaseServices(CreateEditPropertyManager propertyManager, IRegisteredPropertyManager<T> registeredPropertyManager, RuleManagerFactory<T> ruleManager, IReadWritePortal<T> readWritePortal)
         {
             RegisteredPropertyManager = registeredPropertyManager;
             this.ruleManager = ruleManager;
@@ -55,7 +55,7 @@ namespace Neatoo
 
         public IRuleManager<T> CreateRuleManager(T target)
         {
-            return ruleManager(target, this.RegisteredPropertyManager);
+            return ruleManager.CreateRuleManager(target, this.RegisteredPropertyManager);
         }
     }
 }

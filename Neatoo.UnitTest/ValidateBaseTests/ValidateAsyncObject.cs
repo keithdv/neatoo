@@ -9,6 +9,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 {
     public interface IValidateAsyncObject : IPersonBase
     {
+        string aLabel { get; set; }
         IValidateAsyncObject Child { get; set; }
         int RuleRunCount { get; }
         string ThrowException { get; set; }
@@ -31,8 +32,11 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             FullNameRule = fullNameRule;
             // TODO : Can add a rule that's not the correct type, Handle?
             RuleManager.AddRule(asyncRuleThrowsException);
+
+            RuleManager.AddActionAsync((v) => Task.Delay(10), nameof(Child));
         }
 
+        public string aLabel { get => Getter<string>(); set => Setter(value); }
         public IValidateAsyncObject Child { get { return Getter<IValidateAsyncObject>(); } set { Setter(value); } }
 
         public string ThrowException { get => Getter<string>(); set => Setter(value); }

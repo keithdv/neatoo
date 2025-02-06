@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System;
@@ -21,11 +21,10 @@ namespace Neatoo.UnitTest.SystemTextJson.ValidateTests
         [TestInitialize]
         public void TestInitailize()
         {
-            scope = AutofacContainer.GetLifetimeScope().Resolve<IServiceScope>();
-            target = scope.Resolve<IValidateObjectList>();
-            resolver = scope.Resolve<NeatooJsonSerializer>();
-
-            child = scope.Resolve<IValidateObject>();
+            scope = UnitTestServices.GetLifetimeScope();
+            target = scope.GetRequiredService<IValidateObjectList>();
+            resolver = scope.GetRequiredService<NeatooJsonSerializer>();
+            child = scope.GetRequiredService<IValidateObject>();
             child.ID = Guid.NewGuid();
             child.Name = Guid.NewGuid().ToString();
             target.Add(child);

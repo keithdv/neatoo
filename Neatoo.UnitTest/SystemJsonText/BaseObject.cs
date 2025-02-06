@@ -33,7 +33,7 @@ namespace Neatoo.UnitTest.SystemTextJson.BaseTests
 
     public class BaseObjectList : ListBase<BaseObjectList, IBaseObject>, IBaseObjectList
     {
-        public BaseObjectList(ListBaseServices<BaseObjectList, IBaseObject> services) : base(services)
+        public BaseObjectList(IListBaseServices<BaseObjectList, IBaseObject> services) : base(services)
         {
         }
 

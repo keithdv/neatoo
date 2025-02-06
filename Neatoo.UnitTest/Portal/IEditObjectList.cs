@@ -4,9 +4,6 @@ namespace Neatoo.UnitTest.ObjectPortal
 {
     public interface IEditObjectList : IEditListBase<IEditObject>
     {
-        Guid? ID { get; set; }
-        int IntCriteria { get; }
-        Guid GuidCriteria { get; }
         bool CreateCalled { get; set; }
         bool CreateChildCalled { get; set; }
         bool FetchCalled { get; set; }

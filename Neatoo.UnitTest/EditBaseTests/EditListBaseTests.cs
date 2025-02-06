@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neatoo.Portal;
@@ -16,19 +16,19 @@ namespace Neatoo.UnitTest.EditBaseTests
     public class EditListBaseTests
     {
 
-        private ILifetimeScope scope;
+        private IServiceScope scope;
         private IEditPersonList list;
         private IEditPerson child;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
-            var parentDto = scope.Resolve<IReadOnlyList<PersonDto>>().Where(p => !p.FatherId.HasValue && !p.MotherId.HasValue).First();
+            scope = UnitTestServices.GetLifetimeScope();
+            var parentDto = scope.GetRequiredService<IReadOnlyList<PersonDto>>().Where(p => !p.FatherId.HasValue && !p.MotherId.HasValue).First();
 
-            list = scope.Resolve<IEditPersonList>();
+            list = scope.GetRequiredService<IEditPersonList>();
 
-            child = scope.Resolve<IEditPerson>();
+            child = scope.GetRequiredService<IEditPerson>();
             list.Add(child);
             child.MarkUnmodified();
             child.MarkOld();

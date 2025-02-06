@@ -42,7 +42,7 @@ namespace HorseBarn.lib
             {
                 // If the normal setting is used sets to IsModified = true
                 // TODO: Anyway to not have to define <int?> ??
-                this[nameof(Id)].LoadProperty(((IdPropertyChangedBase)sender).Id);
+                this[nameof(Id)].LoadValue(((IdPropertyChangedBase)sender).Id);
                 id.PropertyChanged -= HandleIdPropertyChanged;
             }
         }

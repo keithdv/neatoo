@@ -7,17 +7,24 @@ using System.Threading;
 namespace Neatoo
 {
 
+    public interface IBaseMetaProperties
+    {
+        bool IsBusy { get; }
+        bool IsSelfBusy { get; }
+        Task WaitForTasks();
+    }
 
-    public interface IValidateMetaProperties
+    public interface IValidateMetaProperties : IBaseMetaProperties
     {
         bool IsValid { get; }
         bool IsSelfValid { get; }
-        bool IsBusy { get; }
-        bool IsSelfBusy { get; }
 
-        Task WaitForRules();
-        Task CheckAllRules(CancellationToken token = new CancellationToken());
-        Task CheckAllSelfRules(CancellationToken token = new CancellationToken());
+
+        Task RunAllRules(CancellationToken token = new CancellationToken());
+        Task RunSelfRules(CancellationToken token = new CancellationToken());
+
+        void ClearAllErrors();
+        void ClearSelfErrors();
     }
 
     public interface IEditMetaProperties : IValidateMetaProperties

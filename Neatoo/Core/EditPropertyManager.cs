@@ -18,11 +18,13 @@ namespace Neatoo.Core
         IEnumerable<string> ModifiedProperties { get; }
         void MarkSelfUnmodified();
 
+        void PauseAllActions();
+        void ResumeAllActions();
     }
 
     public interface IEditProperty : IValidateProperty
     {
-        bool IsStopped { get; }
+        bool IsPaused { get; set; }
         bool IsModified { get; }
         bool IsSelfModified { get; }
         void MarkSelfUnmodified();
@@ -55,7 +57,7 @@ namespace Neatoo.Core
 
             if (propertyName == nameof(Value))
             {
-                if (!IsStopped)
+                if (!IsPaused)
                 {
                     IsSelfModified = true && EditChild == null; // Never consider ourself modified if holding a Neatoo object
                 }
@@ -66,19 +68,22 @@ namespace Neatoo.Core
 
         public bool IsSelfModified { get; protected set; } = false;
 
-        public bool IsStopped { get; set; } = false;
+        public bool IsPaused { get; set; } = false;
 
         public void MarkSelfUnmodified()
         {
             IsSelfModified = false;
         }
 
-        public override void LoadProperty(object value)
+        public override void LoadValue(object value)
         {
-            base.LoadProperty(value);
+            base.LoadValue(value);
             IsSelfModified = false;
         }
     }
+
+
+    public delegate IEditPropertyManager CreateEditPropertyManager(IRegisteredPropertyManager registeredPropertyManager);
 
     public class EditPropertyManager : ValidatePropertyManager<IEditProperty>, IEditPropertyManager
     {
@@ -107,41 +112,21 @@ namespace Neatoo.Core
             }
         }
 
-        //public IEditProperty this[string propertyName]
-        //{
-        //    get => GetProperty(propertyName);
-        //}
+        public void PauseAllActions()
+        {
+            foreach (var fd in fieldData.Values)
+            {
+                fd.IsPaused = true;
+            }
+        }
 
-        //public IEditProperty this[IRegisteredProperty registeredProperty]
-        //{
-        //    get => GetProperty(registeredProperty);
-        //}
-
-
-        //public virtual IEditProperty GetProperty(string propertyName)
-        //{
-        //    return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
-        //}
-
-        //IValidateProperty IValidatePropertyManager.GetProperty(string propertyName)
-        //{
-        //    return GetProperty(propertyName);
-        //}
-
-        //IValidateProperty IValidatePropertyManager.GetProperty(IRegisteredProperty registeredProperty)
-        //{
-        //    return GetProperty(registeredProperty);
-        //}
-
-        //IProperty IPropertyManager.GetProperty(string propertyName)
-        //{
-        //    return GetProperty(propertyName);
-        //}
-
-        //IProperty IPropertyManager.GetProperty(IRegisteredProperty registeredProperty)
-        //{
-        //    return GetProperty(registeredProperty);
-        //}
+        public void ResumeAllActions()
+        {
+            foreach (var fd in fieldData.Values)
+            {
+                fd.IsPaused = false;
+            }
+        }   
     }
 
 

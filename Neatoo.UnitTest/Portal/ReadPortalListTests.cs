@@ -1,4 +1,4 @@
-using Autofac;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.AuthorizationRules;
 using Neatoo.Portal;
@@ -13,14 +13,14 @@ namespace Neatoo.UnitTest.ObjectPortal
     [TestClass]
     public class ReadPortalListTests
     {
-        private ILifetimeScope scope = AutofacContainer.GetLifetimeScope(true);
+        private IServiceScope scope = UnitTestServices.GetLifetimeScope(true);
         private IReadPortal<IBaseObjectList> portal;
         private IBaseObjectList list;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            portal = scope.Resolve<IReadPortal<IBaseObjectList>>();
+            portal = scope.GetRequiredService<IReadPortal<IBaseObjectList>>();
         }
 
         [TestCleanup]

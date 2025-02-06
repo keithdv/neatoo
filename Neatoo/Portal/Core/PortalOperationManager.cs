@@ -1,4 +1,5 @@
-﻿using Neatoo.AuthorizationRules;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Neatoo.AuthorizationRules;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,6 +12,8 @@ using static System.Formats.Asn1.AsnWriter;
 
 namespace Neatoo.Portal.Core
 {
+
+
     public class PortalOperationManager<T> : IPortalOperationManager<T>
     {
 
@@ -18,14 +21,15 @@ namespace Neatoo.Portal.Core
         protected static IDictionary<PortalOperation, List<MethodInfo>> RegisteredOperations { get; } = new ConcurrentDictionary<PortalOperation, List<MethodInfo>>();
         protected static bool IsRegistered { get; set; }
         protected static object lockIsRegistered = new object();
+        private readonly IServiceProviderIsService serviceProviderIsService;
 
-        private IServiceScope Scope { get; }
+        private IServiceProvider Scope { get; }
 
         protected IAuthorizationRuleManager AuthorizationRuleManager { get; }
 
         protected IPortalJsonSerializer jsonSerializer { get; }
 
-        public PortalOperationManager(IServiceScope scope, IPortalJsonSerializer jsonSerializer)
+        public PortalOperationManager(IServiceProvider scope, IPortalJsonSerializer jsonSerializer, IServiceProviderIsService serviceProviderIsService)
         {
 #if DEBUG
             if (typeof(T).IsInterface) { throw new Exception($"PortalOperationManager should be service type not an interface. {typeof(T).FullName}"); }
@@ -33,7 +37,8 @@ namespace Neatoo.Portal.Core
             RegisterPortalOperations();
             Scope = scope;
             this.jsonSerializer = jsonSerializer;
-            AuthorizationRuleManager = scope.Resolve<IAuthorizationRuleManager<T>>();
+            this.serviceProviderIsService = serviceProviderIsService;
+            AuthorizationRuleManager = scope.GetRequiredService<IAuthorizationRuleManager<T>>();
         }
 
 
@@ -136,7 +141,7 @@ namespace Neatoo.Portal.Core
                             {
                                 match = false;
                             }
-                            else if (!critHasValue && !Scope.IsRegistered(paramEnum.Current)) // For recognizing multiple positives for the same criteria
+                            else if (!critHasValue && !serviceProviderIsService.IsService(paramEnum.Current)) // For recognizing multiple positives for the same criteria
                             {
                                 match = false;
                             }
@@ -183,7 +188,7 @@ namespace Neatoo.Portal.Core
 
             if (target is IPortalTarget portalTarget)
             {
-                stopAllActions = portalTarget.StopAllActions();
+                stopAllActions = portalTarget.PauseAllActions();
             }
 
             using (stopAllActions)
@@ -198,7 +203,7 @@ namespace Neatoo.Portal.Core
                     for (var i = 0; i < parameterValues.Length; i++)
                     {
                         var parameter = parameters[i];
-                        if (!Scope.IsRegistered(parameter.ParameterType))
+                        if (!serviceProviderIsService.IsService(parameter.ParameterType))
                         {
                             // Assume it's a criteria not a dependency
                             success = false;
@@ -212,7 +217,7 @@ namespace Neatoo.Portal.Core
                         for (var i = 0; i < parameterValues.Length; i++)
                         {
                             var parameter = parameters[i];
-                            parameterValues[i] = Scope.Resolve(parameter.ParameterType);
+                            parameterValues[i] = Scope.GetRequiredService(parameter.ParameterType);
                         }
 
                         invoked = true;
@@ -241,7 +246,7 @@ namespace Neatoo.Portal.Core
             IDisposable stopAllActions = null;
             if (target is IPortalTarget portalTarget)
             {
-                stopAllActions = portalTarget.StopAllActions();
+                stopAllActions = portalTarget.PauseAllActions();
             }
 
             using (stopAllActions)
@@ -277,7 +282,8 @@ namespace Neatoo.Portal.Core
                         else
                         {
                             var parameter = parameters[i];
-                            if (Scope.TryResolve(parameter.ParameterType, out var pv))
+                            var pv = Scope.GetService(parameter.ParameterType);
+                            if (pv != null)
                             {
                                 parameterValues[i] = pv;
                             }
@@ -343,21 +349,23 @@ namespace Neatoo.Portal.Core
 
             object target = null;
 
+            var request = jsonSerializer.FromPortalRequest(portalRequest);
+
             if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Read) == (int)PortalOperationType.Read)
             {
                 Debug.Assert(string.IsNullOrEmpty(portalRequest.Target.Json), "PortalRequest.Target.Json should not be defined for PortalOperationType.Create");
-                target = Scope.Resolve(IPortalJsonSerializer.ToType(portalRequest.Target.AssemblyType)) ?? throw new InvalidOperationException("Type is not an IPortalTarget");
+                target = Scope.GetRequiredService(IPortalJsonSerializer.ToType(portalRequest.Target.AssemblyType)) ?? throw new InvalidOperationException("Type is not an IPortalTarget");
             }
             else
             {
-                target = jsonSerializer.FromObjectTypeJson(portalRequest.Target) ?? throw new InvalidOperationException("Type is not an IPortalTarget");
+                target = request.target;
             }
 
 
             if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Read) == (int)PortalOperationType.Read
                 && portalRequest.Criteria != null)
             {
-                var criteria = portalRequest.Criteria.Select(c => jsonSerializer.FromObjectTypeJson(c)).ToArray();
+                var criteria = request.criteria;
 
                 var success = await TryCallOperation(target, portalRequest.PortalOperation, criteria);
 

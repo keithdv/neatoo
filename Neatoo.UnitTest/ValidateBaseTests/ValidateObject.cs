@@ -66,7 +66,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     public class ValidateObjectList : ValidateListBase<ValidateObjectList, IValidateObject>, IValidateObjectList
     {
 
-        public ValidateObjectList(ValidateListBaseServices<ValidateObjectList, IValidateObject> services
+        public ValidateObjectList(IValidateListBaseServices<ValidateObjectList, IValidateObject> services
             ) : base(services)
         {
         }

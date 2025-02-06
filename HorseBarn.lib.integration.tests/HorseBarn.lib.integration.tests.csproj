@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HorseBarn.lib\HorseBarn.lib.csproj" />
-    <ProjectReference Include="..\Neatoo.Autofac\Neatoo.Autofac.csproj" />
   </ItemGroup>
 
   <ItemGroup>

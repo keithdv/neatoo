@@ -23,7 +23,7 @@ namespace Neatoo
     }
 
 
-    public interface IListBase : INeatooObject, INotifyCollectionChanged, INotifyPropertyChanged, IEnumerable, ICollection, IList
+    public interface IListBase : INeatooObject, INotifyCollectionChanged, INotifyPropertyChanged, IEnumerable, ICollection, IList, INotifyNeatooPropertyChanged, IBaseMetaProperties
     {
         IBase Parent { get; }
     }
@@ -38,7 +38,7 @@ namespace Neatoo
     }
 
 
-    public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, ISetParent, IJsonOnDeserialized, IJsonOnDeserializing
+    public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, ISetParent, IJsonOnDeserialized, IJsonOnDeserializing, IBaseMetaProperties
         where T : ListBase<T, I>
         where I : IBase
     {
@@ -51,10 +51,22 @@ namespace Neatoo
 
         public IBase Parent { get; protected set; }
 
+        public bool IsBusy => this.Any(c => c.IsBusy);
+        public bool IsSelfBusy => false;
+        public event NeatooPropertyChanged NeatooPropertyChanged;
+
         #region "Match Base"
         void ISetParent.SetParent(IBase parent)
         {
             Parent = parent;
+
+            foreach (var item in this)
+            {
+                if (item is ISetParent setParent)
+                {
+                    setParent.SetParent(parent);
+                }
+            }
         }
 
 
@@ -67,17 +79,15 @@ namespace Neatoo
 
             base.InsertItem(index, item);
 
-            OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
-            item.PropertyChanged += _ChildPropertyChanged;
+            item.NeatooPropertyChanged += _ChildNeatooPropertyChanged;
         }
 
         protected override void RemoveItem(int index)
         {
-            this[index].PropertyChanged -= _ChildPropertyChanged;
+            this[index].NeatooPropertyChanged -= _ChildNeatooPropertyChanged;
 
             base.RemoveItem(index);
 
-            OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
         }
 
         public async Task<I> CreateAdd()
@@ -94,32 +104,39 @@ namespace Neatoo
             return item;
         }
 
-        private void _ChildPropertyChanged(object sender, PropertyChangedEventArgs e)
+        public virtual void OnDeserializing()
         {
-            ChildPropertyChanged(sender, e);
-        }
-
-        protected virtual void ChildPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-
         }
 
         public virtual void OnDeserialized()
         {
             foreach (var item in this)
             {
-                item.PropertyChanged += _ChildPropertyChanged;
-                if(item is ISetParent setParent)
+                item.NeatooPropertyChanged += _ChildNeatooPropertyChanged;
+                if (item is ISetParent setParent)
                 {
                     setParent.SetParent(this.Parent);
                 }
             }
         }
 
-        public virtual void OnDeserializing()
+        protected virtual Task RaiseNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
         {
-            
+            return NeatooPropertyChanged?.Invoke(breadCrumbs) ?? Task.CompletedTask;
         }
-    }
 
+        protected virtual Task OnChildNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
+        {
+            // Lists don't add to the breadcrumbs
+            return RaiseNeatooPropertyChanged(breadCrumbs);
+        }
+
+        private Task _ChildNeatooPropertyChanged(PropertyNameBreadCrumbs propertyNameBreadCrumbs)
+        {
+            return OnChildNeatooPropertyChanged(propertyNameBreadCrumbs);
+        }
+
+        public Task WaitForTasks() => Task.WhenAll(this.Where(thisItem => thisItem.IsBusy).Select(thisItem => thisItem.WaitForTasks()));
+        
+    }
 }

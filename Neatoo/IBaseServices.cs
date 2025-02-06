@@ -30,12 +30,7 @@ namespace Neatoo
             PropertyManager = new PropertyManager<IProperty>(RegisteredPropertyManager, new DefaultFactory());
         }
 
-        public BaseServices(IRegisteredPropertyManager<T> registeredPropertyManager)
-        {
-            RegisteredPropertyManager = registeredPropertyManager;
-        }
-
-        public BaseServices(Func<IRegisteredPropertyManager, IPropertyManager<IProperty>> propertyManager, IRegisteredPropertyManager<T> registeredPropertyManager)
+        public BaseServices(CreatePropertyManager propertyManager, IRegisteredPropertyManager<T> registeredPropertyManager)
         {
             RegisteredPropertyManager = registeredPropertyManager;
             PropertyManager = propertyManager(RegisteredPropertyManager);

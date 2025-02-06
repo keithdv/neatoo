@@ -13,7 +13,7 @@ namespace Neatoo.UnitTest.ObjectPortal
     public class BaseObjectList : ListBase<BaseObjectList, IBaseObject>, IBaseObjectList
     {
 
-        public BaseObjectList(ListBaseServices<BaseObjectList, IBaseObject> baseServices) : base(baseServices)
+        public BaseObjectList(IListBaseServices<BaseObjectList, IBaseObject> baseServices) : base(baseServices)
         {
         }
 

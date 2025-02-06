@@ -1,4 +1,4 @@
-using Autofac;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Portal;
 using Neatoo.UnitTest.Objects;
@@ -12,14 +12,14 @@ namespace Neatoo.UnitTest.ObjectPortal
     [TestClass]
     public class ReadPortalTests
     {
-        private ILifetimeScope scope = AutofacContainer.GetLifetimeScope(true);
+        private IServiceScope scope = UnitTestServices.GetLifetimeScope(true);
         private IReadPortal<IBaseObject> portal;
         private IBaseObject domainObject;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            portal = scope.Resolve<IReadPortal<IBaseObject>>();
+            portal = scope.GetRequiredService<IReadPortal<IBaseObject>>();
         }
 
         [TestCleanup]
@@ -87,8 +87,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         [TestMethod]
         public async Task ReadPortal_CreateMultipleCriteriaCalled_Double()
         {
-            var r = scope.IsRegistered(typeof(int));
-
             domainObject = await portal.Create(1, 10d);
             CollectionAssert.AreEquivalent(new object[] { 1, 10d }, domainObject.MultipleCriteria);
         }

@@ -1,17 +1,10 @@
 ﻿using Neatoo.Core;
 using Neatoo.Portal;
 using Neatoo.Rules;
-using Neatoo.Rules.Rules;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,19 +13,16 @@ namespace Neatoo
 
     public interface IValidateBase : IBase, IValidateMetaProperties, INotifyPropertyChanged, INotifyNeatooPropertyChanged
     {
-
         IReadOnlyList<string> BrokenRuleMessages { get; }
 
         /// <summary>
-        /// Stop events, rules and ismodified
+        /// Pause events, rules and ismodified
         /// Only affects the Setter method
         /// Not SetProperty or LoadProperty
         /// </summary>
-        bool IsStopped { get; }
+        bool IsPaused { get; }
 
         internal string ObjectInvalid { get; }
-
-        internal Task AddSequencedTask(Func<Task, Task> task, bool runOnException = false);
 
         internal new IValidateProperty GetProperty(string propertyName);
         internal new IValidateProperty GetProperty(IRegisteredProperty registeredProperty);
@@ -44,8 +34,7 @@ namespace Neatoo
     public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IPortalTarget
         where T : ValidateBase<T>
     {
-
-        protected new IValidatePropertyManager<IValidateProperty> PropertyManager => (IValidatePropertyManager<IValidateProperty>) base.PropertyManager;
+        protected new IValidatePropertyManager<IValidateProperty> PropertyManager => (IValidatePropertyManager<IValidateProperty>)base.PropertyManager;
 
         protected IRuleManager<T> RuleManager { get; }
 
@@ -53,7 +42,7 @@ namespace Neatoo
         {
             this.RuleManager = services.CreateRuleManager((T)(IValidateBase)this);
 
-            AsyncTaskSequencer.OnFullSequenceComplete = async (t) =>
+            AsyncTaskSequencer.OnFullSequenceComplete = async () =>
             {
                 await PropertyManager.WaitForTasks();
                 RaiseMetaPropertiesChanged(true);
@@ -65,10 +54,6 @@ namespace Neatoo
         public bool IsValid => PropertyManager.IsValid;
 
         public bool IsSelfValid => PropertyManager.IsSelfValid;
-
-        public bool IsSelfBusy => !AsyncTaskSequencer.AllDone.IsCompleted;
-
-        public bool IsBusy => IsSelfBusy || PropertyManager.IsBusy;
 
         protected (bool IsValid, bool IsSelfValid, bool IsBusy, bool IsSelfBusy) MetaState { get; private set; }
 
@@ -99,34 +84,16 @@ namespace Neatoo
             MetaState = (IsValid, IsSelfValid, IsBusy, IsSelfBusy);
         }
 
-        protected override void PropertyManagerPropertyChanged(object sender, PropertyChangedEventArgs e)
+        protected override async Task PropertyManagerNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
         {
-            base.PropertyManagerPropertyChanged(sender, e);
-            RaiseMetaPropertiesChanged();
-        }
+            await base.PropertyManagerNeatooPropertyChanged(breadCrumbs);
 
-        protected override async Task PropertyManagerNeatooPropertyChange(string propertyName, object source)
-        {
-            await base.PropertyManagerNeatooPropertyChange(propertyName, source);
-
-            if (source == this.PropertyManager)
+            if (!IsPaused)
             {
-                if (!IsStopped)
-                {
-                    RaisePropertyChanged(propertyName);
-                    await CheckRules(propertyName);
-                }
-
-                // TODO - Support async PropertyChanged
-                // AsyncTaskSequencer.AddTask((t) => RaiseNeatooPropertyChanged(propertyName, source) ?? Task.CompletedTask);
+                RaisePropertyChanged(breadCrumbs.PropertyName);
+                await CheckRules(breadCrumbs.PropertyName);
             }
 
-            RaiseMetaPropertiesChanged();
-        }
-
-        protected override void ChildPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            base.ChildPropertyChanged(sender, e);
             RaiseMetaPropertiesChanged();
         }
 
@@ -135,21 +102,10 @@ namespace Neatoo
             return AsyncTaskSequencer.AddTask(method, runOnException);
         }
 
-        Task IValidateBase.AddSequencedTask(System.Func<Task, Task> task, bool runOnException = false)
-        {
-            return AddAsyncMethod(task, runOnException);
-        }
-
-        public virtual Task WaitForRules()
-        {
-            return Task.WhenAll([AsyncTaskSequencer.AllDone, PropertyManager.WaitForRules()]);
-        }
-
-
         public IReadOnlyList<string> BrokenRuleMessages => PropertyManager.ErrorMessages;
 
         /// <summary>
-        /// Permantatly mark invalid
+        /// Permanently mark invalid
         /// Running all rules will reset this
         /// </summary>
         /// <param name="message"></param>
@@ -175,78 +131,88 @@ namespace Neatoo
         new protected IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
         new protected IValidateProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
 
-        public bool IsStopped { get; protected set; }
+        public bool IsPaused { get; protected set; }
 
-        public virtual IDisposable StopAllActions()
+        public virtual IDisposable PauseAllActions()
         {
-            if (IsStopped) { return null; } // You are a nested using; You get nothing!!
-            IsStopped = true;
-            return new Core.Stopped(this);
+            if (IsPaused) { return null; } // You are a nested using; You get nothing!!
+            IsPaused = true;
+            return new Core.Paused(this);
         }
 
-        public void StartAllActions()
+        public virtual void ResumeAllActions()
         {
-            if (IsStopped)
+            if (IsPaused)
             {
-                IsStopped = false;
+                IsPaused = false;
                 ResetMetaState();
             }
         }
 
-        IDisposable IPortalTarget.StopAllActions()
+        IDisposable IPortalTarget.PauseAllActions()
         {
-            return StopAllActions();
+            return PauseAllActions();
         }
 
-        void IPortalTarget.StartAllActions()
+        void IPortalTarget.ResumeAllActions()
         {
-            StartAllActions();
+            ResumeAllActions();
         }
 
         public Task CheckRules(string propertyName)
         {
             if (this[nameof(ObjectInvalid)].IsSelfValid)
             {
-                var t = AddAsyncMethod((t) => RuleManager.CheckRulesForProperty(propertyName));
+                var task = AddAsyncMethod((t) => RuleManager.CheckRulesForProperty(propertyName));
 
-                if (!t.IsCompleted || t.IsFaulted)
-                {
-                    RaiseMetaPropertiesChanged();
-                }
-                return t;
+                RaiseMetaPropertiesChanged();
+
+                return task;
             }
+
             return Task.CompletedTask;
         }
 
-
-        public Task CheckAllSelfRules(CancellationToken token = new CancellationToken())
+        public async Task RunSelfRules(CancellationToken token = new CancellationToken())
         {
             this[nameof(ObjectInvalid)].ClearAllErrors();
 
-            AddAsyncMethod((t) => RuleManager.CheckAllRules(token));
-            return AsyncTaskSequencer.AllDone;
+            await AddAsyncMethod((t) => RuleManager.CheckAllRules(token));
+            await AsyncTaskSequencer.AllDone;
         }
 
-        public Task CheckAllRules(CancellationToken token = new CancellationToken())
+        public async Task RunAllRules(CancellationToken token = new CancellationToken())
+        {
+            ClearAllErrors();
+
+            await AddAsyncMethod((t) => RuleManager.CheckAllRules(token));
+            await AddAsyncMethod((t) => PropertyManager.RunAllRules(token));
+            // TODO - This isn't raising the 'IsValid' property changed event
+            await AsyncTaskSequencer.AllDone;
+        }
+
+        public virtual void ClearSelfErrors()
         {
             this[nameof(ObjectInvalid)].ClearAllErrors();
+            PropertyManager.ClearSelfErrors();
+        }
 
-            AddAsyncMethod((t) => RuleManager.CheckAllRules(token));
-            AddAsyncMethod((t) => PropertyManager.CheckAllRules(token));
-            // TODO - This isn't raising the 'IsValid' property changed event
-            return AsyncTaskSequencer.AllDone;
+        public virtual void ClearAllErrors()
+        {
+            this[nameof(ObjectInvalid)].ClearAllErrors();
+            PropertyManager.ClearAllErrors();
         }
 
         [Create]
         protected async Task Create()
         {
-            await CheckAllSelfRules();
+            await RunSelfRules();
         }
 
         [CreateChild]
         protected async Task CreateChild()
         {
-            await CheckAllSelfRules();
+            await RunSelfRules();
         }
 
         IValidateProperty IValidateBase.GetProperty(string propertyName)
@@ -262,12 +228,10 @@ namespace Neatoo
 }
 
 
-
 [Serializable]
 public class AddRulesNotDefinedException<T> : Exception
 {
     public AddRulesNotDefinedException() : base($"AddRules not defined for {typeof(T).Name}") { }
     public AddRulesNotDefinedException(string message) : base(message) { }
     public AddRulesNotDefinedException(string message, Exception inner) : base(message, inner) { }
-
 }

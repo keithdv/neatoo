@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neatoo.Portal;
@@ -17,16 +17,16 @@ namespace Neatoo.UnitTest.EditBaseTests
     public class EditBaseTests
     {
 
-        private ILifetimeScope scope;
+        private IServiceScope scope;
         private IEditPerson editPerson;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
+            scope = UnitTestServices.GetLifetimeScope();
 
-            editPerson = scope.Resolve<IEditPerson>();
-            var parentDto = scope.Resolve<IReadOnlyList<PersonDto>>().Where(p => !p.FatherId.HasValue && !p.MotherId.HasValue).First();
+            editPerson = scope.GetRequiredService<IEditPerson>();
+            var parentDto = scope.GetRequiredService<IReadOnlyList<PersonDto>>().Where(p => !p.FatherId.HasValue && !p.MotherId.HasValue).First();
 
             editPerson.FillFromDto(parentDto);
             editPerson.MarkOld();
@@ -155,11 +155,11 @@ namespace Neatoo.UnitTest.EditBaseTests
             Assert.IsTrue(editPerson.IsSavable);
         }
 
-
         [TestMethod]
         public async Task EditBaseTest_Save()
         {
-            var mock = scope.Resolve<MockReadWritePortal<EditPerson>>();
+            var mock = (MockReadWritePortal<EditPerson>)  scope.GetRequiredService<IReadWritePortal<EditPerson>>();
+
             mock.MockPortal.Setup(x => x.Update((EditPerson) editPerson)).Returns(Task.FromResult((EditPerson) editPerson));
 
             editPerson.FirstName = Guid.NewGuid().ToString();
@@ -167,8 +167,6 @@ namespace Neatoo.UnitTest.EditBaseTests
 
             mock.MockPortal.Verify(x => x.Update((EditPerson)editPerson), Times.Once);
         }
-
-
     }
 }
 

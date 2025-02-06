@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Rules;
 using Neatoo.UnitTest.PersonObjects;
@@ -17,16 +17,16 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     public class ValidateListBaseTests
     {
 
-        ILifetimeScope scope;
+        IServiceScope scope;
         IValidateObjectList List;
         IValidateObject Child;
 
         [TestInitialize]
         public void TestInitailize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
-            List = scope.Resolve<IValidateObjectList>();
-            Child = scope.Resolve<IValidateObject>();
+            scope = UnitTestServices.GetLifetimeScope();
+            List = scope.GetRequiredService<IValidateObjectList>();
+            Child = scope.GetRequiredService<IValidateObject>();
             List.PropertyChanged += Validate_PropertyChanged;
             Child.PropertyChanged += ChildValidate_PropertyChanged;
             List.Add(Child);

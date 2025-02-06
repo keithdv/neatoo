@@ -11,7 +11,7 @@ namespace Neatoo.Rules.Rules
 
     }
 
-    public delegate IRequiredRule CreateRequiredRule(string name);
+    public delegate IRequiredRule CreateRequiredRule(IRegisteredProperty name);
 
     internal class RequiredRule : RuleBase<IValidateBase>, IRequiredRule
     {

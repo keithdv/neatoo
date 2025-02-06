@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System;
@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Neatoo.Portal;
+using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.SystemTextJson
 {
@@ -22,11 +23,11 @@ namespace Neatoo.UnitTest.SystemTextJson
         [TestInitialize]
         public void TestInitailize()
         {
-            scope = AutofacContainer.GetLifetimeScope().Resolve<IServiceScope>();
-            target = scope.Resolve<IValidateObject>();
+            scope = UnitTestServices.GetLifetimeScope();
+            target = scope.GetRequiredService<IValidateObject>();
             target.ID = Id;
             target.Name = Name;
-            resolver = scope.Resolve<NeatooJsonSerializer>();
+            resolver = scope.GetRequiredService<NeatooJsonSerializer>();
         }
 
         [TestMethod]
@@ -100,7 +101,7 @@ namespace Neatoo.UnitTest.SystemTextJson
         public void FatClientValidate_Deserialize_Child()
         {
 
-            var child = target.Child = scope.Resolve<IValidateObject>();
+            var child = target.Child = scope.GetRequiredService<IValidateObject>();
 
             child.ID = Guid.NewGuid();
             child.Name = Guid.NewGuid().ToString();
@@ -120,7 +121,7 @@ namespace Neatoo.UnitTest.SystemTextJson
         public void FatClientValidate_Deserialize_Child_RuleManager()
         {
 
-            var child = target.Child = scope.Resolve<IValidateObject>();
+            var child = target.Child = scope.GetRequiredService<IValidateObject>();
 
             child.ID = Guid.NewGuid();
             child.Name = "Error";
@@ -140,11 +141,11 @@ namespace Neatoo.UnitTest.SystemTextJson
         }
 
         [TestMethod]
-        public void FatClientValidate_Deserialize_ValidateProperty_Child()
+        public async Task FatClientValidate_Deserialize_ValidateProperty_Child()
         {
             // Ensure ValidateProperty.Child is a reference to the Child 
 
-            var child = target.Child = scope.Resolve<IValidateObject>();
+            var child = target.Child = scope.GetRequiredService<IValidateObject>();
 
             child.ID = Guid.NewGuid();
             child.Name = "Error";
@@ -156,7 +157,14 @@ namespace Neatoo.UnitTest.SystemTextJson
 
             Assert.IsFalse(newTarget.IsValid);
 
+            child = newTarget.Child;
+
+            await child.RunAllRules();
+
+            Assert.IsFalse(newTarget.IsValid);
+
             newTarget.Child.Name = "Fine";
+
             Assert.IsTrue(newTarget.IsValid);
 
         }
@@ -165,7 +173,7 @@ namespace Neatoo.UnitTest.SystemTextJson
         public void FatClientValidate_Deserialize_Child_ParentRef()
         {
 
-            var child = target.Child = scope.Resolve<IValidateObject>();
+            var child = target.Child = scope.GetRequiredService<IValidateObject>();
 
             child.ID = Guid.NewGuid();
             child.Name = Guid.NewGuid().ToString();

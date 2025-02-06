@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System;
@@ -21,11 +21,11 @@ namespace Neatoo.UnitTest.SystemTextJson.BaseTests
         [TestInitialize]
         public void TestInitailize()
         {
-            scope = AutofacContainer.GetLifetimeScope().Resolve<IServiceScope>();
-            target = scope.Resolve<IBaseObject>();
+            scope = UnitTestServices.GetLifetimeScope();
+            target = scope.GetRequiredService<IBaseObject>();
             target.ID = Id;
             target.Name = Name;
-            resolver = scope.Resolve<NeatooJsonSerializer>();
+            resolver = scope.GetRequiredService<NeatooJsonSerializer>();
         }
 
         private string Serialize(object target)
@@ -64,7 +64,7 @@ namespace Neatoo.UnitTest.SystemTextJson.BaseTests
         public void FatClientBaseTests_Deserialize_Child()
         {
 
-            var child = target.Child = scope.Resolve<IBaseObject>();
+            var child = target.Child = scope.GetRequiredService<IBaseObject>();
 
             child.ID = Guid.NewGuid();
             child.Name = Guid.NewGuid().ToString();
@@ -85,7 +85,7 @@ namespace Neatoo.UnitTest.SystemTextJson.BaseTests
         public void FatClientBaseTests_Deserialize_Child_ParentRef()
         {
 
-            var child = target.Child = scope.Resolve<IBaseObject>();
+            var child = target.Child = scope.GetRequiredService<IBaseObject>();
 
             child.ID = Guid.NewGuid();
             child.Name = Guid.NewGuid().ToString();

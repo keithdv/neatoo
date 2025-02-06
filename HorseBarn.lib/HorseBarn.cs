@@ -67,7 +67,7 @@ namespace HorseBarn.lib
             }
             
             this.Pasture.HorseList.Add(horse);
-            await horse.CheckAllRules();
+            await horse.RunAllRules();
             return horse;
         }
 
@@ -100,7 +100,7 @@ namespace HorseBarn.lib
         }
 
         [Fetch]
-        public async Task Fetch(HorseBarnContext horseBarnContext,
+        public async Task Fetch(IHorseBarnContext horseBarnContext,
                                 IReadPortalChild<IPasture> pasturePortal,
                                 IReadPortalChild<ICartList> cartPortal)
         {
@@ -115,7 +115,7 @@ namespace HorseBarn.lib
         }
 
         [Insert]
-        public async Task Insert(HorseBarnContext horseBarnContext,
+        public async Task Insert(IHorseBarnContext horseBarnContext,
                                 IReadWritePortalChild<IPasture> pasturePortal,
                                 IReadWritePortalChild<ICartList> cartPortal)
         {
@@ -132,7 +132,7 @@ namespace HorseBarn.lib
         }
 
         [Update]
-        public async Task Update(HorseBarnContext horseBarnContext,
+        public async Task Update(IHorseBarnContext horseBarnContext,
                                 IReadWritePortalChild<IPasture> pasturePortal,
                                 IReadWritePortalChild<ICartList> cartPortal)
         {

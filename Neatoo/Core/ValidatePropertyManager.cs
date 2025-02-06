@@ -19,26 +19,28 @@ namespace Neatoo.Core
         // Valid without looking at Children that are IValidateBase
         bool IsSelfValid { get; }
         bool IsValid { get; }
-        bool IsBusy { get; }
-        Task CheckAllRules(CancellationToken token);
-        Task WaitForRules();
-        Task WaitForTasks();
-        IReadOnlyList<string> ErrorMessages { get; }
+        Task RunAllRules(CancellationToken token);
 
+        IReadOnlyList<string> ErrorMessages { get; }
+        void ClearAllErrors();
+        void ClearSelfErrors();
     }
 
     public interface IValidateProperty : IProperty, INotifyPropertyChanged
     {
         bool IsSelfValid { get; }
         bool IsValid { get; }
-        bool IsBusy { get; }
         Task CheckAllRules(CancellationToken token);
-        Task WaitForRules();
         IReadOnlyList<string> ErrorMessages { get; }
-        void LoadProperty(object value);
+        /// <summary>
+        /// Sets the value without running any rules or raising any events
+        /// </summary>
+        /// <param name="value"></param>
+        void LoadValue(object value);
         internal void SetErrorsForRule(uint ruleIndex, IReadOnlyList<string> errorMessages);
         internal void ClearErrorsForRule(uint ruleIndex);
         internal void ClearAllErrors();
+        internal void ClearSelfErrors();
     }
 
     public interface IValidateProperty<T> : IValidateProperty, IProperty<T>
@@ -66,17 +68,13 @@ namespace Neatoo.Core
 
         public bool IsSelfValid => ValueIsValidateBase != null ? true : !RuleErrorMessages.Any();
         public bool IsValid => ValueIsValidateBase != null ? ValueIsValidateBase.IsValid : !RuleErrorMessages.Any();
-        public bool IsBusy => ValueIsValidateBase != null ? (ValueIsValidateBase?.IsBusy ?? false) : IsSelfBusy;
 
-        public bool IsSelfBusy { get; private set; } = false;
-
-        public Task WaitForRules() { return ValueIsValidateBase?.WaitForRules() ?? Task.CompletedTask; }
-        public Task CheckAllRules(CancellationToken token) { return ValueIsValidateBase?.CheckAllRules(token) ?? Task.CompletedTask; }
+        public Task CheckAllRules(CancellationToken token) { return ValueIsValidateBase?.RunAllRules(token) ?? Task.CompletedTask; }
 
         [JsonIgnore]
         public IReadOnlyList<string> ErrorMessages => RuleErrorMessages.SelectMany(r => r.Value).ToList().AsReadOnly();
 
-        public virtual void LoadProperty(object value)
+        public virtual void LoadValue(object value)
         {
             if (value is T x)
             {
@@ -88,39 +86,6 @@ namespace Neatoo.Core
             }
         }
 
-        protected override Task OnValueNeatooPropertyChanged(string propertyName, object source)
-        {
-            try
-            {
-                // ValidateBase sticks Task into AsyncTaskSequencer for us
-                // so that it will be awaited by WaitForRules
-                Task = base.OnValueNeatooPropertyChanged(propertyName, source);
-
-                if (!Task.IsCompleted)
-                {
-                    IsSelfBusy = true;
-
-                    OnPropertyChanged(nameof(IsBusy));
-                    OnPropertyChanged(nameof(IsSelfBusy));
-
-                    Task.ContinueWith(_ =>
-                    {
-                        IsSelfBusy = false;
-                        OnPropertyChanged(nameof(IsBusy));
-                        OnPropertyChanged(nameof(IsSelfBusy));
-                    });
-                }
-
-                return Task;
-            }
-            catch
-            {
-
-                IsSelfBusy = false;
-
-                throw;
-            }
-        }
 
         // [PortalDataMember] Ummm...ising the RuleIndex going to be different...
         protected Dictionary<uint, List<string>> RuleErrorMessages { get; } = new Dictionary<uint, List<string>>();
@@ -148,13 +113,25 @@ namespace Neatoo.Core
             OnPropertyChanged(nameof(ErrorMessages));
         }
 
-        void IValidateProperty.ClearAllErrors()
+        public virtual void ClearSelfErrors()
         {
             RuleErrorMessages.Clear();
             OnPropertyChanged(nameof(IsValid));
             OnPropertyChanged(nameof(ErrorMessages));
         }
+
+        public virtual void ClearAllErrors()
+        {
+            RuleErrorMessages.Clear();
+            ValueIsValidateBase?.ClearAllErrors();
+
+            OnPropertyChanged(nameof(IsValid));
+            OnPropertyChanged(nameof(ErrorMessages));
+        }
     }
+
+
+    public delegate IValidatePropertyManager<IValidateProperty> CreateValidatePropertyManager(IRegisteredPropertyManager registeredPropertyManager);
 
     public class ValidatePropertyManager<P> : PropertyManager<P>, IValidatePropertyManager<P>
         where P : IValidateProperty
@@ -173,24 +150,29 @@ namespace Neatoo.Core
         public bool IsSelfValid => !fieldData.Values.Any(_ => !_.IsSelfValid);
         public bool IsValid => !fieldData.Values.Any(_ => !_.IsValid);
 
-        public bool IsBusy => fieldData.Values.Any(_ => _.IsBusy);
-
         public IReadOnlyList<string> ErrorMessages => fieldData.Values.SelectMany(_ => _.ErrorMessages).ToList().AsReadOnly();
 
-        public Task WaitForRules()
-        {
-            return Task.WhenAll(fieldData.Values.Select(x => x.WaitForRules()));
-        }
 
-        public Task WaitForTasks()
-        {
-            return Task.WhenAll(fieldData.Values.Select(x => x.Task));
-        }
-
-        public Task CheckAllRules(CancellationToken token)
+        public Task RunAllRules(CancellationToken token)
         {
             var tasks = fieldData.Values.Select(x => x.CheckAllRules(token)).ToList();
             return Task.WhenAll(tasks.Where(t => t != null));
+        }
+
+        public void ClearSelfErrors()
+        {
+            foreach (var p in fieldData.Values)
+            {
+                p.ClearSelfErrors();
+            }
+        }
+
+        public void ClearAllErrors()
+        {
+            foreach (var p in fieldData.Values)
+            {
+                p.ClearAllErrors();
+            }
         }
     }
 

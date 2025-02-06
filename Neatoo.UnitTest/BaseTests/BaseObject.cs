@@ -19,6 +19,7 @@ namespace Neatoo.UnitTest.BaseTests
         IA TestPropertyType { get; set; }
         void LoadPropertyTest(B propertyValue);
         IBaseObject Child { get; set; }
+        IBaseObjectList ChildList { get; set; }
     }
     public class BaseObject : Base<BaseObject>, IBaseObject
     {
@@ -53,6 +54,12 @@ namespace Neatoo.UnitTest.BaseTests
         public IA TestPropertyType
         {
             get { return Getter<IA>(); }
+            set { Setter(value); }
+        }
+
+        public IBaseObjectList ChildList
+        {
+            get { return Getter<IBaseObjectList>(); }
             set { Setter(value); }
         }
 

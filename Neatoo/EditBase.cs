@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
@@ -36,7 +37,7 @@ namespace Neatoo
 
         protected override void RaiseMetaPropertiesChanged(bool raiseBusy = true)
         {
-            if (!IsStopped)
+            if (!IsPaused)
             {
                 if (EditMetaState.IsModified != IsModified)
                 {
@@ -69,7 +70,7 @@ namespace Neatoo
 
         protected virtual void MarkAsChild()
         {
-            if (!IsStopped)
+            if (!IsPaused)
             {
                 IsChild = true;
             }
@@ -83,7 +84,7 @@ namespace Neatoo
         // TODO - Recursive set clean for all children
         protected virtual void MarkUnmodified()
         {
-            if (!IsStopped)
+            if (!IsPaused)
             {
                 // TODO : What if busy??
                 PropertyManager.MarkSelfUnmodified();
@@ -99,7 +100,7 @@ namespace Neatoo
 
         protected virtual void MarkModified()
         {
-            if (!IsStopped)
+            if (!IsPaused)
             {
                 IsMarkedModified = true;
                 RaiseMetaPropertiesChanged();
@@ -113,7 +114,7 @@ namespace Neatoo
 
         protected virtual void MarkNew()
         {
-            if (!IsStopped)
+            if (!IsPaused)
             {
                 IsNew = true;
             }
@@ -126,7 +127,7 @@ namespace Neatoo
 
         protected virtual void MarkOld()
         {
-            if (!IsStopped)
+            if (!IsPaused)
             {
                 IsNew = false;
             }
@@ -138,7 +139,7 @@ namespace Neatoo
 
         protected virtual void MarkDeleted()
         {
-            if (!IsStopped)
+            if (!IsPaused)
             {
                 IsDeleted = true;
                 RaiseMetaPropertiesChanged();
@@ -157,7 +158,7 @@ namespace Neatoo
 
         public void UnDelete()
         {
-            if (!IsStopped)
+            if (!IsPaused)
             {
 
                 if (IsDeleted)
@@ -168,17 +169,18 @@ namespace Neatoo
             }
         }
 
-        protected override void PropertyManagerPropertyChanged(object sender, PropertyChangedEventArgs e)
+        protected override Task PropertyManagerNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
         {
-            base.PropertyManagerPropertyChanged(sender, e);
-
+            
             // TODO - if an object isn't assigned to another IBase
             // it will still consider us to be the Parent
 
-            if (sender == this.PropertyManager && this[e.PropertyName].Value is IEditBase child)
+            if (breadCrumbs.PropertyName == nameof(IEditProperty.Value) && breadCrumbs.Source is IEditBase child)
             {
                 child.UnDelete();
             }
+
+            return base.PropertyManagerNeatooPropertyChanged(breadCrumbs);
         }
 
         public virtual async Task<IEditBase> Save()
@@ -199,7 +201,7 @@ namespace Neatoo
                 }
                 if (IsBusy)
                 {
-                    // TODO await this.WaitForRules(); ??
+                    // TODO await this.WaitForTasks(); ??
                     throw new Exception("Object is busy and cannot be saved.");
                 }
             }
@@ -217,15 +219,27 @@ namespace Neatoo
             return PropertyManager[registeredProperty];
         }
 
+        public override IDisposable PauseAllActions()
+        {
+            PropertyManager.PauseAllActions();
+            return base.PauseAllActions();
+        }
+
+        public override void ResumeAllActions()
+        {
+            PropertyManager.ResumeAllActions();
+            base.ResumeAllActions();
+        }
+
         public void OnDeserializing()
         {
-            IsStopped = true;
+            IsPaused = true;
         }
 
         override public void OnDeserialized()
         {
             base.OnDeserialized();
-            IsStopped = false;
+            IsPaused = false;
         }
 
             new protected IEditProperty this[string propertyName] { get => GetProperty(propertyName); }

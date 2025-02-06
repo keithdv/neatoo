@@ -104,7 +104,7 @@ namespace HorseBarn.lib.Horse
         }
 
         [UpdateChild]
-        protected async Task Update(Dal.Ef.Pasture pasture, HorseBarnContext horseBarnContext)
+        protected async Task Update(Dal.Ef.Pasture pasture, IHorseBarnContext horseBarnContext)
         {
             var horse = await horseBarnContext.Horses.SingleAsync(h => h.Id == this.Id);
 
@@ -120,7 +120,7 @@ namespace HorseBarn.lib.Horse
         }
 
         [UpdateChild]
-        protected async Task Update(Dal.Ef.Cart cart, HorseBarnContext horseBarnContext)
+        protected async Task Update(Dal.Ef.Cart cart, IHorseBarnContext horseBarnContext)
         {
             var horse = await horseBarnContext.Horses.SingleAsync(h => h.Id == this.Id);
 

@@ -11,6 +11,8 @@ namespace Neatoo.Portal
     // TODO : Make these two an interface so that we car resolve them from DI
     // so that for newtonsoft we can use [JsonConstructor] attribute
     // so that we can do Nullable correctly
+
+
     public class PortalRequest
     {
         public PortalOperation PortalOperation { get; set; }

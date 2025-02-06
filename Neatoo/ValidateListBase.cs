@@ -31,20 +31,11 @@ namespace Neatoo
     {
         public ValidateListBase(IValidateListBaseServices<T, I> services) : base(services)
         {
-
-            AsyncTaskSequencer.OnFullSequenceComplete = (t) =>
-            {
-                RaiseMetaPropertiesChanged(true);
-                return Task.CompletedTask;
-            };
-
             ResetMetaState();
         }
 
         public bool IsValid => !this.Any(c => !c.IsValid);
         public bool IsSelfValid => true;
-        public bool IsBusy => AsyncTaskSequencer.IsRunning || this.Any(c => c.IsBusy);
-        public bool IsSelfBusy => AsyncTaskSequencer.IsRunning;
 
         protected (bool IsValid, bool IsSelfValid, bool IsBusy, bool IsSelfBusy) MetaState { get; private set; }
 
@@ -75,33 +66,36 @@ namespace Neatoo
             MetaState = (IsValid, IsSelfValid, IsBusy, IsSelfBusy);
         }
 
-        // TODO: Inject
-        protected AsyncTaskSequencer AsyncTaskSequencer { get; set; } = new AsyncTaskSequencer();
-
-        protected override void ChildPropertyChanged(object sender, PropertyChangedEventArgs e)
+        protected override Task OnChildNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
         {
             RaiseMetaPropertiesChanged();
-            base.ChildPropertyChanged(sender, e);
+            return base.OnChildNeatooPropertyChanged(breadCrumbs);
         }
 
-        protected virtual Task AddAsyncMethod(Func<Task, Task> method, bool runOnException = false)
+        public Task RunAllRules(CancellationToken token = default)
         {
-            return AsyncTaskSequencer.AddTask(method, runOnException);
+            return Task.WhenAll(this.Select(x => x.RunAllRules(token)));
         }
 
-        public virtual Task WaitForRules()
-        {
-            return Task.WhenAll(this.Where(x => x.IsBusy).Select(x => x.WaitForRules()));
-        }
-
-        public Task CheckAllRules(CancellationToken token = default)
-        {
-            return Task.WhenAll(this.Select(x => x.CheckAllRules(token)));
-        }
-
-        public Task CheckAllSelfRules(CancellationToken token = default)
+        public Task RunSelfRules(CancellationToken token = default)
         {
             return Task.CompletedTask;
+        }
+
+        public void ClearAllErrors()
+        {
+            foreach (var item in this)
+            {
+                item.ClearAllErrors();
+            }
+        }
+
+        public void ClearSelfErrors()
+        {
+            foreach (var item in this)
+            {
+                item.ClearSelfErrors();
+            }
         }
     }
 }

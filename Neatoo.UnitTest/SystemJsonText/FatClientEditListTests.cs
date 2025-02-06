@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using Neatoo.Portal;
@@ -20,9 +20,9 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
         [TestInitialize]
         public void TestInitailize()
         {
-            scope = AutofacContainer.GetLifetimeScope().Resolve<IServiceScope>();
-            target = scope.Resolve<IEditObjectList>();
-            resolver = scope.Resolve<NeatooJsonSerializer>();
+            scope = UnitTestServices.GetLifetimeScope();
+            target = scope.GetRequiredService<IEditObjectList>();
+            resolver = scope.GetRequiredService<NeatooJsonSerializer>();
         }
 
         private string Serialize(object target)
@@ -54,7 +54,7 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
         [TestMethod]
         public void FatClientEditList_Deserialize_Child()
         {
-            var child = scope.Resolve<IEditObject>();
+            var child = scope.GetRequiredService<IEditObject>();
             target.Add(child);
 
             child.ID = Guid.NewGuid();
@@ -73,10 +73,10 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
         [TestMethod]
         public void FatClientEditList_Deserialize_Child_ParentRef()
         {
-            var parent = scope.Resolve<IEditObject>();
+            var parent = scope.GetRequiredService<IEditObject>();
             parent.ChildList = target;
 
-            var child = scope.Resolve<IEditObject>();
+            var child = scope.GetRequiredService<IEditObject>();
             target.Add(child);
 
             Assert.AreSame(child.Parent, parent);
@@ -98,7 +98,7 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
         [TestMethod]
         public void FatClientEditList_IsModified()
         {
-            var child = scope.Resolve<IEditObject>();
+            var child = scope.GetRequiredService<IEditObject>();
             target.Add(child);
 
             child.ID = Guid.NewGuid();
@@ -119,7 +119,7 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
         [TestMethod]
         public void FatClientEditList_IsModified_False()
         {
-            var child = scope.Resolve<IEditObject>();
+            var child = scope.GetRequiredService<IEditObject>();
             target.Add(child);
 
             child.ID = Guid.NewGuid();
@@ -141,7 +141,7 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
         [TestMethod]
         public void FatClientEditList_IsNew_False()
         {
-            var child = scope.Resolve<IEditObject>();
+            var child = scope.GetRequiredService<IEditObject>();
             target.Add(child);
 
             child.ID = Guid.NewGuid();

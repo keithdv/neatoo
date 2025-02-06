@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Core;
 using Neatoo.Rules;
@@ -17,29 +17,28 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     public class ValidateBaseTests
     {
 
-        private ILifetimeScope scope;
+        private IServiceScope scope;
         private IValidateObject validate;
         private IValidateObject child;
 
         [TestInitialize]
         public void TestInitailize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
-            validate = scope.Resolve<IValidateObject>();
-            child = scope.Resolve<IValidateObject>();
+            scope = UnitTestServices.GetLifetimeScope();
+            validate = scope.GetRequiredService<IValidateObject>();
+            child = scope.GetRequiredService<IValidateObject>();
             validate.Child = child;
             validate.PropertyChanged += Validate_PropertyChanged; 
             validate.Child.PropertyChanged += ChildValidate_PropertyChanged;
 
             Assert.IsFalse(validate.IsBusy);
-
         }
 
 
         [TestCleanup]
         public async Task TestCleanup()
         {
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
             Assert.IsFalse(validate.IsBusy);
             Assert.IsFalse(validate.IsSelfBusy);
             validate.PropertyChanged -= Validate_PropertyChanged;
@@ -170,7 +169,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public async Task ValidateBase_RunSelfRules()
         {
             var ruleCount = validate.RuleRunCount;
-            await validate.CheckAllSelfRules();
+            await validate.RunSelfRules();
             Assert.AreEqual(ruleCount + 3, validate.RuleRunCount);
         }
 
@@ -179,7 +178,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         {
             var ruleCount = validate.RuleRunCount;
             validate.Age = 10;
-            await validate.CheckAllRules();
+            await validate.RunAllRules();
             Assert.AreEqual(ruleCount + 3, validate.RuleRunCount);
         }
 

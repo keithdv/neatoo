@@ -1,24 +1,24 @@
-﻿using System;
+﻿//using System;
 
-namespace Neatoo
-{
-    public interface IServiceScope : IDisposable
-    {
-        IServiceScope BeginNewScope(object tag = null);
-        T Resolve<T>();
+//namespace Neatoo
+//{
+//    public interface IServiceProvider : IDisposable
+//    {
+//        IServiceProvider BeginNewScope(object tag = null);
+//        T Resolve<T>();
 
-        object Resolve(Type t);
+//        object Resolve(Type t);
 
-        bool TryResolve<T>(out T result) where T : class;
+//        bool TryResolve<T>(out T result) where T : class;
 
-        bool TryResolve(Type T, out object result);
+//        bool TryResolve(Type T, out object result);
 
-        Type ConcreteType(Type T);
-        Type ConcreteType<T>();
+//        Type ConcreteType(Type T);
+//        Type ConcreteType<T>();
 
-        bool IsRegistered<T>();
+//        bool IsRegistered<T>();
 
-        bool IsRegistered(Type type);
-    }
+//        bool IsRegistered(Type type);
+//    }
 
-}
+//}

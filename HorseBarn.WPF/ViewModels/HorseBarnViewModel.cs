@@ -95,6 +95,7 @@ namespace HorseBarn.WPF.ViewModels
                 cart.NumberOfHorses = 2;
                 cart.Name = "Wagon A";
 
+                await HorseBarn.RunAllRules();
 
                 HorseBarn = (IHorseBarn) await HorseBarn.Save();
             }

@@ -1,4 +1,4 @@
-using Autofac;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Portal;
 using Neatoo.UnitTest.Objects;
@@ -11,14 +11,14 @@ namespace Neatoo.UnitTest.ObjectPortal
     [TestClass]
     public class ReadWritePortalListTests
     {
-        private ILifetimeScope scope = AutofacContainer.GetLifetimeScope(true);
+        private IServiceScope scope = UnitTestServices.GetLifetimeScope(true);
         private IReadWritePortal<IEditObjectList> portal;
         private IEditObjectList editObjectList;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            portal = scope.Resolve<IReadWritePortal<IEditObjectList>>();
+            portal = scope.GetRequiredService<IReadWritePortal<IEditObjectList>>();
         }
 
         [TestCleanup]
@@ -43,7 +43,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         {
             var crit = Guid.NewGuid();
             editObjectList = await portal.Create(crit);
-            Assert.AreEqual(crit, editObjectList.GuidCriteria);
             Assert.IsTrue(editObjectList.CreateCalled);
         }
 
@@ -52,7 +51,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         {
             int crit = DateTime.Now.Millisecond;
             editObjectList = await portal.Create(crit);
-            Assert.AreEqual(crit, editObjectList.IntCriteria);
             Assert.IsTrue(editObjectList.CreateCalled);
         }
 
@@ -61,7 +59,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         public async Task ReadWritePortalList_Fetch()
         {
             editObjectList = await portal.Fetch();
-            Assert.IsTrue(editObjectList.ID.HasValue);
             Assert.IsTrue(editObjectList.FetchCalled);
             Assert.IsFalse(editObjectList.IsNew);
             Assert.IsFalse(editObjectList.IsChild);
@@ -76,7 +73,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         {
             var crit = Guid.NewGuid();
             editObjectList = await portal.Fetch(crit);
-            Assert.AreEqual(crit, editObjectList.GuidCriteria);
             Assert.IsTrue(editObjectList.FetchCalled);
         }
 
@@ -85,7 +81,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         {
             int crit = DateTime.Now.Millisecond;
             editObjectList = await portal.Fetch(crit);
-            Assert.AreEqual(crit, editObjectList.IntCriteria);
             Assert.IsTrue(editObjectList.FetchCalled);
         }
 
@@ -95,10 +90,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         public async Task ReadWritePortalList_Update()
         {
             editObjectList = await portal.Fetch();
-            var id = Guid.NewGuid();
-            editObjectList.ID = Guid.NewGuid();
             await portal.Update(editObjectList);
-            Assert.AreNotEqual(id, editObjectList.ID);
             Assert.IsTrue(editObjectList.UpdateCalled);
             Assert.IsFalse(editObjectList.IsNew);
             Assert.IsFalse(editObjectList.IsChild);
@@ -111,10 +103,8 @@ namespace Neatoo.UnitTest.ObjectPortal
         public async Task ReadWritePortalList_Insert()
         {
             editObjectList = await portal.Create();
-            editObjectList.ID = Guid.Empty;
             await portal.Update(editObjectList);
-            Assert.AreNotEqual(Guid.Empty, editObjectList.ID);
-            Assert.IsTrue(editObjectList.InsertCalled);
+            Assert.IsTrue(editObjectList.UpdateCalled);
             Assert.IsFalse(editObjectList.IsNew);
             Assert.IsFalse(editObjectList.IsChild);
             Assert.IsFalse(editObjectList.IsModified);

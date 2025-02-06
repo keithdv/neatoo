@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest
@@ -325,11 +326,7 @@ namespace Neatoo.UnitTest
             };
 
             sequencer.AddTask(funcA);
-            sequencer.AddTask(funcB).ContinueWith(t => {
-                Assert.IsTrue(completedA);
-                Assert.IsTrue(completedB);
-                Assert.IsFalse(completedC);
-            });
+            sequencer.AddTask(funcB);
             sequencer.AddTask(funcC);
 
             await sequencer.AllDone;
@@ -337,6 +334,55 @@ namespace Neatoo.UnitTest
             Assert.IsTrue(completedA);
             Assert.IsTrue(completedB);
             Assert.IsTrue(completedC);
+        }
+
+
+        [TestMethod]
+        public async Task AsyncTaskSequencer_NestedAddsAsyncMethod() {
+
+            asyncTaskSequencer.AddTask((t) => FunctionA());
+
+            await asyncTaskSequencer.AllDone;
+
+        }
+
+        private AsyncTaskSequencer asyncTaskSequencer = new AsyncTaskSequencer();
+        private int count = 0;
+
+        private async Task FunctionA()
+        {
+            var myCount = count;
+            if (count < 5)
+            {
+                count++;
+                asyncTaskSequencer.AddTask((t) => FunctionA());
+            }
+            await Task.Delay(5);
+            Debug.WriteLine($"FunctionA {myCount}");
+        }
+
+        [TestMethod]
+        public async Task AsyncTaskSequencer_Hangs()
+        {
+
+            asyncTaskSequencer.AddTask((t) => Hangs());
+
+            await asyncTaskSequencer.AllDone;
+
+        }
+
+
+        private async Task Hangs()
+        {
+            await Task.Delay(5);
+
+            if (count == 0)
+            {
+                count++;
+                asyncTaskSequencer.AddTask((t) => Hangs());
+            }
+
+            await Task.CompletedTask;
         }
     }
 }

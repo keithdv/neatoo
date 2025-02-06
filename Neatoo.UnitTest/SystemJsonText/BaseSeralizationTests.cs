@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Core;
 using Neatoo.Portal;
@@ -30,8 +30,7 @@ namespace Neatoo.UnitTest.SystemJsonText
         private IBaseObject single;
         private IBaseObject child;
         private IBaseObject third;
-        private MyReferenceHandler referenceHandler;
-        private JsonSerializerOptions options;
+        private NeatooJsonSerializer serializer;
 
 
 
@@ -40,16 +39,16 @@ namespace Neatoo.UnitTest.SystemJsonText
         public void TestInitialize()
         {
 
-            scope = AutofacContainer.GetLifetimeScope().Resolve<IServiceScope>();
+            scope = UnitTestServices.GetLifetimeScope();
 
             // Note: Can't be an interface type
-            single = scope.Resolve<IBaseObject>();
+            single = scope.GetRequiredService<IBaseObject>();
 
             single.Id = Guid.NewGuid();
             single.FirstName = Guid.NewGuid().ToString();
             single.LastName = Guid.NewGuid().ToString();
 
-            child = scope.Resolve<IBaseObject>();
+            child = scope.GetRequiredService<IBaseObject>();
 
             child.Id = Guid.NewGuid();
             child.FirstName = Guid.NewGuid().ToString();
@@ -57,27 +56,20 @@ namespace Neatoo.UnitTest.SystemJsonText
 
             single.Child = child;
 
-            third = scope.Resolve<IBaseObject>();
+            third = scope.GetRequiredService<IBaseObject>();
             third.Id = Guid.NewGuid();
             third.FirstName = Guid.NewGuid().ToString();
             third.LastName = Guid.NewGuid().ToString();
 
             third.Child = child;
 
-            referenceHandler = new MyReferenceHandler();
+            serializer = scope.GetRequiredService<NeatooJsonSerializer>();
 
-            options = new()
-            {
-                Converters = { new NeatooJsonConverterFactory(scope) },
-                ReferenceHandler = referenceHandler,
-                WriteIndented = true
-            };
         }
 
         [TestCleanup]
         public void TestCleanup()
         {
-            referenceHandler.Reset();
             scope.Dispose();
         }
 
@@ -86,9 +78,9 @@ namespace Neatoo.UnitTest.SystemJsonText
         public void Serialize_BaseObject()
         {
             List<IBase> list = new List<IBase>() { single, third, child };
-            var json = System.Text.Json.JsonSerializer.Serialize(list, options);
+            var json = serializer.Serialize(list);
 
-            var deserialized = (List<IBase>) System.Text.Json.JsonSerializer.Deserialize(json, typeof(List<IBaseObject>), options);
+            var deserialized = (List<IBase>) serializer.Deserialize(json, typeof(List<IBase>));
 
 
         }
@@ -97,9 +89,9 @@ namespace Neatoo.UnitTest.SystemJsonText
         public void Serialize_IBase_Deserialize()
         {
             List<IBase> list = new List<IBase>() { single, third, child };
-            var json = System.Text.Json.JsonSerializer.Serialize(list, options);
+            var json = serializer.Serialize(list);
 
-            var deserialized = (List<IBase>)System.Text.Json.JsonSerializer.Deserialize(json, typeof(List<IBase>), options);
+            var deserialized = (List<IBase>)serializer.Deserialize(json, typeof(List<IBase>));
 
             var result = deserialized.Cast<IBaseObject>().ToList();
 

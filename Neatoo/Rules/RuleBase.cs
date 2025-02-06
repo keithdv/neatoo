@@ -169,7 +169,7 @@ namespace Neatoo.Rules
         {
             if (RunRuleTarget[registeredProperty] is IValidateProperty editProperty)
             {
-                editProperty.LoadProperty(value);
+                editProperty.LoadValue(value);
             }
             else
             {

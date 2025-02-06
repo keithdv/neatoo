@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Autofac.Core;
 using Neatoo.AuthorizationRules;
 using Neatoo.Core;
@@ -41,7 +41,7 @@ namespace Neatoo.Autofac
 
 
             // Scope Wrapper
-            builder.RegisterType<ServiceScope>().As<IServiceScope>().InstancePerLifetimeScope();
+            //builder.RegisterType<ServiceScope>().As<IServiceScope>().InstancePerLifetimeScope();
 
             // Meta Data about the properties and methods of Classes
             // This will not change during runtime
@@ -71,10 +71,10 @@ namespace Neatoo.Autofac
             builder.RegisterType<RegisteredProperty>().As<IRegisteredProperty>().AsSelf();
             builder.Register<CreateRegisteredProperty>(cc =>
             {
-                var scope = cc.Resolve<Func<ILifetimeScope>>();
+                var scope = cc.GetRequiredService<Func<IServiceScope>>();
                 return (propertyInfo) =>
                 {
-                    return scope().Resolve<Func<System.Reflection.PropertyInfo, IRegisteredProperty>>()(propertyInfo);
+                    return scope().GetRequiredService<Func<System.Reflection.PropertyInfo, IRegisteredProperty>>()(propertyInfo);
                 };
             });
 
@@ -140,8 +140,8 @@ namespace Neatoo.Autofac
 
             builder.Register<RequestFromServerDelegate>(cc => {
 
-                var httpClient = cc.Resolve<HttpClient>();
-                var portalJsonSerializer = cc.Resolve<IPortalJsonSerializer>();
+                var httpClient = cc.GetRequiredService<HttpClient>();
+                var portalJsonSerializer = cc.GetRequiredService<IPortalJsonSerializer>();
 
                 return async (portalRequest) =>
                 {

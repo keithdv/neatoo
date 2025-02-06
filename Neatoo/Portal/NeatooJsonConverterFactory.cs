@@ -8,18 +8,43 @@ using System.Threading.Tasks;
 using Neatoo.Core;
 using System.Reflection.PortableExecutable;
 using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
+using System.Threading;
+using System.Reflection.Metadata;
 
 namespace Neatoo.Portal
 {
-
-    public class NeatooJsonSerializer : IDisposable, IPortalJsonSerializer
+    public interface IPortalJsonSerializer
     {
-        JsonSerializerOptions Options { get; }
-        private MyReferenceHandler MyReferenceHandler { get; }
-        public NeatooJsonSerializer(NeatooJsonConverterFactory neatooJsonConverterFactory)
-        {
+        string Serialize(object target);
+        T Deserialize<T>(string json);
+        object Deserialize(string json, Type type);
+        PortalRequest ToPortalRequest(PortalOperation portalOperation, Type targetType);
+        PortalRequest ToPortalRequest(PortalOperation portalOperation, Type targetType, params object[] criteria);
+        PortalRequest ToPortalRequest(PortalOperation portalOperation, object target);
+        PortalRequest  ToPortalRequest(PortalOperation portalOperation, object target, params object[] criteria);
+        (object target, object[] criteria) FromPortalRequest(PortalRequest portalRequest);
+        object FromPortalResponse(PortalResponse portalResponse);
 
-            MyReferenceHandler = new MyReferenceHandler();
+        public static Type ToType(string fullName)
+        {
+            var types = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType(fullName));
+            var type = types.FirstOrDefault(t => t != null);
+
+            return type;
+        }
+
+    }
+
+    public class NeatooJsonSerializer : IPortalJsonSerializer
+    {
+        private readonly GetImplementationType getImplementationType;
+
+        JsonSerializerOptions Options { get; }
+
+        private MyReferenceHandler MyReferenceHandler { get; } = new MyReferenceHandler();
+        public NeatooJsonSerializer(NeatooJsonConverterFactory neatooJsonConverterFactory, GetImplementationType getImplementationType)
+        {
             Options = new JsonSerializerOptions
             {
                 ReferenceHandler = MyReferenceHandler,
@@ -27,34 +52,128 @@ namespace Neatoo.Portal
                 WriteIndented = true,
                 IncludeFields = true
             };
+            this.getImplementationType = getImplementationType;
         }
 
-        public void Dispose()
-        {
-            MyReferenceHandler.Reset();
-        }
 
         public string Serialize(object target)
         {
+            using var rr = new MyReferenceResolver();
+            MyReferenceHandler.asyncLocal.Value = rr;
+
             return JsonSerializer.Serialize(target, Options);
         }
 
         public T Deserialize<T>(string json)
         {
+            using var rr = new MyReferenceResolver();
+            MyReferenceHandler.asyncLocal.Value = rr;
+
             return JsonSerializer.Deserialize<T>(json, Options);
         }
 
         public object Deserialize(string json, Type type)
         {
+            using var rr = new MyReferenceResolver();
+            MyReferenceHandler.asyncLocal.Value = rr;
+
             return JsonSerializer.Deserialize(json, type, Options);
         }
+
+        public PortalRequest ToPortalRequest(PortalOperation portalOperation, Type targetType)
+        {
+            return new PortalRequest()
+            {
+                PortalOperation = portalOperation,
+                Target = new ObjectTypeJson() { AssemblyType = getImplementationType(targetType).FullName },
+            };
+        }
+
+        public PortalRequest ToPortalRequest(PortalOperation portalOperation, Type targetType, params object[] criteria)
+        {
+            var criteriaJson = criteria.Select(c => ToObjectTypeJson(c)).ToList();
+            return new PortalRequest()
+            {
+                PortalOperation = portalOperation,
+                Target = new ObjectTypeJson() { AssemblyType = getImplementationType(targetType).FullName },
+                Criteria = criteriaJson
+            };
+        }
+
+        public PortalRequest ToPortalRequest(PortalOperation portalOperation, object target)
+        {
+            var targetJson = ToObjectTypeJson(target);
+            return new PortalRequest()
+            {
+                PortalOperation = portalOperation,
+                Target = targetJson
+            };
+        }
+
+        public PortalRequest ToPortalRequest(PortalOperation portalOperation, object target, params object[] criteria)
+        {
+            var targetJson = ToObjectTypeJson(target);
+            var criteriaJson = criteria.Select(c => ToObjectTypeJson(c)).ToList();
+            return new PortalRequest()
+            {
+                PortalOperation = portalOperation,
+                Target = targetJson,
+                Criteria = criteriaJson
+            };
+        }
+
+        public ObjectTypeJson ToObjectTypeJson<T>()
+        {
+            return new ObjectTypeJson()
+            {
+                AssemblyType = getImplementationType(typeof(T)).FullName
+            };
+        }
+
+        public ObjectTypeJson ToObjectTypeJson(object target)
+        {
+            return new ObjectTypeJson()
+            {
+                Json = target != null ? Serialize(target) : null,
+                AssemblyType = getImplementationType(target.GetType()).FullName
+            };
+        }
+
+        public (object target, object[] criteria) FromPortalRequest(PortalRequest portalRequest)
+        {
+
+            object target = null;
+            object[] criteria = null;
+
+            if (portalRequest.Target != null && !string.IsNullOrEmpty(portalRequest.Target.Json))
+            {
+                target = FromObjectTypeJson(portalRequest.Target);
+            }
+            if(portalRequest.Criteria != null)
+            {
+                criteria = portalRequest.Criteria.Select(c => FromObjectTypeJson(c)).ToArray();
+            }
+
+            return (target, criteria);
+        }
+
+        public object FromPortalResponse(PortalResponse portalResponse)
+        {
+            return Deserialize(portalResponse.ObjectJson, IPortalJsonSerializer.ToType(portalResponse.AssemblyType));
+        }
+
+        public object FromObjectTypeJson(ObjectTypeJson objectTypeJson)
+        {
+            return Deserialize(objectTypeJson.Json, IPortalJsonSerializer.ToType(objectTypeJson.AssemblyType));
+        }
+
     }
 
     public class NeatooJsonConverterFactory : JsonConverterFactory
     {
-        private IServiceScope scope;
+        private IServiceProvider scope;
 
-        public NeatooJsonConverterFactory(IServiceScope scope)
+        public NeatooJsonConverterFactory(IServiceProvider scope)
         {
             this.scope = scope;
         }
@@ -77,11 +196,11 @@ namespace Neatoo.Portal
         {
             if (typeToConvert.IsAssignableTo(typeof(IBase)))
             {
-                return (JsonConverter)scope.Resolve(typeof(NeatooBaseJsonTypeConverter<>).MakeGenericType(typeToConvert));
+                return (JsonConverter)scope.GetRequiredService(typeof(NeatooBaseJsonTypeConverter<>).MakeGenericType(typeToConvert));
             }
             else if (typeToConvert.IsAssignableTo(typeof(IListBase)))
             {
-                return (JsonConverter)scope.Resolve(typeof(NeatooListBaseJsonTypeConverter<>).MakeGenericType(typeToConvert));
+                return (JsonConverter)scope.GetRequiredService(typeof(NeatooListBaseJsonTypeConverter<>).MakeGenericType(typeToConvert));
             }
 
             return null;
@@ -91,9 +210,9 @@ namespace Neatoo.Portal
     public class NeatooBaseJsonTypeConverter<T> : JsonConverter<T>
             where T : IBase
     {
-        private readonly IServiceScope scope;
+        private readonly IServiceProvider scope;
 
-        public NeatooBaseJsonTypeConverter(IServiceScope scope)
+        public NeatooBaseJsonTypeConverter(IServiceProvider scope)
         {
             this.scope = scope;
         }
@@ -154,7 +273,7 @@ namespace Neatoo.Portal
                 {
                     var typeString = reader.GetString();
                     var type = IPortalJsonSerializer.ToType(typeString);
-                    result = (T)scope.Resolve(type);
+                    result = (T)scope.GetRequiredService(type);
 
                     if(result is IJsonOnDeserializing jsonOnDeserializing)
                     {
@@ -297,9 +416,9 @@ namespace Neatoo.Portal
     public class NeatooListBaseJsonTypeConverter<T> : JsonConverter<T>
             where T : IListBase
     {
-        private readonly IServiceScope scope;
+        private readonly IServiceProvider scope;
 
-        public NeatooListBaseJsonTypeConverter(IServiceScope scope)
+        public NeatooListBaseJsonTypeConverter(IServiceProvider scope)
         {
             this.scope = scope;
         }
@@ -352,7 +471,7 @@ namespace Neatoo.Portal
                 {
                     var typeString = reader.GetString();
                     var type = IPortalJsonSerializer.ToType(typeString);
-                    list = (T)scope.Resolve(type);
+                    list = (T)scope.GetRequiredService(type);
 
                     if (list is IJsonOnDeserializing jsonOnDeserializing)
                     {
@@ -435,58 +554,70 @@ namespace Neatoo.Portal
 
     class MyReferenceHandler : ReferenceHandler
     {
-        private ReferenceResolver _rootedResolver;
-        public MyReferenceHandler() => Reset();
-        public override ReferenceResolver CreateResolver() => _rootedResolver;
-        public void Reset() => _rootedResolver = new MyReferenceResolver();
+        public AsyncLocal<ReferenceResolver> asyncLocal = new AsyncLocal<ReferenceResolver>();
 
-        class MyReferenceResolver : ReferenceResolver
+        public override ReferenceResolver CreateResolver()
         {
-            private uint _referenceCount;
-            private readonly Dictionary<string, object> _referenceIdToObjectMap = new Dictionary<string, object>();
-            private readonly Dictionary<object, string> _objectToReferenceIdMap = new Dictionary<object, string>(ReferenceEqualityComparer.Instance);
+            return asyncLocal.Value;
+        }
 
-            public override void AddReference(string referenceId, object value)
+        
+    }
+    class MyReferenceResolver : ReferenceResolver, IDisposable
+    {
+        private uint _referenceCount;
+        private Dictionary<string, object> _referenceIdToObjectMap = new Dictionary<string, object>();
+        private Dictionary<object, string> _objectToReferenceIdMap = new Dictionary<object, string>(ReferenceEqualityComparer.Instance);
+
+        public void Dispose()
+        {
+            _referenceCount = 0;
+            _referenceIdToObjectMap.Clear();
+            _objectToReferenceIdMap.Clear();
+            _referenceIdToObjectMap = null;
+            _objectToReferenceIdMap = null;
+        }
+
+        public override void AddReference(string referenceId, object value)
+        {
+            if (!_referenceIdToObjectMap.TryAdd(referenceId, value))
             {
-                if (!_referenceIdToObjectMap.TryAdd(referenceId, value))
-                {
-                    throw new JsonException();
-                }
+                throw new JsonException();
+            }
+        }
+
+        public override string GetReference(object value, out bool alreadyExists)
+        {
+            var type = value.GetType();
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            {
+                alreadyExists = false;
+                return string.Empty;
             }
 
-            public override string GetReference(object value, out bool alreadyExists)
+            if (_objectToReferenceIdMap.TryGetValue(value, out string referenceId))
             {
-                var type = value.GetType();
-                if(type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-                {
-                    alreadyExists = false;
-                    return string.Empty;
-                }
-
-                if (_objectToReferenceIdMap.TryGetValue(value, out string referenceId))
-                {
-                    alreadyExists = true;
-                }
-                else
-                {
-                    _referenceCount++;
-                    referenceId = _referenceCount.ToString();
-                    _objectToReferenceIdMap.Add(value, referenceId);
-                    alreadyExists = false;
-                }
-
-                return referenceId;
+                alreadyExists = true;
+            }
+            else
+            {
+                _referenceCount++;
+                referenceId = _referenceCount.ToString();
+                _objectToReferenceIdMap.Add(value, referenceId);
+                alreadyExists = false;
             }
 
-            public override object ResolveReference(string referenceId)
-            {
-                if (!_referenceIdToObjectMap.TryGetValue(referenceId, out object value))
-                {
-                    throw new JsonException();
-                }
+            return referenceId;
+        }
 
-                return value;
+        public override object ResolveReference(string referenceId)
+        {
+            if (!_referenceIdToObjectMap.TryGetValue(referenceId, out object value))
+            {
+                throw new JsonException();
             }
+
+            return value;
         }
     }
 }

@@ -33,7 +33,7 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public void FillFromDto(PersonDto dto)
         {
-             this[IdProperty].LoadProperty(dto.PersonId);
+             this[IdProperty].LoadValue(dto.PersonId);
 
             // These will not mark IsModified to true
             // as long as within ObjectPortal operation

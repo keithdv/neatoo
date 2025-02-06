@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -39,9 +40,9 @@ namespace Neatoo.AuthorizationRules
         private IDictionary<AuthorizeOperation, IList<AuthorizationRuleMethod>> AuthorizationMethods = new ConcurrentDictionary<AuthorizeOperation, IList<AuthorizationRuleMethod>>();
         private bool IsRegistered { get; set; }
         bool IAuthorizationRuleManager.IsRegistered => IsRegistered;
-        private IServiceScope Scope { get; set; }
+        private IServiceProvider Scope { get; set; }
 
-        public AuthorizationRuleManager(IServiceScope scope)
+        public AuthorizationRuleManager(IServiceProvider scope)
         {
             Scope = scope; // Needed for AddRule
             CallRegisterAuthorizationRulesMethod();
@@ -97,7 +98,7 @@ namespace Neatoo.AuthorizationRules
         public void AddRule<R>() where R : IAuthorizationRule
         {
 
-            R rule = Scope.Resolve<R>();
+            R rule = Scope.GetRequiredService<R>();
 
             IsRegistered = true;
 

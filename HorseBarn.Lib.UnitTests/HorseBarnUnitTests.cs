@@ -89,7 +89,7 @@ namespace HorseBarn.lib.UnitTests
             var lightHorse = await horseBarn.AddNewHorse(criteria);
 
             Assert.AreEqual(mockLightHorse.Object, lightHorse);
-            mockLightHorse.Verify(h => h.CheckAllRules(CancellationToken.None), Times.Once);
+            mockLightHorse.Verify(h => h.RunAllRules(CancellationToken.None), Times.Once);
         }
 
         [TestMethod]
@@ -102,7 +102,7 @@ namespace HorseBarn.lib.UnitTests
             var heavyHorse = await horseBarn.AddNewHorse(Mock.Of<IHorseCriteria>());
 
             Assert.AreEqual(mockHeavyHorse.Object, heavyHorse);
-            mockHeavyHorse.Verify(h => h.CheckAllRules(CancellationToken.None), Times.Once);
+            mockHeavyHorse.Verify(h => h.RunAllRules(CancellationToken.None), Times.Once);
         }
 
         [TestMethod]
@@ -124,7 +124,7 @@ namespace HorseBarn.lib.UnitTests
             await horseBarn.MoveHorseToCart(mockHeavyHorse.Object, mockWagon.Object);
 
             mockWagon.Verify(w => w.HorseList.Add(mockHeavyHorse.Object), Times.Once);
-            mockWagon.Verify(w => w.CheckAllRules(CancellationToken.None), Times.Once);
+            mockWagon.Verify(w => w.RunAllRules(CancellationToken.None), Times.Once);
         }
     }
 }

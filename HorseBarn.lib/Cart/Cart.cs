@@ -52,11 +52,11 @@ namespace HorseBarn.lib.Cart
         IEnumerable<IHorse> ICart.Horses => HorseList.Cast<IHorse>();
 
 
-
         public async Task RemoveHorse(IHorse horse)
         {
             HorseList.RemoveHorse(horse);
             await CheckRules(nameof(HorseList));
+            await WaitForTasks();
         }
 
         public async Task AddHorse(IHorse horse)
@@ -69,6 +69,7 @@ namespace HorseBarn.lib.Cart
                 throw new ArgumentException($"Horse {horse.GetType().FullName} is not of type {typeof(H).FullName}");
             }
             await CheckRules(nameof(HorseList));
+            await WaitForTasks();
         }
 
         public bool CanAddHorse(IHorse horse)
@@ -90,7 +91,7 @@ namespace HorseBarn.lib.Cart
         {
             this.HorseList = await horsePortal.CreateChild();
             this.NumberOfHorses = 1;
-            await this.CheckAllSelfRules();
+            await this.RunSelfRules();
         }
 
         [FetchChild]

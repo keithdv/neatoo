@@ -29,7 +29,7 @@ namespace Neatoo
         public IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
         public IValidatePropertyManager<IValidateProperty> ValidatePropertyManager { get; }
 
-        public CreateRuleManager<T> CreateRuleManagerDI { get; }
+        public RuleManagerFactory<T> ruleManagerFactory { get; }
 
         public IPropertyManager<IProperty> PropertyManager => ValidatePropertyManager;
 
@@ -37,26 +37,26 @@ namespace Neatoo
         {
             RegisteredPropertyManager = new RegisteredPropertyManager<T>((System.Reflection.PropertyInfo pi) => new RegisteredProperty(pi));
             this.ValidatePropertyManager = new ValidatePropertyManager<IValidateProperty>(RegisteredPropertyManager, new DefaultFactory());
-            this.CreateRuleManagerDI = (t, r) => new RuleManager<T>(t, r, new AttributeToRule(rp => new RequiredRule(rp)));
+            this.ruleManagerFactory = new RuleManagerFactory<T>(new AttributeToRule(rp => new RequiredRule(rp)));
         }
 
-        public ValidateBaseServices(IRegisteredPropertyManager<T> registeredPropertyManager, CreateRuleManager<T> createRuleManager)
+        public ValidateBaseServices(IRegisteredPropertyManager<T> registeredPropertyManager, RuleManagerFactory<T> createRuleManager)
         {
-            this.CreateRuleManagerDI = createRuleManager;
+            this.ruleManagerFactory = createRuleManager;
         }
 
-        public ValidateBaseServices(Func<IRegisteredPropertyManager, IValidatePropertyManager<IValidateProperty>>  validatePropertyManager, IRegisteredPropertyManager<T> registeredPropertyManager, CreateRuleManager<T> createRuleManager)
+        public ValidateBaseServices(CreateValidatePropertyManager  validatePropertyManager, IRegisteredPropertyManager<T> registeredPropertyManager, RuleManagerFactory<T> createRuleManager)
         {
             RegisteredPropertyManager = new RegisteredPropertyManager<T>((System.Reflection.PropertyInfo pi) => new RegisteredProperty(pi));
             ValidatePropertyManager = validatePropertyManager(RegisteredPropertyManager);
-            this.CreateRuleManagerDI = createRuleManager;
+            this.ruleManagerFactory = createRuleManager;
         }
 
 
 
         public IRuleManager<T> CreateRuleManager(T target)
         {
-            return CreateRuleManagerDI(target, this.RegisteredPropertyManager);
+            return ruleManagerFactory.CreateRuleManager(target, this.RegisteredPropertyManager);
         }
 
     }

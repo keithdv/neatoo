@@ -9,8 +9,8 @@ namespace Neatoo.Portal
 {
     public interface IPortalTarget
     {
-        IDisposable StopAllActions();
-        void StartAllActions();
+        IDisposable PauseAllActions();
+        void ResumeAllActions();
         internal Task PostPortalConstruct();
 
     }

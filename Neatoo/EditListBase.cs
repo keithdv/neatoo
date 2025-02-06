@@ -43,7 +43,7 @@ namespace Neatoo
         protected List<I> DeletedList { get; } = new List<I>();
 
         [JsonIgnore]
-        protected bool IsStopped { get; set; }
+        protected bool IsPaused { get; set; }
 
         protected (bool IsModified, bool IsSelfModified, bool IsSavable) EditMetaState { get; private set; }
 
@@ -75,7 +75,7 @@ namespace Neatoo
 
         protected override void InsertItem(int index, I item)
         {
-            if (!IsStopped)
+            if (!IsPaused)
             {
                 if (item.IsDeleted)
                 {
@@ -93,7 +93,7 @@ namespace Neatoo
 
         protected override void RemoveItem(int index)
         {
-            if (!IsStopped)
+            if (!IsPaused)
             {
                 var item = this[index];
 
@@ -165,13 +165,13 @@ namespace Neatoo
         public override void OnDeserializing()
         {
             base.OnDeserializing();
-            IsStopped = true;
+            IsPaused = true;
         }
 
         public override void OnDeserialized()
         {
             base.OnDeserialized();
-            IsStopped = false;
+            IsPaused = false;
         }
     }
 

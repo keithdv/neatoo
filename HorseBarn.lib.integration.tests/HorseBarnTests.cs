@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using HorseBarn.Dal.Ef;
 using HorseBarn.lib.Cart;
 using HorseBarn.lib.Horse;
@@ -13,7 +13,7 @@ namespace HorseBarn.lib.integration.tests
     [TestClass]
     public sealed class HorseBarnTests
     {
-        private ILifetimeScope scope;
+        private IServiceScope scope;
         private IReadWritePortal<IHorseBarn> portal;
         private HorseBarnContext horseBarnContext;
         private IDbContextTransaction transaction;
@@ -22,9 +22,9 @@ namespace HorseBarn.lib.integration.tests
         public async Task TestInitialize()
         {
 
-            scope = AutofacContainer.GetLifetimeScope();
-            portal = scope.Resolve<IReadWritePortal<IHorseBarn>>();
-            horseBarnContext = scope.Resolve<HorseBarnContext>();
+            scope = UnitTestContainer.GetLifetimeScope();
+            portal = scope.ServiceProvider.GetRequiredService<IReadWritePortal<IHorseBarn>>();
+            horseBarnContext = scope.ServiceProvider.GetRequiredService<HorseBarnContext>();
 
             await horseBarnContext.Horses.ExecuteDeleteAsync();
             await horseBarnContext.Carts.ExecuteDeleteAsync();
@@ -106,7 +106,7 @@ namespace HorseBarn.lib.integration.tests
 
             horseBarn = (IHorseBarn) await horseBarn.Save();
 
-            var horseBarnContext = scope.Resolve<IHorseBarnContext>();
+            var horseBarnContext = scope.ServiceProvider.GetRequiredService<IHorseBarnContext>();
 
             var horses = await horseBarnContext.Horses.ToListAsync();
 

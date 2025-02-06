@@ -13,10 +13,12 @@ using System.Threading.Tasks;
 
 namespace Neatoo.Core
 {
-
-    public interface IPropertyManager<out P> : INotifyPropertyChanged, INotifyNeatooPropertyChanged
+    public interface IPropertyManager<out P> : INotifyNeatooPropertyChanged
         where P : IProperty
     {
+        bool IsBusy { get; }
+        bool IsSelfBusy { get; }
+        Task WaitForTasks();
         IRegisteredProperty GetRegisteredProperty(string name);
         bool HasProperty(string propertyName);
 
@@ -33,162 +35,7 @@ namespace Neatoo.Core
         void SetProperties(IEnumerable<IProperty> properties);
     }
 
-
-    public delegate Task NeatooPropertyChanged(string propertyName, object source);
-
-    public interface INotifyNeatooPropertyChanged
-    {
-        event NeatooPropertyChanged NeatooPropertyChanged;
-    }
-
-
-    public interface IProperty : INotifyPropertyChanged, INotifyNeatooPropertyChanged
-    {
-        string Name { get; }
-        object Value { get; set; }
-
-        void SetValue(object newValue);
-
-        Task Task { get; }
-
-        TaskAwaiter GetAwaiter() => Task.GetAwaiter();
-
-    }
-
-    public interface IProperty<T> : IProperty
-    {
-        new T Value { get; set; }
-
-    }
-
-    public class Property<T> : IProperty<T>, IProperty, INotifyPropertyChanged, IJsonOnDeserialized
-    {
-        // TODO: Shouldn't be modified from the outside
-        public string Name { get; } // Setter for Deserialization of Edit
-
-        protected T _value = default;
-
-        public virtual T Value
-        {
-            get => _value;
-            // TODO - Don't allow if the property setting on the ValidateBase<> is private set
-            set
-            {
-                SetValue(value);
-            }
-        }
-
-        object IProperty.Value { get => Value; set => SetValue(value); }
-
-        [JsonIgnore]
-        public Task Task { get; protected set; } = Task.CompletedTask;
-
-        public virtual void SetValue(object newValue)
-        {
-            if (newValue == null && _value == null) { return; }
-
-            Task = Task.CompletedTask;
-
-            if (newValue == null)
-            {
-                if (_value is INotifyNeatooPropertyChanged neatooPropertyChanged)
-                {
-                    neatooPropertyChanged.NeatooPropertyChanged -= _OnValueNeatooPropertyChanged;
-                }
-
-                _value = default;
-                OnPropertyChanged(nameof(Value));
-                Task = OnValueNeatooPropertyChanged(nameof(Value), this);
-            }
-            else if (newValue is T value)
-            {
-                var isDiff = AreSame(_value, value);
-
-                if (isDiff)
-                {
-                    if (value is INotifyNeatooPropertyChanged neatooPropertyChanged)
-                    {
-                        neatooPropertyChanged.NeatooPropertyChanged -= _OnValueNeatooPropertyChanged;
-                    }
-                }
-
-                _value = value;
-
-                if (isDiff)
-                {
-                    if (value is INotifyNeatooPropertyChanged neatooPropertyChanged)
-                    {
-                        neatooPropertyChanged.NeatooPropertyChanged += _OnValueNeatooPropertyChanged;
-                    }
-
-                    OnPropertyChanged(nameof(Value));
-                    Task = OnValueNeatooPropertyChanged(nameof(Value), this);
-                }
-            }
-            else
-            {
-                throw new PropertyTypeMismatchException($"Type {newValue.GetType()} is not type {typeof(T).FullName}");
-            }
-
-            if (Task.IsCompleted && Task.IsFaulted)
-            {
-                throw Task.Exception;
-            }
-        }
-
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        private Task _OnValueNeatooPropertyChanged(string propertyName, object source)
-        {
-            return OnValueNeatooPropertyChanged(propertyName, source);
-        }
-
-        protected virtual Task OnValueNeatooPropertyChanged(string propertyName, object source)
-        {
-            return NeatooPropertyChanged?.Invoke(this.Name, source) ?? Task.CompletedTask;
-        }
-
-        public Property(string name)
-        {
-            this.Name = name;
-        }
-
-        [JsonConstructor]
-        public Property(string name, T value) : this(name)
-        {
-            _value = value;
-        }
-
-        protected virtual bool AreSame<P>(P oldValue, P newValue)
-        {
-            if (!typeof(P).IsValueType)
-            {
-                if (oldValue == null && newValue == null)
-                {
-                    return true;
-                }
-                return !(ReferenceEquals(oldValue, newValue));
-            }
-            else
-            {
-                return !oldValue.Equals(newValue);
-            }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        public event NeatooPropertyChanged NeatooPropertyChanged;
-
-        public void OnDeserialized()
-        {
-            if (Value is INotifyNeatooPropertyChanged neatooPropertyChanged)
-            {
-                neatooPropertyChanged.NeatooPropertyChanged += OnValueNeatooPropertyChanged;
-            }
-        }
-    }
+    public delegate IPropertyManager<IProperty> CreatePropertyManager(IRegisteredPropertyManager registeredPropertyManager);
 
     public class PropertyManager<P> : IPropertyManager<P>, IJsonOnDeserialized
         where P : IProperty
@@ -198,6 +45,9 @@ namespace Neatoo.Core
         protected readonly IRegisteredPropertyManager RegisteredPropertyManager;
 
         IRegisteredPropertyManager IPropertyManager<P>.RegisteredPropertyManager => RegisteredPropertyManager;
+
+        public bool IsBusy => fieldData.Values.Any(_ => _.IsBusy);
+        public bool IsSelfBusy => fieldData.Values.Any(_ => _.IsSelfBusy);
 
         public bool HasProperty(string propertyName)
         {
@@ -215,21 +65,13 @@ namespace Neatoo.Core
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public Task WaitForTasks() => Task.WhenAll(fieldData.Values.Select(_ => _.WaitForTasks()));
+
         public event NeatooPropertyChanged NeatooPropertyChanged;
 
-        private void _OnPropertyChanged(object sender, PropertyChangedEventArgs e)
+        private Task _OnNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
         {
-            if (e.PropertyName == nameof(IProperty.Value))
-            {
-                // Switch it from the IProperty.Name to IPropertyManager.PropertyName
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(((IProperty)sender).Name));
-            }
-        }
-
-        private Task _OnNeatooPropertyChanged(string propertyName, object source)
-        {
-            return NeatooPropertyChanged?.Invoke(propertyName, this); // Switch source on purpose
+            return NeatooPropertyChanged?.Invoke(breadCrumbs) ?? Task.CompletedTask;
         }
 
         public PropertyManager(IRegisteredPropertyManager registeredPropertyManager, IFactory factory)
@@ -257,7 +99,6 @@ namespace Neatoo.Core
 
             var newProperty = (P)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty });
 
-            newProperty.PropertyChanged += _OnPropertyChanged;
             newProperty.NeatooPropertyChanged += _OnNeatooPropertyChanged;
 
             fieldData[registeredProperty.Name] = newProperty;
@@ -282,8 +123,7 @@ namespace Neatoo.Core
 
         void IPropertyManager<P>.SetProperties(IEnumerable<IProperty> properties)
         {
-            
-            foreach(var p in properties.Cast<P>())
+            foreach (var p in properties.Cast<P>())
             {
                 if (fieldData.TryGetValue(p.Name, out var fd))
                 {
@@ -291,38 +131,22 @@ namespace Neatoo.Core
                 }
                 fieldData[p.Name] = p;
             }
-
         }
 
         public void OnDeserialized()
         {
             foreach (var p in fieldData.Values)
             {
-                p.PropertyChanged += _OnPropertyChanged;
                 p.NeatooPropertyChanged += _OnNeatooPropertyChanged;
             }
         }
 
-
-        IEnumerable<P>  IPropertyManager<P>.GetProperties => fieldData.Values.AsEnumerable();
-
-        //void IPropertyManager<P>.SetProperties(IEnumerable<P> properties)
-        //{
-        //    if (fieldData.Count > 0)
-        //    {
-        //        throw new InvalidOperationException("Properties already set");
-        //    }
-
-        //    fieldData = properties.ToDictionary(p => p.Name);
-        //}
-
+        IEnumerable<P> IPropertyManager<P>.GetProperties => fieldData.Values.AsEnumerable();
     }
-
 
     [Serializable]
     public class PropertyTypeMismatchException : Exception
     {
-
         public PropertyTypeMismatchException() { }
         public PropertyTypeMismatchException(string message) : base(message) { }
         public PropertyTypeMismatchException(string message, Exception inner) : base(message, inner) { }
@@ -330,7 +154,6 @@ namespace Neatoo.Core
           System.Runtime.Serialization.SerializationInfo info,
           System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
     }
-
 
     [Serializable]
     public class PropertyNotFoundException : Exception
@@ -343,4 +166,7 @@ namespace Neatoo.Core
           System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
     }
 }
+
+
+
 

@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Portal;
 using Neatoo.Rules;
@@ -63,14 +63,14 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     public class SharedAsyncRuleTests
     {
 
-        private ILifetimeScope scope;
+        private IServiceScope scope;
         private ISharedAsyncRuleObject target;
 
         [TestInitialize]
         public void TestInitailize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
-            target = scope.Resolve<ISharedAsyncRuleObject>();
+            scope = UnitTestServices.GetLifetimeScope();
+            target = scope.GetRequiredService<ISharedAsyncRuleObject>();
 
         }
 
@@ -87,7 +87,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             target.FirstName = "John";
             target.LastName = "Smith";
 
-            await target.WaitForRules();
+            await target.WaitForTasks();
 
             Assert.AreEqual("John Smith", target.ShortName);
 

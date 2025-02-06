@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Rules;
 using Neatoo.UnitTest.PersonObjects;
@@ -16,16 +16,16 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     public class ValidateListBaseAsyncBaseAsyncTests
     {
 
-        ILifetimeScope scope;
+        IServiceScope scope;
         IValidateAsyncObjectList List;
         IValidateAsyncObject Child;
 
         [TestInitialize]
         public void TestInitailize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
-            List = scope.Resolve<IValidateAsyncObjectList>();
-            Child = scope.Resolve<IValidateAsyncObject>();
+            scope = UnitTestServices.GetLifetimeScope();
+            List = scope.GetRequiredService<IValidateAsyncObjectList>();
+            Child = scope.GetRequiredService<IValidateAsyncObject>();
             List.Add(Child);
         }
 
@@ -48,7 +48,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public async Task ValidateListBaseAsync_ChildInvalid()
         {
             Child.FirstName = "Error";
-            await List.WaitForRules();
+            await List.WaitForTasks();
             Assert.IsFalse(Child.IsValid);
             Assert.IsFalse(Child.IsSelfValid);
             Assert.IsFalse(List.IsBusy);
@@ -66,7 +66,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsTrue(Child.IsBusy);
             Assert.IsTrue(Child.IsSelfBusy);
 
-            await List.WaitForRules();
+            await List.WaitForTasks();
 
             Assert.IsFalse(List.IsBusy);
             Assert.IsFalse(List.IsValid);

@@ -1,4 +1,5 @@
-﻿using Neatoo.AuthorizationRules;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Neatoo.AuthorizationRules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,9 +15,12 @@ namespace Neatoo.Portal.Core
 
     }
 
+
+    public delegate Task<PortalResponse> ServerHandlePortalRequest(PortalRequest portalRequest);
+
     public class LocalReadPortal<T> : Portal<T>, ILocalReadPortal<T>
     {
-        public LocalReadPortal(IServiceScope scope)
+        public LocalReadPortal(IServiceProvider scope)
             : base(scope)
         {
         }
@@ -68,7 +72,7 @@ namespace Neatoo.Portal.Core
         where T : IEditMetaProperties
     {
 
-        public LocalReadWritePortal(IServiceScope scope)
+        public LocalReadWritePortal(IServiceProvider scope)
             : base(scope)
         {
         }
