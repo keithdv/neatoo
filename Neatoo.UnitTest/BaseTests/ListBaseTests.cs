@@ -1,6 +1,7 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Neatoo.Portal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,14 +13,14 @@ namespace Neatoo.UnitTest.BaseTests
     [TestClass]
     public class ListBaseTests
     {
-        private ILifetimeScope scope;
+        private IServiceScope scope;
         private IBaseObjectList list;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
-            list = scope.Resolve<IBaseObjectList>();
+            scope = UnitTestServices.GetLifetimeScope();
+            list = scope.GetRequiredService<IBaseObjectList>();
         }
 
         [TestMethod]
@@ -51,9 +52,9 @@ namespace Neatoo.UnitTest.BaseTests
         [TestMethod]
         public async Task ListBase_CreateAdd()
         {
-            var mock = scope.Resolve<MockReadPortalChild<IBaseObject>>();
+            var mock = (MockReadPortalChild<IBaseObject>) scope.GetRequiredService<IReadPortalChild<IBaseObject>>();
 
-            mock.MockPortal.Setup(x => x.CreateChild()).ReturnsAsync(scope.Resolve<IBaseObject>());
+            mock.MockPortal.Setup(x => x.CreateChild()).ReturnsAsync(scope.GetRequiredService<IBaseObject>());
 
             var result = await list.CreateAdd();
             Assert.IsTrue(list.Count == 1);

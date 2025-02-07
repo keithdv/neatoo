@@ -3,71 +3,89 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neatoo.Core
 {
-    public class AsyncTaskSequencer
+    /// <summary>
+    /// Manages the sequence of asynchronous tasks, ensuring they are executed in order.
+    /// </summary>
+    public sealed class AsyncTaskSequencer
     {
-
-        private readonly object lockObject = new object();
-        private IContinueWith firstTask;
-        private IContinueWith currentTask;
+        protected readonly object lockObject = new object();
+        private AsyncTaskSequencerFunction firstTask;
+        private AsyncTaskSequencerFunction currentTask;
         private TaskCompletionSource<bool> allDoneCompletionSource;
         private CancellationTokenSource cancellationTokenSource;
+
+        /// <summary>
+        /// Indicates whether the sequencer is currently running tasks.
+        /// </summary>
         public bool IsRunning => !this.allDoneCompletionSource?.Task.IsCompleted ?? false;
 
-        public ConcurrentBag<Action> OnFullSequenceComplete { get; } = new ConcurrentBag<Action>();
+        /// <summary>
+        /// Function to be called when the full sequence is complete.
+        /// </summary>
+        public Func<Task> OnFullSequenceComplete { get; set; } = () => Task.CompletedTask;
 
+        /// <summary>
+        /// Adds a new task to the sequence.
+        /// </summary>
+        /// <param name="task">The task to be added.</param>
+        /// <param name="runOnException">Indicates whether the task should run on exception.</param>
+        /// <returns>A task representing the added task.</returns>
         public Task AddTask(Func<Task, Task> task, bool runOnException = false)
         {
             lock (lockObject)
             {
-                // For now, exceptions mean the Business Object is more or less dead
+                // If the sequencer is faulted, return the faulted task.
                 if (allDoneCompletionSource != null && allDoneCompletionSource.Task.IsFaulted)
                 {
                     return allDoneCompletionSource.Task;
                 }
 
+                // If the sequencer is not running or has completed, start a new sequence.
                 if (allDoneCompletionSource == null || allDoneCompletionSource.Task.IsCompleted)
                 {
-                    // TODO : I think I need another lock to ensure that the task 
-                    // is not completed and then the completed with is set
-                    // I think AsyncTaskSequencer and all AsyncTaskSequencyTasks should share a lock
+                    Task result = task(Task.CompletedTask);
 
-                    // First task is a special case
-                    // If there is no async fork don't create one
-                    var eTask = task(Task.CompletedTask);
-
-                    if (eTask.IsCompleted)
+                    if (result.IsFaulted)
                     {
-                        foreach (var action in OnFullSequenceComplete.ToList())
-                        {
-                            action();
-                        }
+                        throw result.Exception;
+                    }
 
-                        if (eTask.IsFaulted)
-                        {
-                            throw eTask.Exception;
-                        }
+                    //if (result.IsCompleted)
+                    //{
+                    //    var t = OnFullSequenceComplete();
+                    //    Debug.Assert(t.IsCompleted, "Not sure what to do about this yet");
+                    //}
 
-                        return eTask;
+                    if (result.IsFaulted)
+                    {
+                        throw result.Exception;
+                    }
+
+                    if (result.IsCompleted)
+                    {
+                        return result;
                     }
 
                     allDoneCompletionSource = new TaskCompletionSource<bool>();
 
-                    Func<Task, Task> continueWith = (t) =>
+                    Func<Task, Task> continueWith = async (t) =>
                     {
-                        // TODO: There's an issue here
-                        // if a sequence is started while waiting for this to complete
                         var allDoneCompletionSource = this.allDoneCompletionSource;
 
-                        // Needs to be here so that it's known that the rules are done
-                        foreach (var action in OnFullSequenceComplete.ToList())
+                        try
                         {
-                            action();
+                            await OnFullSequenceComplete();
+                        }
+                        catch (Exception ex)
+                        {
+                            allDoneCompletionSource.SetException(t.Exception);
                         }
 
 
@@ -80,25 +98,20 @@ namespace Neatoo.Core
                             allDoneCompletionSource.SetResult(true);
                         }
 
-
-                        return allDoneCompletionSource.Task;
+                        await allDoneCompletionSource.Task;
                     };
 
-                    firstTask = new AsyncTaskSequencerTask(eTask, continueWith);
-
+                    firstTask = new AsyncTaskSequencerFunction(result => result, continueWith, lockObject, true);
                     currentTask = firstTask;
+                    firstTask.Execute(result);
 
-                    return firstTask.Task;
+                    return firstTask.Task; // Await AllDone if you want to wait for the sequence to complete
                 }
                 else
                 {
-                    // We change the ContinueWith stored in a delegate variable of the current task
-                    // before it finishes
-                    // so that it now does calls the next task instead of the "AllDone"
-
-                    var nextTask = new AsyncTaskSequencerFunction(task, currentTask.ContinueWith, runOnException);
-
-                    currentTask.IsLast = false;
+                    // Change the ContinueWith stored in a delegate variable of the current task
+                    // before it finishes so that it now calls the next task instead of the "AllDone".
+                    var nextTask = new AsyncTaskSequencerFunction(task, currentTask.ContinueWith, lockObject, runOnException);
 
                     currentTask.ContinueWith = (t) =>
                     {
@@ -112,76 +125,109 @@ namespace Neatoo.Core
             }
         }
 
+        /// <summary>
+        /// Gets a task that completes when all tasks in the sequence are done.
+        /// </summary>
         public Task AllDone => allDoneCompletionSource?.Task ?? Task.CompletedTask;
 
-    }
-
-    public interface IContinueWith
-    {
-        public Func<Task, Task> ContinueWith { get; set; }
-        public Task Task { get; }
-        public bool IsLast { get; set; }
-    }
-
-    public class AsyncTaskSequencerTask : IContinueWith
-    {
-        private readonly bool runOnException;
-
-        // Be clear which Func<Task, Task> is being used
-        public AsyncTaskSequencerTask(Task task, Func<Task, Task> initialContinueWith)
-        {
-            ContinueWith = initialContinueWith;
-            Task = task.ContinueWith((t) =>
-            {
-                return ContinueWith(t);
-            });
-        }
-
-        public Task Task { get; }
-
-        public CancellationTokenSource CancellationTokenSource { get; set; }
-        public Func<Task, Task> ContinueWith { get; set; }
-        public bool IsLast { get; set; }
-    }
-
-    public class AsyncTaskSequencerFunction : IContinueWith
-    {
-        // Be clear which Func<Task, Task> is being used
-        public AsyncTaskSequencerFunction(Func<Task, Task> task, Func<Task, Task> initialContinueWith, bool runOnException)
-        {
-            this.task = task;
-            ContinueWith = initialContinueWith;
-            this.runOnException = runOnException;
-        }
-
-        private bool callOnce = false;
-        private readonly Func<Task, Task> task;
-        private readonly bool runOnException;
-        private readonly TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
-        public Task Task => taskCompletionSource.Task;
-        public Task Execute(Task t)
-        {
-            Debug.Assert(!callOnce, "Task has already been executed");
-            callOnce = true;
-            if (!t.IsFaulted || runOnException || IsLast)
-            {
-                return task(t).ContinueWith((t2) =>
-                {
-                    if (t.IsFaulted) { t2 = t; } // Pass thru the failure
-                    return ContinueWith(t2);
-                });
-            } 
-            return ContinueWith(t);
-        }
-
-        public CancellationTokenSource CancellationTokenSource { get; set; }
-
         /// <summary>
-        /// This is the key piece
-        /// Switching this causes the task to do something different when it completes
-        /// Then original. Like call ("await") a different task.
+        /// Represents a single task in the sequence.
         /// </summary>
-        public Func<Task, Task> ContinueWith { get; set; }
-        public bool IsLast { get; set; } = true;
+        public sealed class AsyncTaskSequencerFunction
+        {
+            private bool callOnce = false;
+            private readonly Func<Task, Task> task;
+            private readonly object lockObject;
+            private readonly bool runOnException;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AsyncTaskSequencerFunction"/> class.
+            /// </summary>
+            /// <param name="task">The task to be executed.</param>
+            /// <param name="initialContinueWith">The initial continuation function.</param>
+            /// <param name="lockObject">The lock object for synchronization.</param>
+            /// <param name="runOnException">Indicates whether the task should run on exception.</param>
+            public AsyncTaskSequencerFunction(Func<Task, Task> task, Func<Task, Task> initialContinueWith, object lockObject, bool runOnException)
+            {
+                this.task = task;
+                ContinueWith = initialContinueWith;
+                this.lockObject = lockObject;
+                this.runOnException = runOnException;
+            }
+
+            /// <summary>
+            /// Executes the task.
+            /// </summary>
+            /// <param name="t">The previous task in the sequence.</param>
+            /// <returns>A task representing the execution of the task.</returns>
+            public Task Execute(Task t)
+            {
+                lock (lockObject)
+                {
+                    Debug.Assert(!callOnce, "Task has already been executed");
+                    callOnce = true;
+
+                    if (!t.IsFaulted || runOnException)
+                    {
+                        Task finishTask(Task t)
+                        {
+                            if (t.IsFaulted)
+                            {
+                                TaskCompletionSource.SetException(t.Exception);
+                            }
+                            else
+                            {
+                                TaskCompletionSource.SetResult(null);
+                            }
+
+                            return ContinueWith(t);
+                        };
+
+                        try
+                        {
+                            var result = task(t);
+
+                            if (result.IsCompleted)
+                            {
+                                return finishTask(result);
+                            }
+                            else
+                            {
+                                return result.ContinueWith((t) =>
+                                {
+                                    try
+                                    {
+                                        finishTask(t);
+                                    } catch(Exception ex)
+                                    {
+                                        TaskCompletionSource.SetException(ex);
+                                    }
+                                });
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            TaskCompletionSource.SetException(ex);
+                        }
+
+
+                    }
+
+                    return ContinueWith(t);
+                }
+            }
+
+            public CancellationTokenSource CancellationTokenSource { get; set; }
+
+            private TaskCompletionSource<Exception> TaskCompletionSource = new TaskCompletionSource<Exception>();
+            public Task Task => TaskCompletionSource.Task;
+
+            /// <summary>
+            /// This is the key piece.
+            /// Switching this causes the task to do something different when it completes.
+            /// Then original. Like call ("await") a different task.
+            /// </summary>
+            public Func<Task, Task> ContinueWith { get; set; }
+        }
     }
 }

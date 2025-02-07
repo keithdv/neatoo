@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.AuthorizationRules;
 using Neatoo.Portal;
@@ -109,21 +109,21 @@ namespace Neatoo.UnitTest.BaseTests.Authorization
     public class BaseAuthorizationGrantedAsyncTests
     {
 
-        ILifetimeScope scope;
+        IServiceScope scope;
         IReadPortal<IBaseAuthorizationGrantedAsyncObject> portal;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            scope = AutofacContainer.GetLifetimeScope(true);
-            portal = scope.Resolve<IReadPortal<IBaseAuthorizationGrantedAsyncObject>>();
+            scope = UnitTestServices.GetLifetimeScope(true);
+            portal = scope.GetRequiredService<IReadPortal<IBaseAuthorizationGrantedAsyncObject>>();
         }
 
         [TestMethod]
         public async Task BaseAuthorizationGrantedAsync_Create()
         {
             var obj = await portal.Create();
-            var authRule = scope.Resolve<IAuthorizationGrantedAsyncRule>();
+            var authRule = scope.GetRequiredService<IAuthorizationGrantedAsyncRule>();
             Assert.IsTrue(authRule.ExecuteCreateCalled);
         }
 
@@ -132,7 +132,7 @@ namespace Neatoo.UnitTest.BaseTests.Authorization
         {
             var criteria = DateTime.Now.Millisecond;
             var obj = await portal.Create(criteria);
-            var authRule = scope.Resolve<IAuthorizationGrantedAsyncRule>();
+            var authRule = scope.GetRequiredService<IAuthorizationGrantedAsyncRule>();
             Assert.IsTrue(authRule.ExecuteCreateCalled);
             Assert.AreEqual(criteria, authRule.Criteria);
         }
@@ -141,7 +141,7 @@ namespace Neatoo.UnitTest.BaseTests.Authorization
         public async Task BaseAuthorizationGrantedAsync_Fetch()
         {
             var obj = await portal.Fetch();
-            var authRule = scope.Resolve<IAuthorizationGrantedAsyncRule>();
+            var authRule = scope.GetRequiredService<IAuthorizationGrantedAsyncRule>();
             Assert.IsTrue(authRule.ExecuteFetchCalled);
         }
 
@@ -150,7 +150,7 @@ namespace Neatoo.UnitTest.BaseTests.Authorization
         {
             var criteria = DateTime.Now.Millisecond;
             var obj = await portal.Fetch(criteria);
-            var authRule = scope.Resolve<IAuthorizationGrantedAsyncRule>();
+            var authRule = scope.GetRequiredService<IAuthorizationGrantedAsyncRule>();
             Assert.IsTrue(authRule.ExecuteFetchCalled);
             Assert.AreEqual(criteria, authRule.Criteria);
         }

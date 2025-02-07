@@ -1,4 +1,5 @@
-﻿using Neatoo.AuthorizationRules;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Neatoo.AuthorizationRules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,8 +33,8 @@ namespace Neatoo.Portal.Core
     public class Portal<T> : IPortal<T>
     {
 
-        protected IServiceScope Scope { get; }
-        public Portal(IServiceScope scope)
+        protected IServiceProvider Scope { get; }
+        public Portal(IServiceProvider scope)
         {
             Scope = scope;
 
@@ -43,7 +44,7 @@ namespace Neatoo.Portal.Core
 
         public async Task<T> CallReadOperationMethod(PortalOperation operation, bool throwException)
         {
-            var target = Scope.Resolve<T>();
+            var target = Scope.GetRequiredService<T>();
             await CallOperationMethod(target, operation, throwException);
             if(target is IPortalTarget editTarget)
             {
@@ -92,7 +93,7 @@ namespace Neatoo.Portal.Core
         {
             // Concrete type can vary since an interface can have more than one implementation
             // So need to load the actual concrete type
-            var operationManager = (IPortalOperationManager)Scope.Resolve(typeof(IPortalOperationManager<>).MakeGenericType(target.GetType()));
+            var operationManager = (IPortalOperationManager)Scope.GetRequiredService(typeof(IPortalOperationManager<>).MakeGenericType(target.GetType()));
          
             var success = await operationManager.TryCallOperation(target, operation);
 
@@ -105,7 +106,7 @@ namespace Neatoo.Portal.Core
 
         public async Task<T> CallReadOperationMethod(PortalOperation operation, object[] criteria)
         {
-            var target = Scope.Resolve<T>();
+            var target = Scope.GetRequiredService<T>();
             await CallOperationMethod(target, operation, criteria);
             if (target is IPortalTarget editTarget)
             {
@@ -159,7 +160,7 @@ namespace Neatoo.Portal.Core
 
             // Concrete type can vary since an interface can have more than one implementation
             // So need to load the actual concrete type
-            var operationManager = (IPortalOperationManager)Scope.Resolve(typeof(IPortalOperationManager<>).MakeGenericType(target.GetType()));
+            var operationManager = (IPortalOperationManager)Scope.GetRequiredService(typeof(IPortalOperationManager<>).MakeGenericType(target.GetType()));
 
             var success = await operationManager.TryCallOperation(target, operation, criteria);
 

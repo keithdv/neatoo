@@ -2,24 +2,17 @@
 using Neatoo;
 using System.Collections.Specialized;
 
-namespace HorseBarn.lib.Cart
+namespace HorseBarn.lib.Cart;
+
+
+public interface ICart : IEditBase, INotifyCollectionChanged
 {
-
-    public interface ICart : IEditBase, INotifyCollectionChanged
-    {
-        internal int? Id { get; }
-        string Name { get; set;  }
-        int NumberOfHorses { get; set;  }
-        IEnumerable<IHorse> Horses { get; }
-        bool CanAddHorse(IHorse horse);
-        internal void RemoveHorse(IHorse horse);
-        internal void AddHorse(IHorse horse);
-    }
-
-    public interface ICart<H> : ICart, INotifyCollectionChanged
-        where H : IHorse
-    {
-        internal IHorseList<H> HorseList { get; }
-
-    }
+    internal int? Id { get; }
+    string Name { get; set; }
+    int NumberOfHorses { get; set; }
+    IEnumerable<IHorse> Horses { get; }
+    bool CanAddHorse(IHorse horse);
+    internal Task RemoveHorse(IHorse horse);
+    internal Task AddHorse(IHorse horse);
+    internal IHorseList HorseList { get; }
 }

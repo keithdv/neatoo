@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -10,12 +10,12 @@ namespace Neatoo.UnitTest.Example.SimpleValidate
     [TestClass]
     public class SimpleValidateObjectTests
     {
-        private ILifetimeScope scope;
+        private IServiceScope scope;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
+            scope = UnitTestServices.GetLifetimeScope();
         }
 
         [TestCleanup]
@@ -28,7 +28,7 @@ namespace Neatoo.UnitTest.Example.SimpleValidate
         [TestMethod]
         public void SimpleValidateObject()
         {
-            var validateObject = scope.Resolve<SimpleValidateObject>();
+            var validateObject = scope.GetRequiredService<SimpleValidateObject>();
 
             validateObject.FirstName = "John";
             validateObject.LastName = "Smith";
@@ -39,7 +39,7 @@ namespace Neatoo.UnitTest.Example.SimpleValidate
         [TestMethod]
         public void SimpleValidateObject_InValid()
         {
-            var validateObject = scope.Resolve<SimpleValidateObject>();
+            var validateObject = scope.GetRequiredService<SimpleValidateObject>();
 
             validateObject.FirstName = string.Empty;
             validateObject.LastName = "Smith";
@@ -52,7 +52,7 @@ namespace Neatoo.UnitTest.Example.SimpleValidate
         [TestMethod]
         public void SimpleValidateObject_InValid_Fixed()
         {
-            var validateObject = scope.Resolve<SimpleValidateObject>();
+            var validateObject = scope.GetRequiredService<SimpleValidateObject>();
 
             validateObject.FirstName = string.Empty;
             Assert.IsFalse(validateObject.IsValid);

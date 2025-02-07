@@ -31,7 +31,7 @@ namespace Neatoo.UnitTest.PersonObjects
                 target.FirstName = "Error"; // trigger the ShortNameRule error
             }
 
-            return PropertyErrors.None;
+            return None;
         }
     }
 }

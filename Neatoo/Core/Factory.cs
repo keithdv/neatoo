@@ -18,18 +18,18 @@ namespace Neatoo.Core
         {
         }
 
-        public PropertyValue<P> CreatePropertyValue<P>(IRegisteredProperty registeredProperty, IBase parent)
+        public Property<P> CreateProperty<P>(IRegisteredProperty registeredProperty)
         {
-            return new PropertyValue<P>(registeredProperty.Name) { Parent = parent };
+            return new Property<P>(registeredProperty.Name);
         }
-        public ValidatePropertyValue<P> CreateValidatePropertyValue<P>(IRegisteredProperty registeredProperty, IBase parent)
+        public ValidateProperty<P> CreateValidateProperty<P>(IRegisteredProperty registeredProperty)
         {
-            return new ValidatePropertyValue<P>(registeredProperty.Name) { Parent = parent };
+            return new ValidateProperty<P>(registeredProperty.Name);
         }
 
-        public EditPropertyValue<P> CreateEditPropertyValue<P>(IRegisteredProperty registeredProperty, IBase parent)
+        public EditProperty<P> CreateEditProperty<P>(IRegisteredProperty registeredProperty)
         {
-            return new EditPropertyValue<P>(registeredProperty.Name) { Parent = parent };
+            return new EditProperty<P>(registeredProperty.Name);
         }
 
     }

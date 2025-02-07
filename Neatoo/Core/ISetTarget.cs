@@ -4,8 +4,8 @@ using System.Text;
 
 namespace Neatoo.Core
 {
-    internal interface ISetTarget
-    {
-        void SetTarget(IBase target);
-    }
+    //internal interface ISetTarget
+    //{
+    //    void SetTarget(IBase target);
+    //}
 }

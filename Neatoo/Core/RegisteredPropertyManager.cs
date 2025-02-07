@@ -12,65 +12,92 @@ namespace Neatoo.Core
     {
 
         protected CreateRegisteredProperty CreateRegisteredProperty { get; }
-        private IDictionary<string, IRegisteredProperty> RegisteredProperties { get; } = new ConcurrentDictionary<string, IRegisteredProperty>();
+        protected static IDictionary<Type, IDictionary<string, IRegisteredProperty>> RegisteredPropertiesByType { get; } = new ConcurrentDictionary<Type, IDictionary<string, IRegisteredProperty>>();
+
+        protected IDictionary<string, IRegisteredProperty> RegisteredProperties
+        {
+            get
+            {
+                RegisterProperties();
+                return RegisteredPropertiesByType[Type];
+            }
+        }
+
+protected static object lockRegisteredProperties = new object();
+        protected Type Type { get; set; }
+
         public RegisteredPropertyManager(CreateRegisteredProperty createRegisteredProperty)
         {
+
             CreateRegisteredProperty = createRegisteredProperty;
 
-#if DEBUG
-            if (typeof(T).IsInterface) { throw new Exception($"RegisteredPropertyManager should be service type not interface. {typeof(T).FullName}"); }
-#endif
+            Type = typeof(T);
+
             RegisterProperties();
         }
+
 
         private static Type[] neatooTypes = new Type[] { typeof(Base<>), typeof(ListBase<,>), typeof(ValidateBase<>), typeof(ValidateListBase<,>), typeof(EditBase<>), typeof(EditListBase<,>) };
 
         protected void RegisterProperties()
         {
-            var type = typeof(T);
-
-            // If a type does a 'new' on the property you will have duplicate PropertyNames
-            // So honor to top-level type that has that propertyName
-
-            // Problem -- this will include All of the properties even ones we don't declare
-            do
+            lock (lockRegisteredProperties)
             {
-                var properties = type.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | BindingFlags.DeclaredOnly).ToList();
-
-                foreach (var p in properties)
+                if (RegisteredPropertiesByType.ContainsKey(Type))
                 {
-                    var prop = CreateRegisteredProperty(p);
-                    if (!RegisteredProperties.ContainsKey(p.Name))
+                    return;
+                }
+
+                RegisteredPropertiesByType[Type] = new Dictionary<string, IRegisteredProperty>();
+
+                var type = this.Type;
+
+                // If a type does a 'new' on the property you will have duplicate PropertyNames
+                // So honor to top-level type that has that propertyName
+
+                // Problem -- this will include All of the properties even ones we don't declare
+                do
+                {
+                    var properties = type.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | BindingFlags.DeclaredOnly).ToList();
+
+                    foreach (var p in properties)
                     {
-                        RegisteredProperties.Add(p.Name, prop);
+                        var prop = CreateRegisteredProperty(p);
+                        if (!RegisteredProperties.ContainsKey(p.Name))
+                        {
+                            RegisteredProperties.Add(p.Name, prop);
+                        }
                     }
-                }
 
-                type = type.BaseType;
+                    type = type.BaseType;
 
-            } while (type != null && (!type.IsGenericType || !neatooTypes.Contains(type.GetGenericTypeDefinition())));
+                } while (type != null && (!type.IsGenericType || !neatooTypes.Contains(type.GetGenericTypeDefinition())));
 
-            do
-            {
-                var objProp = type.GetProperty(nameof(IValidateBase.ObjectInvalid), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | BindingFlags.DeclaredOnly);
-
-                if (objProp != null)
+                do
                 {
-                    RegisteredProperties.Add(nameof(IValidateBase.ObjectInvalid), CreateRegisteredProperty(objProp));
-                    break;
-                }
+                    var objProp = type.GetProperty(nameof(IValidateBase.ObjectInvalid), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | BindingFlags.DeclaredOnly);
 
-                type = type.BaseType;
+                    if (objProp != null)
+                    {
+                        RegisteredProperties.Add(nameof(IValidateBase.ObjectInvalid), CreateRegisteredProperty(objProp));
+                        break;
+                    }
+
+                    type = type.BaseType;
+                }
+                while (type != null && (!type.IsGenericType || neatooTypes.Contains(type.GetGenericTypeDefinition())));
+
             }
-            while (type != null && (!type.IsGenericType || neatooTypes.Contains(type.GetGenericTypeDefinition())));
 
         }
 
         public IRegisteredProperty GetRegisteredProperty(string propertyName)
         {
+            RegisterProperties();
+
             if (!RegisteredProperties.TryGetValue(propertyName, out var prop))
             {
-                throw new Exception($"{propertyName} missing on {typeof(T).FullName}");
+                throw new Exception($"{propertyName} missing on {Type.FullName}");
             }
 
             return prop;
@@ -78,11 +105,13 @@ namespace Neatoo.Core
 
         public IEnumerable<IRegisteredProperty> GetRegisteredProperties()
         {
+            RegisterProperties();
             return RegisteredProperties.Values;
         }
 
         public bool HasProperty(string propertyName)
         {
+            RegisterProperties();
             return RegisteredProperties.ContainsKey(propertyName);
         }
     }

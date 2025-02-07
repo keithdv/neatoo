@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -31,14 +31,14 @@ namespace Neatoo.UnitTest.ValidateBaseTests.Attributes
     [TestClass]
     public class RequiredAttributeTests
     {
-        private ILifetimeScope scope;
+        private IServiceScope scope;
         private IRequiredObject requiredObject;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
-            requiredObject = scope.Resolve<IRequiredObject>();
+            scope = UnitTestServices.GetLifetimeScope();
+            requiredObject = scope.GetRequiredService<IRequiredObject>();
         }
 
         [TestMethod]

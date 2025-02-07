@@ -17,9 +17,7 @@ namespace Neatoo
         where T : EditListBase<T, I>
         where I : IEditBase
     {
-        IEditPropertyValueManager<T> EditPropertyValueManager { get; }
         IReadWritePortalChild<I> ReadWritePortalChild { get; }
-        IReadWritePortal<T> ReadWritePortal { get; }
     }
 
     public class EditListBaseServices<T, I> : ValidateListBaseServices<T, I>, IEditListBaseServices<T, I>
@@ -27,19 +25,12 @@ namespace Neatoo
         where I : IEditBase
     {
 
-        public IEditPropertyValueManager<T> EditPropertyValueManager { get; }
         public IReadWritePortalChild<I> ReadWritePortalChild { get; }
-        public IReadWritePortal<T> ReadWritePortal { get; }
 
-        public EditListBaseServices(IEditPropertyValueManager<T> registeredPropertyManager,
-                                        IReadWritePortalChild<I> readWritePortalChild,
-                                        IReadWritePortal<T> readWritePortal,
-                                        IRuleManager<T> ruleManager)
-            : base(registeredPropertyManager, readWritePortalChild, ruleManager)
+        public EditListBaseServices(IReadWritePortalChild<I> readWritePortalChild)
+            : base(readWritePortalChild)
         {
-            EditPropertyValueManager = registeredPropertyManager;
             ReadWritePortalChild = readWritePortalChild;
-            ReadWritePortal = readWritePortal;
         }
     }
 }

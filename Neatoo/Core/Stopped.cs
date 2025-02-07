@@ -4,17 +4,17 @@ using System;
 namespace Neatoo.Core
 {
 
-    public class Stopped : IDisposable
+    public class Paused : IDisposable
     {
         IPortalTarget Target { get; }
-        public Stopped(IPortalTarget target)
+        public Paused(IPortalTarget target)
         {
             this.Target = target;
         }
 
         public void Dispose()
         {
-            Target.StartAllActions();
+            Target.ResumeAllActions();
         }
     }
 

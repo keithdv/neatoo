@@ -2,6 +2,11 @@
 
 namespace Neatoo.UnitTest.PersonObjects
 {
+   public interface IPersonEdit : IPersonBase, IEditBase
+    {
+
+    }
+
     public interface IPersonBase : IValidateBase
     {
         Guid Id { get; }

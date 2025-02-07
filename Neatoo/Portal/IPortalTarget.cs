@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Neatoo.Core;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
@@ -8,9 +9,10 @@ namespace Neatoo.Portal
 {
     public interface IPortalTarget
     {
-        IDisposable StopAllActions();
-        void StartAllActions();
+        IDisposable PauseAllActions();
+        void ResumeAllActions();
         internal Task PostPortalConstruct();
+
     }
 
     public interface IPortalEditTarget : IPortalTarget

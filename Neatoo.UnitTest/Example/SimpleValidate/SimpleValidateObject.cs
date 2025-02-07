@@ -23,7 +23,7 @@ namespace Neatoo.UnitTest.Example.SimpleValidate
 
         public string ShortName { get { return Getter<string>(); } set { Setter(value); } }
 
-        public new IValidatePropertyValue this[string propertyName] { get => GetProperty(propertyName); }
+        public new IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
     }
 
     public interface ISimpleValidateObject : IValidateBase
@@ -32,7 +32,7 @@ namespace Neatoo.UnitTest.Example.SimpleValidate
         string FirstName { get; set; }
         string LastName { get; set; }
         string ShortName { get; set; }
-        new IValidatePropertyValue this[string propertyName]
+        new IValidateProperty this[string propertyName]
         {
             get => GetProperty(propertyName);
         }

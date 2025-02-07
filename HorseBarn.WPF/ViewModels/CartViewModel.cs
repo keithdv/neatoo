@@ -80,12 +80,12 @@ namespace HorseBarn.WPF.ViewModels
             Cart.NumberOfHorses--;
         }
 
-        public void HandleDragDrop(object source, DragEventArgs e)
+        public async void HandleDragDrop(object source, DragEventArgs e)
         {
             var horseViewModel = e.Data.GetData(typeof(HorseViewModel)) as HorseViewModel;
             if (horseViewModel != null && horseViewModel.Horse != null && Cart.CanAddHorse(horseViewModel.Horse))
             {
-                horseBarn.MoveHorseToCart(horseViewModel.Horse, Cart);
+                await horseBarn.MoveHorseToCart(horseViewModel.Horse, Cart);
             }
         }
 

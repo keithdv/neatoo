@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Keith Voels</Authors>
     <Company>Keith Voels</Company>
@@ -20,7 +20,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Neatoo.Newtonsoft.Json\Neatoo.Newtonsoft.Json.csproj" />
     <ProjectReference Include="..\Neatoo\Neatoo.csproj" />
   </ItemGroup>
 

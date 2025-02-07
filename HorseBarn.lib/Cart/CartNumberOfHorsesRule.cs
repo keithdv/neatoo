@@ -16,7 +16,7 @@ namespace HorseBarn.lib.Cart
     {
         public CartNumberOfHorsesRule()
         {
-            AddTriggerProperties(nameof(ICart.NumberOfHorses), nameof(ICart<IHorse>.HorseList));
+            AddTriggerProperties(nameof(ICart.NumberOfHorses), "HorseList.Count");
         }
         public override PropertyErrors Execute(ICart cart)
         {
@@ -28,6 +28,9 @@ namespace HorseBarn.lib.Cart
             else if (cart.NumberOfHorses == 0)
             {
                 cart.NumberOfHorses = 1;
+            } else if(cart.NumberOfHorses > 6)
+            {
+                cart.NumberOfHorses = 6;
             }
             else if (horseCount != 0 && cart.NumberOfHorses != horseCount)
             {

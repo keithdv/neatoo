@@ -44,16 +44,25 @@ namespace Neatoo.Rules
             {
                 return propertyName == PropertyName;
             }
-            else if (expression != null)
+            else if (expression is LambdaExpression lambdaExpression)
             {
-                var memberExpression = expression as MemberExpression;
-                if (memberExpression != null)
+                if(lambdaExpression.Body is MemberExpression memberExpression)
                 {
-                    return memberExpression.Member.Name == propertyName;
+                    var lambdaPropertyName = RecurseMembers(memberExpression);
+                    return propertyName == lambdaPropertyName;
                 }
             }
 
             throw new Exception("Invalid TriggerProperty: expression and propertyName not defined");
+        }
+
+        protected string RecurseMembers(MemberExpression memberExpression)
+        {
+            if (memberExpression.Expression is MemberExpression)
+            {
+                return RecurseMembers(memberExpression.Expression as MemberExpression) + "." + memberExpression.Member.Name;
+            }
+            return memberExpression.Member.Name;
         }
 
         public static implicit operator TriggerProperty(string propertyName)

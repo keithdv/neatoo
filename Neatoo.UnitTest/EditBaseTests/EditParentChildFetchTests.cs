@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Portal;
 using Neatoo.UnitTest.PersonObjects;
@@ -15,22 +15,22 @@ namespace Neatoo.UnitTest.EditBaseTests
     public class EditParentChildFetchTests
     {
 
-        private ILifetimeScope scope;
+        private IServiceScope scope;
         private IEditPerson parent;
         private IEditPerson child;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
-            var persons = scope.Resolve<IReadOnlyList<PersonDto>>();
+            scope = UnitTestServices.GetLifetimeScope();
+            var persons = scope.GetRequiredService<IReadOnlyList<PersonDto>>();
             
 
 
-            parent = scope.Resolve<IEditPerson>();
+            parent = scope.GetRequiredService<IEditPerson>();
             parent.FillFromDto(persons.Where(p => !p.FatherId.HasValue && !p.MotherId.HasValue).First());
 
-            child = scope.Resolve<IEditPerson>();
+            child = scope.GetRequiredService<IEditPerson>();
             child.FillFromDto(persons.Where(p => p.FatherId == parent.Id).First());
             parent.Child = child;
 
@@ -68,7 +68,7 @@ namespace Neatoo.UnitTest.EditBaseTests
         {
 
             child.FirstName = Guid.NewGuid().ToString();
-            await parent.WaitForRules();
+            await parent.WaitForTasks();
             Assert.IsTrue(parent.IsModified);
             Assert.IsTrue(child.IsModified);
 
@@ -79,7 +79,7 @@ namespace Neatoo.UnitTest.EditBaseTests
         {
 
             child.FirstName = Guid.NewGuid().ToString();
-            await parent.WaitForRules();
+            await parent.WaitForTasks();
 
             Assert.IsFalse(parent.IsSelfModified);
             Assert.IsTrue(child.IsSelfModified);
@@ -91,7 +91,7 @@ namespace Neatoo.UnitTest.EditBaseTests
         {
 
             child.FirstName = Guid.NewGuid().ToString();
-            await parent.WaitForRules();
+            await parent.WaitForTasks();
 
             Assert.IsTrue(parent.IsSavable);
             Assert.IsFalse(child.IsSavable);

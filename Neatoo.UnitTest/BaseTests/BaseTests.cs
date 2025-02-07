@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -10,14 +10,14 @@ namespace Neatoo.UnitTest.BaseTests
     [TestClass]
     public class BaseTests
     {
-        private ILifetimeScope scope;
+        private IServiceScope scope;
         private IBaseObject single;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
-            single = scope.Resolve<IBaseObject>();
+            scope = UnitTestServices.GetLifetimeScope();
+            single = scope.GetRequiredService<IBaseObject>();
         }
         [TestMethod]
         public void Base_Construct()
@@ -62,7 +62,7 @@ namespace Neatoo.UnitTest.BaseTests
         [TestMethod]
         public void Base_Set_Parent()
         {
-            var child = scope.Resolve<IBaseObject>();
+            var child = scope.GetRequiredService<IBaseObject>();
             single.Child = child;
             Assert.AreSame(single, child.Parent);
         }

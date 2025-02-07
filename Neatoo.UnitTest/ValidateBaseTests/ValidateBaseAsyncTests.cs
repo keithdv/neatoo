@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Rules;
 using Neatoo.UnitTest.PersonObjects;
@@ -20,18 +20,24 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     {
 
 
-        private ILifetimeScope scope;
+        private IServiceScope scope;
         private IValidateAsyncObject validate;
         private IValidateAsyncObject child;
 
         [TestInitialize]
-        public void TestInitailize()
+        public async Task TestInitailize()
         {
-            scope = AutofacContainer.GetLifetimeScope();
-            var validateDto = scope.Resolve<IReadOnlyList<PersonDto>>().Where(p => !p.FatherId.HasValue && !p.MotherId.HasValue).First();
-            validate = scope.Resolve<IValidateAsyncObject>();
-            child = scope.Resolve<IValidateAsyncObject>();
+            scope = UnitTestServices.GetLifetimeScope();
+            var validateDto = scope.GetRequiredService<IReadOnlyList<PersonDto>>().Where(p => !p.FatherId.HasValue && !p.MotherId.HasValue).First();
+            validate = scope.GetRequiredService<IValidateAsyncObject>();
+            child = scope.GetRequiredService<IValidateAsyncObject>();
             validate.Child = child;
+            
+            child.aLabel = "Child";
+            validate.aLabel = "Parent";
+
+            await validate.WaitForTasks();
+
             validate.PropertyChanged += Validate_PropertyChanged;   
         }
 
@@ -50,9 +56,11 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         }
 
         [TestMethod]
-        public void ValidateBaseAsync_Const()
+        public async Task ValidateBaseAsync_Const()
         {
-
+            Assert.AreSame(child.Parent, validate);
+            await validate.WaitForTasks();
+            Assert.IsFalse(validate.IsBusy);
         }
 
 
@@ -60,7 +68,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public async Task ValidateBaseAsync_Set()
         {
             validate.FirstName = "Keith";
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
         }
 
         [TestMethod]
@@ -69,7 +77,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.FirstName = "Keith";
             Assert.IsTrue(validate.IsBusy);
             Assert.IsTrue(validate.IsSelfBusy);
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
             Assert.IsFalse(validate.IsBusy);
             Assert.IsFalse(validate.IsSelfBusy);
         }
@@ -80,7 +88,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             var name = Guid.NewGuid().ToString();
             validate.ShortName = name;
             Assert.AreEqual(name, validate.ShortName);
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
         }
 
         //[TestMethod]
@@ -101,7 +109,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.FirstName = "John";
             validate.LastName = "Smith";
 
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
 
             Assert.AreEqual("John Smith", validate.ShortName);
 
@@ -115,7 +123,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.FirstName = "John";
             validate.LastName = "Smith";
 
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
 
             Assert.AreEqual("John Smith", validate.ShortName);
             Assert.AreEqual("Mr. John Smith", validate.FullName);
@@ -129,7 +137,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.FirstName = "John";
             validate.LastName = "Smith";
 
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
 
             Assert.IsTrue(validate.IsValid);
         }
@@ -141,7 +149,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.FirstName = "Error";
             validate.LastName = "Smith";
 
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
 
             Assert.IsFalse(validate.IsValid);
             Assert.IsFalse(validate[nameof(validate.FirstName)].IsValid);
@@ -154,13 +162,13 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.FirstName = "Error";
             validate.LastName = "Smith";
 
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
 
             Assert.IsFalse(validate.IsValid);
 
             validate.FirstName = "John";
 
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
 
             Assert.IsTrue(validate.IsValid);
             Assert.AreEqual(0, validate.BrokenRuleMessages.Count);
@@ -173,7 +181,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         {
             validate.FirstName = "Error";
 
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
 
             Assert.IsFalse(validate.IsBusy);
             Assert.IsFalse(validate.IsValid);
@@ -186,7 +194,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public async Task ValidateBaseAsync_Child_Invalid()
         {
             child.FirstName = "Error";
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
 
             Assert.IsFalse(validate.IsBusy);
             Assert.IsFalse(validate.IsValid);
@@ -205,7 +213,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsTrue(child.IsBusy);
             Assert.IsTrue(child.IsSelfBusy);
 
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
 
             Assert.IsFalse(validate.IsBusy);
             Assert.IsFalse(validate.IsValid);
@@ -218,7 +226,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public async Task ValidateBaseAsync_AsyncRuleThrowsException()
         {
             validate.ThrowException = "Throw";
-            await Assert.ThrowsExceptionAsync<AggregateException>(validate.WaitForRules);
+            await Assert.ThrowsExceptionAsync<AggregateException>(() => validate.WaitForTasks());
             Assert.IsFalse(validate.IsValid);
             Assert.IsFalse(validate[nameof(validate.ThrowException)].IsValid);
         }
@@ -227,7 +235,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public async Task ValidateBaseAsync_RecursiveRuleAsync()
         {
             validate.ShortName = "Recursive";
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
             Assert.AreEqual("Recursive change", validate.ShortName);
         }
 
@@ -236,8 +244,17 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         {
             // This will cause the ShortNameRule to fail
             validate.ShortName = "Recursive Error";
-            await validate.WaitForRules();
+            await validate.WaitForTasks();
             Assert.IsFalse(validate.IsValid);
+        }
+
+        [TestMethod]
+        public async Task ValidateBaseAsync_RunAllRules()
+        {
+            await validate.RunAllRules();
+
+            Assert.AreEqual(3, validate.RuleRunCount);
+            Assert.IsFalse(validate.IsBusy);
         }
     }
 }

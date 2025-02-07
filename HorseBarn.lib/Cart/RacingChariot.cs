@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace HorseBarn.lib.Cart
 {
 
-    public interface IRacingChariot : ICart<ILightHorse>, ICart
+    public interface IRacingChariot : ICart
     {
 
     }
@@ -23,17 +23,5 @@ namespace HorseBarn.lib.Cart
         }
 
         protected override CartType CartType => CartType.RacingChariot;
-    }
-
-    public interface IRacingChariotList : ICartList<IRacingChariot>
-    {
-
-    }
-
-    internal class RacingChariotList : CartList<RacingChariotList, IRacingChariot>, IRacingChariotList
-    {
-        public RacingChariotList(IEditListBaseServices<RacingChariotList, IRacingChariot> services) : base(services)
-        {
-        }
     }
 }

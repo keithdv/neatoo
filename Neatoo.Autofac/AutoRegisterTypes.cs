@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Neatoo.Rules;
 using System;
 using System.Linq;

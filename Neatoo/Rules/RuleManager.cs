@@ -1,5 +1,4 @@
-﻿using Neatoo.Attributes;
-using Neatoo.Core;
+﻿using Neatoo.Core;
 using Neatoo.Rules.Rules;
 using System;
 using System.Collections.Concurrent;
@@ -11,8 +10,6 @@ using System.Threading.Tasks;
 
 namespace Neatoo.Rules
 {
-
-
     public interface IRuleManager
     {
         IEnumerable<IRule> Rules { get; }
@@ -25,31 +22,36 @@ namespace Neatoo.Rules
     public interface IRuleManager<T> : IRuleManager
         where T : IValidateBase
     {
-
         ActionFluentRule<T> AddAction(Action<T> func, string triggerProperty);
         ValidationFluentRule<T> AddValidation(Func<T, string> func, string triggerProperty);
         ActionAsyncFluentRule<T> AddActionAsync(Func<T, Task> func, string triggerProperty);
         AsyncFluentRule<T> AddValidationAsync(Func<T, Task<string>> func, string triggerProperty);
     }
 
-
-    public class RuleManager<T> : IRuleManager<T>, ISetTarget
+    public class RuleManagerFactory<T>
         where T : IValidateBase
     {
-
-        protected T Target { get; set; }
-
-        /// <summary>
-        /// For no DI (Unit testing)
-        /// </summary>
-        /// <param name="registeredPropertyManager"></param>
-        public RuleManager(IRegisteredPropertyManager<T> registeredPropertyManager)
+        public RuleManagerFactory(IAttributeToRule attributeToRule)
         {
-            AddAttributeRules(new AttributeToRule(rp => new RequiredRule(rp)), registeredPropertyManager);
+            AttributeToRule = attributeToRule;
         }
 
-        public RuleManager(IAttributeToRule attributeToRule, IRegisteredPropertyManager<T> registeredPropertyManager)
+        public IAttributeToRule AttributeToRule { get; }
+
+        public IRuleManager<T> CreateRuleManager(T target, IRegisteredPropertyManager registeredPropertyManager)
         {
+            return new RuleManager<T>(target, registeredPropertyManager, AttributeToRule);
+        }
+    }
+
+    public class RuleManager<T> : IRuleManager<T>
+        where T : IValidateBase
+    {
+        protected T Target { get; }
+
+        public RuleManager(T target, IRegisteredPropertyManager registeredPropertyManager, IAttributeToRule attributeToRule)
+        {
+            this.Target = target ?? throw new TargetIsNullException();
             AddAttributeRules(attributeToRule, registeredPropertyManager);
         }
 
@@ -57,7 +59,7 @@ namespace Neatoo.Rules
 
         private IDictionary<uint, IRule> Rules { get; } = new ConcurrentDictionary<uint, IRule>();
 
-        protected virtual void AddAttributeRules(IAttributeToRule attributeToRule, IRegisteredPropertyManager<T> registeredPropertyManager)
+        protected virtual void AddAttributeRules(IAttributeToRule attributeToRule, IRegisteredPropertyManager registeredPropertyManager)
         {
             var requiredRegisteredProp = registeredPropertyManager.GetRegisteredProperties();
 
@@ -76,10 +78,6 @@ namespace Neatoo.Rules
             foreach (var r in rules) { AddRule(r); }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="rule"></param>
         public void AddRule(IRule rule)
         {
             Rules.Add(rule.UniqueIndex, rule ?? throw new ArgumentNullException(nameof(rule)));
@@ -87,28 +85,28 @@ namespace Neatoo.Rules
 
         public ActionAsyncFluentRule<T> AddActionAsync(Func<T, Task> func, string triggerProperty)
         {
-            ActionAsyncFluentRule<T> rule = new ActionAsyncFluentRule<T>(func, triggerProperty); // TODO - DI
+            ActionAsyncFluentRule<T> rule = new ActionAsyncFluentRule<T>(func, triggerProperty);
             Rules.Add(rule.UniqueIndex, rule);
             return rule;
         }
 
         public ActionFluentRule<T> AddAction(Action<T> func, string triggerProperty)
         {
-            ActionFluentRule<T> rule = new ActionFluentRule<T>(func, triggerProperty); // TODO - DI
+            ActionFluentRule<T> rule = new ActionFluentRule<T>(func, triggerProperty);
             Rules.Add(rule.UniqueIndex, rule);
             return rule;
         }
 
         public ValidationFluentRule<T> AddValidation(Func<T, string> func, string triggerProperty)
         {
-            ValidationFluentRule<T> rule = new ValidationFluentRule<T>(func, triggerProperty); // TODO - DI
+            ValidationFluentRule<T> rule = new ValidationFluentRule<T>(func, triggerProperty);
             Rules.Add(rule.UniqueIndex, rule);
             return rule;
         }
 
         public AsyncFluentRule<T> AddValidationAsync(Func<T, Task<string>> func, string triggerProperty)
         {
-            AsyncFluentRule<T> rule = new AsyncFluentRule<T>(func, triggerProperty); // TODO - DI
+            AsyncFluentRule<T> rule = new AsyncFluentRule<T>(func, triggerProperty);
             Rules.Add(rule.UniqueIndex, rule);
             return rule;
         }
@@ -117,7 +115,6 @@ namespace Neatoo.Rules
         {
             foreach (var rule in Rules.Values.Where(r => r.TriggerProperties.Any(t => t.IsMatch(Target, propertyName))).ToList())
             {
-                // System.Diagnostics.Debug.WriteLine($"Enqueue {propertyName}");
                 await RunRule(rule, CancellationToken.None);
             }
         }
@@ -146,20 +143,7 @@ namespace Neatoo.Rules
                 return;
             }
         }
-
-        void ISetTarget.SetTarget(IBase target)
-        {
-            if (target is T tt)
-            {
-                Target = tt;
-            }
-            else
-            {
-                throw new InvalidTargetTypeException(target.GetType().FullName);
-            }
-        }
     }
-
 
     [Serializable]
     public class TargetRulePropertyChangeException : Exception
@@ -172,7 +156,6 @@ namespace Neatoo.Rules
           System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
     }
 
-
     [Serializable]
     public class InvalidRuleTypeException : Exception
     {
@@ -183,7 +166,6 @@ namespace Neatoo.Rules
           System.Runtime.Serialization.SerializationInfo info,
           System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
     }
-
 
     [Serializable]
     public class InvalidTargetTypeException : Exception
@@ -196,7 +178,6 @@ namespace Neatoo.Rules
           StreamingContext context) : base(info, context) { }
     }
 
-
     [Serializable]
     public class TargetIsNullException : Exception
     {
@@ -208,4 +189,3 @@ namespace Neatoo.Rules
           StreamingContext context) : base(info, context) { }
     }
 }
-

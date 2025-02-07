@@ -9,7 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Neatoo.Autofac\Neatoo.Autofac.csproj" />
     <ProjectReference Include="..\..\Neatoo\Neatoo.csproj" />
   </ItemGroup>
 

@@ -16,9 +16,9 @@ using System.Threading.Tasks;
 
 namespace HorseBarn.lib.Cart
 {
-    internal class Cart<C, H> : CustomEditBase<C>, ICart<H>, ICart
+    internal class Cart<C, H> : CustomEditBase<C>, ICart
         where C : Cart<C, H>
-        where H : class, IHorse
+        where H : IHorse
     {
         public Cart(IEditBaseServices<C> services,
                     ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services)
@@ -45,44 +45,39 @@ namespace HorseBarn.lib.Cart
         [Required]
         public int NumberOfHorses { get => Getter<int>(); set => Setter(value); }
 
-        public IHorseList<H> HorseList { get => Getter<IHorseList<H>>(); private set => Setter(value); }
+        public IHorseList HorseList { get => Getter<IHorseList>(); private set => Setter(value); }
 
         internal IEnumerable<IHorse> Horses => HorseList.Cast<IHorse>();
 
-        IEnumerable<IHorse> ICart.Horses => HorseList;
+        IEnumerable<IHorse> ICart.Horses => HorseList.Cast<IHorse>();
 
 
-        protected override async Task HandlePropertyChanged(string propertyName, IBase source)
-        {
-
-            if (source == HorseList && propertyName == nameof(HorseList.Count))
-            {
-                await CheckRules(nameof(NumberOfHorses)); 
-            }
-
-            await base.HandlePropertyChanged(propertyName, source);
-
-        }
-
-        public void RemoveHorse(IHorse horse)
+        public async Task RemoveHorse(IHorse horse)
         {
             HorseList.RemoveHorse(horse);
+            //await CheckRules(nameof(HorseList));
+            //await WaitForTasks();
+            await Task.CompletedTask;
         }
 
-        public void AddHorse(IHorse horse)
+        public async Task AddHorse(IHorse horse)
         {
-            if(horse is H h)
+            if (horse is H h)
             {
                 HorseList.Add(h);
-            } else
+            }
+            else
             {
                 throw new ArgumentException($"Horse {horse.GetType().FullName} is not of type {typeof(H).FullName}");
             }
+            //await CheckRules(nameof(HorseList));
+            //await WaitForTasks();
+            await Task.CompletedTask;
         }
 
         public bool CanAddHorse(IHorse horse)
         {
-            if(horse is H && HorseList.Count < NumberOfHorses)
+            if (horse is H && HorseList.Count < NumberOfHorses)
             {
                 return true;
             }
@@ -95,15 +90,15 @@ namespace HorseBarn.lib.Cart
 
 
         [CreateChild]
-        public async void CreateChild(IReadWritePortalChild<IHorseList<H>> horsePortal)
+        public async void CreateChild(IReadWritePortalChild<IHorseList> horsePortal)
         {
             this.HorseList = await horsePortal.CreateChild();
             this.NumberOfHorses = 1;
-            await this.CheckAllSelfRules();
+            await this.RunSelfRules();
         }
 
         [FetchChild]
-        public async Task FetchChild(Dal.Ef.Cart cart, IReadPortalChild<IHorseList<H>> horsePortal)
+        public async Task FetchChild(Dal.Ef.Cart cart, IReadPortalChild<IHorseList> horsePortal)
         {
             this.Id = cart.Id;
             this.Name = cart.Name;
@@ -112,12 +107,12 @@ namespace HorseBarn.lib.Cart
         }
 
         [InsertChild]
-        protected async Task Insert(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<IHorseList<H>> horseList)
+        protected async Task Insert(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<IHorseList> horseList)
         {
             Dal.Ef.Cart cart = new Dal.Ef.Cart();
 
             cart.Name = this.Name;
-            cart.CartType = (int) this.CartType;
+            cart.CartType = (int)this.CartType;
             cart.NumberOfHorses = this.NumberOfHorses;
             cart.HorseBarn = horseBarn;
             cart.PropertyChanged += HandleIdPropertyChanged;
@@ -128,7 +123,7 @@ namespace HorseBarn.lib.Cart
         }
 
         [UpdateChild]
-        protected async Task Update(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<IHorseList<H>> horseList)
+        protected async Task Update(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<IHorseList> horseList)
         {
             var cart = horseBarn.Carts.First(c => c.Id == this.Id);
 

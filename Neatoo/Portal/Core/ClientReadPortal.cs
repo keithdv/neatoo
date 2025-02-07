@@ -6,6 +6,7 @@ using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
+using static Neatoo.Portal.NeatooJsonSerializer;
 
 namespace Neatoo.Portal.Core
 {
@@ -52,11 +53,7 @@ namespace Neatoo.Portal.Core
 
         protected Task<T> RequestFromServer(PortalOperation portalOperation)
         {
-            var portalRequest = new PortalRequest()
-            {
-                PortalOperation = portalOperation,
-                Target = new ObjectTypeJson() { AssemblyType = typeof(T).FullName }
-            };
+            var portalRequest = portalJsonSerializer.ToPortalRequest(portalOperation, typeof(T));
 
             return RequestFromServer(portalRequest);
         }
@@ -65,35 +62,21 @@ namespace Neatoo.Portal.Core
 
         protected Task<T> RequestFromServer(PortalOperation portalOperation, object[] criteria)
         {
-            var portalRequest = new PortalRequest()
-            {
-                PortalOperation = portalOperation,
-                Target = portalJsonSerializer.ToObjectTypeJson<T>(),
-                Criteria = criteria.Select(x => portalJsonSerializer.ToObjectTypeJson(x)).ToList()
-            };
+            var portalRequest = portalJsonSerializer.ToPortalRequest(portalOperation, typeof(T), criteria);     
 
             return RequestFromServer(portalRequest);
         }
 
         protected Task<T> RequestFromServer(PortalOperation portalOperation, T target)
         {
-            var portalRequest = new PortalRequest()
-            {
-                PortalOperation = portalOperation,
-                Target = portalJsonSerializer.ToObjectTypeJson(target)
-            };
+            var portalRequest = portalJsonSerializer.ToPortalRequest(portalOperation, target);
 
             return RequestFromServer(portalRequest);
         }
 
         protected Task<T> RequestFromServer(PortalOperation portalOperation, T target, object[] criteria)
         {
-            var portalRequest = new PortalRequest()
-            {
-                PortalOperation = portalOperation,
-                Target = portalJsonSerializer.ToObjectTypeJson(target),
-                Criteria = criteria.Select(x => portalJsonSerializer.ToObjectTypeJson(x)).ToList()
-            };
+            var portalRequest = portalJsonSerializer.ToPortalRequest(portalOperation, target);
 
             return RequestFromServer(portalRequest);
         }
@@ -102,7 +85,7 @@ namespace Neatoo.Portal.Core
         {
             var result = await this.requestFromServerDelegate(request);
 
-            return portalJsonSerializer.Deserialize<T>(result.ObjectJson);
+            return (T) portalJsonSerializer.FromPortalResponse(result);
         }
 
         public Task<T> Create(object[] criteria)

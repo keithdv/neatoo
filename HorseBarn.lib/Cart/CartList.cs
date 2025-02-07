@@ -3,6 +3,7 @@ using Neatoo;
 using Neatoo.Portal;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,39 +11,26 @@ using System.Threading.Tasks;
 namespace HorseBarn.lib.Cart
 {
 
-    public interface ICartList : ICartList<ICart>
-    {
-
-    }
-
-    public interface ICartList<C> : IEditListBase<C>
-        where C : ICart
+    
+    public interface ICartList : IEditListBase<ICart>
 
     {
 
-        internal void RemoveHorse(IHorse horse);
+        internal Task RemoveHorse(IHorse horse);
     }
 
-    internal class CartList : CartList<CartList, ICart>, ICartList
+    internal class CartList : EditListBase<CartList, ICart>, ICartList
     {
         public CartList(IEditListBaseServices<CartList, ICart> services) : base(services)
         {
-        }
-    }
 
-    internal class CartList<L, C> : EditListBase<L, C>, ICartList<C>
-        where L : CartList<L, C>
-        where C : ICart
-    {
-        public CartList(IEditListBaseServices<L, C> services) : base(services)
-        {
         }
 
-        public void RemoveHorse(IHorse horse)
+        public async Task RemoveHorse(IHorse horse)
         {
             foreach(var c in this)
             {
-                c.RemoveHorse(horse);
+                await c.RemoveHorse(horse);
             }
         }
 
@@ -55,11 +43,11 @@ namespace HorseBarn.lib.Cart
             {
                 if (cart.CartType == (int)CartType.RacingChariot)
                 {
-                    Add((C)await racingChariotPortal.FetchChild(cart));
+                    Add(await racingChariotPortal.FetchChild(cart));
                 }
                 else if(cart.CartType == (int)CartType.Wagon)
                 {
-                    Add((C)await wagonPortal.FetchChild(cart));
+                    Add(await wagonPortal.FetchChild(cart));
                 }
             }
         }

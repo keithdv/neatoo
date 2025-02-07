@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HorseBarn.lib.Cart
 {
-    public interface IWagon : ICart<IHeavyHorse>
+    public interface IWagon : ICart
     {
 
     }

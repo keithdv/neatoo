@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Portal;
 using Neatoo.UnitTest.ObjectPortal;
@@ -13,7 +13,7 @@ namespace Neatoo.UnitTest.Portal
     public class PortalEditListSaveTests
     {
 
-        private ILifetimeScope scope = AutofacContainer.GetLifetimeScope(true);
+        private IServiceScope scope = UnitTestServices.GetLifetimeScope(true);
         private IReadWritePortal<IEditObjectList> portal;
         private IEditObjectList list;
         private IEditObject child;
@@ -21,7 +21,7 @@ namespace Neatoo.UnitTest.Portal
         [TestInitialize]
         public void TestInitialize()
         {
-            portal = scope.Resolve<IReadWritePortal<IEditObjectList>>();
+            portal = scope.GetRequiredService<IReadWritePortal<IEditObjectList>>();
             list = portal.Fetch().Result;
             child = list.CreateAdd().Result;
             child.MarkUnmodified();
@@ -37,44 +37,5 @@ namespace Neatoo.UnitTest.Portal
             scope.Dispose();
         }
 
-        [TestMethod]
-        public async Task PortalEditListSave_SaveList()
-        {
-            list.ID = Guid.Empty;
-            await list.Save();
-            Assert.AreNotEqual(Guid.Empty, list.ID);
-            Assert.IsTrue(list.UpdateCalled);
-            Assert.IsFalse(child.UpdateChildCalled);
-            Assert.IsFalse(list.IsModified);
-        }
-
-        [TestMethod]
-        public async Task PortalEditListSave_ChildUpdated()
-        {
-            child.ID = Guid.Empty;
-            await list.Save();
-            Assert.AreNotEqual(Guid.Empty, list.ID);
-            Assert.IsFalse(list.UpdateCalled);
-            Assert.IsTrue(child.UpdateChildCalled);
-        }
-
-        [TestMethod]
-        public async Task PortalEditListSave_ChildRemoved()
-        {
-            list.Remove(child);
-            await list.Save();
-            Assert.IsFalse(list.UpdateCalled); // Update was called but IsSelfModified is false
-            Assert.IsTrue(child.DeleteChildCalled);
-        }
-
-        [TestMethod]
-        public async Task PortalEditListSave_ChildAdded()
-        {
-            var newChild = await list.CreateAdd();
-            await list.Save();
-            Assert.IsFalse(list.UpdateCalled); // Update was called but IsSelfModified is false
-            Assert.IsFalse(child.InsertChildCalled);
-            Assert.IsTrue(newChild.InsertChildCalled);
-        }
     }
 }

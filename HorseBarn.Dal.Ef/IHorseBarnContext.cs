@@ -8,5 +8,7 @@ namespace HorseBarn.Dal.Ef
         DbSet<HorseBarn> HorseBarns { get; set; }
         DbSet<Horse> Horses { get; set; }
         DbSet<Pasture> Pastures { get; set; }
+
+        Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

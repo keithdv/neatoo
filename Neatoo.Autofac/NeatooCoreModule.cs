@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Autofac.Core;
 using Neatoo.AuthorizationRules;
 using Neatoo.Core;
@@ -13,8 +13,6 @@ using Autofac.Builder;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
 using System.Reflection.Metadata.Ecma335;
-using Neatoo.Netwonsoft.Json;
-using Neatoo.Newtonsoft.Json;
 using System.Net.Http;
 using System.Net.Mime;
 
@@ -27,7 +25,6 @@ namespace Neatoo.Autofac
 
     public class NeatooCoreModule : Module
     {
-
         public NeatooCoreModule(Portal portal)
         {
             Portal = portal;
@@ -44,7 +41,7 @@ namespace Neatoo.Autofac
 
 
             // Scope Wrapper
-            builder.RegisterType<ServiceScope>().As<IServiceScope>().InstancePerLifetimeScope();
+            //builder.RegisterType<ServiceScope>().As<IServiceScope>().InstancePerLifetimeScope();
 
             // Meta Data about the properties and methods of Classes
             // This will not change during runtime
@@ -56,8 +53,10 @@ namespace Neatoo.Autofac
             // When single instance it receives the root scopewhich is no good
             builder.RegisterGeneric(typeof(PortalOperationManager<>)).As(typeof(IPortalOperationManager<>)).InstancePerLifetimeScope();
 
-            builder.RegisterType<FatClientContractResolver>().AsSelf().As<IPortalJsonSerializer>();
-            builder.RegisterType<ListBaseCollectionConverter>().AsSelf();
+            builder.RegisterType<NeatooJsonSerializer>().AsSelf().As<IPortalJsonSerializer>();
+            builder.RegisterType<NeatooJsonConverterFactory>().AsSelf();
+            builder.RegisterGeneric(typeof(NeatooBaseJsonTypeConverter<>)).AsSelf();
+            builder.RegisterGeneric(typeof(NeatooListBaseJsonTypeConverter<>)).AsSelf();
 
             // Should not be singleinstance because AuthorizationRules can have constructor dependencies
             builder.RegisterGeneric(typeof(AuthorizationRuleManager<>)).As(typeof(IAuthorizationRuleManager<>)).InstancePerLifetimeScope();
@@ -72,18 +71,18 @@ namespace Neatoo.Autofac
             builder.RegisterType<RegisteredProperty>().As<IRegisteredProperty>().AsSelf();
             builder.Register<CreateRegisteredProperty>(cc =>
             {
-                var scope = cc.Resolve<Func<ILifetimeScope>>();
+                var scope = cc.GetRequiredService<Func<IServiceScope>>();
                 return (propertyInfo) =>
                 {
-                    return scope().Resolve<Func<System.Reflection.PropertyInfo, IRegisteredProperty>>()(propertyInfo);
+                    return scope().GetRequiredService<Func<System.Reflection.PropertyInfo, IRegisteredProperty>>()(propertyInfo);
                 };
             });
 
             // Stored values for each Domain Object instance
             // MUST BE per instance
-            builder.RegisterGeneric(typeof(PropertyValueManager<>)).As(typeof(IPropertyValueManager<>)).AsSelf();
-            builder.RegisterGeneric(typeof(ValidatePropertyValueManager<>)).As(typeof(IValidatePropertyValueManager<>)).AsSelf();
-            builder.RegisterGeneric(typeof(EditPropertyValueManager<>)).As(typeof(IEditPropertyValueManager<>)).AsSelf();
+            builder.RegisterType<PropertyManager<IProperty>>().As<IPropertyManager<IProperty>>().AsSelf();
+            builder.RegisterType<ValidatePropertyManager<IValidateProperty>>().As<IValidatePropertyManager<IValidateProperty>>().AsSelf();
+            builder.RegisterType<EditPropertyManager>().As<IEditPropertyManager>().AsSelf();
 
             builder.RegisterGeneric(typeof(LocalReadPortal<>))
                 .As(typeof(ILocalReadPortal<>))
@@ -132,17 +131,17 @@ namespace Neatoo.Autofac
             }
 
             // Simple wrapper - Always InstancePerDependency
-            builder.RegisterGeneric(typeof(BaseServices<>)).As(typeof(IBaseServices<>));
-            builder.RegisterGeneric(typeof(ListBaseServices<,>)).As(typeof(IListBaseServices<,>));
-            builder.RegisterGeneric(typeof(ValidateBaseServices<>)).As(typeof(IValidateBaseServices<>));
-            builder.RegisterGeneric(typeof(ValidateListBaseServices<,>)).As(typeof(IValidateListBaseServices<,>));
-            builder.RegisterGeneric(typeof(EditBaseServices<>)).As(typeof(IEditBaseServices<>));
-            builder.RegisterGeneric(typeof(EditListBaseServices<,>)).As(typeof(IEditListBaseServices<,>));
+            builder.RegisterGeneric(typeof(BaseServices<>)).As(typeof(IBaseServices<>)) .AsSelf();
+            builder.RegisterGeneric(typeof(ListBaseServices<,>)).As(typeof(IListBaseServices<,>)).AsSelf();
+            builder.RegisterGeneric(typeof(ValidateBaseServices<>)).As(typeof(IValidateBaseServices<>)) .AsSelf();
+            builder.RegisterGeneric(typeof(ValidateListBaseServices<,>)).As(typeof(IValidateListBaseServices<,>)).AsSelf();
+            builder.RegisterGeneric(typeof(EditBaseServices<>)).As(typeof(IEditBaseServices<>)) .AsSelf();
+            builder.RegisterGeneric(typeof(EditListBaseServices<,>)).As(typeof(IEditListBaseServices<,>)) .AsSelf();
 
             builder.Register<RequestFromServerDelegate>(cc => {
 
-                var httpClient = cc.Resolve<HttpClient>();
-                var portalJsonSerializer = cc.Resolve<IPortalJsonSerializer>();
+                var httpClient = cc.GetRequiredService<HttpClient>();
+                var portalJsonSerializer = cc.GetRequiredService<IPortalJsonSerializer>();
 
                 return async (portalRequest) =>
                 {

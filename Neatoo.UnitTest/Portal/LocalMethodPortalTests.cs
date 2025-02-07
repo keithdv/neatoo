@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Portal;
 using Neatoo.Portal.Core;
@@ -49,19 +49,19 @@ namespace Neatoo.UnitTest.Portal
     [TestClass]
     public class LocalMethodPortalTests
     {
-        private ILifetimeScope scope;
+        private IServiceScope scope;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            scope = AutofacContainer.GetLifetimeScope(true);
+            scope = UnitTestServices.GetLifetimeScope(true);
         }
 
         [TestMethod]
         public async Task LocalMethodPortal_ExecuteServer()
         {
             // Hide the fact that there is a remote call from the client
-            var methodObject = scope.Resolve<IMethodObject>();
+            var methodObject = scope.GetRequiredService<IMethodObject>();
 
             var result = await methodObject.DoRemoteWork(20);
 
@@ -71,7 +71,7 @@ namespace Neatoo.UnitTest.Portal
         [TestMethod]
         public async Task LocalMethodPortal_Execute()
         {
-            var portal = scope.Resolve<LocalMethodPortal<MethodObject.Execute>>();
+            var portal = scope.GetRequiredService<IRemoteMethodPortal<MethodObject.Execute>>();
 
             var result = await portal.Execute<int>(10);
 

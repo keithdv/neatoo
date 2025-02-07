@@ -14,7 +14,7 @@ namespace Neatoo.Rules.Rules
     public class AttributeToRule : IAttributeToRule
     {
 
-        public AttributeToRule(Func<IRegisteredProperty, IRequiredRule> required)
+        public AttributeToRule(CreateRequiredRule required)
         {
             Required = required;
         }
@@ -29,6 +29,6 @@ namespace Neatoo.Rules.Rules
         }
 
 
-        public Func<IRegisteredProperty, IRequiredRule> Required { get; }
+        public CreateRequiredRule Required { get; }
     }
 }

@@ -67,21 +67,21 @@ namespace HorseBarn.lib
             }
             
             this.Pasture.HorseList.Add(horse);
-            await horse.CheckAllRules();
+            await horse.RunAllRules();
             return horse;
         }
 
-        public void MoveHorseToCart(IHorse horse, ICart cart)
+        public async Task MoveHorseToCart(IHorse horse, ICart cart)
         {
             Pasture.RemoveHorse(horse);
-            Carts.RemoveHorse(horse);
+            await Carts.RemoveHorse(horse);
 
-            cart.AddHorse(horse);
+            await cart.AddHorse(horse);
         }
 
-        public void MoveHorseToPasture(IHorse horse)
+        public async Task MoveHorseToPasture(IHorse horse)
         {
-            Carts.RemoveHorse(horse);
+            await Carts.RemoveHorse(horse);
 
             if (!Pasture.HorseList.Contains(horse))
             {
@@ -100,15 +100,11 @@ namespace HorseBarn.lib
         }
 
         [Fetch]
-        public async Task Fetch(HorseBarnContext horseBarnContext,
+        public async Task Fetch(IHorseBarnContext horseBarnContext,
                                 IReadPortalChild<IPasture> pasturePortal,
                                 IReadPortalChild<ICartList> cartPortal)
         {
-            //await horseBarnContext.Horses.ExecuteDeleteAsync();
-            //await horseBarnContext.Carts.ExecuteDeleteAsync();
-            //await horseBarnContext.Pastures.ExecuteDeleteAsync();
-            //await horseBarnContext.HorseBarns.ExecuteDeleteAsync();
-            //return;
+
             var horseBarn = await horseBarnContext.HorseBarns.FirstOrDefaultAsync();
             if (horseBarn != null)
             {
@@ -119,7 +115,7 @@ namespace HorseBarn.lib
         }
 
         [Insert]
-        public async Task Insert(HorseBarnContext horseBarnContext,
+        public async Task Insert(IHorseBarnContext horseBarnContext,
                                 IReadWritePortalChild<IPasture> pasturePortal,
                                 IReadWritePortalChild<ICartList> cartPortal)
         {
@@ -136,7 +132,7 @@ namespace HorseBarn.lib
         }
 
         [Update]
-        public async Task Update(HorseBarnContext horseBarnContext,
+        public async Task Update(IHorseBarnContext horseBarnContext,
                                 IReadWritePortalChild<IPasture> pasturePortal,
                                 IReadWritePortalChild<ICartList> cartPortal)
         {

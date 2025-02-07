@@ -1,9 +1,8 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Caliburn.Micro;
 using HorseBarn.lib;
 using HorseBarn.lib.Horse;
 using HorseBarn.WPF.ViewModels;
-using Neatoo.Autofac;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net.Http;
-using Microsoft.Extensions.DependencyInjection;
+using Neatoo;
 
 namespace HorseBarn.WPF
 {
@@ -24,12 +23,13 @@ namespace HorseBarn.WPF
         }
 
         //private readonly ILog _logger = LogManager.GetLog(typeof(TypedAutofacBootStrapper<>));
-        private IContainer _container;
+        private IServiceProvider _serviceProvider;
         private IHttpClientFactory httpClientFactory;
+        private IHttpClientFactory _httpClientFactory;
 
-        protected IContainer Container
+        protected IServiceProvider ServiceProvider
         {
-            get { return _container; }
+            get { return _serviceProvider; }
         }
 
         protected override async void OnStartup(object sender, System.Windows.StartupEventArgs e)
@@ -45,16 +45,16 @@ namespace HorseBarn.WPF
         #region Overrides
         protected override void Configure()
         { //  configure container
-            var builder = new ContainerBuilder();
+            var services = new ServiceCollection();
 
-            //  register the single window manager for this container
-            builder.Register<IWindowManager>(c => new WindowManager()).InstancePerLifetimeScope();
-            //  register the single event aggregator for this container
-            builder.Register<IEventAggregator>(c => new EventAggregator()).InstancePerLifetimeScope();
+            // Register the single window manager for this container
+            services.AddSingleton<IWindowManager, WindowManager>();
+            // Register the single event aggregator for this container
+            services.AddSingleton<IEventAggregator, EventAggregator>();
 
-            ConfigureContainer(builder);
+            ConfigureContainer(services);
 
-            _container = builder.Build();
+            _serviceProvider = services.BuildServiceProvider();
 
 
         }
@@ -63,49 +63,64 @@ namespace HorseBarn.WPF
         {
             if (string.IsNullOrWhiteSpace(key))
             {
-                if (Container.IsRegistered(serviceType))
-                    return Container.Resolve(serviceType);
+                return _serviceProvider.GetRequiredService(serviceType);
             }
             else
             {
-                if (Container.IsRegisteredWithKey(key, serviceType))
-                    return Container.ResolveKeyed(key, serviceType);
+                return _serviceProvider.GetKeyedServices(serviceType, key);
             }
-            throw new Exception(string.Format("Could not locate any instances of contract {0}.", key ?? serviceType.Name));
         }
 
         protected override IEnumerable<object> GetAllInstances(Type serviceType)
         {
-            return Container.Resolve(typeof(IEnumerable<>).MakeGenericType(serviceType)) as IEnumerable<object>;
+            return _serviceProvider.GetRequiredService(typeof(IEnumerable<>).MakeGenericType(serviceType)) as IEnumerable<object>;
         }
 
         protected override void BuildUp(object instance)
         {
-            Container.InjectProperties(instance);
+            var serviceProvider = _serviceProvider.CreateScope().ServiceProvider;
+            foreach (var property in instance.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (property.CanWrite && property.GetValue(instance) == null)
+                {
+                    var service = serviceProvider.GetService(property.PropertyType);
+                    if (service != null)
+                    {
+                        property.SetValue(instance, service);
+                    }
+                }
+            }
         }
 
         #endregion
 
-        protected virtual void ConfigureContainer(ContainerBuilder builder)
+        protected virtual void ConfigureContainer(ServiceCollection services)
         {
 
-            var services = new ServiceCollection();
             services.AddHttpClient();
-            var provider = services.BuildServiceProvider();
-            httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
 
-            builder.Register(_ =>
+            _httpClientFactory = services.BuildServiceProvider().GetRequiredService<IHttpClientFactory>();
+
+            services.AddSingleton(_ => _httpClientFactory.CreateClient());
+
+            services.AddTransient<HorseBarnViewModel>();
+            services.AddTransient<CreateHorseViewModel>();
+            services.AddTransient<CartViewModel>();
+            services.AddTransient<HorseViewModel>();
+
+            services.AddTransient<CartViewModel.Factory>(services =>
             {
-                return httpClientFactory.CreateClient();
+                return (horseBarn, cart) => new CartViewModel(horseBarn, cart, services.GetRequiredService<HorseViewModel.Factory>());
             });
 
-            builder.RegisterType<HorseBarnViewModel>();
-            builder.RegisterType<CreateHorseViewModel>();
-            builder.RegisterType<CartViewModel>();
-            builder.RegisterType<HorseViewModel>();
+            services.AddTransient<HorseViewModel.Factory>(services =>
+            {
+                return (horse) => new HorseViewModel(horse);
+            });
 
-            builder.RegisterModule(new NeatooCoreModule(Portal.Client));
-            builder.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));
+            services.AddNeatooServices(PortalServer.Remote);
+
+            services.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));
         }
     }
 }

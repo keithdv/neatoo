@@ -17,9 +17,6 @@ namespace Neatoo
         where T : ValidateListBase<T, I>
         where I : IValidateBase
     {
-        IValidatePropertyValueManager<T> ValidatePropertyValueManager { get; }
-        IRuleManager<T> RuleManager { get; }
-
     }
 
 
@@ -29,22 +26,8 @@ namespace Neatoo
         where I : IValidateBase
     {
 
-        public ValidateListBaseServices(IValidatePropertyValueManager<T> registeredPropertyManager,
-            IReadPortalChild<I> portal,
-            IRuleManager<T> ruleManager) : base(registeredPropertyManager, portal)
+        public ValidateListBaseServices(IReadPortalChild<I> portal) : base(portal)
         {
-            this.ValidatePropertyValueManager = registeredPropertyManager;
-            RuleManager = ruleManager;
         }
-
-        public IValidatePropertyValueManager<T> ValidatePropertyValueManager { get; }
-        public IRuleManager<T> RuleManager { get; }
-
-        IPropertyValueManager<T> IListBaseServices<T, I>.PropertyValueManager
-        {
-            get { return ValidatePropertyValueManager; }
-        }
-
-
     }
 }

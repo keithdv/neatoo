@@ -9,6 +9,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 {
     public interface IValidateAsyncObject : IPersonBase
     {
+        string aLabel { get; set; }
         IValidateAsyncObject Child { get; set; }
         int RuleRunCount { get; }
         string ThrowException { get; set; }
@@ -31,8 +32,11 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             FullNameRule = fullNameRule;
             // TODO : Can add a rule that's not the correct type, Handle?
             RuleManager.AddRule(asyncRuleThrowsException);
+
+            RuleManager.AddActionAsync((v) => Task.Delay(10), nameof(Child));
         }
 
+        public string aLabel { get => Getter<string>(); set => Setter(value); }
         public IValidateAsyncObject Child { get { return Getter<IValidateAsyncObject>(); } set { Setter(value); } }
 
         public string ThrowException { get => Getter<string>(); set => Setter(value); }
@@ -56,29 +60,19 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     }
 
 
-    public interface IValidateAsyncObjectList : IValidateListBase<IValidateAsyncObject>, IPersonBase
+    public interface IValidateAsyncObjectList : IValidateListBase<IValidateAsyncObject>
     {
-        int RuleRunCount { get; }
         void Add(IValidateAsyncObject o);
     }
 
-    public class ValidateAsyncObjectList : PersonValidateListBase<ValidateAsyncObjectList, IValidateAsyncObject>, IValidateAsyncObjectList
+    public class ValidateAsyncObjectList : ValidateListBase<ValidateAsyncObjectList, IValidateAsyncObject>, IValidateAsyncObjectList
     {
 
-        public ValidateAsyncObjectList(IValidateListBaseServices<ValidateAsyncObjectList, IValidateAsyncObject> services,
-            IShortNameRule<ValidateAsyncObjectList> shortNameRule,
-            IFullNameRule<ValidateAsyncObjectList> fullNameRule
-            ) : base(services)
+        public ValidateAsyncObjectList(IValidateListBaseServices<ValidateAsyncObjectList, IValidateAsyncObject> services) : base(services)
         {
-            RuleManager.AddRules(shortNameRule, fullNameRule);
-            ShortNameRule = shortNameRule;
-            FullNameRule = fullNameRule;
 
         }
 
-        public int RuleRunCount => ShortNameRule.RunCount + FullNameRule.RunCount + this.Select(v => v.RuleRunCount).Sum();
-        public IShortNameRule<ValidateAsyncObjectList> ShortNameRule { get; }
-        public IFullNameRule<ValidateAsyncObjectList> FullNameRule { get; }
     }
 
 }

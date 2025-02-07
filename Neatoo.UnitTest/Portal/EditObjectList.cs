@@ -13,24 +13,17 @@ namespace Neatoo.UnitTest.ObjectPortal
         {
         }
 
-        private IRegisteredProperty IDProperty => GetRegisteredProperty(nameof(ID));
-        public Guid? ID { get => Getter<Guid?>(); set => Setter(value); }
-        public Guid GuidCriteria { get => Getter<Guid>(); set => Setter(value); }
-        public int IntCriteria { get => Getter<int>(); set => Setter(value); }
-
         public bool CreateCalled { get; set; } = false;
 
         [Create]
         private void Create()
         {
-            ID = Guid.NewGuid();
             CreateCalled = true;
         }
 
         [Create]
         private void Create(int criteria)
         {
-            IntCriteria = criteria;
             CreateCalled = true;
         }
 
@@ -39,7 +32,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         private void Create(Guid criteria, IDisposableDependency dependency)
         {
             Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
             CreateCalled = true;
         }
 
@@ -48,14 +40,12 @@ namespace Neatoo.UnitTest.ObjectPortal
         [CreateChild]
         private void CreateChild()
         {
-            ID = Guid.NewGuid();
             CreateChildCalled = true;
         }
 
         [CreateChild]
         private void CreateChild(int criteria)
         {
-            IntCriteria = criteria;
             CreateChildCalled = true;
         }
 
@@ -63,7 +53,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         private void CreateChild(Guid criteria, IDisposableDependency dependency)
         {
             Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
             CreateChildCalled = true;
         }
 
@@ -72,14 +61,12 @@ namespace Neatoo.UnitTest.ObjectPortal
         [Fetch]
         private void Fetch()
         {
-            ID = Guid.NewGuid();
             FetchCalled = true;
         }
 
         [Fetch]
         private void Fetch(int criteria)
         {
-            IntCriteria = criteria;
             FetchCalled = true;
         }
 
@@ -88,7 +75,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         private void Fetch(Guid criteria, IDisposableDependency dependency)
         {
             Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
             FetchCalled = true;
         }
 
@@ -97,14 +83,12 @@ namespace Neatoo.UnitTest.ObjectPortal
         [FetchChild]
         private void FetchChild()
         {
-            ID = Guid.NewGuid();
             FetchChildCalled = true;
         }
 
         [FetchChild]
         private void FetchChild(int criteria)
         {
-            IntCriteria = criteria;
             FetchChildCalled = true;
         }
 
@@ -112,7 +96,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         private void FetchChild(Guid criteria, IDisposableDependency dependency)
         {
             Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
             FetchChildCalled = true;
         }
 
@@ -121,7 +104,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         [Insert]
         private void Insert()
         {
-            ID = Guid.NewGuid();
             InsertCalled = true;
         }
 
@@ -130,7 +112,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         private void Insert(int criteria)
         {
             InsertCalled = true;
-            IntCriteria = criteria;
         }
 
 
@@ -139,7 +120,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         {
             Assert.IsNotNull(dependency);
             InsertCalled = true;
-            GuidCriteria = criteria;
         }
 
         public bool InsertChildCalled { get; set; } = false;
@@ -147,14 +127,12 @@ namespace Neatoo.UnitTest.ObjectPortal
         [InsertChild]
         private void InsertChild()
         {
-            ID = Guid.NewGuid();
             InsertChildCalled = true;
         }
 
         [InsertChild]
         private void InsertChild(int criteria)
         {
-            IntCriteria = criteria;
             InsertChildCalled = true;
         }
 
@@ -163,7 +141,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         private void InsertChild(Guid criteria, IDisposableDependency dependency)
         {
             Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
             InsertChildCalled = true;
         }
 
@@ -171,18 +148,13 @@ namespace Neatoo.UnitTest.ObjectPortal
 
         protected override async Task Update()
         {
-            if (IsSelfModified)
-            {
-                ID = Guid.NewGuid();
-                UpdateCalled = true;
-            }
+            UpdateCalled = true;
             await UpdateList();
         }
 
         [Update]
         private void Update(int criteria)
         {
-            IntCriteria = criteria;
             UpdateCalled = true;
         }
 
@@ -191,7 +163,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         private void Update(Guid criteria, IDisposableDependency dependency)
         {
             Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
             UpdateCalled = true;
         }
 
@@ -200,14 +171,12 @@ namespace Neatoo.UnitTest.ObjectPortal
         [UpdateChild]
         private void UpdateChild()
         {
-            ID = Guid.NewGuid();
             UpdateChildCalled = true;
         }
 
         [UpdateChild]
         private void UpdateChild(int criteria)
         {
-            IntCriteria = criteria;
             UpdateChildCalled = true;
         }
 
@@ -216,7 +185,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         private void UpdateChild(Guid criteria, IDisposableDependency dependency)
         {
             Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
             UpdateChildCalled = true;
         }
 
@@ -231,7 +199,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         [Delete]
         private void Delete(int criteria)
         {
-            IntCriteria = criteria;
             DeleteCalled = true;
         }
 
@@ -239,7 +206,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         private void Delete(Guid criteria, IDisposableDependency dependency)
         {
             Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
             DeleteCalled = true;
         }
 
@@ -254,7 +220,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         [DeleteChild]
         private void DeleteChild(int criteria)
         {
-            IntCriteria = criteria;
             DeleteChildCalled = true;
         }
 
@@ -262,7 +227,6 @@ namespace Neatoo.UnitTest.ObjectPortal
         private void DeleteChild(Guid criteria, IDisposableDependency dependency)
         {
             Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
             DeleteChildCalled = true;
         }
 

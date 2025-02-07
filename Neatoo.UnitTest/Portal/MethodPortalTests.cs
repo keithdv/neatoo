@@ -1,4 +1,4 @@
-﻿using Autofac;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -32,7 +32,7 @@ namespace Neatoo.UnitTest.Portal
     [TestClass]
     public class MethodPortalTests
     {
-        private IContainer container;
+        private IServiceProvider container;
 
         public delegate bool RemoteMethod(int number);
 
@@ -45,19 +45,19 @@ namespace Neatoo.UnitTest.Portal
         [TestInitialize]
         public void TestInitialize()
         {
-            var containerBuilder = new ContainerBuilder();
-            containerBuilder.Register<RemoteMethod>(cc =>
+            var containerBuilder = new ServiceCollection();
+            containerBuilder.AddTransient<RemoteMethod>(cc =>
             {
                 return i => RemoteMethod_(i);
             });
-            containerBuilder.RegisterGeneric(typeof(MethodPortal<>));
-            container = containerBuilder.Build();
+            containerBuilder.AddTransient(typeof(MethodPortal<>));
+            container = containerBuilder.BuildServiceProvider();
         }
 
         [TestMethod]
         public void MethodPortalTest()
         {
-            var mp = container.Resolve<MethodPortal<RemoteMethod>>();
+            var mp = container.GetRequiredService<MethodPortal<RemoteMethod>>();
             var result = mp.Execute<int, bool>(10);
         }
     }

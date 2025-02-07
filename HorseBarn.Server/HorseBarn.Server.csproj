@@ -7,14 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.11" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\HorseBarn.Dal.Ef\HorseBarn.Dal.Ef.csproj" />
     <ProjectReference Include="..\HorseBarn.lib\HorseBarn.lib.csproj" />
-    <ProjectReference Include="..\Neatoo.Autofac\Neatoo.Autofac.csproj" />
     <ProjectReference Include="..\Neatoo.Newtonsoft.Json\Neatoo.Newtonsoft.Json.csproj" />
     <ProjectReference Include="..\Neatoo\Neatoo.csproj" />
   </ItemGroup>

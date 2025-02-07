@@ -16,23 +16,21 @@ namespace Neatoo
         where T : ListBase<T, I>
         where I : IBase
     {
-        IPropertyValueManager<T> PropertyValueManager { get; }
         IReadPortalChild<I> ReadPortal { get; }
     }
 
     public class ListBaseServices<T, I> : IListBaseServices<T, I>
         where T : ListBase<T, I>
-        where I : IBase
+        where I : IBase 
     {
 
-        public ListBaseServices(IPropertyValueManager<T> registeredPropertyDataManager, IReadPortalChild<I> readPortal)
+        public ListBaseServices()        {        }
+
+        public ListBaseServices(IReadPortalChild<I> readPortal)
         {
-            PropertyValueManager = registeredPropertyDataManager;
             ReadPortal = readPortal;
         }
 
-        public IPropertyValueManager<T> PropertyValueManager { get; }
         public IReadPortalChild<I> ReadPortal { get; }
-
     }
 }

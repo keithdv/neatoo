@@ -1,24 +1,21 @@
-using Autofac.Extensions.DependencyInjection;
-using Autofac;
+using Microsoft.Extensions.DependencyInjection;
 using HorseBarn.lib;
 using System.Reflection;
-using Neatoo.Autofac;
 using HorseBarn.Dal.Ef;
+using Neatoo;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers().AddNewtonsoftJson();
+builder.Services.AddControllers();
+builder.Services.AddNeatooServices(PortalServer.Local);
 
-builder.Host
-    .UseServiceProviderFactory(new AutofacServiceProviderFactory())
-    .ConfigureContainer<ContainerBuilder>((container) =>
-    {
-        container.RegisterType<HorseBarnContext>().AsSelf().InstancePerLifetimeScope();
-        container.RegisterModule(new Neatoo.Autofac.NeatooCoreModule(Neatoo.Autofac.Portal.Local));
-        container.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));
-    });
+builder.Services.AutoRegisterAssemblyTypes(Assembly.GetExecutingAssembly());
+
+builder.Services.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));
+
+builder.Services.AddScoped<IHorseBarnContext, HorseBarnContext>();
 
 var app = builder.Build();
 

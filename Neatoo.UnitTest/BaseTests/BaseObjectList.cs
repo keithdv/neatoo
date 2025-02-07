@@ -17,23 +17,11 @@ namespace Neatoo.UnitTest.BaseTests
 
         public BaseObjectList(IListBaseServices<BaseObjectList, IBaseObject> services) : base(services) { }
 
-        public Guid Id
-        {
-            get { return Getter<Guid>(); }
-            set { Setter(value); }
-        }
+        public Guid Id { get; set; }
 
-        public string FirstName
-        {
-            get { return Getter<string>(); }
-            set { Setter(value); }
-        }
+        public string FirstName { get; set; }
 
-        public string LastName
-        {
-            get { return Getter<string>(); }
-            set { Setter(value); }
-        }
+        public string LastName { get; set; }
 
 
     }

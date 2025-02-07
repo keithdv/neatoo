@@ -14,35 +14,31 @@ namespace Neatoo
     /// the inheriting classes don't need to list all services
     /// and services can be added
     /// </summary>
-    public interface IBaseServices<T> where T : IBase
+    public interface IBaseServices<T>
     {
-        IPropertyValueManager<T> PropertyValueManager { get; }
-
+        IPropertyManager<IProperty> PropertyManager { get; }
         IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
     }
 
 
     public class BaseServices<T> : IBaseServices<T>
-        where T : Base<T>
+        where T : Base<T> // Important - I need the concrete type at least once. This is where I get it
     {
         public BaseServices()
         {
-            RegisteredPropertyManager = new RegisteredPropertyManager<T>(CreateRegisteredProperty);
-            PropertyValueManager = new PropertyValueManager<T>(RegisteredPropertyManager, new DefaultFactory());
+            RegisteredPropertyManager = new RegisteredPropertyManager<T>((PropertyInfo pi) => new RegisteredProperty(pi));
+            PropertyManager = new PropertyManager<IProperty>(RegisteredPropertyManager, new DefaultFactory());
         }
 
-        public BaseServices(IPropertyValueManager<T> registeredPropertyDataManager, IRegisteredPropertyManager<T> registeredPropertyManager)
+        public BaseServices(CreatePropertyManager propertyManager, IRegisteredPropertyManager<T> registeredPropertyManager)
         {
-            PropertyValueManager = registeredPropertyDataManager;
             RegisteredPropertyManager = registeredPropertyManager;
+            PropertyManager = propertyManager(RegisteredPropertyManager);
         }
 
-        private IRegisteredProperty CreateRegisteredProperty(PropertyInfo propertyInfo)
-        {
-            return (IRegisteredProperty)Activator.CreateInstance(typeof(RegisteredProperty), propertyInfo);
-        }
 
-        public IPropertyValueManager<T> PropertyValueManager { get; }
+        public IPropertyManager<IProperty> PropertyManager { get; protected set; }
         public IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
+
     }
 }

@@ -89,7 +89,7 @@ namespace HorseBarn.lib.UnitTests
             var lightHorse = await horseBarn.AddNewHorse(criteria);
 
             Assert.AreEqual(mockLightHorse.Object, lightHorse);
-            mockLightHorse.Verify(h => h.CheckAllRules(CancellationToken.None), Times.Once);
+            mockLightHorse.Verify(h => h.RunAllRules(CancellationToken.None), Times.Once);
         }
 
         [TestMethod]
@@ -102,29 +102,29 @@ namespace HorseBarn.lib.UnitTests
             var heavyHorse = await horseBarn.AddNewHorse(Mock.Of<IHorseCriteria>());
 
             Assert.AreEqual(mockHeavyHorse.Object, heavyHorse);
-            mockHeavyHorse.Verify(h => h.CheckAllRules(CancellationToken.None), Times.Once);
+            mockHeavyHorse.Verify(h => h.RunAllRules(CancellationToken.None), Times.Once);
         }
 
         [TestMethod]
         [ExpectedException(typeof(Exception))]
-        public void HorseBarn_AddNewHorse_InvalidBreed()
+        public async Task HorseBarn_AddNewHorse_InvalidBreed()
         {
             var criteria = Mock.Of<IHorseCriteria>();
             criteria.Breed = (Breed) 999;
 
-            horseBarn.AddNewHorse(criteria); // Invalid breed
+            await horseBarn.AddNewHorse(criteria); // Invalid breed
         }
 
         [TestMethod]
-        public void HorseBarn_MoveHorseToCart()
+        public async Task HorseBarn_MoveHorseToCart()
         {
             var mockHeavyHorse = new Mock<IHeavyHorse>();
-            var mockWagon = new Mock<ICart<IHeavyHorse>>();
+            var mockWagon = new Mock<ICart>();
 
-            horseBarn.MoveHorseToCart(mockHeavyHorse.Object, mockWagon.Object);
+            await horseBarn.MoveHorseToCart(mockHeavyHorse.Object, mockWagon.Object);
 
             mockWagon.Verify(w => w.HorseList.Add(mockHeavyHorse.Object), Times.Once);
-            mockWagon.Verify(w => w.CheckAllRules(CancellationToken.None), Times.Once);
+            mockWagon.Verify(w => w.RunAllRules(CancellationToken.None), Times.Once);
         }
     }
 }

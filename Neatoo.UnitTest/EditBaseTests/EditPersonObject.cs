@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Neatoo.UnitTest.EditBaseTests
 {
 
-    public interface IEditPerson : IPersonBase, IEditBase
+    public interface IEditPerson : IPersonEdit
     {
 
         IEditPerson Child { get; set; }

@@ -16,7 +16,7 @@ namespace Neatoo.UnitTest.AsyncFlowTests
 
         public AsyncDelayRule()
         {
-            AddTriggerProperties(nameof(AsyncValidateObject.AsyncDelayRuleValue));
+            AddTriggerProperties(nameof(AsyncValidateObject.AsyncDelayRuleValue), nameof(AsyncValidateObject.Child));
         }
         public int RunCount { get; private set; } = 0;
 
@@ -24,6 +24,14 @@ namespace Neatoo.UnitTest.AsyncFlowTests
         {
             RunCount++;
             await Task.Delay(5);
+            if (RunCount < 3)
+            {
+                // Async Loop between parent and child
+                if (target.Child != null)
+                {
+                    target.Child.AsyncDelayRuleValue = Guid.NewGuid().ToString();
+                }
+            }
             return None;
         }
     }
@@ -124,11 +132,12 @@ namespace Neatoo.UnitTest.AsyncFlowTests
 
         public string AsyncDelayRuleValue { get => Getter<string>(); set => Setter(value); }
 
-        public IPropertyValue AsyncRuleCanWaitPropertyValue => this[nameof(AsyncRulesCanWait)];
+        public IProperty AsyncRuleCanWaitProperty => this[nameof(AsyncRulesCanWait)];
 
         public string AsyncRulesCanWait { get => Getter<string>(); set => Setter(value); }
         public string AsyncRulesCanWaitNested { get => Getter<string>(); set => Setter(value); }
 
+        public AsyncValidateObject Child { get => Getter<AsyncValidateObject>(); set => Setter(value); }
     }
 
 
