@@ -80,6 +80,8 @@ namespace Neatoo
             base.InsertItem(index, item);
 
             item.NeatooPropertyChanged += _ChildNeatooPropertyChanged;
+
+            RaiseNeatooPropertyChanged(new PropertyNameBreadCrumbs(nameof(Count), this));
         }
 
         protected override void RemoveItem(int index)
@@ -88,6 +90,7 @@ namespace Neatoo
 
             base.RemoveItem(index);
 
+            RaiseNeatooPropertyChanged(new PropertyNameBreadCrumbs(nameof(Count), this));
         }
 
         public async Task<I> CreateAdd()

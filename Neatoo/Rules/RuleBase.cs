@@ -1,6 +1,7 @@
 ﻿using Neatoo.Core;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
@@ -107,17 +108,25 @@ namespace Neatoo.Rules
             {
                 var propertyErrors = await Execute(target, token);
 
+                var setAtLeastOneProperty = true;
+
                 foreach (var property in TriggerProperties)
                 {
-                    if (propertyErrors.TryGetValue(property.PropertyName, out var errors))
+                    if (target.PropertyManager.HasProperty(property.PropertyName)) // TODO - Improve - Only allow expressions and child property callouts
                     {
-                        target[property.PropertyName].SetErrorsForRule(UniqueIndex, errors);
-                    }
-                    else
-                    {
-                        target[property.PropertyName].ClearErrorsForRule(UniqueIndex);
+                        setAtLeastOneProperty = true;
+                        if (propertyErrors.TryGetValue(property.PropertyName, out var errors))
+                        {
+                            target[property.PropertyName].SetErrorsForRule(UniqueIndex, errors);
+                        }
+                        else
+                        {
+                            target[property.PropertyName].ClearErrorsForRule(UniqueIndex);
+                        }
                     }
                 }
+
+                Debug.Assert(setAtLeastOneProperty, "You must have at least one trigger property that is a valid property on the target");
 
                 return propertyErrors;
             }
@@ -125,8 +134,12 @@ namespace Neatoo.Rules
             {
                 TriggerProperties.ForEach(p =>
                     {
-                        var propertyValue = target[p.PropertyName];
-                        propertyValue.SetErrorsForRule(UniqueIndex, [ex.Message]);
+                        // Allow children
+                        if(target.PropertyManager.HasProperty(p.PropertyName))
+                        {
+                            var propertyValue = target[p.PropertyName];
+                            propertyValue.SetErrorsForRule(UniqueIndex, [ex.Message]);
+                        }
                     });
 
                 throw;

@@ -90,7 +90,7 @@ namespace Neatoo
             if (!IsPaused)
             {
                 RaisePropertyChanged(breadCrumbs.PropertyName);
-                await CheckRules(breadCrumbs.PropertyName);
+                await CheckRules(breadCrumbs.FullPropertyName);
             }
 
             RaiseMetaPropertiesChanged();

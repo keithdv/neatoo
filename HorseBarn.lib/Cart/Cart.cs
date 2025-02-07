@@ -55,26 +55,29 @@ namespace HorseBarn.lib.Cart
         public async Task RemoveHorse(IHorse horse)
         {
             HorseList.RemoveHorse(horse);
-            await CheckRules(nameof(HorseList));
-            await WaitForTasks();
+            //await CheckRules(nameof(HorseList));
+            //await WaitForTasks();
+            await Task.CompletedTask;
         }
 
         public async Task AddHorse(IHorse horse)
         {
-            if(horse is H h)
+            if (horse is H h)
             {
                 HorseList.Add(h);
-            } else
+            }
+            else
             {
                 throw new ArgumentException($"Horse {horse.GetType().FullName} is not of type {typeof(H).FullName}");
             }
-            await CheckRules(nameof(HorseList));
-            await WaitForTasks();
+            //await CheckRules(nameof(HorseList));
+            //await WaitForTasks();
+            await Task.CompletedTask;
         }
 
         public bool CanAddHorse(IHorse horse)
         {
-            if(horse is H && HorseList.Count < NumberOfHorses)
+            if (horse is H && HorseList.Count < NumberOfHorses)
             {
                 return true;
             }
@@ -109,7 +112,7 @@ namespace HorseBarn.lib.Cart
             Dal.Ef.Cart cart = new Dal.Ef.Cart();
 
             cart.Name = this.Name;
-            cart.CartType = (int) this.CartType;
+            cart.CartType = (int)this.CartType;
             cart.NumberOfHorses = this.NumberOfHorses;
             cart.HorseBarn = horseBarn;
             cart.PropertyChanged += HandleIdPropertyChanged;
