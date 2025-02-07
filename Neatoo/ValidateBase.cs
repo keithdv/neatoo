@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -42,11 +43,7 @@ namespace Neatoo
         {
             this.RuleManager = services.CreateRuleManager((T)(IValidateBase)this);
 
-            AsyncTaskSequencer.OnFullSequenceComplete = async () =>
-            {
-                await PropertyManager.WaitForTasks();
-                RaiseMetaPropertiesChanged(true);
-            };
+
 
             ResetMetaState();
         }
@@ -57,8 +54,10 @@ namespace Neatoo
 
         protected (bool IsValid, bool IsSelfValid, bool IsBusy, bool IsSelfBusy) MetaState { get; private set; }
 
-        protected virtual void RaiseMetaPropertiesChanged(bool raiseBusy = false)
+        protected override void RaiseMetaPropertiesChanged(bool raiseBusy = false)
         {
+            base.RaiseMetaPropertiesChanged();
+
             if (MetaState.IsValid != IsValid)
             {
                 RaisePropertyChanged(nameof(IsValid));
@@ -163,7 +162,7 @@ namespace Neatoo
         {
             if (this[nameof(ObjectInvalid)].IsSelfValid)
             {
-                var task = AddAsyncMethod((t) => RuleManager.CheckRulesForProperty(propertyName));
+                var task = RuleManager.CheckRulesForProperty(propertyName);
 
                 RaiseMetaPropertiesChanged();
 
@@ -185,10 +184,14 @@ namespace Neatoo
         {
             ClearAllErrors();
 
-            await AddAsyncMethod((t) => RuleManager.CheckAllRules(token));
-            await AddAsyncMethod((t) => PropertyManager.RunAllRules(token));
-            // TODO - This isn't raising the 'IsValid' property changed event
+            await PropertyManager.RunAllRules(token);
+            await RuleManager.CheckAllRules(token);
             await AsyncTaskSequencer.AllDone;
+
+            //this.AddAsyncMethod((t) => PropertyManager.RunAllRules(token));
+            // TODO - This isn't raising the 'IsValid' property changed event
+            //await base.WaitForTasks();
+            Debug.Assert(!IsBusy, "Should not be busy after running all rules");
         }
 
         public virtual void ClearSelfErrors()

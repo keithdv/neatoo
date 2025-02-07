@@ -11,13 +11,10 @@ namespace Neatoo.Core
     {
         string Name { get; }
         object Value { get; set; }
-
         Task SetValue<P>(P newValue);
-
         Task Task { get; }
         bool IsBusy { get; }
         bool IsSelfBusy { get; }
-
         Task WaitForTasks();
         TaskAwaiter GetAwaiter() => Task.GetAwaiter();
     }
@@ -42,9 +39,7 @@ namespace Neatoo.Core
 
         public string PropertyName { get; private set; }
         public object Source { get; private set; }
-
         public PropertyNameBreadCrumbs PreviousPropertyName { get; private set; }
-
         public string FullPropertyName => PropertyName + (PreviousPropertyName == null ? "" : "." + PreviousPropertyName.FullPropertyName);
     }
 
@@ -74,7 +69,10 @@ namespace Neatoo.Core
 
         public bool IsBusy => ValueAsBase?.IsBusy ?? false || IsSelfBusy;
 
-        public Task WaitForTasks() => ValueAsBase?.WaitForTasks() ?? Task.CompletedTask;
+        public async Task WaitForTasks()
+        {
+            await (ValueAsBase?.WaitForTasks() ?? Task.CompletedTask);
+        }
 
         public bool IsSelfBusy { get; private set; } = false;
 
@@ -152,42 +150,36 @@ namespace Neatoo.Core
 
         protected virtual Task _OnValueNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
         {
-            return OnValueNeatooPropertyChanged(new PropertyNameBreadCrumbs(this.Name, this.Value, breadCrumbs));
+            return NeatooPropertyChanged?.Invoke(new PropertyNameBreadCrumbs(this.Name, this.Value, breadCrumbs)) ?? Task.CompletedTask;
         }
+        private Task IsSelfBusyTask = Task.CompletedTask;
 
         protected virtual Task OnValueNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
         {
+            // ValidateBase sticks Task into AsyncTaskSequencer for us
+            // so that it will be awaited by WaitForTasks()
+            var task = NeatooPropertyChanged?.Invoke(breadCrumbs) ?? Task.CompletedTask;
 
-            try
+            if (!task.IsCompleted && !IsSelfBusy)
             {
-                // ValidateBase sticks Task into AsyncTaskSequencer for us
-                // so that it will be awaited by WaitForTasks()
-                Task = NeatooPropertyChanged?.Invoke(breadCrumbs) ?? Task.CompletedTask;
+                IsSelfBusy = true;
 
-                //if (!Task.IsCompleted)
-                //{
-                //    IsSelfBusy = true;
+                OnPropertyChanged(nameof(IsBusy));
+                OnPropertyChanged(nameof(IsSelfBusy));
 
-                //    OnPropertyChanged(nameof(IsBusy));
-                //    OnPropertyChanged(nameof(IsSelfBusy));
-
-                //    Task.ContinueWith(_ =>
-                //    {
-                //        IsSelfBusy = false;
-                //        OnPropertyChanged(nameof(IsBusy));
-                //        OnPropertyChanged(nameof(IsSelfBusy));
-                //    });
-                //}
-
-                return Task;
+                task = task.ContinueWith(_ =>
+                {
+                    IsSelfBusy = false;
+                    OnPropertyChanged(nameof(IsBusy));
+                    OnPropertyChanged(nameof(IsSelfBusy));
+                    if(_.Exception != null)
+                    {
+                        throw _.Exception;
+                    }
+                });
             }
-            catch
-            {
 
-                IsSelfBusy = false;
-
-                throw;
-            }
+            return task;
         }
 
         public Property(string name)
@@ -224,7 +216,7 @@ namespace Neatoo.Core
         {
             if (Value is INotifyNeatooPropertyChanged neatooPropertyChanged)
             {
-                neatooPropertyChanged.NeatooPropertyChanged += OnValueNeatooPropertyChanged;
+                neatooPropertyChanged.NeatooPropertyChanged += _OnValueNeatooPropertyChanged;
             }
         }
     }

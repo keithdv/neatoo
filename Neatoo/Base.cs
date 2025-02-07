@@ -47,6 +47,11 @@ public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent,
         {
             PropertyManager.NeatooPropertyChanged += _PropertyManagerNeatooPropertyChange;
         }
+
+        AsyncTaskSequencer.OnFullSequenceComplete = async () =>
+        {
+            RaiseMetaPropertiesChanged(true);
+        };
     }
 
     // Methods
@@ -58,6 +63,11 @@ public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent,
     void ISetParent.SetParent(IBase parent)
     {
         SetParent(parent);
+    }
+
+    protected virtual void RaiseMetaPropertiesChanged(bool raiseBusy = true)
+    {
+
     }
 
     protected virtual void RaisePropertyChanged(string propertyName)
@@ -98,7 +108,7 @@ public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent,
 
     protected virtual void Setter<P>(P value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
     {
-        var task = PropertyManager[propertyName].SetValue(value);
+        AsyncTaskSequencer.AddTask((t) => PropertyManager[propertyName].SetValue(value));
     }
 
     protected IRegisteredProperty GetRegisteredProperty(string propertyName)
@@ -150,10 +160,24 @@ public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent,
 
     public virtual async Task WaitForTasks()
     {
-        
-        await AsyncTaskSequencer.AllDone;
+        // I don't like this...
+        while (IsBusy)
+        {
+            await Task.Yield();
+            // Enumrator changed errors
+            // Will need to use events or something to signify when busy
+            //while(PropertyManager.IsBusy)
+            //{
+            //    await PropertyManager.WaitForTasks();
+            //}
+            //await AsyncTaskSequencer.AllDone;
+        }
 
-        Debug.Assert(!IsBusy, "Should not be busy after awaiting all tasks");
+        Debug.Assert(!IsBusy, "Should not be busy after running all rules");
+
+        // Raise Errors
+        await Task.WhenAll(AsyncTaskSequencer.AllDone, PropertyManager.WaitForTasks());
+
     }
 
     // Events

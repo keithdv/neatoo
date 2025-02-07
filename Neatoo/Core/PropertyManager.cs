@@ -64,8 +64,13 @@ namespace Neatoo.Core
                 propertyValueStore = value;
             }
         }
-
-        public Task WaitForTasks() => Task.WhenAll(fieldData.Values.Select(_ => _.WaitForTasks()));
+        
+        public async Task WaitForTasks() {
+            foreach(var p in fieldData.Values.ToList())
+            {
+                await p.WaitForTasks();
+            }
+        }
 
         public event NeatooPropertyChanged NeatooPropertyChanged;
 

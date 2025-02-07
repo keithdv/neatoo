@@ -36,6 +36,8 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             child.aLabel = "Child";
             validate.aLabel = "Parent";
 
+            await validate.WaitForTasks();
+
             validate.PropertyChanged += Validate_PropertyChanged;   
         }
 
@@ -207,7 +209,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             child.FirstName = "Error";
 
             Assert.IsTrue(validate.IsBusy);
-            Assert.IsTrue(validate.IsSelfBusy);
+            Assert.IsFalse(validate.IsSelfBusy);
             Assert.IsTrue(child.IsBusy);
             Assert.IsTrue(child.IsSelfBusy);
 
@@ -244,6 +246,15 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             validate.ShortName = "Recursive Error";
             await validate.WaitForTasks();
             Assert.IsFalse(validate.IsValid);
+        }
+
+        [TestMethod]
+        public async Task ValidateBaseAsync_RunAllRules()
+        {
+            await validate.RunAllRules();
+
+            Assert.AreEqual(3, validate.RuleRunCount);
+            Assert.IsFalse(validate.IsBusy);
         }
     }
 }

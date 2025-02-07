@@ -153,10 +153,12 @@ namespace Neatoo.Core
         public IReadOnlyList<string> ErrorMessages => fieldData.Values.SelectMany(_ => _.ErrorMessages).ToList().AsReadOnly();
 
 
-        public Task RunAllRules(CancellationToken token)
+        public async Task RunAllRules(CancellationToken token)
         {
-            var tasks = fieldData.Values.Select(x => x.CheckAllRules(token)).ToList();
-            return Task.WhenAll(tasks.Where(t => t != null));
+            foreach(var p in fieldData.Values.ToList())
+            {
+                await p.CheckAllRules(token);
+            }
         }
 
         public void ClearSelfErrors()

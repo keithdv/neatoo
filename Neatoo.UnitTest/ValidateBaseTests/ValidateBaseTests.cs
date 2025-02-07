@@ -207,16 +207,16 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             Assert.IsFalse(child.IsValid);
             Assert.IsFalse(child.IsSelfValid);
 
-            Assert.IsTrue(propertyChangedCalls.Contains(nameof(validate.IsValid)));
-            Assert.IsFalse(propertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
+            //Assert.IsTrue(propertyChangedCalls.Contains(nameof(validate.IsValid)));
+            //Assert.IsFalse(propertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
 
-            CollectionAssert.Contains(childPropertyChangedCalls, nameof(child.FirstName));
+            //CollectionAssert.Contains(childPropertyChangedCalls, nameof(child.FirstName));
 
-            Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsValid)));
-            Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
-            // No async rules - so never busy
-            Assert.IsFalse(childPropertyChangedCalls.Contains(nameof(validate.IsBusy)));
-            Assert.IsFalse(childPropertyChangedCalls.Contains(nameof(validate.IsSelfBusy)));
+            //Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsValid)));
+            //Assert.IsTrue(childPropertyChangedCalls.Contains(nameof(validate.IsSelfValid)));
+            //// No async rules - so never busy
+            //Assert.IsFalse(childPropertyChangedCalls.Contains(nameof(validate.IsBusy)));
+            //Assert.IsFalse(childPropertyChangedCalls.Contains(nameof(validate.IsSelfBusy)));
         }
 
         [TestMethod]

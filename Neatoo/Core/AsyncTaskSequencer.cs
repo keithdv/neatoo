@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -56,11 +57,11 @@ namespace Neatoo.Core
                         throw result.Exception;
                     }
 
-                    if (result.IsCompleted)
-                    {
-                        var t = OnFullSequenceComplete();
-                        Debug.Assert(t.IsCompleted, "Not sure what to do about this yet");
-                    }
+                    //if (result.IsCompleted)
+                    //{
+                    //    var t = OnFullSequenceComplete();
+                    //    Debug.Assert(t.IsCompleted, "Not sure what to do about this yet");
+                    //}
 
                     if (result.IsFaulted)
                     {
@@ -182,16 +183,34 @@ namespace Neatoo.Core
                             return ContinueWith(t);
                         };
 
-                        var result = task(t);
+                        try
+                        {
+                            var result = task(t);
 
-                        if (result.IsCompleted)
-                        {
-                            return finishTask(result);
+                            if (result.IsCompleted)
+                            {
+                                return finishTask(result);
+                            }
+                            else
+                            {
+                                return result.ContinueWith((t) =>
+                                {
+                                    try
+                                    {
+                                        finishTask(t);
+                                    } catch(Exception ex)
+                                    {
+                                        TaskCompletionSource.SetException(ex);
+                                    }
+                                });
+                            }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            return result.ContinueWith((t) => finishTask(t));
+                            TaskCompletionSource.SetException(ex);
                         }
+
+
                     }
 
                     return ContinueWith(t);

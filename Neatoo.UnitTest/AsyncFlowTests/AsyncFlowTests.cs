@@ -45,16 +45,22 @@ namespace Neatoo.UnitTest.AsyncFlowTests
         {
             // Just ensure there's not a circular reference
             await asyncValidateObject.RunAllRules(); 
+
+            Assert.AreEqual(9, asyncValidateObject.AsyncDelayRule.RunCount);
+
         }
 
         [TestMethod]
-        public void AsyncFlowTests_NoAwait_IsBusy()
+        public async Task AsyncFlowTests_NoAwait_IsBusy()
         {
             // Need to implement PropertyManager.IsBusy
             // in the same way it is implemented for RulesManager
 
             asyncValidateObject.AsyncDelayRuleValue = "test";
             Assert.IsTrue(asyncValidateObject.IsBusy);
+
+            await Task.Yield();
+            await Task.Delay(5);
 
             Assert.AreEqual(4, asyncValidateObject.AsyncDelayRule.RunCount);
             //CollectionAssert.Contains(propertyChangedCalls, "IsBusy");

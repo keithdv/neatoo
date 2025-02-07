@@ -136,7 +136,13 @@ namespace Neatoo
             return OnChildNeatooPropertyChanged(propertyNameBreadCrumbs);
         }
 
-        public Task WaitForTasks() => Task.WhenAll(this.Where(thisItem => thisItem.IsBusy).Select(thisItem => thisItem.WaitForTasks()));
+        public async Task WaitForTasks()
+        {
+            foreach(var i in this)
+            {
+                await i.WaitForTasks();
+            }
+        }
         
     }
 }
