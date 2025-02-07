@@ -12,7 +12,6 @@
   <ItemGroup>
     <ProjectReference Include="..\HorseBarn.Dal.Ef\HorseBarn.Dal.Ef.csproj" />
     <ProjectReference Include="..\HorseBarn.lib\HorseBarn.lib.csproj" />
-    <ProjectReference Include="..\Neatoo.Newtonsoft.Json\Neatoo.Newtonsoft.Json.csproj" />
     <ProjectReference Include="..\Neatoo\Neatoo.csproj" />
   </ItemGroup>
 

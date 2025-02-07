@@ -200,7 +200,7 @@ namespace Neatoo
                 return async (portalRequest) =>
                 {
 
-                    var response = await httpClient.PostAsync("http://localhost:5037/portal", JsonContent.Create(portalRequest, typeof(PortalRequest)));
+                    var response = await httpClient.PostAsync("portal", JsonContent.Create(portalRequest, typeof(PortalRequest)));
 
                     if (!response.IsSuccessStatusCode)
                     {

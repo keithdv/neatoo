@@ -101,7 +101,12 @@ namespace HorseBarn.WPF
 
             _httpClientFactory = services.BuildServiceProvider().GetRequiredService<IHttpClientFactory>();
 
-            services.AddSingleton(_ => _httpClientFactory.CreateClient());
+            services.AddSingleton(_ =>
+            {
+                var client = _httpClientFactory.CreateClient();
+                client.BaseAddress = new Uri("http://localhost:5037/");
+                return client;
+            });
 
             services.AddTransient<HorseBarnViewModel>();
             services.AddTransient<CreateHorseViewModel>();

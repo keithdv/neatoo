@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
@@ -11,6 +12,8 @@ namespace Neatoo.Core
     {
         string Name { get; }
         object Value { get; set; }
+        string StringValue { get; set; }
+        Task SetStringValue(string value);
         Task SetValue<P>(P newValue);
         Task Task { get; }
         bool IsBusy { get; }
@@ -57,6 +60,36 @@ namespace Neatoo.Core
             set
             {
                 SetValue(value);
+            }
+        }
+
+        public virtual string StringValue
+        {
+            get
+            {
+                Console.WriteLine($"Read StringValue: {Value?.ToString()}");
+                return Value?.ToString();
+            }
+            set
+            {
+                Task = SetStringValue(value);
+            }
+        }
+
+        public async Task SetStringValue(string value)
+        {
+            Console.WriteLine($"Set StringValue: {value}");
+            if (value == null)
+            {
+                await SetValue<T>(default);
+            }
+            else
+            {
+                var converter = TypeDescriptor.GetConverter(typeof(T));
+                if (converter != null && converter.IsValid(value))
+                {
+                    await SetValue((T)converter.ConvertFromString(value));
+                }
             }
         }
 

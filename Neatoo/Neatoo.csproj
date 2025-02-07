@@ -26,8 +26,6 @@
 	<ItemGroup>
 		<InternalsVisibleTo Include="Neatoo.Autofac" />
 		<InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
-		<InternalsVisibleTo Include="Neatoo.Newtonsoft.Json" />
-		<InternalsVisibleTo Include="Neatoo.Netwonsoft.Json.Test" />
 		<InternalsVisibleTo Include="Neatoo.UnitTest" />
 	</ItemGroup>
 
