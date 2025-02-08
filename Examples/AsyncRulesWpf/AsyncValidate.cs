@@ -1,12 +1,6 @@
 ﻿using Neatoo;
 using Neatoo.Core;
 using Neatoo.Rules;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AsyncRulesWpf
 {
@@ -23,19 +17,19 @@ namespace AsyncRulesWpf
             {
                 await Task.Delay(1000);
                 t.AsyncPropertyB = t.AsyncPropertyA * 2;
-            }, nameof(AsyncPropertyA));
+            }, _ => _.AsyncPropertyA);
 
             ruleManager.AddActionAsync(async (AsyncValidate t) =>
             {
                 await Task.Delay(1000);
                 t.AsyncPropertyC = t.AsyncPropertyB * 2;
-            }, nameof(AsyncPropertyB));
+            }, _ => _.AsyncPropertyB);
 
             ruleManager.AddActionAsync(async (AsyncValidate t) =>
             {
                 await Task.Delay(1000);
                 t.AsyncPropertyD = t.AsyncPropertyC /  2;
-            }, nameof(AsyncPropertyC));
+            }, _ => _.AsyncPropertyC);
 
             ruleManager.AddValidationAsync(async (AsyncValidate t) =>
             {
@@ -45,7 +39,7 @@ namespace AsyncRulesWpf
                     return "AsyncPropertyA cannot be 100";
                 }
                 return string.Empty;
-            }, nameof(AsyncPropertyA));
+            }, _ => _.AsyncPropertyA);
 
             ruleManager.AddValidationAsync(async (AsyncValidate t) =>
             {
@@ -55,7 +49,7 @@ namespace AsyncRulesWpf
                     return "AsyncPropertyB cannot be 100";
                 }
                 return string.Empty;
-            }, nameof(AsyncPropertyB));
+            }, _ => _.AsyncPropertyB);
 
             ruleManager.AddValidationAsync(async (AsyncValidate t) =>
             {
@@ -65,7 +59,7 @@ namespace AsyncRulesWpf
                     return "AsyncPropertyC cannot be 100";
                 }
                 return string.Empty;
-            }, nameof(AsyncPropertyC));
+            }, _ => _.AsyncPropertyC);
 
             ruleManager.AddValidationAsync(async (AsyncValidate t) =>
             {
@@ -75,7 +69,7 @@ namespace AsyncRulesWpf
                     return "AsyncPropertyD cannot be 100";
                 }
                 return string.Empty;
-            }, nameof(AsyncPropertyD));
+            }, _ => _.AsyncPropertyD);
         }
 
         new public IValidateProperty this[string propertyName] => base[propertyName];

@@ -1,4 +1,5 @@
 ﻿@page "/counter"
+@using AsyncBlazor.Client.Components
 @using HorseBarn.lib
 @using HorseBarn.lib.Horse
 @using Microsoft.AspNetCore.Components.Web
@@ -7,7 +8,6 @@
 @using Neatoo.Portal
 @using Neatoo.Rules
 @using System.ComponentModel
-@rendermode @(new InteractiveWebAssemblyRenderMode(prerender:false))
 
 
 <ValidatePropertyTextBox ValidateProperty="@asyncValidate[nameof(AsyncValidate.AsyncPropertyA)]" />

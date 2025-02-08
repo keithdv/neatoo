@@ -4,8 +4,6 @@ using Neatoo.AuthorizationRules;
 using Neatoo.Portal;
 using Neatoo.UnitTest.Objects;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.BaseTests.Authorization

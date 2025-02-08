@@ -1,10 +1,4 @@
 ﻿using Neatoo.Rules;
-using Neatoo.UnitTest.EditBaseTests;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.PersonObjects
 {
@@ -14,7 +8,7 @@ namespace Neatoo.UnitTest.PersonObjects
     {
         public RecursiveRule() : base()
         {
-            AddTriggerProperties(nameof(IPersonBase.ShortName));
+            AddTriggerProperties(_ => _.ShortName);
         }
         public override PropertyErrors Execute(IPersonBase target)
         {

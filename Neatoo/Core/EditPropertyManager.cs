@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Buffers;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Neatoo.Core
 {
@@ -75,7 +70,7 @@ namespace Neatoo.Core
             IsSelfModified = false;
         }
 
-        public override void LoadValue(object value)
+        public override void LoadValue(object? value)
         {
             base.LoadValue(value);
             IsSelfModified = false;
@@ -99,14 +94,14 @@ namespace Neatoo.Core
             return Factory.CreateEditProperty<PV>(registeredProperty);
         }
 
-        public bool IsModified => fieldData.Values.Any(p => p.IsModified);
-        public bool IsSelfModified => fieldData.Values.Any(p => p.IsSelfModified);
+        public bool IsModified => PropertyBag.Values.Any(p => p.IsModified);
+        public bool IsSelfModified => PropertyBag.Values.Any(p => p.IsSelfModified);
 
-        public IEnumerable<string> ModifiedProperties => fieldData.Values.Where(f => f.IsModified).Select(f => f.Name);
+        public IEnumerable<string> ModifiedProperties => PropertyBag.Values.Where(f => f.IsModified).Select(f => f.Name);
 
         public void MarkSelfUnmodified()
         {
-            foreach (var fd in fieldData.Values)
+            foreach (var fd in PropertyBag.Values)
             {
                 fd.MarkSelfUnmodified();
             }
@@ -114,7 +109,7 @@ namespace Neatoo.Core
 
         public void PauseAllActions()
         {
-            foreach (var fd in fieldData.Values)
+            foreach (var fd in PropertyBag.Values)
             {
                 fd.IsPaused = true;
             }
@@ -122,7 +117,7 @@ namespace Neatoo.Core
 
         public void ResumeAllActions()
         {
-            foreach (var fd in fieldData.Values)
+            foreach (var fd in PropertyBag.Values)
             {
                 fd.IsPaused = false;
             }

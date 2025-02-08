@@ -1,7 +1,4 @@
 ﻿using Neatoo.Rules;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Neatoo.UnitTest.Example.SimpleValidate
 {
@@ -11,8 +8,8 @@ namespace Neatoo.UnitTest.Example.SimpleValidate
     {
         public ShortNameRule() : base()
         {
-            AddTriggerProperties(nameof(ISimpleValidateObject.FirstName));
-            AddTriggerProperties(nameof(ISimpleValidateObject.LastName));
+            AddTriggerProperties(_ => _.FirstName);
+            AddTriggerProperties(_ => _.LastName);
         }
 
         public override PropertyErrors Execute(ISimpleValidateObject target)

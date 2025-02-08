@@ -1,18 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.AuthorizationRules;
-using Neatoo.Core;
 using Neatoo.Portal;
-using Neatoo.Portal.Core;
-using Neatoo.UnitTest.ObjectPortal;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Linq;
-using Neatoo.Rules;
 using Neatoo.UnitTest.Portal;
 using System.Reflection;
-using Neatoo.UnitTest.EditBaseTests;
 using Neatoo.UnitTest.Objects;
 
 namespace Neatoo.UnitTest

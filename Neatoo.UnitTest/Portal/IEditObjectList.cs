@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Neatoo.UnitTest.ObjectPortal
+﻿namespace Neatoo.UnitTest.ObjectPortal
 {
     public interface IEditObjectList : IEditListBase<IEditObject>
     {

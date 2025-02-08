@@ -1,11 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Rules;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest
 {
@@ -14,7 +9,6 @@ namespace Neatoo.UnitTest
     {
         public TriggerPropertiesTestSubjectChild Child { get; set; }
 
-        public Expression Expression => () => Child.ChildProperty;
     }
 
 
@@ -32,7 +26,7 @@ namespace Neatoo.UnitTest
         {
             var testSubject = new TriggerPropertiesTestSubject();
 
-            var triggerProperty = new TriggerProperty(testSubject.Expression);
+            var triggerProperty = new TriggerProperty<TriggerPropertiesTestSubject>((TriggerPropertiesTestSubject t) => t.Child.ChildProperty);
             // Act
             var result = triggerProperty.IsMatch(testSubject, "Child.ChildProperty");
             // Assert

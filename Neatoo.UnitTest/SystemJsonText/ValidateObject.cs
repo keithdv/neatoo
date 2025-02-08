@@ -1,10 +1,7 @@
-﻿using Neatoo.Core;
-using Neatoo.Portal;
+﻿using Neatoo.Portal;
 using Neatoo.Rules;
 using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Text;
 
 namespace Neatoo.UnitTest.SystemTextJson
 {
@@ -32,7 +29,7 @@ namespace Neatoo.UnitTest.SystemTextJson
                 t.RuleRunCount++;
                 if (t.Name == "Error") { return "Error"; }
                 return string.Empty;
-            }, nameof(Name));
+            }, _ => _.Name);
         }
 
         public int RuleRunCount { get => Getter<int>(); set => Setter(value); }

@@ -1,11 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neatoo.Portal;
 using Neatoo.Rules;
 using Neatoo.UnitTest.PersonObjects;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,24 +13,24 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     // Contravariance on IRule< in T > is required for this to work
     // That way ActualType that inherits from IValidateBase can be cast to IRule < IValidateBase >
 
-    public class ShortNameRule : Rules.AsyncRuleBase<IValidateBase>
+    public class SharedShortNameRule<T> : Rules.AsyncRuleBase<T> where T : IValidateBase
     {
-        private readonly IRegisteredProperty shortName;
-        private readonly IRegisteredProperty firstName;
-        private readonly IRegisteredProperty lastName;
+        private readonly Expression<Func<T, object?>> shortName;
+        private readonly Expression<Func<T, object?>> firstName;
+        private readonly Expression<Func<T, object?>> lastName;
 
-        public ShortNameRule(IRegisteredProperty shortName, IRegisteredProperty firstName, IRegisteredProperty lastName) : base(shortName, firstName, lastName)
+        public SharedShortNameRule(Expression<Func<T, object?>> shortName, Expression<Func<T, object?>> firstName, Expression<Func<T, object?>> lastName) : base(shortName, firstName, lastName)
         {
             this.shortName = shortName;
             this.firstName = firstName;
             this.lastName = lastName;
         }
 
-        public override async Task<PropertyErrors> Execute(IValidateBase target, CancellationToken token)
+        public override async Task<PropertyErrors> Execute(T target, CancellationToken token)
         {
             await Task.Delay(10);
 
-            var sn = $"{ReadProperty<string>(firstName)} {ReadProperty<string>(lastName)}";
+            var sn = $"{ReadProperty(firstName)?.ToString()} {ReadProperty(lastName)?.ToString()}";
 
             LoadProperty(shortName, sn);
 
@@ -48,13 +46,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
         public SharedAsyncRuleObject(IValidateBaseServices<SharedAsyncRuleObject> services) : base(services)
         {
-
-            var fn = services.RegisteredPropertyManager.GetRegisteredProperty(nameof(FirstName));
-            var ln = services.RegisteredPropertyManager.GetRegisteredProperty(nameof(LastName));
-            var sn = services.RegisteredPropertyManager.GetRegisteredProperty(nameof(ShortName));
-
-            RuleManager.AddRule(new ShortNameRule(sn, fn, ln));
-
+            RuleManager.AddRule(new SharedShortNameRule<SharedAsyncRuleObject>(_ => _.ShortName, _ => _.FirstName, _ => _.LastName));
         }
 
     }

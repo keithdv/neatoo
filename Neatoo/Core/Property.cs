@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -11,10 +10,10 @@ namespace Neatoo.Core
     public interface IProperty : INotifyPropertyChanged, INotifyNeatooPropertyChanged
     {
         string Name { get; }
-        object Value { get; set; }
-        string StringValue { get; set; }
-        Task SetStringValue(string value);
-        Task SetValue<P>(P newValue);
+        object? Value { get; set; }
+        string? StringValue { get; set; }
+        Task SetStringValue(string? value);
+        Task SetValue<P>(P? newValue);
         Task Task { get; }
         bool IsBusy { get; }
         bool IsSelfBusy { get; }
@@ -24,7 +23,7 @@ namespace Neatoo.Core
 
     public interface IProperty<T> : IProperty
     {
-        new T Value { get; set; }
+        new T? Value { get; set; }
     }
 
     public class PropertyNameBreadCrumbs
@@ -42,7 +41,7 @@ namespace Neatoo.Core
 
         public string PropertyName { get; private set; }
         public object Source { get; private set; }
-        public PropertyNameBreadCrumbs PreviousPropertyName { get; private set; }
+        public PropertyNameBreadCrumbs? PreviousPropertyName { get; private set; }
         public string FullPropertyName => PropertyName + (PreviousPropertyName == null ? "" : "." + PreviousPropertyName.FullPropertyName);
     }
 
@@ -52,9 +51,9 @@ namespace Neatoo.Core
     {
         public string Name { get; }
 
-        protected T _value = default;
+        protected T? _value = default;
 
-        public virtual T Value
+        public virtual T? Value
         {
             get => _value;
             set
@@ -63,7 +62,7 @@ namespace Neatoo.Core
             }
         }
 
-        public virtual string StringValue
+        public virtual string? StringValue
         {
             get
             {
@@ -76,29 +75,29 @@ namespace Neatoo.Core
             }
         }
 
-        public async Task SetStringValue(string value)
+        public async Task SetStringValue(string? value)
         {
             Console.WriteLine($"Set StringValue: {value}");
             if (value == null)
             {
-                await SetValue<T>(default);
+                await SetValue<T?>(default);
             }
             else
             {
                 var converter = TypeDescriptor.GetConverter(typeof(T));
                 if (converter != null && converter.IsValid(value))
                 {
-                    await SetValue((T)converter.ConvertFromString(value));
+                    await SetValue((T?)converter.ConvertFromString(value));
                 }
             }
         }
 
-        object IProperty.Value { get => Value; set => SetValue(value); }
+        object? IProperty.Value { get => Value; set => SetValue(value); }
 
         [JsonIgnore]
         public Task Task { get; protected set; } = Task.CompletedTask;
 
-        protected IBase ValueAsBase => Value as IBase;
+        protected IBase? ValueAsBase => Value as IBase;
 
         public bool IsBusy => ValueAsBase?.IsBusy ?? false || IsSelfBusy;
 
@@ -109,7 +108,7 @@ namespace Neatoo.Core
 
         public bool IsSelfBusy { get; private set; } = false;
 
-        public virtual Task SetValue<P>(P newValue)
+        public virtual Task SetValue<P>(P? newValue)
         {
             if (newValue == null && _value == null) { return Task.CompletedTask; }
 
@@ -128,7 +127,7 @@ namespace Neatoo.Core
                 throw new PropertyTypeMismatchException($"Type {newValue.GetType()} is not type {typeof(T).FullName}");
             }
 
-            if (Task.IsCompleted && Task.IsFaulted)
+            if (Task.Exception != null)
             {
                 throw Task.Exception;
             }
@@ -151,7 +150,7 @@ namespace Neatoo.Core
 
         protected virtual void HandleNonNullValue(T value)
         {
-            var isDiff = AreSame(_value, value);
+            var isDiff = !AreSame(_value, value);
 
             if (isDiff)
             {
@@ -226,24 +225,29 @@ namespace Neatoo.Core
             _value = value;
         }
 
-        protected virtual bool AreSame<P>(P oldValue, P newValue)
+        protected virtual bool AreSame<P>(P? oldValue, P? newValue)
         {
+            if (oldValue == null && newValue == null)
+            {
+                return true;
+            }
+            else if (oldValue == null || newValue == null)
+            {
+                return false;
+            }
+
             if (!typeof(P).IsValueType)
             {
-                if (oldValue == null && newValue == null)
-                {
-                    return true;
-                }
-                return !(ReferenceEquals(oldValue, newValue));
+                return (ReferenceEquals(oldValue, newValue));
             }
             else
             {
-                return !oldValue.Equals(newValue);
+                return oldValue.Equals(newValue);
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        public event NeatooPropertyChanged NeatooPropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
+        public event NeatooPropertyChanged? NeatooPropertyChanged;
 
         public void OnDeserialized()
         {

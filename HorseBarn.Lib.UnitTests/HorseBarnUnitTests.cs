@@ -2,8 +2,6 @@
 using HorseBarn.lib.Horse;
 using Moq;
 using Neatoo.Portal;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Threading.Tasks;
 using Neatoo;
 
 namespace HorseBarn.lib.UnitTests

@@ -2,15 +2,7 @@
 using Neatoo;
 using Neatoo.Portal;
 using Neatoo.Rules;
-using Neatoo.Rules.Rules;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 
 #if !CLIENT
@@ -37,7 +29,7 @@ namespace HorseBarn.lib.Horse
                     return "Birth date cannot be a future date.";
                 }
                 return string.Empty;
-            }, nameof(BirthDate));
+            }, _ => _.BirthDate);
         }
 
 

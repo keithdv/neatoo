@@ -10,13 +10,5 @@ Welcome to your new app.
 
 
 @code {
-    [Inject]
-    public IReadPortal<IHorseBarn> ReadPortal { get; set; } = default!;
-
-    protected override async Task OnInitializedAsync()
-    {
-
-
-        var horseBarn = await ReadPortal.Fetch();
-    }
+    
 }

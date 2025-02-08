@@ -1,14 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Caliburn.Micro;
 using HorseBarn.lib;
-using HorseBarn.lib.Horse;
 using HorseBarn.WPF.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net.Http;
 using Neatoo;
 

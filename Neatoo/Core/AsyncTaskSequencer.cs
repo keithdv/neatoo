@@ -1,25 +1,26 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading;
+using System.Runtime.Intrinsics.X86;
 using System.Threading.Tasks;
 
 namespace Neatoo.Core
 {
     /// <summary>
     /// Manages the sequence of asynchronous tasks, ensuring they are executed in order.
+    /// The key is the last task that complete 'AllDone' always stays the last task
+    /// even as more tasks are added to the sequence.
+    /// This way anything awaiting the 'AllDone' task will not be completed until all tasks
+    /// are done INCLUDING added tasks.
+    /// This is key for cascading rules.
     /// </summary>
     public sealed class AsyncTaskSequencer
     {
-        protected readonly object lockObject = new object();
-        private AsyncTaskSequencerFunction firstTask;
-        private AsyncTaskSequencerFunction currentTask;
-        private TaskCompletionSource<bool> allDoneCompletionSource;
-        private CancellationTokenSource cancellationTokenSource;
+        // TODO: Add cancellation token
+
+        private readonly object lockObject = new object();
+        private SequencedAsyncFunction? lastTask;
+        private TaskCompletionSource<bool>? allDoneCompletionSource;
 
         /// <summary>
         /// Indicates whether the sequencer is currently running tasks.
@@ -34,7 +35,7 @@ namespace Neatoo.Core
         /// <summary>
         /// Adds a new task to the sequence.
         /// </summary>
-        /// <param name="task">The task to be added.</param>
+        /// <param name="task">The task to be added. Needs to be a Func because it may not actually be time to execute</param>
         /// <param name="runOnException">Indicates whether the task should run on exception.</param>
         /// <returns>A task representing the added task.</returns>
         public Task AddTask(Func<Task, Task> task, bool runOnException = false)
@@ -52,21 +53,17 @@ namespace Neatoo.Core
                 {
                     Task result = task(Task.CompletedTask);
 
-                    if (result.IsFaulted)
+                    if (result.Exception != null)
                     {
                         throw result.Exception;
                     }
 
+                    // Seems like I should do this but it causes too many calls to OnFullSequenceComplete
                     //if (result.IsCompleted)
                     //{
                     //    var t = OnFullSequenceComplete();
                     //    Debug.Assert(t.IsCompleted, "Not sure what to do about this yet");
                     //}
-
-                    if (result.IsFaulted)
-                    {
-                        throw result.Exception;
-                    }
 
                     if (result.IsCompleted)
                     {
@@ -75,52 +72,21 @@ namespace Neatoo.Core
 
                     allDoneCompletionSource = new TaskCompletionSource<bool>();
 
-                    Func<Task, Task> continueWith = async (t) =>
-                    {
-                        var allDoneCompletionSource = this.allDoneCompletionSource;
+                    lastTask = new SequencedAsyncFunction(result => result, SequenceCompleted, lockObject, true);
+                    lastTask.Execute(result, new List<Exception>());
 
-                        try
-                        {
-                            await OnFullSequenceComplete();
-                        }
-                        catch (Exception ex)
-                        {
-                            allDoneCompletionSource.SetException(t.Exception);
-                        }
-
-
-                        if (t.IsFaulted)
-                        {
-                            allDoneCompletionSource.SetException(t.Exception);
-                        }
-                        else
-                        {
-                            allDoneCompletionSource.SetResult(true);
-                        }
-
-                        await allDoneCompletionSource.Task;
-                    };
-
-                    firstTask = new AsyncTaskSequencerFunction(result => result, continueWith, lockObject, true);
-                    currentTask = firstTask;
-                    firstTask.Execute(result);
-
-                    return firstTask.Task; // Await AllDone if you want to wait for the sequence to complete
+                    return lastTask.Task; // Await AllDone if you want to wait for the sequence to complete
                 }
                 else
                 {
                     // Change the ContinueWith stored in a delegate variable of the current task
                     // before it finishes so that it now calls the next task instead of the "AllDone".
-                    var nextTask = new AsyncTaskSequencerFunction(task, currentTask.ContinueWith, lockObject, runOnException);
+                    var newLastTask = new SequencedAsyncFunction(task, SequenceCompleted, lockObject, runOnException);
 
-                    currentTask.ContinueWith = (t) =>
-                    {
-                        return nextTask.Execute(t);
-                    };
+                    lastTask!.nextTask = newLastTask;
+                    lastTask = newLastTask;
 
-                    currentTask = nextTask;
-
-                    return currentTask.Task;
+                    return newLastTask.Task;
                 }
             }
         }
@@ -130,96 +96,109 @@ namespace Neatoo.Core
         /// </summary>
         public Task AllDone => allDoneCompletionSource?.Task ?? Task.CompletedTask;
 
+        private async Task SequenceCompleted(Task previousTask, List<Exception> exceptions)
+        {
+            var completionSource = this.allDoneCompletionSource ?? throw new ArgumentNullException($"{nameof(allDoneCompletionSource)} should not be null");
+
+            try
+            {
+                await OnFullSequenceComplete();
+            }
+            catch (AggregateException ex)
+            {
+                exceptions.AddRange(ex.InnerExceptions);
+            }
+
+            if (exceptions.Count > 0)
+            {
+                completionSource.SetException(new AggregateException(exceptions));
+            }
+            else
+            {
+                completionSource.SetResult(true);
+            }
+
+            await completionSource.Task;
+        }
+
         /// <summary>
         /// Represents a single task in the sequence.
         /// </summary>
-        public sealed class AsyncTaskSequencerFunction
+        public sealed class SequencedAsyncFunction
         {
             private bool callOnce = false;
-            private readonly Func<Task, Task> task;
+            private readonly Func<Task, Task> taskFunc;
             private readonly object lockObject;
             private readonly bool runOnException;
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="AsyncTaskSequencerFunction"/> class.
+            /// Initializes a new instance of the <see cref="SequencedAsyncFunction"/> class.
             /// </summary>
             /// <param name="task">The task to be executed.</param>
-            /// <param name="initialContinueWith">The initial continuation function.</param>
+            /// <param name="sequenceCompleted">The initial continuation function.</param>
             /// <param name="lockObject">The lock object for synchronization.</param>
             /// <param name="runOnException">Indicates whether the task should run on exception.</param>
-            public AsyncTaskSequencerFunction(Func<Task, Task> task, Func<Task, Task> initialContinueWith, object lockObject, bool runOnException)
+            public SequencedAsyncFunction(Func<Task, Task> task, Func<Task, List<Exception>, Task> sequenceCompleted, object lockObject, bool runOnException)
             {
-                this.task = task;
-                ContinueWith = initialContinueWith;
+                this.taskFunc = task;
+                Completed = sequenceCompleted;
                 this.lockObject = lockObject;
                 this.runOnException = runOnException;
             }
 
+
             /// <summary>
             /// Executes the task.
             /// </summary>
-            /// <param name="t">The previous task in the sequence.</param>
+            /// <param name="previousTask">The previous task in the sequence.</param>
             /// <returns>A task representing the execution of the task.</returns>
-            public Task Execute(Task t)
+            public Task Execute(Task previousTask, List<Exception> exceptions)
             {
                 lock (lockObject)
                 {
                     Debug.Assert(!callOnce, "Task has already been executed");
                     callOnce = true;
 
-                    if (!t.IsFaulted || runOnException)
+                    Task continueSequence(Task completedTask)
                     {
-                        Task finishTask(Task t)
+                        if (completedTask.Exception is AggregateException aggregateException)
                         {
-                            if (t.IsFaulted)
-                            {
-                                TaskCompletionSource.SetException(t.Exception);
-                            }
-                            else
-                            {
-                                TaskCompletionSource.SetResult(null);
-                            }
-
-                            return ContinueWith(t);
-                        };
-
-                        try
+                            exceptions.AddRange(aggregateException.InnerExceptions);
+                            TaskCompletionSource.SetException(completedTask.Exception);
+                        }
+                        else
                         {
-                            var result = task(t);
+                            TaskCompletionSource.SetResult(null);
+                        }
 
-                            if (result.IsCompleted)
+                        return nextTask?.Execute(completedTask, exceptions) ?? Completed!(completedTask, exceptions);
+                    };
+
+                    if (exceptions.Count == 0 || runOnException)
+                    {
+                        var currentTask = taskFunc(previousTask); // Execute function - been delayed until it's turn in the sequence
+
+                        if (currentTask.IsCompleted)
+                        {
+                            return continueSequence(currentTask);
+                        }
+                        else
+                        {
+                            return currentTask.ContinueWith((completedTask) =>
                             {
-                                return finishTask(result);
-                            }
-                            else
-                            {
-                                return result.ContinueWith((t) =>
+                                lock (lockObject)
                                 {
-                                    try
-                                    {
-                                        finishTask(t);
-                                    } catch(Exception ex)
-                                    {
-                                        TaskCompletionSource.SetException(ex);
-                                    }
-                                });
-                            }
+                                    return continueSequence(completedTask);
+                                }
+                            });
                         }
-                        catch (Exception ex)
-                        {
-                            TaskCompletionSource.SetException(ex);
-                        }
-
-
                     }
 
-                    return ContinueWith(t);
+                    return nextTask?.Execute(previousTask, exceptions) ?? Completed!(previousTask, exceptions);
                 }
             }
 
-            public CancellationTokenSource CancellationTokenSource { get; set; }
-
-            private TaskCompletionSource<Exception> TaskCompletionSource = new TaskCompletionSource<Exception>();
+            private TaskCompletionSource<object?> TaskCompletionSource = new TaskCompletionSource<object?>();
             public Task Task => TaskCompletionSource.Task;
 
             /// <summary>
@@ -227,7 +206,8 @@ namespace Neatoo.Core
             /// Switching this causes the task to do something different when it completes.
             /// Then original. Like call ("await") a different task.
             /// </summary>
-            public Func<Task, Task> ContinueWith { get; set; }
+            public Func<Task, List<Exception>, Task>? Completed { get; set; }
+            public SequencedAsyncFunction? nextTask { get; set; }
         }
     }
 }

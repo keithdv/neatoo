@@ -1,9 +1,6 @@
 ﻿using Neatoo.Rules;
 using Neatoo.UnitTest.ValidateBaseTests;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,7 +15,7 @@ namespace Neatoo.UnitTest.PersonObjects
     {
         public AsyncRuleThrowsException() : base()
         {
-            AddTriggerProperties(nameof(IValidateAsyncObject.ThrowException));
+            AddTriggerProperties(_ => _.ThrowException);
         }
 
         public override async Task<PropertyErrors> Execute(IValidateAsyncObject target, CancellationToken token)

@@ -1,4 +1,3 @@
-using AsyncBlazor.Client.Pages;
 using AsyncBlazor.Components;
 using HorseBarn.Dal.Ef;
 using HorseBarn.lib;
@@ -9,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
-    .AddInteractiveWebAssemblyComponents();
+    .AddInteractiveServerComponents();
 
 builder.Services.AddControllers();
 builder.Services.AddNeatooServices(PortalServer.Local);
@@ -37,7 +36,7 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
-    .AddInteractiveWebAssemblyRenderMode()
+    .AddInteractiveServerRenderMode()
     .AddAdditionalAssemblies(typeof(AsyncBlazor.Client._Imports).Assembly);
 
 

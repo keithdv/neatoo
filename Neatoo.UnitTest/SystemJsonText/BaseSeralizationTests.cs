@@ -1,22 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neatoo.Core;
 using Neatoo.Portal;
 using Neatoo.UnitTest.BaseTests;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using static Moq.It;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace Neatoo.UnitTest.SystemJsonText
 {

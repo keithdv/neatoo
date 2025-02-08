@@ -1,9 +1,4 @@
-﻿using Neatoo.AuthorizationRules;
-using Neatoo.Core;
-using Neatoo.Portal;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Neatoo.Portal;
 
 namespace Neatoo
 {

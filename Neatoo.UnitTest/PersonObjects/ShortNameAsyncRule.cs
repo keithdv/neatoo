@@ -1,6 +1,5 @@
 ﻿using Neatoo.Rules;
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,8 +15,8 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public ShortNameAsyncRule() : base()
         {
-            AddTriggerProperties(nameof(IPersonBase.FirstName));
-            AddTriggerProperties(nameof(IPersonBase.LastName));
+            AddTriggerProperties(_ => _.FirstName);
+            AddTriggerProperties(_ => _.LastName);
         }
 
         public int RunCount { get; private set; }

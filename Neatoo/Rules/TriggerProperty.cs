@@ -1,74 +1,112 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+using System.Xml.Schema;
 
 namespace Neatoo.Rules
 {
-    public interface ITriggerProperty
+    public interface ITriggerProperty<in T>
     {
         string PropertyName { get; }
 
-        PropertyError PropertyError(string message);
-
-        bool IsMatch<T>(T target, string propertyName);
-
+        bool IsMatch(T target, string propertyName);
+        object? GetValue(T target);
     }
 
-    internal class TriggerProperty : ITriggerProperty
+    //internal class TriggerProperty : ITriggerProperty
+    //{
+    //    private readonly Expression expression;
+
+    //    public string PropertyName { get; protected set; }
+
+    //    public TriggerProperty(Expression expression)
+    //    {
+    //        this.expression = expression;
+    //    }
+
+    //    public TriggerProperty(string propertyName)
+    //    {
+    //        this.PropertyName = propertyName;
+    //    }
+
+    //    public PropertyError PropertyError(string message)
+    //    {
+    //        return new PropertyError(PropertyName, message);
+    //    }
+
+    //    public bool IsMatch<T>(T t, string propertyName)
+    //    {
+    //        if (!string.IsNullOrWhiteSpace(PropertyName))
+    //        {
+    //            return propertyName == PropertyName;
+    //        }
+    //        else if (expression is Expression<Expression<Func<T, Object>>> funcExpression)
+    //        {
+    //        }
+
+    //        throw new Exception("Invalid TriggerProperty: expression and propertyName not defined");
+    //    }
+
+    //    protected string RecurseMembers(MemberExpression memberExpression)
+    //    {
+    //        if (memberExpression.Expression is MemberExpression)
+    //        {
+    //            return RecurseMembers(memberExpression.Expression as MemberExpression) + "." + memberExpression.Member.Name;
+    //        }
+    //        return memberExpression.Member.Name;
+    //    }
+
+    //    public static implicit operator TriggerProperty(string propertyName)
+    //    {
+    //        return new TriggerProperty(propertyName);
+    //    }
+    //}
+
+    public class TriggerProperty<T> : ITriggerProperty<T>
     {
-        private readonly Expression expression;
-
-        public string PropertyName { get; protected set; }
-
-        public TriggerProperty(Expression expression)
+        private readonly Expression<Func<T, object?>> expression;
+        private readonly string expressionPropertyName;
+        public TriggerProperty(Expression<Func<T, object?>> expression)
         {
             this.expression = expression;
+            expressionPropertyName = RecurseMembers(expression.Body, new List<string>());
         }
 
-        public TriggerProperty(string propertyName)
+
+        public bool IsMatch(T t, string propertyName)
         {
-            this.PropertyName = propertyName;
+            return string.Equals(expressionPropertyName, propertyName);
         }
 
-        public PropertyError PropertyError(string message)
+        public object? GetValue(T target)
         {
-            return new PropertyError(PropertyName, message);
+            return expression.Compile()(target);
         }
 
-        public bool IsMatch<T>(T t, string propertyName)
+        public string PropertyName => expressionPropertyName;
+
+        protected string RecurseMembers(Expression? expression, List<string> properties)
         {
-            if (!string.IsNullOrWhiteSpace(PropertyName))
+            if (expression is UnaryExpression unaryExpression)
             {
-                return propertyName == PropertyName;
+                return RecurseMembers(unaryExpression.Operand, properties);
             }
-            else if (expression is LambdaExpression lambdaExpression)
+            if (expression is MemberExpression memberExpression)
             {
-                if(lambdaExpression.Body is MemberExpression memberExpression)
-                {
-                    var lambdaPropertyName = RecurseMembers(memberExpression);
-                    return propertyName == lambdaPropertyName;
-                }
+                properties.Add(memberExpression.Member.Name);
+                return RecurseMembers(memberExpression.Expression, properties);
             }
 
-            throw new Exception("Invalid TriggerProperty: expression and propertyName not defined");
+            properties.Reverse();
+
+            return string.Join('.', properties);
         }
 
-        protected string RecurseMembers(MemberExpression memberExpression)
+        public static implicit operator TriggerProperty<T>(Expression<Func<T, object?>> expression)
         {
-            if (memberExpression.Expression is MemberExpression)
-            {
-                return RecurseMembers(memberExpression.Expression as MemberExpression) + "." + memberExpression.Member.Name;
-            }
-            return memberExpression.Member.Name;
-        }
-
-        public static implicit operator TriggerProperty(string propertyName)
-        {
-            return new TriggerProperty(propertyName);
+            return new TriggerProperty<T>(expression);
         }
     }
-
 }

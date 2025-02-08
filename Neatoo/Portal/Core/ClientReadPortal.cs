@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Mime;
-using System.Text;
-using System.Threading.Tasks;
-using System.Reflection;
-using static Neatoo.Portal.NeatooJsonSerializer;
+﻿using System.Threading.Tasks;
 
 namespace Neatoo.Portal.Core
 {

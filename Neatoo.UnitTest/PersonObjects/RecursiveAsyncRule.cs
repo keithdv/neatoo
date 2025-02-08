@@ -1,9 +1,4 @@
 ﻿using Neatoo.Rules;
-using Neatoo.UnitTest.EditBaseTests;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,7 +10,7 @@ namespace Neatoo.UnitTest.PersonObjects
     {
         public RecursiveAsyncRule() : base()
         {
-            AddTriggerProperties(nameof(IPersonBase.ShortName));
+            AddTriggerProperties(_ => _.ShortName);
         }
         public override async Task<PropertyErrors> Execute(IPersonBase target, CancellationToken token)
         {

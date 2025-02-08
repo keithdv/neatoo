@@ -1,8 +1,4 @@
 ﻿using Neatoo.Rules;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.PersonObjects
 {
@@ -15,8 +11,8 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public ShortNameRule() : base()
         {
-            AddTriggerProperties(nameof(IPersonBase.FirstName));
-            AddTriggerProperties(nameof(IPersonBase.LastName));
+            AddTriggerProperties(_ => _.FirstName);
+            AddTriggerProperties(_ => _.LastName);
         }
 
         public override PropertyErrors Execute(T target)

@@ -1,10 +1,4 @@
-﻿using HorseBarn.lib.Horse;
-using Neatoo.Rules;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Neatoo.Rules;
 
 namespace HorseBarn.lib.Cart
 {
@@ -16,7 +10,7 @@ namespace HorseBarn.lib.Cart
     {
         public CartNumberOfHorsesRule()
         {
-            AddTriggerProperties(nameof(ICart.NumberOfHorses), "HorseList.Count");
+            AddTriggerProperties(_ => _.NumberOfHorses, _ => _.HorseList.Count);
         }
         public override PropertyErrors Execute(ICart cart)
         {

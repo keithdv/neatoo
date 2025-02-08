@@ -1,17 +1,11 @@
 ﻿using HorseBarn.lib.Horse;
 using Neatoo;
 using Neatoo.Portal;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HorseBarn.lib.Cart
 {
 
-    
+
     public interface ICartList : IEditListBase<ICart>
 
     {

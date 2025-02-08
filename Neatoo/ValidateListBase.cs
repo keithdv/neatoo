@@ -1,14 +1,6 @@
 ﻿using Neatoo.Core;
-using Neatoo.Portal;
-using Neatoo.Rules;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -72,9 +64,12 @@ namespace Neatoo
             return base.OnChildNeatooPropertyChanged(breadCrumbs);
         }
 
-        public Task RunAllRules(CancellationToken token = default)
+        public async Task RunAllRules(CancellationToken token = default)
         {
-            return Task.WhenAll(this.Select(x => x.RunAllRules(token)));
+            foreach (var item in this)
+            {
+                await item.RunAllRules();
+            }
         }
 
         public Task RunSelfRules(CancellationToken token = default)

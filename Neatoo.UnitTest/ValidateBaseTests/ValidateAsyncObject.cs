@@ -1,5 +1,4 @@
 ﻿using Neatoo.Portal;
-using Neatoo.Rules;
 using Neatoo.UnitTest.PersonObjects;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,7 +32,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             // TODO : Can add a rule that's not the correct type, Handle?
             RuleManager.AddRule(asyncRuleThrowsException);
 
-            RuleManager.AddActionAsync((v) => Task.Delay(10), nameof(Child));
+            RuleManager.AddActionAsync((v) => Task.Delay(10), _ => _.Child);
         }
 
         public string aLabel { get => Getter<string>(); set => Setter(value); }

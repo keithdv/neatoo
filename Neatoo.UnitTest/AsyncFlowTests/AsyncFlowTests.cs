@@ -1,10 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.AsyncFlowTests
@@ -46,7 +42,8 @@ namespace Neatoo.UnitTest.AsyncFlowTests
             // Just ensure there's not a circular reference
             await asyncValidateObject.RunAllRules(); 
 
-            Assert.AreEqual(9, asyncValidateObject.AsyncDelayRule.RunCount);
+            Assert.AreEqual(5, asyncValidateObject.AsyncDelayRule.RunCount);
+            Assert.AreEqual(4, asyncValidateObject.Child.AsyncDelayRule.RunCount);
 
         }
 
@@ -59,10 +56,15 @@ namespace Neatoo.UnitTest.AsyncFlowTests
             asyncValidateObject.AsyncDelayRuleValue = "test";
             Assert.IsTrue(asyncValidateObject.IsBusy);
 
-            await Task.Yield();
-            await Task.Delay(5);
+            while (asyncValidateObject.IsBusy)
+            {
+                await Task.Yield();
+                await Task.Delay(1);
+            }
 
-            Assert.AreEqual(4, asyncValidateObject.AsyncDelayRule.RunCount);
+            Assert.AreEqual(3, asyncValidateObject.AsyncDelayRule.RunCount);
+            Assert.AreEqual(2, asyncValidateObject.Child.AsyncDelayRule.RunCount);
+
             //CollectionAssert.Contains(propertyChangedCalls, "IsBusy");
             //CollectionAssert.Contains(propertyChangedCalls, "IsSelfBusy");
         }

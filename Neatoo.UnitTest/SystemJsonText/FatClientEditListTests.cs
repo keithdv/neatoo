@@ -2,9 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Portal;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Neatoo.UnitTest.SystemTextJson.EditTests
 {

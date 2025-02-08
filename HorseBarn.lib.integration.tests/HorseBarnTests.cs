@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using HorseBarn.Dal.Ef;
-using HorseBarn.lib.Cart;
 using HorseBarn.lib.Horse;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;

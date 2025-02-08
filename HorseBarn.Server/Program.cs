@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using HorseBarn.lib;
 using System.Reflection;
 using HorseBarn.Dal.Ef;

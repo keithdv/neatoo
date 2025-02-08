@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Neatoo.AuthorizationRules
+﻿namespace Neatoo.AuthorizationRules
 {
 
     public interface IAuthorizationRuleResult

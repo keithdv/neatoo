@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Neatoo.UnitTest.Portal
 {
-    
+
     public class IMethodPortal<S> where S : Delegate
     {
 

@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,7 +16,6 @@ namespace Neatoo.Rules
         /// Must be unique for every rule across all types
         /// </summary>
         uint UniqueIndex { get; }
-        IReadOnlyList<ITriggerProperty> TriggerProperties { get; }
 
     }
 
@@ -29,6 +26,9 @@ namespace Neatoo.Rules
     public interface IRule<in T> : IRule
     {
         Task<PropertyErrors> RunRule(T target, CancellationToken token);
+
+
+        IReadOnlyList<ITriggerProperty<T>> TriggerProperties { get; }
     }
 
     internal static class RuleIndexer
@@ -46,7 +46,6 @@ namespace Neatoo.Rules
 
 
 
-
     public abstract class AsyncRuleBase<T> : IRule<T>
         where T : IValidateBase
     {
@@ -58,23 +57,11 @@ namespace Neatoo.Rules
             UniqueIndex = RuleIndexer.StaticIndex;
         }
 
-        public AsyncRuleBase(params string[] triggerOnPropertyNames) : this(triggerOnPropertyNames.AsEnumerable()) { }
+        public AsyncRuleBase(params Expression<Func<T, object?>>[] triggerOnPropertyNames) : this(triggerOnPropertyNames.AsEnumerable()) { }
 
-        public AsyncRuleBase(IEnumerable<string> triggerOnPropertyNames) : this()
+        public AsyncRuleBase(IEnumerable<Expression<Func<T, object?>>> triggerOnPropertyNames) : this()
         {
-            TriggerProperties.AddRange(triggerOnPropertyNames.Select(propertyName => new TriggerProperty(propertyName)));
-        }
-
-        public AsyncRuleBase(params IRegisteredProperty[] triggerOnProperty) : this(triggerOnProperty.Select(t => t.Name).AsEnumerable()) { }
-
-        /// <summary>
-        /// Define the properties without using nameof()
-        /// Much more involved and complicated
-        /// I don't know that I am going to support this long term. 
-        /// </summary>
-        /// <param name="triggerProperties"></param>
-        public AsyncRuleBase(IEnumerable<IRegisteredProperty> triggerOnProperty) : this(triggerOnProperty.Select(t => t.Name))
-        {
+            TriggerProperties.AddRange(triggerOnPropertyNames.Select(propertyName => new TriggerProperty<T>(propertyName)));
         }
 
         /// <summary>
@@ -84,16 +71,17 @@ namespace Neatoo.Rules
 
         protected PropertyErrors None = PropertyErrors.None;
 
-        IReadOnlyList<ITriggerProperty> IRule.TriggerProperties => TriggerProperties.AsReadOnly();
-        protected List<ITriggerProperty> TriggerProperties { get; } = new List<ITriggerProperty>();
+        IReadOnlyList<ITriggerProperty<T>> IRule<T>.TriggerProperties => TriggerProperties.AsReadOnly();
+        protected List<ITriggerProperty<T>> TriggerProperties { get; } = new List<ITriggerProperty<T>>();
 
         protected AsyncLocal<T> runRuleTarget = new AsyncLocal<T>();
 
+        // TODO : I Think I can get rid of this using Expressions
         protected T RunRuleTarget { get => runRuleTarget.Value; set { runRuleTarget.Value = value; } }
 
-        protected virtual void AddTriggerProperties(params string[] triggerOnPropertyNames)
+        protected virtual void AddTriggerProperties(params Expression<Func<T, Object>>[] triggerOnExpression)
         {
-            TriggerProperties.AddRange(triggerOnPropertyNames.Select(propertyName => new TriggerProperty(propertyName)));
+            TriggerProperties.AddRange(triggerOnExpression.Select(expression => new TriggerProperty<T>(expression)));
         }
 
         public abstract Task<PropertyErrors> Execute(T t, CancellationToken token);
@@ -151,24 +139,29 @@ namespace Neatoo.Rules
         }
 
 
-        protected object ReadProperty(string propertyName)
+        protected object? ReadProperty(string propertyName)
         {
             return RunRuleTarget[propertyName].Value;
         }
 
-        protected object ReadProperty(ITriggerProperty triggerProperty)
+        protected object? ReadProperty(ITriggerProperty<T> triggerProperty)
         {
             return RunRuleTarget[triggerProperty.PropertyName].Value;
         }
 
-        protected P ReadProperty<P>(IRegisteredProperty registeredProperty)
+        protected object? ReadProperty(TriggerProperty<T> triggerProperty)
         {
-            return (P)RunRuleTarget[registeredProperty].Value;
+            return ReadProperty((ITriggerProperty<T>)triggerProperty);
         }
 
-        protected void SetProperty<P>(IRegisteredProperty registeredProperty, P value)
+        protected void SetProperty<P>(ITriggerProperty<T> triggerProperty, P value)
         {
-            RunRuleTarget[registeredProperty].SetValue(value);
+            RunRuleTarget[triggerProperty.PropertyName].SetValue(value);
+        }
+
+        protected void SetProperty<P>(TriggerProperty<T> triggerProperty, P value)
+        {
+            SetProperty((ITriggerProperty<T>)triggerProperty, value);
         }
 
         /// <summary>
@@ -178,16 +171,21 @@ namespace Neatoo.Rules
         /// <param name="target"></param>
         /// <param name="registeredProperty"></param>
         /// <param name="value"></param>
-        protected void LoadProperty<P>(IRegisteredProperty registeredProperty, P value)
+        protected void LoadProperty(ITriggerProperty<T> registeredProperty, object? value)
         {
-            if (RunRuleTarget[registeredProperty] is IValidateProperty editProperty)
+            if (RunRuleTarget[registeredProperty.PropertyName] is IValidateProperty editProperty)
             {
                 editProperty.LoadValue(value);
             }
             else
             {
-                RunRuleTarget[registeredProperty].SetValue(value);
+                RunRuleTarget[registeredProperty.PropertyName].SetValue(value);
             }
+        }
+
+        protected void LoadProperty(TriggerProperty<T> registeredProperty, object? value)
+        {
+            LoadProperty((ITriggerProperty<T>)registeredProperty, value);
         }
 
     }
@@ -198,13 +196,9 @@ namespace Neatoo.Rules
     {
         protected RuleBase() { }
 
-        protected RuleBase(params string[] triggerOnPropertyNames) : base(triggerOnPropertyNames) { }
-
-        protected RuleBase(IEnumerable<string> triggerOnPropertyNames) : base(triggerOnPropertyNames) { }
-
-        protected RuleBase(params IRegisteredProperty[] triggerOnProperty) : base(triggerOnProperty) { }
-
-        protected RuleBase(IEnumerable<IRegisteredProperty> triggerOnProperty) : base(triggerOnProperty) { }
+        protected RuleBase(params Expression<Func<T, object?>>[] triggerOnPropertyNames) : base(triggerOnPropertyNames)
+        {
+        }
 
         public abstract PropertyErrors Execute(T target);
 
@@ -219,7 +213,7 @@ namespace Neatoo.Rules
     where T : IValidateBase
     {
         private Action<T> ExecuteFunc { get; }
-        public ActionFluentRule(Action<T> execute, string triggerProperty) : base([triggerProperty])
+        public ActionFluentRule(Action<T> execute, Expression<Func<T, object?>> triggerProperty) : base([triggerProperty])
         {
             this.ExecuteFunc = execute;
         }
@@ -235,7 +229,7 @@ namespace Neatoo.Rules
 where T : IValidateBase
     {
         private Func<T, Task> ExecuteFunc { get; }
-        public ActionAsyncFluentRule(Func<T, Task> execute, string triggerProperty) : base([triggerProperty])
+        public ActionAsyncFluentRule(Func<T, Task> execute, Expression<Func<T, object?>> triggerProperty) : base([triggerProperty])
         {
             this.ExecuteFunc = execute;
         }
@@ -251,7 +245,7 @@ where T : IValidateBase
         where T : IValidateBase
     {
         private Func<T, string> ExecuteFunc { get; }
-        public ValidationFluentRule(Func<T, string> execute, string triggerProperty) : base([triggerProperty])
+        public ValidationFluentRule(Func<T, string> execute, Expression<Func<T, object?>> triggerProperty) : base([triggerProperty])
         {
             this.ExecuteFunc = execute;
         }
@@ -266,7 +260,7 @@ where T : IValidateBase
             }
             else
             {
-                return TriggerProperties.Single().PropertyError(result);
+                return new PropertyError(TriggerProperties.Single().PropertyName, result);
             }
         }
     }
@@ -276,7 +270,7 @@ where T : IValidateBase
     {
         private Func<T, Task<string>> ExecuteFunc { get; }
 
-        public AsyncFluentRule(Func<T, Task<string>> execute, string triggerProperties) : base(triggerProperties)
+        public AsyncFluentRule(Func<T, Task<string>> execute, Expression<Func<T, object?>> triggerProperty) : base([triggerProperty])
         {
             this.ExecuteFunc = execute;
         }
@@ -291,7 +285,7 @@ where T : IValidateBase
             }
             else
             {
-                return TriggerProperties.Single().PropertyError(result);
+                return new PropertyError(TriggerProperties.Single().PropertyName, result);
             }
         }
     }

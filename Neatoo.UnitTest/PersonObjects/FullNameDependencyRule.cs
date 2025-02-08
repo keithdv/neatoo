@@ -13,8 +13,8 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public FullNameDependencyRule(IDisposableDependency dd) : base()
         {
-            AddTriggerProperties(nameof(IPersonBase.Title));
-            AddTriggerProperties(nameof(IPersonBase.ShortName));
+            AddTriggerProperties(_ => _.Title);
+            AddTriggerProperties(_ => _.ShortName);
 
             this.DisposableDependency = dd;
         }

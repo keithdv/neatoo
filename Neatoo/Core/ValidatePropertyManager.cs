@@ -1,12 +1,8 @@
-﻿using Neatoo.Rules;
-using System;
-using System.Collections.Concurrent;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,13 +26,13 @@ namespace Neatoo.Core
     {
         bool IsSelfValid { get; }
         bool IsValid { get; }
-        Task CheckAllRules(CancellationToken token);
+        Task RunAllRules(CancellationToken token);
         IReadOnlyList<string> ErrorMessages { get; }
         /// <summary>
         /// Sets the value without running any rules or raising any events
         /// </summary>
         /// <param name="value"></param>
-        void LoadValue(object value);
+        void LoadValue(object? value);
         internal void SetErrorsForRule(uint ruleIndex, IReadOnlyList<string> errorMessages);
         internal void ClearErrorsForRule(uint ruleIndex);
         internal void ClearAllErrors();
@@ -51,7 +47,7 @@ namespace Neatoo.Core
     public class ValidateProperty<T> : Property<T>, IValidateProperty<T>
     {
         [JsonIgnore]
-        public virtual IValidateMetaProperties ValueIsValidateBase => Value as IValidateMetaProperties;
+        public virtual IValidateMetaProperties? ValueIsValidateBase => Value as IValidateMetaProperties;
 
         public ValidateProperty(string name) : base(name)
         {
@@ -69,14 +65,18 @@ namespace Neatoo.Core
         public bool IsSelfValid => ValueIsValidateBase != null ? true : !RuleErrorMessages.Any();
         public bool IsValid => ValueIsValidateBase != null ? ValueIsValidateBase.IsValid : !RuleErrorMessages.Any();
 
-        public Task CheckAllRules(CancellationToken token) { return ValueIsValidateBase?.RunAllRules(token) ?? Task.CompletedTask; }
+        public Task RunAllRules(CancellationToken token) { return ValueIsValidateBase?.RunAllRules(token) ?? Task.CompletedTask; }
 
         [JsonIgnore]
         public IReadOnlyList<string> ErrorMessages => RuleErrorMessages.SelectMany(r => r.Value).ToList().AsReadOnly();
 
-        public virtual void LoadValue(object value)
+        public virtual void LoadValue(object? value)
         {
-            if (value is T x)
+            if(value == null)
+            {
+                _value = default;
+            }
+            else if (value is T x)
             {
                 _value = x;
             }
@@ -147,23 +147,23 @@ namespace Neatoo.Core
             return Factory.CreateValidateProperty<PV>(registeredProperty);
         }
 
-        public bool IsSelfValid => !fieldData.Values.Any(_ => !_.IsSelfValid);
-        public bool IsValid => !fieldData.Values.Any(_ => !_.IsValid);
+        public bool IsSelfValid => !PropertyBag.Values.Any(_ => !_.IsSelfValid);
+        public bool IsValid => !PropertyBag.Values.Any(_ => !_.IsValid);
 
-        public IReadOnlyList<string> ErrorMessages => fieldData.Values.SelectMany(_ => _.ErrorMessages).ToList().AsReadOnly();
+        public IReadOnlyList<string> ErrorMessages => PropertyBag.Values.SelectMany(_ => _.ErrorMessages).ToList().AsReadOnly();
 
 
         public async Task RunAllRules(CancellationToken token)
         {
-            foreach(var p in fieldData.Values.ToList())
+            foreach (var p in PropertyBag.Values.ToList())
             {
-                await p.CheckAllRules(token);
+                await p.RunAllRules(token);
             }
         }
 
         public void ClearSelfErrors()
         {
-            foreach (var p in fieldData.Values)
+            foreach (var p in PropertyBag.Values)
             {
                 p.ClearSelfErrors();
             }
@@ -171,7 +171,7 @@ namespace Neatoo.Core
 
         public void ClearAllErrors()
         {
-            foreach (var p in fieldData.Values)
+            foreach (var p in PropertyBag.Values)
             {
                 p.ClearAllErrors();
             }
@@ -185,9 +185,7 @@ namespace Neatoo.Core
         public RegisteredPropertyValidateChildDataWrongTypeException() { }
         public RegisteredPropertyValidateChildDataWrongTypeException(string message) : base(message) { }
         public RegisteredPropertyValidateChildDataWrongTypeException(string message, Exception inner) : base(message, inner) { }
-        protected RegisteredPropertyValidateChildDataWrongTypeException(
-          System.Runtime.Serialization.SerializationInfo info,
-          System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
+
     }
 
 }

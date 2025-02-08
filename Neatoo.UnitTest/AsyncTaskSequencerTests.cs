@@ -1,11 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Core;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest
@@ -171,9 +168,9 @@ namespace Neatoo.UnitTest
             {
                 await sequencer.AllDone;
             }
-            catch (Exception ex)
+            catch (AggregateException ex)
             {
-                Assert.AreEqual(ex.InnerException, exception);
+                Assert.AreSame(ex.InnerExceptions.Single(), exception);
             }
 
             Assert.IsTrue(completedA);

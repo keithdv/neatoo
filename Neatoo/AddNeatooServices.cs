@@ -6,15 +6,10 @@ using Neatoo.Portal.Core;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Net.Mime;
 using System.Reflection;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Neatoo
 {
@@ -98,17 +93,8 @@ namespace Neatoo
             services.AddTransient(typeof(NeatooListBaseJsonTypeConverter<>));
 
 
-
-            // Should not be singleinstance because AuthorizationRules can have constructor dependencies
-
             services.AddSingleton<IAttributeToRule, AttributeToRule>();
-            services.AddTransient<CreateRequiredRule>(services =>
-            {
-                return (rp) =>
-                {
-                    return new RequiredRule(rp);
-                };
-            });
+
 
             services.AddScoped(typeof(IAuthorizationRuleManager<>), typeof(AuthorizationRuleManager<>));
             services.AddTransient(typeof(IRuleManager<>), typeof(RuleManager<>));

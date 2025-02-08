@@ -42,7 +42,7 @@ title="@GetErrorMessage()" />
         {
             if (e.PropertyName == nameof(IProperty.IsBusy))
             {
-                StateHasChanged();
+                InvokeAsync(() => StateHasChanged());
             }
         };
 

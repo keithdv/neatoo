@@ -1,10 +1,5 @@
 ﻿using Neatoo.Rules;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.PersonObjects
 {
@@ -16,7 +11,7 @@ namespace Neatoo.UnitTest.PersonObjects
     {
         public RuleThrowsException() : base()
         {
-            AddTriggerProperties(nameof(IPersonBase.FirstName));
+            AddTriggerProperties(_ => _.FirstName);
         }
 
         public override PropertyErrors Execute(IPersonBase target)

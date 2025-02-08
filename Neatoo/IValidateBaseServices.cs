@@ -1,12 +1,6 @@
-﻿using Neatoo.AuthorizationRules;
-using Neatoo.Core;
-using Neatoo.Portal;
+﻿using Neatoo.Core;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
-using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
 
 namespace Neatoo
 {
@@ -37,7 +31,7 @@ namespace Neatoo
         {
             RegisteredPropertyManager = new RegisteredPropertyManager<T>((System.Reflection.PropertyInfo pi) => new RegisteredProperty(pi));
             this.ValidatePropertyManager = new ValidatePropertyManager<IValidateProperty>(RegisteredPropertyManager, new DefaultFactory());
-            this.ruleManagerFactory = new RuleManagerFactory<T>(new AttributeToRule(rp => new RequiredRule(rp)));
+            this.ruleManagerFactory = new RuleManagerFactory<T>(new AttributeToRule());
         }
 
         public ValidateBaseServices(IRegisteredPropertyManager<T> registeredPropertyManager, RuleManagerFactory<T> createRuleManager)

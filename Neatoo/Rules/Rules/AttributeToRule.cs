@@ -1,34 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 
 namespace Neatoo.Rules.Rules
 {
 
     public interface IAttributeToRule
     {
-        IRule GetRule(IRegisteredProperty r, Type attribute);
+        IRule<T> GetRule<T>(IRegisteredProperty r, Type attribute) where T : IValidateBase;
     }
 
     public class AttributeToRule : IAttributeToRule
     {
 
-        public AttributeToRule(CreateRequiredRule required)
+        public AttributeToRule()
         {
-            Required = required;
+
         }
 
-        public IRule GetRule(IRegisteredProperty r, Type attribute)
+        public IRule<T> GetRule<T>(IRegisteredProperty r, Type attribute) where T : IValidateBase
         {
             if (attribute == typeof(RequiredAttribute))
             {
-                return Required(r);
+                return new RequiredRule<T>(r);
             }
             return null;
         }
 
-
-        public CreateRequiredRule Required { get; }
     }
 }

@@ -1,16 +1,8 @@
 ﻿using Caliburn.Micro;
 using HorseBarn.lib;
 using HorseBarn.lib.Cart;
-using HorseBarn.lib.Horse;
-using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 
 namespace HorseBarn.WPF.ViewModels
 {

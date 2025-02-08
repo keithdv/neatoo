@@ -1,13 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
-using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
@@ -46,33 +39,33 @@ namespace Neatoo.Core
 
         IRegisteredPropertyManager IPropertyManager<P>.RegisteredPropertyManager => RegisteredPropertyManager;
 
-        public bool IsBusy => fieldData.Values.Any(_ => _.IsBusy);
-        public bool IsSelfBusy => fieldData.Values.Any(_ => _.IsSelfBusy);
+        public bool IsBusy => PropertyBag.Values.Any(_ => _.IsBusy);
+        public bool IsSelfBusy => PropertyBag.Values.Any(_ => _.IsSelfBusy);
 
         public bool HasProperty(string propertyName)
         {
             return RegisteredPropertyManager.HasProperty(propertyName);
         }
 
-        protected IDictionary<string, P> propertyValueStore = new Dictionary<string, P>();
+        protected IDictionary<string, P> _propertyBag = new Dictionary<string, P>();
 
-        protected IDictionary<string, P> fieldData
+        protected IDictionary<string, P> PropertyBag
         {
-            get => propertyValueStore;
+            get => _propertyBag;
             set
             {
-                propertyValueStore = value;
+                _propertyBag = value;
             }
         }
         
         public async Task WaitForTasks() {
-            foreach(var p in fieldData.Values.ToList())
+            foreach(var p in PropertyBag.Values.ToList())
             {
                 await p.WaitForTasks();
             }
         }
 
-        public event NeatooPropertyChanged NeatooPropertyChanged;
+        public event NeatooPropertyChanged? NeatooPropertyChanged;
 
         private Task _OnNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
         {
@@ -97,16 +90,16 @@ namespace Neatoo.Core
 
         public virtual P GetProperty(IRegisteredProperty registeredProperty)
         {
-            if (fieldData.TryGetValue(registeredProperty.Name, out var fd))
+            if (PropertyBag.TryGetValue(registeredProperty.Name, out var fd))
             {
                 return fd;
             }
 
-            var newProperty = (P)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty });
+            var newProperty = (P)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty })!;
 
             newProperty.NeatooPropertyChanged += _OnNeatooPropertyChanged;
 
-            fieldData[registeredProperty.Name] = newProperty;
+            PropertyBag[registeredProperty.Name] = newProperty;
 
             return newProperty;
         }
@@ -130,23 +123,23 @@ namespace Neatoo.Core
         {
             foreach (var p in properties.Cast<P>())
             {
-                if (fieldData.TryGetValue(p.Name, out var fd))
+                if (PropertyBag.TryGetValue(p.Name, out var fd))
                 {
                     throw new InvalidOperationException("Property already set");
                 }
-                fieldData[p.Name] = p;
+                PropertyBag[p.Name] = p;
             }
         }
 
         public void OnDeserialized()
         {
-            foreach (var p in fieldData.Values)
+            foreach (var p in PropertyBag.Values)
             {
                 p.NeatooPropertyChanged += _OnNeatooPropertyChanged;
             }
         }
 
-        IEnumerable<P> IPropertyManager<P>.GetProperties => fieldData.Values.AsEnumerable();
+        IEnumerable<P> IPropertyManager<P>.GetProperties => PropertyBag.Values.AsEnumerable();
     }
 
     [Serializable]
@@ -155,9 +148,6 @@ namespace Neatoo.Core
         public PropertyTypeMismatchException() { }
         public PropertyTypeMismatchException(string message) : base(message) { }
         public PropertyTypeMismatchException(string message, Exception inner) : base(message, inner) { }
-        protected PropertyTypeMismatchException(
-          System.Runtime.Serialization.SerializationInfo info,
-          System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
     }
 
     [Serializable]
@@ -166,9 +156,6 @@ namespace Neatoo.Core
         public PropertyNotFoundException() { }
         public PropertyNotFoundException(string message) : base(message) { }
         public PropertyNotFoundException(string message, Exception inner) : base(message, inner) { }
-        protected PropertyNotFoundException(
-          System.Runtime.Serialization.SerializationInfo info,
-          System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
     }
 }
 

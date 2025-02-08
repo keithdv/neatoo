@@ -1,9 +1,9 @@
-﻿using Neatoo.Core;
-using Neatoo.Rules.Rules;
+﻿using Neatoo.Rules.Rules;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,8 +13,7 @@ namespace Neatoo.Rules
     public interface IRuleManager
     {
         IEnumerable<IRule> Rules { get; }
-        void AddRule(IRule rule);
-        void AddRules(params IRule[] rules);
+
         Task CheckRulesForProperty(string propertyName);
         Task CheckAllRules(CancellationToken token = new CancellationToken());
     }
@@ -22,10 +21,12 @@ namespace Neatoo.Rules
     public interface IRuleManager<T> : IRuleManager
         where T : IValidateBase
     {
-        ActionFluentRule<T> AddAction(Action<T> func, string triggerProperty);
-        ValidationFluentRule<T> AddValidation(Func<T, string> func, string triggerProperty);
-        ActionAsyncFluentRule<T> AddActionAsync(Func<T, Task> func, string triggerProperty);
-        AsyncFluentRule<T> AddValidationAsync(Func<T, Task<string>> func, string triggerProperty);
+        void AddRule(IRule<T> rule);
+        void AddRules(params IRule<T>[] rules);
+        ActionFluentRule<T> AddAction(Action<T> func, Expression<Func<T, object?>> triggerProperty);
+        ValidationFluentRule<T> AddValidation(Func<T, string> func, Expression<Func<T, object?>> triggerProperty);
+        ActionAsyncFluentRule<T> AddActionAsync(Func<T, Task> func, Expression<Func<T, object?>> triggerProperty);
+        AsyncFluentRule<T> AddValidationAsync(Func<T, Task<string>> func, Expression<Func<T, object?>> triggerProperty);
     }
 
     public class RuleManagerFactory<T>
@@ -57,7 +58,7 @@ namespace Neatoo.Rules
 
         IEnumerable<IRule> IRuleManager.Rules => Rules.Values;
 
-        private IDictionary<uint, IRule> Rules { get; } = new ConcurrentDictionary<uint, IRule>();
+        private IDictionary<uint, IRule<T>> Rules { get; } = new ConcurrentDictionary<uint, IRule<T>>();
 
         protected virtual void AddAttributeRules(IAttributeToRule attributeToRule, IRegisteredPropertyManager registeredPropertyManager)
         {
@@ -67,44 +68,44 @@ namespace Neatoo.Rules
             {
                 foreach (var a in r.PropertyInfo.GetCustomAttributes(true))
                 {
-                    var rule = attributeToRule.GetRule(r, a.GetType());
+                    var rule = attributeToRule.GetRule<T>(r, a.GetType());
                     if (rule != null) { AddRule(rule); }
                 }
             }
         }
 
-        public void AddRules(params IRule[] rules)
+        public void AddRules(params IRule<T>[] rules)
         {
             foreach (var r in rules) { AddRule(r); }
         }
 
-        public void AddRule(IRule rule)
+        public void AddRule(IRule<T> rule)
         {
             Rules.Add(rule.UniqueIndex, rule ?? throw new ArgumentNullException(nameof(rule)));
         }
 
-        public ActionAsyncFluentRule<T> AddActionAsync(Func<T, Task> func, string triggerProperty)
+        public ActionAsyncFluentRule<T> AddActionAsync(Func<T, Task> func, Expression<Func<T, object?>> triggerProperty)
         {
             ActionAsyncFluentRule<T> rule = new ActionAsyncFluentRule<T>(func, triggerProperty);
             Rules.Add(rule.UniqueIndex, rule);
             return rule;
         }
 
-        public ActionFluentRule<T> AddAction(Action<T> func, string triggerProperty)
+        public ActionFluentRule<T> AddAction(Action<T> func, Expression<Func<T, object?>> triggerProperty)
         {
             ActionFluentRule<T> rule = new ActionFluentRule<T>(func, triggerProperty);
             Rules.Add(rule.UniqueIndex, rule);
             return rule;
         }
 
-        public ValidationFluentRule<T> AddValidation(Func<T, string> func, string triggerProperty)
+        public ValidationFluentRule<T> AddValidation(Func<T, string> func, Expression<Func<T, object?>> triggerProperty)
         {
             ValidationFluentRule<T> rule = new ValidationFluentRule<T>(func, triggerProperty);
             Rules.Add(rule.UniqueIndex, rule);
             return rule;
         }
 
-        public AsyncFluentRule<T> AddValidationAsync(Func<T, Task<string>> func, string triggerProperty)
+        public AsyncFluentRule<T> AddValidationAsync(Func<T, Task<string>> func, Expression<Func<T, object?>> triggerProperty)
         {
             AsyncFluentRule<T> rule = new AsyncFluentRule<T>(func, triggerProperty);
             Rules.Add(rule.UniqueIndex, rule);

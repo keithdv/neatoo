@@ -1,11 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neatoo.Core;
+﻿using Neatoo.Core;
 using Neatoo.Rules;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,14 +11,14 @@ namespace Neatoo.UnitTest.AsyncFlowTests
 
         public AsyncDelayRule()
         {
-            AddTriggerProperties(nameof(AsyncValidateObject.AsyncDelayRuleValue), nameof(AsyncValidateObject.Child));
+            AddTriggerProperties(a => a.AsyncDelayRuleValue, a => a.Child.AsyncDelayRuleValue);
         }
         public int RunCount { get; private set; } = 0;
 
         public override async Task<PropertyErrors> Execute(AsyncValidateObject target, CancellationToken token)
         {
             RunCount++;
-            await Task.Delay(5);
+            await Task.Delay(2);
             if (RunCount < 3)
             {
                 // Async Loop between parent and child
@@ -40,7 +35,7 @@ namespace Neatoo.UnitTest.AsyncFlowTests
     {
         public SyncRuleA()
         {
-            AddTriggerProperties(nameof(AsyncValidateObject.SyncA));
+            AddTriggerProperties(_ => _.SyncA);
         }
 
         public int RunCount { get; private set; } = 0;
@@ -56,7 +51,7 @@ namespace Neatoo.UnitTest.AsyncFlowTests
     {
         public NestedSyncRuleB()
         {
-            AddTriggerProperties(nameof(AsyncValidateObject.NestedSyncB));
+            AddTriggerProperties(_ => _.NestedSyncB);
         }
         public int RunCount { get; private set; } = 0;
 
@@ -71,13 +66,13 @@ namespace Neatoo.UnitTest.AsyncFlowTests
     {
         public AsyncRuleCanWait()
         {
-            AddTriggerProperties(nameof(AsyncValidateObject.AsyncRulesCanWait));
+            AddTriggerProperties(_ => _.AsyncRulesCanWait);
         }
         public int RunCount { get; private set; } = 0;
         public override async Task<PropertyErrors> Execute(AsyncValidateObject target, CancellationToken token)
         {
             RunCount++;
-            await Task.Delay(5);
+            await Task.Delay(2);
             target.AsyncRulesCanWaitNested = "Value";
             var prop = base.ReadProperty(nameof(AsyncValidateObject.AsyncRulesCanWait));
 
@@ -96,13 +91,13 @@ namespace Neatoo.UnitTest.AsyncFlowTests
     {
         public AsyncRuleCanWaitNested()
         {
-            AddTriggerProperties(nameof(AsyncValidateObject.AsyncRulesCanWait));
+            AddTriggerProperties(_ => _.AsyncRulesCanWait);
         }
         public int RunCount { get; private set; } = 0;
         public override async Task<PropertyErrors> Execute(AsyncValidateObject target, CancellationToken token)
         {
             RunCount++;
-            await Task.Delay(5);
+            await Task.Delay(2);
             target.AsyncRulesCanWaitNested = "Ran";
             target.AsyncDelayRuleValue = Guid.NewGuid().ToString();
             return PropertyErrors.None;

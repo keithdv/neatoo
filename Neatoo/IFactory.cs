@@ -1,5 +1,4 @@
 ﻿using Neatoo.Core;
-using Neatoo.Rules;
 
 namespace Neatoo
 {

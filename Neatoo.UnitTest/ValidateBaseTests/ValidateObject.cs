@@ -1,5 +1,4 @@
 ﻿using Neatoo.Portal;
-using Neatoo.Rules;
 using Neatoo.UnitTest.PersonObjects;
 using System.Collections.Generic;
 using System.Linq;

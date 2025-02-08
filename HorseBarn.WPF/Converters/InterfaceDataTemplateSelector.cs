@@ -1,14 +1,6 @@
-﻿using HorseBarn.lib.Horse;
-using HorseBarn.WPF.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using HorseBarn.WPF.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Markup;
 
 namespace HorseBarn.WPF.Converters
 {

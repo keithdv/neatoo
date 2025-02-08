@@ -1,10 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
-using HorseBarn.lib;
 using Microsoft.AspNetCore.Mvc;
 using Neatoo.Portal;
 using Neatoo.Portal.Core;
-using System.Diagnostics;
-using System.Reflection;
 
 namespace HorseBarn.Server.Controllers
 {

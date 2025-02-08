@@ -1,10 +1,6 @@
-﻿using Neatoo.AuthorizationRules;
-using Neatoo.Core;
+﻿using Neatoo.Core;
 using Neatoo.Portal;
 using Neatoo.Rules;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Neatoo
 {

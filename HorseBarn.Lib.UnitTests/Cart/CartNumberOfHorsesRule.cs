@@ -1,9 +1,5 @@
 using HorseBarn.lib.Horse;
 using Moq;
-using Neatoo.Rules;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace HorseBarn.lib.Cart.Tests
 {

@@ -1,7 +1,6 @@
 ﻿using Caliburn.Micro;
 using HorseBarn.lib.Horse;
 using System.Windows.Input;
-using System.Windows.Shapes;
 using System.Windows;
 using System.Diagnostics;
 

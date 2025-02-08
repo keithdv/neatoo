@@ -3,16 +3,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ValidateBaseTests.Attributes
 {
-    public interface IRequiredObject : IValidateBase { }
-    public class RequiredObject : ValidateBase<RequiredObject>, IRequiredObject
+    public class RequiredObject : ValidateBase<RequiredObject>
     {
-        public RequiredObject(IValidateBaseServices<RequiredObject> services) : base(services)
-        {
-        }
+        public RequiredObject() : base(new ValidateBaseServices<RequiredObject>()) { }
 
         [Required]
         public string StringValue { get => Getter<string>(); set => Setter(value); }
@@ -31,21 +29,32 @@ namespace Neatoo.UnitTest.ValidateBaseTests.Attributes
     [TestClass]
     public class RequiredAttributeTests
     {
-        private IServiceScope scope;
-        private IRequiredObject requiredObject;
+        private RequiredObject requiredObject;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            scope = UnitTestServices.GetLifetimeScope();
-            requiredObject = scope.GetRequiredService<IRequiredObject>();
+            requiredObject = new RequiredObject();
         }
 
         [TestMethod]
-        public void RequireAttribute_InValid()
+        public async Task RequiredAttribute_InValid()
         {
-            Assert.IsTrue(requiredObject.IsValid);
+
+            await requiredObject.RunAllRules();
+            Assert.IsFalse(requiredObject.IsValid);
         }
 
+        [TestMethod]
+        public void RequiredAttribute_Valid()
+        {
+
+            requiredObject.StringValue = "test";
+            requiredObject.IntValue = 1;
+            requiredObject.NullableValue = 1;
+            requiredObject.ObjectValue = new List<int> { 1, 2, 3 };
+
+            Assert.IsTrue(requiredObject.IsValid);
+        }
     }
 }

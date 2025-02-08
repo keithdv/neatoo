@@ -1,11 +1,5 @@
 ﻿using Neatoo;
-using Neatoo.Rules;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HorseBarn.lib.Horse
 {

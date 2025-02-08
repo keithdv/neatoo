@@ -17,19 +17,19 @@ namespace AsyncBlazor
             {
                 await Task.Delay(1000);
                 t.AsyncPropertyB = t.AsyncPropertyA * 2;
-            }, nameof(AsyncPropertyA));
+            }, _ => _.AsyncPropertyA);
 
             ruleManager.AddActionAsync(async (AsyncValidate t) =>
             {
                 await Task.Delay(1000);
                 t.AsyncPropertyC = t.AsyncPropertyB * 2;
-            }, nameof(AsyncPropertyB));
+            }, _ => _.AsyncPropertyB);
 
             ruleManager.AddActionAsync(async (AsyncValidate t) =>
             {
                 await Task.Delay(1000);
                 t.AsyncPropertyD = t.AsyncPropertyC / 2;
-            }, nameof(AsyncPropertyC));
+            }, _ => _.AsyncPropertyC);
 
             ruleManager.AddValidationAsync(async (AsyncValidate t) =>
             {
@@ -39,7 +39,7 @@ namespace AsyncBlazor
                     return "AsyncPropertyA cannot be 100";
                 }
                 return string.Empty;
-            }, nameof(AsyncPropertyA));
+            }, _ => _.AsyncPropertyA);
 
             ruleManager.AddValidationAsync(async (AsyncValidate t) =>
             {
@@ -49,7 +49,7 @@ namespace AsyncBlazor
                     return "AsyncPropertyB cannot be 100";
                 }
                 return string.Empty;
-            }, nameof(AsyncPropertyB));
+            }, _ => _.AsyncPropertyB);
 
             ruleManager.AddValidationAsync(async (AsyncValidate t) =>
             {
@@ -59,7 +59,7 @@ namespace AsyncBlazor
                     return "AsyncPropertyC cannot be 100";
                 }
                 return string.Empty;
-            }, nameof(AsyncPropertyC));
+            }, _ => _.AsyncPropertyC);
 
             ruleManager.AddValidationAsync(async (AsyncValidate t) =>
             {
@@ -69,7 +69,7 @@ namespace AsyncBlazor
                     return "AsyncPropertyD cannot be 100";
                 }
                 return string.Empty;
-            }, nameof(AsyncPropertyD));
+            }, _ => _.AsyncPropertyD);
         }
 
         new public IValidateProperty this[string propertyName] => base[propertyName];

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Neatoo.Rules;
 
 namespace Neatoo.UnitTest.PersonObjects
 

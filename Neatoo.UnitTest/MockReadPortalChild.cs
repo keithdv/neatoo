@@ -1,8 +1,6 @@
 ﻿using Neatoo.Portal;
 using Moq;
 using System.Threading.Tasks;
-using System;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 
 namespace Neatoo.UnitTest
 {
