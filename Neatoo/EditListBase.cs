@@ -40,14 +40,11 @@ namespace Neatoo
         public bool IsChild => false;
         protected List<I> DeletedList { get; } = new List<I>();
 
-        [JsonIgnore]
-        protected bool IsPaused { get; set; }
-
         protected (bool IsModified, bool IsSelfModified, bool IsSavable) EditMetaState { get; private set; }
 
-        protected override void RaiseMetaPropertiesChanged(bool resetBusy = false)
+        protected override void CheckIfMetaPropertiesChanged(bool resetBusy = false)
         {
-            base.RaiseMetaPropertiesChanged(resetBusy);
+            base.CheckIfMetaPropertiesChanged(resetBusy);
 
             if (EditMetaState.IsModified != IsModified)
             {

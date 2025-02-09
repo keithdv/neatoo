@@ -4,12 +4,12 @@ using System.Reflection;
 namespace Neatoo.Core
 {
 
-    public delegate IRegisteredProperty CreateRegisteredProperty(PropertyInfo property);
+    public delegate IPropertyInfo CreatePropertyInfoWrapper(PropertyInfo property);
 
-    public class RegisteredProperty : IRegisteredProperty
+    public class NeatooPropertyInfoWrapper : IPropertyInfo
     {
 
-        public RegisteredProperty(PropertyInfo propertyInfo)
+        public NeatooPropertyInfoWrapper(PropertyInfo propertyInfo)
         {
             this.PropertyInfo = propertyInfo;
         }

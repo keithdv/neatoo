@@ -72,7 +72,12 @@ namespace Neatoo.Core
 
         public virtual void LoadValue(object? value)
         {
-            if(value == null)
+            if(AreSame(_value, value))
+            {
+                return;
+            }
+
+            if (value == null)
             {
                 _value = default;
             }
@@ -82,8 +87,10 @@ namespace Neatoo.Core
             }
             else
             {
-                throw new RegisteredPropertyValidateChildDataWrongTypeException();
+                throw new PropertyValidateChildDataWrongTypeException();
             }
+
+            OnPropertyChanged(nameof(Value));
         }
 
 
@@ -131,20 +138,20 @@ namespace Neatoo.Core
     }
 
 
-    public delegate IValidatePropertyManager<IValidateProperty> CreateValidatePropertyManager(IRegisteredPropertyManager registeredPropertyManager);
+    public delegate IValidatePropertyManager<IValidateProperty> CreateValidatePropertyManager(IPropertyInfoList propertyInfoList);
 
     public class ValidatePropertyManager<P> : PropertyManager<P>, IValidatePropertyManager<P>
         where P : IValidateProperty
     {
 
-        public ValidatePropertyManager(IRegisteredPropertyManager registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
+        public ValidatePropertyManager(IPropertyInfoList propertyInfoList, IFactory factory) : base(propertyInfoList, factory)
         {
         }
 
 
-        protected new IProperty CreateProperty<PV>(IRegisteredProperty registeredProperty)
+        protected new IProperty CreateProperty<PV>(IPropertyInfo propertyInfo)
         {
-            return Factory.CreateValidateProperty<PV>(registeredProperty);
+            return Factory.CreateValidateProperty<PV>(propertyInfo);
         }
 
         public bool IsSelfValid => !PropertyBag.Values.Any(_ => !_.IsSelfValid);
@@ -180,11 +187,11 @@ namespace Neatoo.Core
 
 
     [Serializable]
-    public class RegisteredPropertyValidateChildDataWrongTypeException : Exception
+    public class PropertyValidateChildDataWrongTypeException : Exception
     {
-        public RegisteredPropertyValidateChildDataWrongTypeException() { }
-        public RegisteredPropertyValidateChildDataWrongTypeException(string message) : base(message) { }
-        public RegisteredPropertyValidateChildDataWrongTypeException(string message, Exception inner) : base(message, inner) { }
+        public PropertyValidateChildDataWrongTypeException() { }
+        public PropertyValidateChildDataWrongTypeException(string message) : base(message) { }
+        public PropertyValidateChildDataWrongTypeException(string message, Exception inner) : base(message, inner) { }
 
     }
 

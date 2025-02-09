@@ -7,10 +7,10 @@ namespace Neatoo
     /// DO NOT REGISTER IN DI CONTAINER
     /// </summary>
     /// <typeparam name="T">Generic to ensure that types can only access their properties</typeparam>
-    public interface IRegisteredPropertyManager
+    public interface IPropertyInfoList
     {
-        IRegisteredProperty GetRegisteredProperty(string name);
-        IEnumerable<IRegisteredProperty> GetRegisteredProperties();
+        IPropertyInfo GetPropertyInfo(string name);
+        IEnumerable<IPropertyInfo> Properties();
         bool HasProperty(string propertyName);
     }
 
@@ -18,7 +18,7 @@ namespace Neatoo
     /// REGISTERED IN THE DI CONTAINER
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IRegisteredPropertyManager<T> : IRegisteredPropertyManager
+    public interface IPropertyInfoBag<T> : IPropertyInfoList
     {
 
     }

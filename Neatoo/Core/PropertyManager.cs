@@ -12,39 +12,36 @@ namespace Neatoo.Core
         bool IsBusy { get; }
         bool IsSelfBusy { get; }
         Task WaitForTasks();
-        IRegisteredProperty GetRegisteredProperty(string name);
         bool HasProperty(string propertyName);
 
         P GetProperty(string propertyName);
-        P GetProperty(IRegisteredProperty registeredProperty);
 
         public P this[string propertyName] { get => GetProperty(propertyName); }
-        public P this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
 
-        internal IRegisteredPropertyManager RegisteredPropertyManager { get; }
+        internal IPropertyInfoList PropertyInfoList { get; }
 
         internal IEnumerable<P> GetProperties { get; }
 
         void SetProperties(IEnumerable<IProperty> properties);
     }
 
-    public delegate IPropertyManager<IProperty> CreatePropertyManager(IRegisteredPropertyManager registeredPropertyManager);
+    public delegate IPropertyManager<IProperty> CreatePropertyManager(IPropertyInfoList propertyInfoList);
 
     public class PropertyManager<P> : IPropertyManager<P>, IJsonOnDeserialized
         where P : IProperty
     {
         protected IFactory Factory { get; }
 
-        protected readonly IRegisteredPropertyManager RegisteredPropertyManager;
+        protected readonly IPropertyInfoList PropertyInfoList;
 
-        IRegisteredPropertyManager IPropertyManager<P>.RegisteredPropertyManager => RegisteredPropertyManager;
+        IPropertyInfoList IPropertyManager<P>.PropertyInfoList => PropertyInfoList;
 
         public bool IsBusy => PropertyBag.Values.Any(_ => _.IsBusy);
         public bool IsSelfBusy => PropertyBag.Values.Any(_ => _.IsSelfBusy);
 
         public bool HasProperty(string propertyName)
         {
-            return RegisteredPropertyManager.HasProperty(propertyName);
+            return PropertyInfoList.HasProperty(propertyName);
         }
 
         protected IDictionary<string, P> _propertyBag = new Dictionary<string, P>();
@@ -67,39 +64,36 @@ namespace Neatoo.Core
 
         public event NeatooPropertyChanged? NeatooPropertyChanged;
 
-        private Task _OnNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
+        private Task _OnNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
             return NeatooPropertyChanged?.Invoke(breadCrumbs) ?? Task.CompletedTask;
         }
 
-        public PropertyManager(IRegisteredPropertyManager registeredPropertyManager, IFactory factory)
+        public PropertyManager(IPropertyInfoList propertyInfoList, IFactory factory)
         {
-            this.RegisteredPropertyManager = registeredPropertyManager;
+            this.PropertyInfoList = propertyInfoList;
             Factory = factory;
         }
 
-        protected IProperty CreateProperty<PV>(IRegisteredProperty registeredProperty)
+        protected IProperty CreateProperty<PV>(IPropertyInfo propertyInfo)
         {
-            return Factory.CreateProperty<PV>(registeredProperty);
+            return Factory.CreateProperty<PV>(propertyInfo);
         }
 
-        public IRegisteredProperty GetRegisteredProperty(string name)
+        public virtual P GetProperty(string propertyName)
         {
-            return RegisteredPropertyManager.GetRegisteredProperty(name);
-        }
-
-        public virtual P GetProperty(IRegisteredProperty registeredProperty)
-        {
-            if (PropertyBag.TryGetValue(registeredProperty.Name, out var fd))
+            if (PropertyBag.TryGetValue(propertyName, out var property))
             {
-                return fd;
+                return property;
             }
 
-            var newProperty = (P)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.MakeGenericMethod(registeredProperty.Type).Invoke(this, new object[] { registeredProperty })!;
+            var propertyInfo = PropertyInfoList.GetPropertyInfo(propertyName);
+
+            var newProperty = (P)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.MakeGenericMethod(propertyInfo.Type).Invoke(this, new object[] { propertyInfo })!;
 
             newProperty.NeatooPropertyChanged += _OnNeatooPropertyChanged;
 
-            PropertyBag[registeredProperty.Name] = newProperty;
+            PropertyBag[propertyName] = newProperty;
 
             return newProperty;
         }
@@ -109,15 +103,6 @@ namespace Neatoo.Core
             get => GetProperty(propertyName);
         }
 
-        public P this[IRegisteredProperty registeredProperty]
-        {
-            get => GetProperty(registeredProperty);
-        }
-
-        public virtual P GetProperty(string propertyName)
-        {
-            return GetProperty(RegisteredPropertyManager.GetRegisteredProperty(propertyName));
-        }
 
         void IPropertyManager<P>.SetProperties(IEnumerable<IProperty> properties)
         {

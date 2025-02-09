@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace Neatoo
 {
-    public interface IRegisteredProperty
+    public interface IPropertyInfo
     {
         PropertyInfo PropertyInfo { get; }
         string Name { get; }

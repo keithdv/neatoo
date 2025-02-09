@@ -30,7 +30,7 @@ namespace Neatoo
 
         protected (bool IsModified, bool IsSelfModified, bool IsSavable, bool IsDeleted) EditMetaState { get; private set; }
 
-        protected override void RaiseMetaPropertiesChanged(bool raiseBusy = true)
+        protected override void CheckIfMetaPropertiesChanged(bool raiseBusy = true)
         {
             if (!IsPaused)
             {
@@ -52,7 +52,7 @@ namespace Neatoo
                 }
             }
 
-            base.RaiseMetaPropertiesChanged(raiseBusy);
+            base.CheckIfMetaPropertiesChanged(raiseBusy);
         }
 
         protected override void ResetMetaState()
@@ -84,7 +84,7 @@ namespace Neatoo
                 // TODO : What if busy??
                 PropertyManager.MarkSelfUnmodified();
                 IsMarkedModified = false;
-                RaiseMetaPropertiesChanged(); // Really shouldn't be anything listening to this
+                CheckIfMetaPropertiesChanged(); // Really shouldn't be anything listening to this
             }
         }
 
@@ -98,7 +98,7 @@ namespace Neatoo
             if (!IsPaused)
             {
                 IsMarkedModified = true;
-                RaiseMetaPropertiesChanged();
+                CheckIfMetaPropertiesChanged();
             }
         }
 
@@ -137,7 +137,7 @@ namespace Neatoo
             if (!IsPaused)
             {
                 IsDeleted = true;
-                RaiseMetaPropertiesChanged();
+                CheckIfMetaPropertiesChanged();
             }
         }
 
@@ -159,12 +159,12 @@ namespace Neatoo
                 if (IsDeleted)
                 {
                     IsDeleted = false;
-                    RaiseMetaPropertiesChanged();
+                    CheckIfMetaPropertiesChanged();
                 }
             }
         }
 
-        protected override Task PropertyManagerNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
+        protected override Task HandleNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
             
             // TODO - if an object isn't assigned to another IBase
@@ -175,7 +175,7 @@ namespace Neatoo
                 child.UnDelete();
             }
 
-            return base.PropertyManagerNeatooPropertyChanged(breadCrumbs);
+            return base.HandleNeatooPropertyChanged(breadCrumbs);
         }
 
         public virtual async Task<IEditBase> Save()
@@ -209,11 +209,6 @@ namespace Neatoo
             return PropertyManager[propertyName];
         }
 
-        new protected IEditProperty GetProperty(IRegisteredProperty registeredProperty)
-        {
-            return PropertyManager[registeredProperty];
-        }
-
         public override IDisposable PauseAllActions()
         {
             PropertyManager.PauseAllActions();
@@ -237,7 +232,7 @@ namespace Neatoo
             IsPaused = false;
         }
 
-            new protected IEditProperty this[string propertyName] { get => GetProperty(propertyName); }
-        new protected IEditProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
+        new protected IEditProperty this[string propertyName] { get => GetProperty(propertyName); }
+
     }
 }

@@ -2,6 +2,6 @@
 {
     internal interface ISetParent
     {
-        void SetParent(IBase parent);
+        void SetParent(IBase? parent);
     }
 }

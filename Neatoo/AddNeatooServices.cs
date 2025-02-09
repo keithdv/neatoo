@@ -77,7 +77,7 @@ namespace Neatoo
             // Meta Data about the properties and methods of Classes
             // This will not change during runtime
             // So SingleInstance
-            services.AddSingleton(typeof(IRegisteredPropertyManager<>), typeof(RegisteredPropertyManager<>));
+            services.AddSingleton(typeof(IPropertyInfoBag<>), typeof(PropertyInfoBag<>));
 
 
             // This was single instance; but now it resolves the Authorization Rules 
@@ -101,11 +101,11 @@ namespace Neatoo
 
             services.AddTransient(typeof(RuleManagerFactory<>));
 
-            services.AddTransient<CreateRegisteredProperty>(factory =>
+            services.AddTransient<CreatePropertyInfoWrapper>(factory =>
             {
                 return (propertyInfo) =>
                 {
-                    return new RegisteredProperty(propertyInfo);
+                    return new NeatooPropertyInfoWrapper(propertyInfo);
                 };
             });
 
@@ -119,25 +119,25 @@ namespace Neatoo
 
             services.AddTransient<CreatePropertyManager>(services =>
             {
-                return (IRegisteredPropertyManager registeredPropertyManager) =>
+                return (IPropertyInfoList propertyInfoList) =>
                 {
-                    return new PropertyManager<IProperty>(registeredPropertyManager, services.GetRequiredService<IFactory>());
+                    return new PropertyManager<IProperty>(propertyInfoList, services.GetRequiredService<IFactory>());
                 };
             });
 
             services.AddTransient<CreateValidatePropertyManager>(services =>
             {
-                return (IRegisteredPropertyManager registeredPropertyManager) =>
+                return (IPropertyInfoList propertyInfoList) =>
                 {
-                    return new ValidatePropertyManager<IValidateProperty>(registeredPropertyManager, services.GetRequiredService<IFactory>());
+                    return new ValidatePropertyManager<IValidateProperty>(propertyInfoList, services.GetRequiredService<IFactory>());
                 };
             });
 
             services.AddTransient<CreateEditPropertyManager>(services =>
             {
-                return (IRegisteredPropertyManager registeredPropertyManager) =>
+                return (IPropertyInfoList propertyInfoList) =>
                 {
-                    return new EditPropertyManager(registeredPropertyManager, services.GetRequiredService<IFactory>());
+                    return new EditPropertyManager(propertyInfoList, services.GetRequiredService<IFactory>());
                 };
             });
 

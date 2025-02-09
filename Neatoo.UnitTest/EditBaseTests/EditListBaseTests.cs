@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neatoo.Portal;
 using Neatoo.UnitTest.PersonObjects;
 using System;
 using System.Collections.Generic;
@@ -25,10 +26,15 @@ namespace Neatoo.UnitTest.EditBaseTests
             list = scope.GetRequiredService<IEditPersonList>();
 
             child = scope.GetRequiredService<IEditPerson>();
-            list.Add(child);
+
             child.MarkUnmodified();
             child.MarkOld();
             child.MarkAsChild();
+
+            using (((IPortalTarget)list).PauseAllActions())
+            {
+                list.Add(child);
+            }
 
             Assert.IsFalse(list.IsBusy);
 

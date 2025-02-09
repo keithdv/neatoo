@@ -31,27 +31,27 @@ namespace Neatoo
 
         public IPropertyManager<IProperty> PropertyManager => EditPropertyManager;
 
-        public IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
+        public IPropertyInfoBag<T> PropertyInfoList { get; }
 
         public EditBaseServices(IReadWritePortal<T> readWritePortal) : base() {
 
-            RegisteredPropertyManager = new RegisteredPropertyManager<T>((System.Reflection.PropertyInfo pi) => new RegisteredProperty(pi));
+            PropertyInfoList = new PropertyInfoBag<T>((System.Reflection.PropertyInfo pi) => new NeatooPropertyInfoWrapper(pi));
 
-            EditPropertyManager = new EditPropertyManager(RegisteredPropertyManager, new DefaultFactory());
+            EditPropertyManager = new EditPropertyManager(PropertyInfoList, new DefaultFactory());
             ReadWritePortal = readWritePortal;  
         }
 
-        public EditBaseServices(CreateEditPropertyManager propertyManager, IRegisteredPropertyManager<T> registeredPropertyManager, RuleManagerFactory<T> ruleManager, IReadWritePortal<T> readWritePortal)
+        public EditBaseServices(CreateEditPropertyManager propertyManager, IPropertyInfoBag<T> propertyInfoList, RuleManagerFactory<T> ruleManager, IReadWritePortal<T> readWritePortal)
         {
-            RegisteredPropertyManager = registeredPropertyManager;
+            PropertyInfoList = propertyInfoList;
             this.ruleManager = ruleManager;
-            EditPropertyManager = propertyManager(registeredPropertyManager);
+            EditPropertyManager = propertyManager(propertyInfoList);
             ReadWritePortal = readWritePortal;
         }
 
         public IRuleManager<T> CreateRuleManager(T target)
         {
-            return ruleManager.CreateRuleManager(target, this.RegisteredPropertyManager);
+            return ruleManager.CreateRuleManager(target, this.PropertyInfoList);
         }
     }
 }

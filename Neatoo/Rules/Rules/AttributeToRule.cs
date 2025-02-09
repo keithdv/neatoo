@@ -6,7 +6,7 @@ namespace Neatoo.Rules.Rules
 
     public interface IAttributeToRule
     {
-        IRule<T> GetRule<T>(IRegisteredProperty r, Type attribute) where T : IValidateBase;
+        IRule<T> GetRule<T>(IPropertyInfo r, Type attribute) where T : IValidateBase;
     }
 
     public class AttributeToRule : IAttributeToRule
@@ -17,7 +17,7 @@ namespace Neatoo.Rules.Rules
 
         }
 
-        public IRule<T> GetRule<T>(IRegisteredProperty r, Type attribute) where T : IValidateBase
+        public IRule<T> GetRule<T>(IPropertyInfo r, Type attribute) where T : IValidateBase
         {
             if (attribute == typeof(RequiredAttribute))
             {

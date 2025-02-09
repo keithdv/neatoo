@@ -14,18 +14,18 @@ namespace Neatoo.Core
         {
         }
 
-        public Property<P> CreateProperty<P>(IRegisteredProperty registeredProperty)
+        public Property<P> CreateProperty<P>(IPropertyInfo propertyInfo)
         {
-            return new Property<P>(registeredProperty.Name);
+            return new Property<P>(propertyInfo.Name);
         }
-        public ValidateProperty<P> CreateValidateProperty<P>(IRegisteredProperty registeredProperty)
+        public ValidateProperty<P> CreateValidateProperty<P>(IPropertyInfo propertyInfo)
         {
-            return new ValidateProperty<P>(registeredProperty.Name);
+            return new ValidateProperty<P>(propertyInfo.Name);
         }
 
-        public EditProperty<P> CreateEditProperty<P>(IRegisteredProperty registeredProperty)
+        public EditProperty<P> CreateEditProperty<P>(IPropertyInfo propertyInfo)
         {
-            return new EditProperty<P>(registeredProperty.Name);
+            return new EditProperty<P>(propertyInfo.Name);
         }
 
     }
@@ -36,9 +36,6 @@ namespace Neatoo.Core
         public GlobalFactoryException() { }
         public GlobalFactoryException(string message) : base(message) { }
         public GlobalFactoryException(string message, Exception inner) : base(message, inner) { }
-        protected GlobalFactoryException(
-          System.Runtime.Serialization.SerializationInfo info,
-          System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
     }
 
 }

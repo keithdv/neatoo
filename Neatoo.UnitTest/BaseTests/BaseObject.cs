@@ -47,7 +47,6 @@ namespace Neatoo.UnitTest.BaseTests
             set { Setter(value); }
         }
 
-        private IRegisteredProperty TestPropertyTypeProperty => GetRegisteredProperty(nameof(TestPropertyType));
         public IA TestPropertyType
         {
             get { return Getter<IA>(); }
@@ -70,7 +69,7 @@ namespace Neatoo.UnitTest.BaseTests
             /// Example - If the types are different you need to explicitly define the type
             /// of the Property
             /// The <IA> in this case
-            this[TestPropertyTypeProperty].SetValue(propertyValue);
+            this[nameof(TestPropertyType)].SetValue(propertyValue);
 
         }
     }

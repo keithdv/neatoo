@@ -7,13 +7,21 @@ using System.Xml.Schema;
 
 namespace Neatoo.Rules
 {
+
     public interface ITriggerProperty<in T>
     {
         string PropertyName { get; }
 
-        bool IsMatch(T target, string propertyName);
         object? GetValue(T target);
+
+        bool IsMatch(T target, string propertyName);
     }
+
+    public interface ITriggerProperty<in T, P> : ITriggerProperty<T>
+    {
+        P? Get(T target);
+    }
+
 
     //internal class TriggerProperty : ITriggerProperty
     //{
@@ -64,11 +72,11 @@ namespace Neatoo.Rules
     //    }
     //}
 
-    public class TriggerProperty<T> : ITriggerProperty<T>
+    public class TriggerProperty<T, P> : ITriggerProperty<T>
     {
-        private readonly Expression<Func<T, object?>> expression;
+        private readonly Expression<Func<T, P?>> expression;
         private readonly string expressionPropertyName;
-        public TriggerProperty(Expression<Func<T, object?>> expression)
+        public TriggerProperty(Expression<Func<T, P?>> expression)
         {
             this.expression = expression;
             expressionPropertyName = RecurseMembers(expression.Body, new List<string>());
@@ -81,6 +89,11 @@ namespace Neatoo.Rules
         }
 
         public object? GetValue(T target)
+        {
+            return Get(target);
+        }
+
+        public P? Get(T target)
         {
             return expression.Compile()(target);
         }
@@ -104,9 +117,10 @@ namespace Neatoo.Rules
             return string.Join('.', properties);
         }
 
-        public static implicit operator TriggerProperty<T>(Expression<Func<T, object?>> expression)
+        public static TriggerProperty<T1, P1> FromExpression<T1, P1>(Expression<Func<T1, P1?>> expression)
         {
-            return new TriggerProperty<T>(expression);
+            return new TriggerProperty<T1, P1>(expression);
         }
+
     }
 }

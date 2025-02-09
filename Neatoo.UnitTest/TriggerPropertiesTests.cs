@@ -26,7 +26,7 @@ namespace Neatoo.UnitTest
         {
             var testSubject = new TriggerPropertiesTestSubject();
 
-            var triggerProperty = new TriggerProperty<TriggerPropertiesTestSubject>((TriggerPropertiesTestSubject t) => t.Child.ChildProperty);
+            var triggerProperty = new TriggerProperty<TriggerPropertiesTestSubject, string>((TriggerPropertiesTestSubject t) => t.Child.ChildProperty);
             // Act
             var result = triggerProperty.IsMatch(testSubject, "Child.ChildProperty");
             // Assert

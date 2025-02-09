@@ -10,29 +10,29 @@ using System.Threading.Tasks;
 namespace Neatoo.UnitTest.ValidateBaseTests
 {
 
-    // Contravariance on IRule< in T > is required for this to work
-    // That way ActualType that inherits from IValidateBase can be cast to IRule < IValidateBase >
-
-    public class SharedShortNameRule<T> : Rules.AsyncRuleBase<T> where T : IValidateBase
+    public interface ISharedShortNameRule : IValidateBase
     {
-        private readonly Expression<Func<T, object?>> shortName;
-        private readonly Expression<Func<T, object?>> firstName;
-        private readonly Expression<Func<T, object?>> lastName;
+        string ShortName { get; set; }
+        string FirstName { get; set; }
+        string LastName { get; set; }
+    }
 
-        public SharedShortNameRule(Expression<Func<T, object?>> shortName, Expression<Func<T, object?>> firstName, Expression<Func<T, object?>> lastName) : base(shortName, firstName, lastName)
+    public class SharedShortNameRule<T> : Rules.AsyncRuleBase<T> where T : ISharedShortNameRule
+    {
+
+        public SharedShortNameRule() : base()
         {
-            this.shortName = shortName;
-            this.firstName = firstName;
-            this.lastName = lastName;
+            base.AddTriggerProperties(_=> _.ShortName, _=>_.FirstName, _=>_.LastName);
         }
 
         public override async Task<PropertyErrors> Execute(T target, CancellationToken token)
         {
             await Task.Delay(10);
 
-            var sn = $"{ReadProperty(firstName)?.ToString()} {ReadProperty(lastName)?.ToString()}";
+            var sn = $"{target.FirstName} {target.LastName}";
 
-            LoadProperty(shortName, sn);
+            // Prevent cascading rules or any PropertyChanged events
+            LoadProperty(target, _ => _.ShortName, sn);
 
             return PropertyErrors.None;
 
@@ -41,12 +41,12 @@ namespace Neatoo.UnitTest.ValidateBaseTests
 
     public interface ISharedAsyncRuleObject : IPersonBase { }
 
-    public class SharedAsyncRuleObject : PersonValidateBase<SharedAsyncRuleObject>, ISharedAsyncRuleObject
+    public class SharedAsyncRuleObject : PersonValidateBase<SharedAsyncRuleObject>, ISharedAsyncRuleObject, ISharedShortNameRule
     {
 
         public SharedAsyncRuleObject(IValidateBaseServices<SharedAsyncRuleObject> services) : base(services)
         {
-            RuleManager.AddRule(new SharedShortNameRule<SharedAsyncRuleObject>(_ => _.ShortName, _ => _.FirstName, _ => _.LastName));
+            RuleManager.AddRule(new SharedShortNameRule<SharedAsyncRuleObject>());
         }
 
     }

@@ -136,6 +136,11 @@ namespace HorseBarn.lib.integration.tests
             CollectionAssert.AreEquivalent(horseNames, horseBarnContext.Horses.Select(h => h.Name).ToList());
             CollectionAssert.AreEquivalent(horseBarn.Carts.Select(c => c.Id).ToList(), horseBarnContext.Carts.Select(c => c.Id).ToList());
             Assert.AreEqual(horseBarn.Pasture.Id, horseBarnContext.Pastures.Single().Id);
+
+
+            horseBarn = await portal.Fetch();
+
+            Assert.IsFalse(horseBarn.IsModified);
         }
 
         [TestMethod]

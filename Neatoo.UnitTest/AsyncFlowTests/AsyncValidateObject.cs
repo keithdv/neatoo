@@ -74,14 +74,6 @@ namespace Neatoo.UnitTest.AsyncFlowTests
             RunCount++;
             await Task.Delay(2);
             target.AsyncRulesCanWaitNested = "Value";
-            var prop = base.ReadProperty(nameof(AsyncValidateObject.AsyncRulesCanWait));
-
-            // Deadlock
-            //if(target.AsyncRulesCanWait == "Wait")
-            //{
-            //    await prop;
-            //    Assert.AreEqual("Ran", prop.Value);
-            //}
 
             return PropertyErrors.None;
         }

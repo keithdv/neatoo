@@ -12,7 +12,7 @@ namespace Neatoo
     public interface IBaseServices<T>
     {
         IPropertyManager<IProperty> PropertyManager { get; }
-        IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
+        IPropertyInfoBag<T> PropertyInfoList { get; }
     }
 
 
@@ -21,19 +21,19 @@ namespace Neatoo
     {
         public BaseServices()
         {
-            RegisteredPropertyManager = new RegisteredPropertyManager<T>((PropertyInfo pi) => new RegisteredProperty(pi));
-            PropertyManager = new PropertyManager<IProperty>(RegisteredPropertyManager, new DefaultFactory());
+            PropertyInfoList = new PropertyInfoBag<T>((PropertyInfo pi) => new NeatooPropertyInfoWrapper(pi));
+            PropertyManager = new PropertyManager<IProperty>(PropertyInfoList, new DefaultFactory());
         }
 
-        public BaseServices(CreatePropertyManager propertyManager, IRegisteredPropertyManager<T> registeredPropertyManager)
+        public BaseServices(CreatePropertyManager propertyManager, IPropertyInfoBag<T> propertyInfoList)
         {
-            RegisteredPropertyManager = registeredPropertyManager;
-            PropertyManager = propertyManager(RegisteredPropertyManager);
+            PropertyInfoList = propertyInfoList;
+            PropertyManager = propertyManager(PropertyInfoList);
         }
 
 
         public IPropertyManager<IProperty> PropertyManager { get; protected set; }
-        public IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
+        public IPropertyInfoBag<T> PropertyInfoList { get; }
 
     }
 }

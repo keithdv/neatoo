@@ -16,11 +16,11 @@ namespace Neatoo.UnitTest.BaseTests
         private IBaseObjectList list;
         private IBaseObject parent;
         private List<string> parentPropertyNames = new List<string>();
-        private List<PropertyNameBreadCrumbs> parentBreadCrumbs = new List<PropertyNameBreadCrumbs>();
+        private List<PropertyChangedBreadCrumbs> parentBreadCrumbs = new List<PropertyChangedBreadCrumbs>();
         private List<string> childPropertyNames = new List<string>();
-        private List<PropertyNameBreadCrumbs> childBreadCrumbs = new List<PropertyNameBreadCrumbs>();
+        private List<PropertyChangedBreadCrumbs> childBreadCrumbs = new List<PropertyChangedBreadCrumbs>();
         private List<string> listPropertyNames = new List<string>();
-        private List<PropertyNameBreadCrumbs> listBreadCrumbs = new List<PropertyNameBreadCrumbs>();
+        private List<PropertyChangedBreadCrumbs> listBreadCrumbs = new List<PropertyChangedBreadCrumbs>();
 
         [TestInitialize]
         public void TestInitialize()
@@ -56,7 +56,7 @@ namespace Neatoo.UnitTest.BaseTests
             parentPropertyNames.Add(e.PropertyName);
         }
 
-        private Task Parent_NeatooPropertyChanged(PropertyNameBreadCrumbs propertyNameBreadCrumbs)
+        private Task Parent_NeatooPropertyChanged(PropertyChangedBreadCrumbs propertyNameBreadCrumbs)
         {
             parentBreadCrumbs.Add(propertyNameBreadCrumbs);
             return Task.CompletedTask;
@@ -67,7 +67,7 @@ namespace Neatoo.UnitTest.BaseTests
             childPropertyNames.Add(e.PropertyName);
         }
 
-        private Task Child_NeatooPropertyChanged(PropertyNameBreadCrumbs propertyNameBreadCrumbs)
+        private Task Child_NeatooPropertyChanged(PropertyChangedBreadCrumbs propertyNameBreadCrumbs)
         {
             childBreadCrumbs.Add(propertyNameBreadCrumbs);
             return Task.CompletedTask;
@@ -78,7 +78,7 @@ namespace Neatoo.UnitTest.BaseTests
             listPropertyNames.Add(e.PropertyName);
         }
 
-        private Task List_NeatooPropertyChanged(PropertyNameBreadCrumbs propertyNameBreadCrumbs)
+        private Task List_NeatooPropertyChanged(PropertyChangedBreadCrumbs propertyNameBreadCrumbs)
         {
             listBreadCrumbs.Add(propertyNameBreadCrumbs);
             return Task.CompletedTask;

@@ -26,10 +26,8 @@ namespace Neatoo
         internal string ObjectInvalid { get; }
 
         internal new IValidateProperty GetProperty(string propertyName);
-        internal new IValidateProperty GetProperty(IRegisteredProperty registeredProperty);
 
         new internal IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
-        new internal IValidateProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     }
 
     public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IPortalTarget
@@ -54,9 +52,9 @@ namespace Neatoo
 
         protected (bool IsValid, bool IsSelfValid, bool IsBusy, bool IsSelfBusy) MetaState { get; private set; }
 
-        protected override void RaiseMetaPropertiesChanged(bool raiseBusy = false)
+        protected override void CheckIfMetaPropertiesChanged(bool raiseBusy = false)
         {
-            base.RaiseMetaPropertiesChanged();
+            base.CheckIfMetaPropertiesChanged();
 
             if (MetaState.IsValid != IsValid)
             {
@@ -83,17 +81,16 @@ namespace Neatoo
             MetaState = (IsValid, IsSelfValid, IsBusy, IsSelfBusy);
         }
 
-        protected override async Task PropertyManagerNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
+        protected override async Task HandleNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
-            await base.PropertyManagerNeatooPropertyChanged(breadCrumbs);
+            await base.HandleNeatooPropertyChanged(breadCrumbs);
 
             if (!IsPaused)
             {
-                RaisePropertyChanged(breadCrumbs.PropertyName);
                 await CheckRules(breadCrumbs.FullPropertyName);
             }
 
-            RaiseMetaPropertiesChanged();
+            CheckIfMetaPropertiesChanged();
         }
 
         protected virtual Task AddAsyncMethod(Func<Task, Task> method, bool runOnException = false)
@@ -112,7 +109,7 @@ namespace Neatoo
         {
             ObjectInvalid = message;
             this[nameof(ObjectInvalid)].SetErrorsForRule(0, new ReadOnlyCollection<string>(new List<string> { message }));
-            RaiseMetaPropertiesChanged();
+            CheckIfMetaPropertiesChanged();
         }
 
         public string ObjectInvalid { get => Getter<string>(); protected set => Setter(value); }
@@ -122,13 +119,7 @@ namespace Neatoo
             return PropertyManager[propertyName];
         }
 
-        new protected IValidateProperty GetProperty(IRegisteredProperty registeredProperty)
-        {
-            return PropertyManager[registeredProperty];
-        }
-
         new protected IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
-        new protected IValidateProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
 
         public bool IsPaused { get; protected set; }
 
@@ -158,13 +149,18 @@ namespace Neatoo
             ResumeAllActions();
         }
 
+        public virtual Task PostPortalConstruct()
+        {
+            return Task.CompletedTask;
+        }
+
         public Task CheckRules(string propertyName)
         {
             if (this[nameof(ObjectInvalid)].IsSelfValid)
             {
                 var task = RuleManager.CheckRulesForProperty(propertyName);
 
-                RaiseMetaPropertiesChanged();
+                CheckIfMetaPropertiesChanged();
 
                 return task;
             }
@@ -223,10 +219,6 @@ namespace Neatoo
             return GetProperty(propertyName);
         }
 
-        IValidateProperty IValidateBase.GetProperty(IRegisteredProperty registeredProperty)
-        {
-            return GetProperty(registeredProperty);
-        }
     }
 }
 

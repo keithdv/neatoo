@@ -20,7 +20,7 @@ namespace Neatoo
     public class ValidateBaseServices<T> : IValidateBaseServices<T>
         where T : ValidateBase<T>
     {
-        public IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
+        public IPropertyInfoBag<T> PropertyInfoList { get; }
         public IValidatePropertyManager<IValidateProperty> ValidatePropertyManager { get; }
 
         public RuleManagerFactory<T> ruleManagerFactory { get; }
@@ -29,20 +29,20 @@ namespace Neatoo
 
         public ValidateBaseServices() : base()
         {
-            RegisteredPropertyManager = new RegisteredPropertyManager<T>((System.Reflection.PropertyInfo pi) => new RegisteredProperty(pi));
-            this.ValidatePropertyManager = new ValidatePropertyManager<IValidateProperty>(RegisteredPropertyManager, new DefaultFactory());
+            PropertyInfoList = new PropertyInfoBag<T>((System.Reflection.PropertyInfo pi) => new NeatooPropertyInfoWrapper(pi));
+            this.ValidatePropertyManager = new ValidatePropertyManager<IValidateProperty>(PropertyInfoList, new DefaultFactory());
             this.ruleManagerFactory = new RuleManagerFactory<T>(new AttributeToRule());
         }
 
-        public ValidateBaseServices(IRegisteredPropertyManager<T> registeredPropertyManager, RuleManagerFactory<T> createRuleManager)
+        public ValidateBaseServices(IPropertyInfoBag<T> propertyInfoList, RuleManagerFactory<T> createRuleManager)
         {
             this.ruleManagerFactory = createRuleManager;
         }
 
-        public ValidateBaseServices(CreateValidatePropertyManager  validatePropertyManager, IRegisteredPropertyManager<T> registeredPropertyManager, RuleManagerFactory<T> createRuleManager)
+        public ValidateBaseServices(CreateValidatePropertyManager  validatePropertyManager, IPropertyInfoBag<T> propertyInfoList, RuleManagerFactory<T> createRuleManager)
         {
-            RegisteredPropertyManager = new RegisteredPropertyManager<T>((System.Reflection.PropertyInfo pi) => new RegisteredProperty(pi));
-            ValidatePropertyManager = validatePropertyManager(RegisteredPropertyManager);
+            PropertyInfoList = new PropertyInfoBag<T>((System.Reflection.PropertyInfo pi) => new NeatooPropertyInfoWrapper(pi));
+            ValidatePropertyManager = validatePropertyManager(PropertyInfoList);
             this.ruleManagerFactory = createRuleManager;
         }
 
@@ -50,7 +50,7 @@ namespace Neatoo
 
         public IRuleManager<T> CreateRuleManager(T target)
         {
-            return ruleManagerFactory.CreateRuleManager(target, this.RegisteredPropertyManager);
+            return ruleManagerFactory.CreateRuleManager(target, this.PropertyInfoList);
         }
 
     }

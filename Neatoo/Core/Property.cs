@@ -26,26 +26,26 @@ namespace Neatoo.Core
         new T? Value { get; set; }
     }
 
-    public class PropertyNameBreadCrumbs
+    public class PropertyChangedBreadCrumbs
     {
-        public PropertyNameBreadCrumbs(string propertyName, object source)
+        public PropertyChangedBreadCrumbs(string propertyName, object source)
         {
             PropertyName = propertyName;
             Source = source;
         }
 
-        public PropertyNameBreadCrumbs(string propertyName, object source, PropertyNameBreadCrumbs previousPropertyName) : this(propertyName, source)
+        public PropertyChangedBreadCrumbs(string propertyName, object source, PropertyChangedBreadCrumbs previousPropertyName) : this(propertyName, source)
         {
             PreviousPropertyName = previousPropertyName;
         }
 
         public string PropertyName { get; private set; }
         public object Source { get; private set; }
-        public PropertyNameBreadCrumbs? PreviousPropertyName { get; private set; }
+        public PropertyChangedBreadCrumbs? PreviousPropertyName { get; private set; }
         public string FullPropertyName => PropertyName + (PreviousPropertyName == null ? "" : "." + PreviousPropertyName.FullPropertyName);
     }
 
-    public delegate Task NeatooPropertyChanged(PropertyNameBreadCrumbs propertyNameBreadCrumbs);
+    public delegate Task NeatooPropertyChanged(PropertyChangedBreadCrumbs propertyNameBreadCrumbs);
 
     public class Property<T> : IProperty<T>, IProperty, INotifyPropertyChanged, IJsonOnDeserialized
     {
@@ -62,6 +62,7 @@ namespace Neatoo.Core
             }
         }
 
+        [JsonIgnore]
         public virtual string? StringValue
         {
             get
@@ -145,7 +146,7 @@ namespace Neatoo.Core
             _value = default;
             OnPropertyChanged(nameof(Value));
 
-            Task = OnValueNeatooPropertyChanged(new PropertyNameBreadCrumbs(this.Name, this));
+            Task = OnValueNeatooPropertyChanged(new PropertyChangedBreadCrumbs(this.Name, this));
         }
 
         protected virtual void HandleNonNullValue(T value)
@@ -171,7 +172,7 @@ namespace Neatoo.Core
 
                 OnPropertyChanged(nameof(Value));
 
-                Task = OnValueNeatooPropertyChanged(new PropertyNameBreadCrumbs(this.Name, this));
+                Task = OnValueNeatooPropertyChanged(new PropertyChangedBreadCrumbs(this.Name, this));
             }
         }
 
@@ -180,13 +181,13 @@ namespace Neatoo.Core
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        protected virtual Task _OnValueNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
+        protected virtual Task _OnValueNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
-            return NeatooPropertyChanged?.Invoke(new PropertyNameBreadCrumbs(this.Name, this.Value, breadCrumbs)) ?? Task.CompletedTask;
+            return NeatooPropertyChanged?.Invoke(new PropertyChangedBreadCrumbs(this.Name, this.Value, breadCrumbs)) ?? Task.CompletedTask;
         }
         private Task IsSelfBusyTask = Task.CompletedTask;
 
-        protected virtual Task OnValueNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
+        protected virtual Task OnValueNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
             // ValidateBase sticks Task into AsyncTaskSequencer for us
             // so that it will be awaited by WaitForTasks()

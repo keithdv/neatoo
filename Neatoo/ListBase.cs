@@ -1,5 +1,6 @@
 ﻿using Neatoo.Core;
 using Neatoo.Portal;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -21,7 +22,7 @@ namespace Neatoo
 
     public interface IListBase : INeatooObject, INotifyCollectionChanged, INotifyPropertyChanged, IEnumerable, ICollection, IList, INotifyNeatooPropertyChanged, IBaseMetaProperties
     {
-        IBase Parent { get; }
+        IBase? Parent { get; }
     }
 
     public interface IListBase<I> : IListBase, IReadOnlyListBase<I>, IEnumerable<I>, ICollection<I>, IList<I>
@@ -34,7 +35,7 @@ namespace Neatoo
     }
 
 
-    public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, ISetParent, IJsonOnDeserialized, IJsonOnDeserializing, IBaseMetaProperties
+    public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, ISetParent, IJsonOnDeserialized, IJsonOnDeserializing, IBaseMetaProperties, IPortalTarget
         where T : ListBase<T, I>
         where I : IBase
     {
@@ -45,15 +46,16 @@ namespace Neatoo
             ItemPortal = services.ReadPortal;
         }
 
-        public IBase Parent { get; protected set; }
+        public IBase? Parent { get; protected set; }
 
         public bool IsBusy => this.Any(c => c.IsBusy);
         public bool IsSelfBusy => false;
-        public event NeatooPropertyChanged NeatooPropertyChanged;
+        public event NeatooPropertyChanged? NeatooPropertyChanged;
 
-        #region "Match Base"
         void ISetParent.SetParent(IBase parent)
         {
+            // The list is not the Parent
+
             Parent = parent;
 
             foreach (var item in this)
@@ -65,28 +67,27 @@ namespace Neatoo
             }
         }
 
-
-        #endregion
-
-
         protected override void InsertItem(int index, I item)
         {
             ((ISetParent)item).SetParent(this.Parent);
 
             base.InsertItem(index, item);
 
-            item.NeatooPropertyChanged += _ChildNeatooPropertyChanged;
+            item.PropertyChanged += _PropertyChanged;
+            item.NeatooPropertyChanged += _NeatooPropertyChanged;
 
-            RaiseNeatooPropertyChanged(new PropertyNameBreadCrumbs(nameof(Count), this));
+            RaiseNeatooPropertyChanged(new PropertyChangedBreadCrumbs(nameof(Count), this));
         }
 
         protected override void RemoveItem(int index)
         {
-            this[index].NeatooPropertyChanged -= _ChildNeatooPropertyChanged;
+
+            this[index].PropertyChanged -= _PropertyChanged;
+            this[index].NeatooPropertyChanged -= _NeatooPropertyChanged;
 
             base.RemoveItem(index);
 
-            RaiseNeatooPropertyChanged(new PropertyNameBreadCrumbs(nameof(Count), this));
+            RaiseNeatooPropertyChanged(new PropertyChangedBreadCrumbs(nameof(Count), this));
         }
 
         public async Task<I> CreateAdd()
@@ -103,6 +104,25 @@ namespace Neatoo
             return item;
         }
 
+        IDisposable? IPortalTarget.PauseAllActions()
+        {
+            return default;
+        }
+
+        void IPortalTarget.ResumeAllActions()
+        {
+        }
+
+        Task IPortalTarget.PostPortalConstruct()
+        {
+            return this.PostPortalConstruct();
+        }
+
+        protected virtual Task PostPortalConstruct()
+        {
+            return Task.CompletedTask;
+        }
+
         public virtual void OnDeserializing()
         {
         }
@@ -111,7 +131,8 @@ namespace Neatoo
         {
             foreach (var item in this)
             {
-                item.NeatooPropertyChanged += _ChildNeatooPropertyChanged;
+                item.PropertyChanged += _PropertyChanged;
+                item.NeatooPropertyChanged += _NeatooPropertyChanged;
                 if (item is ISetParent setParent)
                 {
                     setParent.SetParent(this.Parent);
@@ -119,20 +140,35 @@ namespace Neatoo
             }
         }
 
-        protected virtual Task RaiseNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
+        protected virtual Task RaiseNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
             return NeatooPropertyChanged?.Invoke(breadCrumbs) ?? Task.CompletedTask;
         }
 
-        protected virtual Task OnChildNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
+        protected virtual Task HandleNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
             // Lists don't add to the breadcrumbs
             return RaiseNeatooPropertyChanged(breadCrumbs);
         }
 
-        private Task _ChildNeatooPropertyChanged(PropertyNameBreadCrumbs propertyNameBreadCrumbs)
+        private Task _NeatooPropertyChanged(PropertyChangedBreadCrumbs propertyNameBreadCrumbs)
         {
-            return OnChildNeatooPropertyChanged(propertyNameBreadCrumbs);
+            return HandleNeatooPropertyChanged(propertyNameBreadCrumbs);
+        }
+
+        protected virtual void HandlePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            CheckIfMetaPropertiesChanged(true);
+        }
+
+        private void _PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            HandlePropertyChanged(sender, e);
+        }
+
+        protected virtual void CheckIfMetaPropertiesChanged(bool raiseBusy = false)
+        {
+
         }
 
         public async Task WaitForTasks()

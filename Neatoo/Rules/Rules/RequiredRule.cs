@@ -13,21 +13,21 @@ namespace Neatoo.Rules.Rules
         internal class RequiredRule<T> : RuleBase<T>, IRequiredRule<T>
         where T : IValidateBase
     {
-        public RequiredRule(IRegisteredProperty registeredProperty) : base() {
+        public RequiredRule(IPropertyInfo propertyInfo) : base() {
 
 
 
             var parameter = Expression.Parameter(typeof(T));
-            var property = Expression.Property(parameter, registeredProperty.Name);
+            var property = Expression.Property(parameter, propertyInfo.Name);
             var lambda = Expression.Lambda<Func<T, object?>>(Expression.Convert(property, typeof(object)), parameter);
-            var tr = new TriggerProperty<T>(lambda);
+            var tr = new TriggerProperty<T, object>(lambda);
 
             TriggerProperties.Add(tr);
         }
 
         public override PropertyErrors Execute(T target)
         {
-            var value = ReadProperty(TriggerProperties[0]);
+            var value = TriggerProperties[0].GetValue(target);
 
             bool isError = false;
 

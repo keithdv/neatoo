@@ -7,13 +7,13 @@ using System.Reflection;
 namespace Neatoo.Core
 {
 
-    public class RegisteredPropertyManager<T> : IRegisteredPropertyManager<T>
+    public class PropertyInfoBag<T> : IPropertyInfoBag<T>
     {
 
-        protected CreateRegisteredProperty CreateRegisteredProperty { get; }
-        protected static IDictionary<Type, IDictionary<string, IRegisteredProperty>> RegisteredPropertiesByType { get; } = new ConcurrentDictionary<Type, IDictionary<string, IRegisteredProperty>>();
+        protected CreatePropertyInfoWrapper CreatePropertyInfo { get; }
+        protected static IDictionary<Type, IDictionary<string, IPropertyInfo>> RegisteredPropertiesByType { get; } = new ConcurrentDictionary<Type, IDictionary<string, IPropertyInfo>>();
 
-        protected IDictionary<string, IRegisteredProperty> RegisteredProperties
+        protected IDictionary<string, IPropertyInfo> RegisteredProperties
         {
             get
             {
@@ -25,10 +25,10 @@ namespace Neatoo.Core
 protected static object lockRegisteredProperties = new object();
         protected Type Type { get; set; }
 
-        public RegisteredPropertyManager(CreateRegisteredProperty createRegisteredProperty)
+        public PropertyInfoBag(CreatePropertyInfoWrapper createPropertyInfoWrapper)
         {
 
-            CreateRegisteredProperty = createRegisteredProperty;
+            CreatePropertyInfo = createPropertyInfoWrapper;
 
             Type = typeof(T);
 
@@ -47,7 +47,7 @@ protected static object lockRegisteredProperties = new object();
                     return;
                 }
 
-                RegisteredPropertiesByType[Type] = new Dictionary<string, IRegisteredProperty>();
+                RegisteredPropertiesByType[Type] = new Dictionary<string, IPropertyInfo>();
 
                 var type = this.Type;
 
@@ -61,7 +61,7 @@ protected static object lockRegisteredProperties = new object();
 
                     foreach (var p in properties)
                     {
-                        var prop = CreateRegisteredProperty(p);
+                        var prop = CreatePropertyInfo(p);
                         if (!RegisteredProperties.ContainsKey(p.Name))
                         {
                             RegisteredProperties.Add(p.Name, prop);
@@ -78,7 +78,7 @@ protected static object lockRegisteredProperties = new object();
 
                     if (objProp != null)
                     {
-                        RegisteredProperties.Add(nameof(IValidateBase.ObjectInvalid), CreateRegisteredProperty(objProp));
+                        RegisteredProperties.Add(nameof(IValidateBase.ObjectInvalid), CreatePropertyInfo(objProp));
                         break;
                     }
 
@@ -90,7 +90,7 @@ protected static object lockRegisteredProperties = new object();
 
         }
 
-        public IRegisteredProperty GetRegisteredProperty(string propertyName)
+        public IPropertyInfo GetPropertyInfo(string propertyName)
         {
             RegisterProperties();
 
@@ -102,7 +102,7 @@ protected static object lockRegisteredProperties = new object();
             return prop;
         }
 
-        public IEnumerable<IRegisteredProperty> GetRegisteredProperties()
+        public IEnumerable<IPropertyInfo> Properties()
         {
             RegisterProperties();
             return RegisteredProperties.Values;

@@ -11,7 +11,6 @@ namespace Neatoo.UnitTest.PersonObjects
         {
         }
 
-        private IRegisteredProperty IdProperty => GetRegisteredProperty(nameof(Id));
         public Guid Id { get { return Getter<Guid>(); } }
 
         public string FirstName { get { return Getter<string>(); } set { Setter(value); } }
@@ -29,7 +28,7 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public void FillFromDto(PersonDto dto)
         {
-             this[IdProperty].LoadValue(dto.PersonId);
+             this[nameof(Id)].LoadValue(dto.PersonId);
 
             // These will not mark IsModified to true
             // as long as within ObjectPortal operation

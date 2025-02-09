@@ -11,12 +11,12 @@ namespace Neatoo.Portal
     {
         public PortalOperation PortalOperation { get; set; }
         public ObjectTypeJson Target { get; set; }
-        public List<ObjectTypeJson> Criteria { get; set; }
+        public List<ObjectTypeJson>? Criteria { get; set; }
     }
 
     public class ObjectTypeJson
     {
-        public string Json { get; set; }
+        public string? Json { get; set; }
         public string AssemblyType { get; set; }
     }
 

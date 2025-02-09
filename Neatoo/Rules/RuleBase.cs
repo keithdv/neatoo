@@ -61,7 +61,7 @@ namespace Neatoo.Rules
 
         public AsyncRuleBase(IEnumerable<Expression<Func<T, object?>>> triggerOnPropertyNames) : this()
         {
-            TriggerProperties.AddRange(triggerOnPropertyNames.Select(propertyName => new TriggerProperty<T>(propertyName)));
+            TriggerProperties.AddRange(triggerOnPropertyNames.Select(propertyName => new TriggerProperty<T, object?>(propertyName)));
         }
 
         /// <summary>
@@ -74,14 +74,14 @@ namespace Neatoo.Rules
         IReadOnlyList<ITriggerProperty<T>> IRule<T>.TriggerProperties => TriggerProperties.AsReadOnly();
         protected List<ITriggerProperty<T>> TriggerProperties { get; } = new List<ITriggerProperty<T>>();
 
-        protected AsyncLocal<T> runRuleTarget = new AsyncLocal<T>();
-
-        // TODO : I Think I can get rid of this using Expressions
-        protected T RunRuleTarget { get => runRuleTarget.Value; set { runRuleTarget.Value = value; } }
-
-        protected virtual void AddTriggerProperties(params Expression<Func<T, Object>>[] triggerOnExpression)
+        protected virtual void AddTriggerProperties(params Expression<Func<T, object?>>[] triggerOnExpression)
         {
-            TriggerProperties.AddRange(triggerOnExpression.Select(expression => new TriggerProperty<T>(expression)));
+            TriggerProperties.AddRange(triggerOnExpression.Select(expression => new TriggerProperty<T, object?>(expression)));
+        }
+
+        protected virtual void AddTriggerProperties(params ITriggerProperty<T>[] triggerProperties)
+        {
+            TriggerProperties.AddRange(triggerProperties);
         }
 
         public abstract Task<PropertyErrors> Execute(T t, CancellationToken token);
@@ -90,8 +90,6 @@ namespace Neatoo.Rules
         public async Task<PropertyErrors> RunRule(T target, CancellationToken token)
         {
             // I want to allow registering rules as static
-
-            RunRuleTarget = target;
             try
             {
                 var propertyErrors = await Execute(target, token);
@@ -132,36 +130,6 @@ namespace Neatoo.Rules
 
                 throw;
             }
-            finally
-            {
-                runRuleTarget.Value = default;
-            }
-        }
-
-
-        protected object? ReadProperty(string propertyName)
-        {
-            return RunRuleTarget[propertyName].Value;
-        }
-
-        protected object? ReadProperty(ITriggerProperty<T> triggerProperty)
-        {
-            return RunRuleTarget[triggerProperty.PropertyName].Value;
-        }
-
-        protected object? ReadProperty(TriggerProperty<T> triggerProperty)
-        {
-            return ReadProperty((ITriggerProperty<T>)triggerProperty);
-        }
-
-        protected void SetProperty<P>(ITriggerProperty<T> triggerProperty, P value)
-        {
-            RunRuleTarget[triggerProperty.PropertyName].SetValue(value);
-        }
-
-        protected void SetProperty<P>(TriggerProperty<T> triggerProperty, P value)
-        {
-            SetProperty((ITriggerProperty<T>)triggerProperty, value);
         }
 
         /// <summary>
@@ -169,23 +137,44 @@ namespace Neatoo.Rules
         /// </summary>
         /// <typeparam name="P"></typeparam>
         /// <param name="target"></param>
-        /// <param name="registeredProperty"></param>
+        /// <param name="triggerProperty"></param>
         /// <param name="value"></param>
-        protected void LoadProperty(ITriggerProperty<T> registeredProperty, object? value)
+        protected void LoadProperty(T target, ITriggerProperty<T> triggerProperty, object? value)
         {
-            if (RunRuleTarget[registeredProperty.PropertyName] is IValidateProperty editProperty)
+            if (target[triggerProperty.PropertyName] is IValidateProperty editProperty)
             {
                 editProperty.LoadValue(value);
             }
             else
             {
-                RunRuleTarget[registeredProperty.PropertyName].SetValue(value);
+                target[triggerProperty.PropertyName].SetValue(value);
             }
         }
 
-        protected void LoadProperty(TriggerProperty<T> registeredProperty, object? value)
+        protected void LoadProperty<P>(T target, ITriggerProperty<T, P> triggerProperty, P? value)
         {
-            LoadProperty((ITriggerProperty<T>)registeredProperty, value);
+            if (target[triggerProperty.PropertyName] is IValidateProperty editProperty)
+            {
+                editProperty.LoadValue(value);
+            }
+            else
+            {
+                target[triggerProperty.PropertyName].SetValue(value);
+            }
+        }
+
+        protected void LoadProperty<P>(T target, Expression<Func<T, P?>> expression, P? value)
+        {
+            var triggerProperty = new TriggerProperty<T, P>(expression);
+
+            if (target[triggerProperty.PropertyName] is IValidateProperty editProperty)
+            {
+                editProperty.LoadValue(value);
+            }
+            else
+            {
+                target[triggerProperty.PropertyName].SetValue(value);
+            }
         }
 
     }

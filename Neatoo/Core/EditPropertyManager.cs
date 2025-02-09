@@ -44,7 +44,7 @@ namespace Neatoo.Core
         }
 
         [JsonIgnore]
-        public IEditMetaProperties EditChild => Value as IEditMetaProperties;
+        public IEditMetaProperties? EditChild => Value as IEditMetaProperties;
 
         protected override void OnPropertyChanged(string propertyName)
         {
@@ -78,24 +78,27 @@ namespace Neatoo.Core
     }
 
 
-    public delegate IEditPropertyManager CreateEditPropertyManager(IRegisteredPropertyManager registeredPropertyManager);
+    public delegate IEditPropertyManager CreateEditPropertyManager(IPropertyInfoList propertyInfoList);
 
     public class EditPropertyManager : ValidatePropertyManager<IEditProperty>, IEditPropertyManager
     {
 
 
-        public EditPropertyManager(IRegisteredPropertyManager registeredPropertyManager, IFactory factory) : base(registeredPropertyManager, factory)
+        public EditPropertyManager(IPropertyInfoList propertyInfoList, IFactory factory) : base(propertyInfoList, factory)
         {
 
         }
 
-        protected new IProperty CreateProperty<PV>(IRegisteredProperty registeredProperty)
+        protected new IProperty CreateProperty<PV>(IPropertyInfo propertyInfo)
         {
-            return Factory.CreateEditProperty<PV>(registeredProperty);
+            var property = Factory.CreateEditProperty<PV>(propertyInfo);
+            property.IsPaused = IsPaused;
+            return property;
         }
 
         public bool IsModified => PropertyBag.Values.Any(p => p.IsModified);
         public bool IsSelfModified => PropertyBag.Values.Any(p => p.IsSelfModified);
+        public bool IsPaused = false;
 
         public IEnumerable<string> ModifiedProperties => PropertyBag.Values.Where(f => f.IsModified).Select(f => f.Name);
 
@@ -107,8 +110,11 @@ namespace Neatoo.Core
             }
         }
 
+
+
         public void PauseAllActions()
         {
+            IsPaused = true;
             foreach (var fd in PropertyBag.Values)
             {
                 fd.IsPaused = true;
@@ -117,6 +123,7 @@ namespace Neatoo.Core
 
         public void ResumeAllActions()
         {
+            IsPaused = false;
             foreach (var fd in PropertyBag.Values)
             {
                 fd.IsPaused = false;
@@ -126,14 +133,12 @@ namespace Neatoo.Core
 
 
     [Serializable]
-    public class RegisteredPropertyEditChildDataWrongTypeException : Exception
+    public class PropertyInfoEditChildDataWrongTypeException : Exception
     {
-        public RegisteredPropertyEditChildDataWrongTypeException() { }
-        public RegisteredPropertyEditChildDataWrongTypeException(string message) : base(message) { }
-        public RegisteredPropertyEditChildDataWrongTypeException(string message, Exception inner) : base(message, inner) { }
-        protected RegisteredPropertyEditChildDataWrongTypeException(
-          System.Runtime.Serialization.SerializationInfo info,
-          System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
+        public PropertyInfoEditChildDataWrongTypeException() { }
+        public PropertyInfoEditChildDataWrongTypeException(string message) : base(message) { }
+        public PropertyInfoEditChildDataWrongTypeException(string message, Exception inner) : base(message, inner) { }
+
     }
 
 }

@@ -11,13 +11,7 @@ namespace Neatoo.UnitTest.PersonObjects
         {
         }
 
-        private IRegisteredProperty IdProperty => GetRegisteredProperty(nameof(Id));
         public Guid Id { get { return Getter<Guid>(); } }
-
-        public IRegisteredProperty TryGetRegisteredProperty<PP>(Action<PP> lamba)
-        {
-            return null;
-        }
 
         public string FirstName
         {
@@ -56,7 +50,7 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public void FillFromDto(PersonDto dto)
         {
-            this[IdProperty].SetValue(dto.PersonId);
+            this[nameof(Id)].SetValue(dto.PersonId);
 
             FirstName = dto.FirstName;
             LastName = dto.LastName;

@@ -39,9 +39,9 @@ namespace Neatoo.Rules
 
         public IAttributeToRule AttributeToRule { get; }
 
-        public IRuleManager<T> CreateRuleManager(T target, IRegisteredPropertyManager registeredPropertyManager)
+        public IRuleManager<T> CreateRuleManager(T target, IPropertyInfoList propertyInfoList)
         {
-            return new RuleManager<T>(target, registeredPropertyManager, AttributeToRule);
+            return new RuleManager<T>(target, propertyInfoList, AttributeToRule);
         }
     }
 
@@ -50,19 +50,19 @@ namespace Neatoo.Rules
     {
         protected T Target { get; }
 
-        public RuleManager(T target, IRegisteredPropertyManager registeredPropertyManager, IAttributeToRule attributeToRule)
+        public RuleManager(T target, IPropertyInfoList propertyInfoList, IAttributeToRule attributeToRule)
         {
             this.Target = target ?? throw new TargetIsNullException();
-            AddAttributeRules(attributeToRule, registeredPropertyManager);
+            AddAttributeRules(attributeToRule, propertyInfoList);
         }
 
         IEnumerable<IRule> IRuleManager.Rules => Rules.Values;
 
         private IDictionary<uint, IRule<T>> Rules { get; } = new ConcurrentDictionary<uint, IRule<T>>();
 
-        protected virtual void AddAttributeRules(IAttributeToRule attributeToRule, IRegisteredPropertyManager registeredPropertyManager)
+        protected virtual void AddAttributeRules(IAttributeToRule attributeToRule, IPropertyInfoList propertyInfoList)
         {
-            var requiredRegisteredProp = registeredPropertyManager.GetRegisteredProperties();
+            var requiredRegisteredProp = propertyInfoList.Properties();
 
             foreach (var r in requiredRegisteredProp)
             {

@@ -1,6 +1,9 @@
 ﻿using Neatoo.Core;
+using Neatoo.Portal;
+using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,7 +20,7 @@ namespace Neatoo
 
     }
 
-    public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase<I>, IValidateListBase, INotifyPropertyChanged
+    public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase<I>, IValidateListBase, INotifyPropertyChanged, IPortalTarget
         where T : ValidateListBase<T, I>
         where I : IValidateBase
     {
@@ -29,9 +32,12 @@ namespace Neatoo
         public bool IsValid => !this.Any(c => !c.IsValid);
         public bool IsSelfValid => true;
 
+        [JsonIgnore]
+        public bool IsPaused { get; protected set; } = false;
+
         protected (bool IsValid, bool IsSelfValid, bool IsBusy, bool IsSelfBusy) MetaState { get; private set; }
 
-        protected virtual void RaiseMetaPropertiesChanged(bool raiseBusy = false)
+        protected override void CheckIfMetaPropertiesChanged(bool raiseBusy = false)
         {
             if (MetaState.IsValid != IsValid)
             {
@@ -51,6 +57,7 @@ namespace Neatoo
             }
 
             ResetMetaState();
+            base.CheckIfMetaPropertiesChanged(raiseBusy);
         }
 
         protected virtual void ResetMetaState()
@@ -58,10 +65,10 @@ namespace Neatoo
             MetaState = (IsValid, IsSelfValid, IsBusy, IsSelfBusy);
         }
 
-        protected override Task OnChildNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
+        protected override Task HandleNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
-            RaiseMetaPropertiesChanged();
-            return base.OnChildNeatooPropertyChanged(breadCrumbs);
+            CheckIfMetaPropertiesChanged();
+            return base.HandleNeatooPropertyChanged(breadCrumbs);
         }
 
         public async Task RunAllRules(CancellationToken token = default)
@@ -92,5 +99,32 @@ namespace Neatoo
                 item.ClearSelfErrors();
             }
         }
+
+        public virtual IDisposable? PauseAllActions()
+        {
+            if (IsPaused) { return null; } // You are a nested using; You get nothing!!
+            IsPaused = true;
+            return new Core.Paused(this);
+        }
+
+        public virtual void ResumeAllActions()
+        {
+            if (IsPaused)
+            {
+                IsPaused = false;
+                ResetMetaState();
+            }
+        }
+
+        IDisposable? IPortalTarget.PauseAllActions()
+        {
+            return PauseAllActions();
+        }
+
+        void IPortalTarget.ResumeAllActions()
+        {
+            ResumeAllActions();
+        }
+
     }
 }
