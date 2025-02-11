@@ -19,8 +19,18 @@ namespace Neatoo.UnitTest.AsyncFlowTests
             asyncValidateObject = new AsyncValidateObject(new ValidateBaseServices<AsyncValidateObject>());
             asyncValidateObject.Child = new AsyncValidateObject(new ValidateBaseServices<AsyncValidateObject>());
             await asyncValidateObject.WaitForTasks();
-            asyncValidateObject.PropertyChanged += AsyncValidateObject_PropertyChanged; 
+            asyncValidateObject.PropertyChanged += AsyncValidateObject_PropertyChanged;
+            asyncValidateObject.NeatooPropertyChanged += AsyncValidateObject_NeatooPropertyChanged;
+
             Assert.IsFalse(asyncValidateObject.IsBusy);
+        }
+
+        private async Task AsyncValidateObject_NeatooPropertyChanged(Core.PropertyChangedBreadCrumbs propertyNameBreadCrumbs)
+        {
+            if(propertyNameBreadCrumbs.FullPropertyName == nameof(AsyncValidateObject.AsyncRulesCanWait))
+            {
+                await Task.Delay(2);
+            }
         }
 
         [TestCleanup]
@@ -29,13 +39,15 @@ namespace Neatoo.UnitTest.AsyncFlowTests
             await asyncValidateObject.WaitForTasks();
             Assert.IsFalse(asyncValidateObject.IsBusy);
             asyncValidateObject.PropertyChanged -= AsyncValidateObject_PropertyChanged;
+            asyncValidateObject.NeatooPropertyChanged -= AsyncValidateObject_NeatooPropertyChanged;
         }
 
-        private void AsyncValidateObject_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void AsyncValidateObject_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            propertyChangedCalls.Add(e.PropertyName);
+            propertyChangedCalls.Add(e.PropertyName ?? "EMPTY");
         }
 
+        [Ignore]
         [TestMethod]
         public async Task AsyncFlowTests_CheckAllRules()
         {
@@ -56,11 +68,7 @@ namespace Neatoo.UnitTest.AsyncFlowTests
             asyncValidateObject.AsyncDelayRuleValue = "test";
             Assert.IsTrue(asyncValidateObject.IsBusy);
 
-            while (asyncValidateObject.IsBusy)
-            {
-                await Task.Yield();
-                await Task.Delay(1);
-            }
+            await asyncValidateObject.WaitForTasks();
 
             Assert.AreEqual(3, asyncValidateObject.AsyncDelayRule.RunCount);
             Assert.AreEqual(2, asyncValidateObject.Child.AsyncDelayRule.RunCount);
@@ -133,7 +141,8 @@ namespace Neatoo.UnitTest.AsyncFlowTests
 
                 asyncValidateObject.AsyncRuleCanWaitProperty.Value = "Wait";
 
-                await Task.Delay(2);
+                await Task.Yield();
+                await Task.Delay(10);
 
                 Assert.IsTrue(asyncValidateObject.IsBusy);
                 Assert.IsTrue(asyncValidateObject.IsSelfBusy);

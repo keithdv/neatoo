@@ -173,9 +173,12 @@ namespace Neatoo
 
         public async Task WaitForTasks()
         {
-            foreach(var i in this)
+            var busyTask = this.FirstOrDefault(x => x.IsBusy)?.WaitForTasks();
+
+            while (busyTask != null)
             {
-                await i.WaitForTasks();
+                await busyTask;
+                busyTask = this.FirstOrDefault(x => x.IsBusy)?.WaitForTasks();
             }
         }
         

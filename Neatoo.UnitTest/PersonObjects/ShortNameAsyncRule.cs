@@ -23,21 +23,26 @@ namespace Neatoo.UnitTest.PersonObjects
 
         public override async Task<PropertyErrors> Execute(T target, CancellationToken token)
         {
+            Console.WriteLine($"ShortNameAsyncRule: {UniqueId.ToString()} BEGIN");
+
             RunCount++;
 
             await Task.Delay(10, token);
 
-            Console.WriteLine($"ShortNameAsyncRule: {UniqueId.ToString()} {target.FirstName} {target.LastName}");
 
             // System.Diagnostics.Debug.WriteLine($"ShortNameAsyncRule {target.FirstName} {target.LastName}");
 
             if (target.FirstName?.StartsWith("Error") ?? false)
             {
+                Console.WriteLine($"ShortNameAsyncRule: {UniqueId.ToString()} {target.FirstName} {target.LastName} Error!!");
                 return nameof(IPersonBase.FirstName).PropertyError(target.FirstName);
             }
 
+            Console.WriteLine($"ShortNameAsyncRule: {UniqueId.ToString()} {target.FirstName} {target.LastName}");
 
             target.ShortName = $"{target.FirstName} {target.LastName}";
+
+            Console.WriteLine($"ShortNameAsyncRule: {UniqueId.ToString()} Done");
 
             return PropertyErrors.None;
         }

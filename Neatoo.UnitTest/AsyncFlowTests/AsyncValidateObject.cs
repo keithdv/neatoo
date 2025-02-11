@@ -94,6 +94,7 @@ namespace Neatoo.UnitTest.AsyncFlowTests
             target.AsyncDelayRuleValue = Guid.NewGuid().ToString();
             return PropertyErrors.None;
         }
+
     }
 
     internal class AsyncValidateObject : ValidateBase<AsyncValidateObject>
@@ -111,20 +112,29 @@ namespace Neatoo.UnitTest.AsyncFlowTests
         public SyncRuleA SyncRuleA { get; private set; }
         public NestedSyncRuleB NestedSyncRuleB { get; private set; }
 
-        public string HasNoRules { get => Getter<string>(); set => Setter(value); }
+        public string? HasNoRules { get => Getter<string>(); set => Setter(value); }
 
-        public string SyncA { get => Getter<string>(); set => Setter(value); }
+        public string? SyncA { get => Getter<string>(); set => Setter(value); }
 
-        public string NestedSyncB { get => Getter<string>(); set => Setter(value); }
+        public string? NestedSyncB { get => Getter<string>(); set => Setter(value); }
 
-        public string AsyncDelayRuleValue { get => Getter<string>(); set => Setter(value); }
+        public string? AsyncDelayRuleValue { get => Getter<string>(); set => Setter(value); }
 
         public IProperty AsyncRuleCanWaitProperty => this[nameof(AsyncRulesCanWait)];
 
-        public string AsyncRulesCanWait { get => Getter<string>(); set => Setter(value); }
-        public string AsyncRulesCanWaitNested { get => Getter<string>(); set => Setter(value); }
+        public string? AsyncRulesCanWait { get => Getter<string>(); set => Setter(value); }
+        public string? AsyncRulesCanWaitNested { get => Getter<string>(); set => Setter(value); }
 
-        public AsyncValidateObject Child { get => Getter<AsyncValidateObject>(); set => Setter(value); }
+        public AsyncValidateObject? Child { get => Getter<AsyncValidateObject>(); set => Setter(value); }
+
+        protected override async Task ChildNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
+        {
+            if(breadCrumbs.FullPropertyName == nameof(AsyncRulesCanWait))
+            {
+                await Task.Delay(2);
+            }
+            await base.ChildNeatooPropertyChanged(breadCrumbs);
+        }
     }
 
 

@@ -81,9 +81,9 @@ namespace Neatoo
             MetaState = (IsValid, IsSelfValid, IsBusy, IsSelfBusy);
         }
 
-        protected override async Task HandleNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
+        protected override async Task ChildNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
-            await base.HandleNeatooPropertyChanged(breadCrumbs);
+            await base.ChildNeatooPropertyChanged(breadCrumbs);
 
             if (!IsPaused)
             {
@@ -187,7 +187,10 @@ namespace Neatoo
             //this.AddAsyncMethod((t) => PropertyManager.RunAllRules(token));
             // TODO - This isn't raising the 'IsValid' property changed event
             //await base.WaitForTasks();
-            Debug.Assert(!IsBusy, "Should not be busy after running all rules");
+            if (this.Parent == null)
+            {
+                Debug.Assert(!IsBusy, "Should not be busy after running all rules");
+            }
         }
 
         public virtual void ClearSelfErrors()

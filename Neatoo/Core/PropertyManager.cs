@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Neatoo.Core
 {
-    public interface IPropertyManager<out P> : INotifyNeatooPropertyChanged
+    public interface IPropertyManager<out P> : INotifyNeatooPropertyChanged, INotifyPropertyChanged
         where P : IProperty
     {
         bool IsBusy { get; }
@@ -44,7 +46,7 @@ namespace Neatoo.Core
             return PropertyInfoList.HasProperty(propertyName);
         }
 
-        protected IDictionary<string, P> _propertyBag = new Dictionary<string, P>();
+        protected IDictionary<string, P> _propertyBag = new ConcurrentDictionary<string, P>();
 
         protected IDictionary<string, P> PropertyBag
         {
@@ -56,15 +58,20 @@ namespace Neatoo.Core
         }
         
         public async Task WaitForTasks() {
-            foreach(var p in PropertyBag.Values.ToList())
+            
+            var busyTask = PropertyBag.Values.FirstOrDefault(x => x.IsBusy)?.WaitForTasks();
+
+            while (busyTask != null)
             {
-                await p.WaitForTasks();
+                await busyTask;
+                busyTask = PropertyBag.Values.FirstOrDefault(x => x.IsBusy)?.WaitForTasks();
             }
         }
 
         public event NeatooPropertyChanged? NeatooPropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-        private Task _OnNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
+        private Task _Property_NeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
             return NeatooPropertyChanged?.Invoke(breadCrumbs) ?? Task.CompletedTask;
         }
@@ -91,11 +98,17 @@ namespace Neatoo.Core
 
             var newProperty = (P)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.MakeGenericMethod(propertyInfo.Type).Invoke(this, new object[] { propertyInfo })!;
 
-            newProperty.NeatooPropertyChanged += _OnNeatooPropertyChanged;
+            newProperty.NeatooPropertyChanged += _Property_NeatooPropertyChanged;
+            newProperty.PropertyChanged += _Property_PropertyChanged;
 
             PropertyBag[propertyName] = newProperty;
 
             return newProperty;
+        }
+
+        private void _Property_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            PropertyChanged?.Invoke(sender, e);
         }
 
         public P this[string propertyName]
@@ -120,7 +133,8 @@ namespace Neatoo.Core
         {
             foreach (var p in PropertyBag.Values)
             {
-                p.NeatooPropertyChanged += _OnNeatooPropertyChanged;
+                p.NeatooPropertyChanged += _Property_NeatooPropertyChanged;
+                p.PropertyChanged += _Property_PropertyChanged;
             }
         }
 

@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neatoo.Core
@@ -34,7 +35,7 @@ namespace Neatoo.Core
             Source = source;
         }
 
-        public PropertyChangedBreadCrumbs(string propertyName, object source, PropertyChangedBreadCrumbs previousPropertyName) : this(propertyName, source)
+        public PropertyChangedBreadCrumbs(string propertyName, object source, PropertyChangedBreadCrumbs? previousPropertyName) : this(propertyName, source)
         {
             PreviousPropertyName = previousPropertyName;
         }
@@ -140,7 +141,7 @@ namespace Neatoo.Core
         {
             if (_value is INotifyNeatooPropertyChanged neatooPropertyChanged)
             {
-                neatooPropertyChanged.NeatooPropertyChanged -= _OnValueNeatooPropertyChanged;
+                neatooPropertyChanged.NeatooPropertyChanged -= PassThruValueNeatooPropertyChanged;
             }
 
             _value = default;
@@ -155,21 +156,43 @@ namespace Neatoo.Core
 
             if (isDiff)
             {
-                if (value is INotifyNeatooPropertyChanged neatooPropertyChanged)
+                if (_value is INotifyNeatooPropertyChanged neatooPropertyChanged)
                 {
-                    neatooPropertyChanged.NeatooPropertyChanged -= _OnValueNeatooPropertyChanged;
+                    neatooPropertyChanged.NeatooPropertyChanged -= PassThruValueNeatooPropertyChanged;
                 }
+
+                if (value is INotifyNeatooPropertyChanged valueNeatooPropertyChanged)
+                {
+                    valueNeatooPropertyChanged.NeatooPropertyChanged += PassThruValueNeatooPropertyChanged;
+                }
+
+                if (_value is IBase _valueBase){
+                    if (_valueBase.IsBusy)
+                    {
+                        throw new Exception("Cannot remove a child that is busy");
+                    }
+                }
+                
+                if (value is IBase valueBase)
+                {
+                    if (valueBase.IsBusy)
+                    {
+                        throw new Exception("Cannot add a child that is busy");
+                    }
+                }
+
+                if(_value is ISetParent _valueSetParent)
+                {
+                    _valueSetParent.SetParent(null);
+                }
+
+
             }
 
             _value = value;
 
             if (isDiff)
             {
-                if (value is INotifyNeatooPropertyChanged neatooPropertyChanged)
-                {
-                    neatooPropertyChanged.NeatooPropertyChanged += _OnValueNeatooPropertyChanged;
-                }
-
                 OnPropertyChanged(nameof(Value));
 
                 Task = OnValueNeatooPropertyChanged(new PropertyChangedBreadCrumbs(this.Name, this));
@@ -181,9 +204,9 @@ namespace Neatoo.Core
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        protected virtual Task _OnValueNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
+        protected virtual Task PassThruValueNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
-            return NeatooPropertyChanged?.Invoke(new PropertyChangedBreadCrumbs(this.Name, this.Value, breadCrumbs)) ?? Task.CompletedTask;
+            return NeatooPropertyChanged?.Invoke(new PropertyChangedBreadCrumbs(this.Name, breadCrumbs.Source, breadCrumbs)) ?? Task.CompletedTask;
         }
         private Task IsSelfBusyTask = Task.CompletedTask;
 
@@ -254,7 +277,7 @@ namespace Neatoo.Core
         {
             if (Value is INotifyNeatooPropertyChanged neatooPropertyChanged)
             {
-                neatooPropertyChanged.NeatooPropertyChanged += _OnValueNeatooPropertyChanged;
+                neatooPropertyChanged.NeatooPropertyChanged += PassThruValueNeatooPropertyChanged;
             }
         }
     }

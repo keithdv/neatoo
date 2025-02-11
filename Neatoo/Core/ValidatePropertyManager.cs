@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -95,12 +96,14 @@ namespace Neatoo.Core
 
 
         // [PortalDataMember] Ummm...ising the RuleIndex going to be different...
-        protected Dictionary<uint, List<string>> RuleErrorMessages { get; } = new Dictionary<uint, List<string>>();
+        protected IDictionary<uint, List<string>> RuleErrorMessages { get; } = new ConcurrentDictionary<uint, List<string>>();
 
         public string[] SerializedErrorMessages => RuleErrorMessages.SelectMany(r => r.Value).ToArray();
 
         protected void SetError(uint ruleIndex, IReadOnlyList<string> errorMessages)
         {
+            Console.WriteLine($"Set Error: {Name} {ruleIndex} {errorMessages.Count}");
+
             Debug.Assert(ValueIsValidateBase == null, "If the Child is IValidateBase then it should be handling the errors");
             RuleErrorMessages[ruleIndex] = errorMessages.ToList();
             OnPropertyChanged(nameof(IsValid));
@@ -115,6 +118,7 @@ namespace Neatoo.Core
 
         void IValidateProperty.ClearErrorsForRule(uint ruleIndex)
         {
+            Console.WriteLine($"Clear Error: {Name} {ruleIndex}");
             RuleErrorMessages.Remove(ruleIndex);
             OnPropertyChanged(nameof(IsValid));
             OnPropertyChanged(nameof(ErrorMessages));

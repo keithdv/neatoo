@@ -23,11 +23,6 @@ namespace Neatoo.Core
         private TaskCompletionSource<bool>? allDoneCompletionSource;
 
         /// <summary>
-        /// Indicates whether the sequencer is currently running tasks.
-        /// </summary>
-        public bool IsRunning => !this.allDoneCompletionSource?.Task.IsCompleted ?? false;
-
-        /// <summary>
         /// Function to be called when the full sequence is complete.
         /// </summary>
         public Func<Task> OnFullSequenceComplete { get; set; } = () => Task.CompletedTask;
@@ -94,7 +89,17 @@ namespace Neatoo.Core
         /// <summary>
         /// Gets a task that completes when all tasks in the sequence are done.
         /// </summary>
-        public Task AllDone => allDoneCompletionSource?.Task ?? Task.CompletedTask;
+        public Task AllDone
+        {
+            get
+            {
+                lock (lockObject)
+                {
+                    return allDoneCompletionSource?.Task ?? Task.CompletedTask;
+                }
+            }
+        }
+         
 
         private async Task SequenceCompleted(Task previousTask, List<Exception> exceptions)
         {

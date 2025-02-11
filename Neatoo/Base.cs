@@ -1,6 +1,7 @@
 ﻿using Neatoo.Core;
 using Neatoo.Portal;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
@@ -13,6 +14,7 @@ public interface IBase : INeatooObject, INotifyPropertyChanged, INotifyNeatooPro
 {
     IBase Parent { get; }
 
+    internal void AddChildTask(Task task);
     internal IProperty GetProperty(string propertyName);
     internal IProperty this[string propertyName] { get => GetProperty(propertyName); }
     internal IPropertyManager<IProperty> PropertyManager { get; }
@@ -39,12 +41,14 @@ public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeseria
 
         if (PropertyManager is IPropertyManager<IProperty>)
         {
-            PropertyManager.NeatooPropertyChanged += _NeatooPropertyChanged;
+            PropertyManager.NeatooPropertyChanged += _PropertyManager_NeatooPropertyChanged;
+            PropertyManager.PropertyChanged += _PropertyManager_PropertyChanged;
         }
 
-        AsyncTaskSequencer.OnFullSequenceComplete = async () =>
+        AsyncTaskSequencer.OnFullSequenceComplete = () =>
         {
             CheckIfMetaPropertiesChanged(true);
+            return Task.CompletedTask;
         };
     }
 
@@ -69,11 +73,6 @@ public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeseria
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    protected virtual void HandlePropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        CheckIfMetaPropertiesChanged(true);
-    }
-
     protected virtual Task RaiseNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
     {
         Debug.Assert(PropertyManager.GetProperties.Any(p => p.Name == breadCrumbs.PropertyName), "Property not found");
@@ -82,39 +81,73 @@ public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeseria
         return NeatooPropertyChanged?.Invoke(new PropertyChangedBreadCrumbs(breadCrumbs.PropertyName, this, breadCrumbs.PreviousPropertyName)) ?? Task.CompletedTask;
     }
 
-    protected virtual Task HandleNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
+    protected virtual Task ChildNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
     {
-        if (breadCrumbs.Source is IProperty property)
+        return RaiseNeatooPropertyChanged(breadCrumbs);
+    }
+
+    private Task _PropertyManager_NeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
+    {
+
+        if (breadCrumbs.Source is IProperty property) // This can be clearer
         {
             if (this[property.Name].Value is ISetParent child)
             {
                 child.SetParent(this);
             }
-            if (this[property.Name] is IBase childBase)
-            {
-                childBase.PropertyChanged += HandlePropertyChanged;
-            }
 
-            // This isn't meant to go to parent Neatoo objects, just outside listeners
+            // This isn't meant to go to parent Neatoo objects, thru the tree, just immediate outside listeners
             RaisePropertyChanged(breadCrumbs.FullPropertyName);
         }
 
-        return RaiseNeatooPropertyChanged(breadCrumbs);
+        return ChildNeatooPropertyChanged(breadCrumbs);
     }
-
-    private Task _NeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
+    private void _PropertyManager_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        return HandleNeatooPropertyChanged(breadCrumbs);
+        CheckIfMetaPropertiesChanged();
     }
 
     protected virtual P? Getter<P>([System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
     {
         return (P?) PropertyManager[propertyName]?.Value;
     }
+    
+    private List<(object, Task)> tasksRan = new List<(object, Task)>();
 
     protected virtual void Setter<P>(P? value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
     {
-        AsyncTaskSequencer.AddTask((t) => PropertyManager[propertyName].SetValue(value));
+        var task = PropertyManager[propertyName].SetValue(value);
+
+        tasksRan.Add((this, task));
+
+        if (Parent != null)
+        {
+            Parent.AddChildTask(task);
+        } 
+        else
+        {
+            AsyncTaskSequencer.AddTask((t) => task);
+        }
+    }
+
+    public virtual void AddChildTask(Task task)
+    {
+        // This has the effect of only running one task per object graph
+        // BUT if I don't do this I have to loop in WaitForTask on IsBusy...
+        // Not sure which is better
+        //AsyncTaskSequencer.AddTask((t) => task);
+        //Parent?.AddChildTask(task);
+
+        tasksRan.Add((this, task));
+
+        if (Parent != null)
+        {
+            Parent.AddChildTask(task);
+        } 
+        else
+        {
+            AsyncTaskSequencer.AddTask((t) => task);
+        }
     }
 
     public IProperty GetProperty(string propertyName)
@@ -124,7 +157,8 @@ public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeseria
 
     public virtual void OnDeserialized()
     {
-        PropertyManager.NeatooPropertyChanged += _NeatooPropertyChanged;
+        PropertyManager.NeatooPropertyChanged += _PropertyManager_NeatooPropertyChanged;
+        PropertyManager.PropertyChanged += _PropertyManager_PropertyChanged;
 
 
         foreach (var property in PropertyManager.GetProperties)
@@ -133,33 +167,33 @@ public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeseria
             {
                 setParent.SetParent(this);
             }
-            if (property.Value is IBase baseProperty)
-            {
-                baseProperty.PropertyChanged += HandlePropertyChanged;
-            }
         }
     }
 
     public virtual async Task WaitForTasks()
     {
         // I don't like this...
-        while (IsBusy)
+        //while (IsBusy)
+        //{
+        //    await PropertyManager.WaitForTasks();
+        //    await AsyncTaskSequencer.AllDone;
+        //}
+
+        //await PropertyManager.WaitForTasks();
+        await AsyncTaskSequencer.AllDone;
+
+        if (Parent == null)
         {
-            await Task.Yield();
-            // Enumrator changed errors
-            // Will need to use events or something to signify when busy
-            //while(PropertyManager.IsBusy)
-            //{
-            //    await PropertyManager.WaitForTasks();
-            //}
-            //await AsyncTaskSequencer.AllDone;
+            if (IsBusy)
+            {
+
+                var busyProperty = PropertyManager.GetProperties.FirstOrDefault(p => p.IsBusy);
+
+            }
+
+            // Raise Errors
+            Debug.Assert(!IsBusy, "Should not be busy after running all rules");
         }
-
-        Debug.Assert(!IsBusy, "Should not be busy after running all rules");
-
-        // Raise Errors
-        await Task.WhenAll(AsyncTaskSequencer.AllDone, PropertyManager.WaitForTasks());
-
     }
 
     // Events

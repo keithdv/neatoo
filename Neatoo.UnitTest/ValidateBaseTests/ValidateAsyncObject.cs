@@ -1,4 +1,5 @@
-﻿using Neatoo.Portal;
+﻿using Neatoo.Core;
+using Neatoo.Portal;
 using Neatoo.UnitTest.PersonObjects;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,8 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         IValidateAsyncObject Child { get; set; }
         int RuleRunCount { get; }
         string ThrowException { get; set; }
+
+        List<IValidateProperty> Properties => PropertyManager.GetProperties.Cast<IValidateProperty>().ToList();
     }
 
     internal class ValidateAsyncObject : PersonValidateBase<ValidateAsyncObject>, IValidateAsyncObject

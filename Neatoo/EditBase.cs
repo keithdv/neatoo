@@ -164,7 +164,7 @@ namespace Neatoo
             }
         }
 
-        protected override Task HandleNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
+        protected override Task ChildNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
             
             // TODO - if an object isn't assigned to another IBase
@@ -175,7 +175,7 @@ namespace Neatoo
                 child.UnDelete();
             }
 
-            return base.HandleNeatooPropertyChanged(breadCrumbs);
+            return base.ChildNeatooPropertyChanged(breadCrumbs);
         }
 
         public virtual async Task<IEditBase> Save()
