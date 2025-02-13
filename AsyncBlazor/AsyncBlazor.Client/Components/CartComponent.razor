@@ -17,9 +17,9 @@
         </div>
         <div class="card-body">
                 @foreach (var horse in Cart.Horses)
-                {
-                    <HorseComponent Horse="horse" />
-                }
+            {
+                <HorseComponent Horse="horse" />
+            }
         </div>
     </div>
 }
@@ -29,6 +29,6 @@ else
 }
 
 @code {
-    [Parameter]
-    public ICart Cart { get; set; } = default!;
+[Parameter]
+public ICart Cart { get; set; } = default!;
 }

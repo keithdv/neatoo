@@ -4,28 +4,27 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neatoo.UnitTest.PersonObjects
-{
+namespace Neatoo.UnitTest.PersonObjects;
 
-    public interface IAsyncRuleThrowsException : IRule<IValidateAsyncObject>
+
+public interface IAsyncRuleThrowsException : IRule<IValidateAsyncObject>
+{
+}
+
+public class AsyncRuleThrowsException : AsyncRuleBase<IValidateAsyncObject>, IAsyncRuleThrowsException
+{
+    public AsyncRuleThrowsException() : base()
     {
+        AddTriggerProperties(_ => _.ThrowException);
     }
 
-    public class AsyncRuleThrowsException : AsyncRuleBase<IValidateAsyncObject>, IAsyncRuleThrowsException
+    public override async Task<PropertyErrors> Execute(IValidateAsyncObject target, CancellationToken token)
     {
-        public AsyncRuleThrowsException() : base()
+        await Task.Delay(5);
+        if (target.ThrowException == "Throw")
         {
-            AddTriggerProperties(_ => _.ThrowException);
+            throw new Exception("Rule Failed");
         }
-
-        public override async Task<PropertyErrors> Execute(IValidateAsyncObject target, CancellationToken token)
-        {
-            await Task.Delay(5);
-            if (target.ThrowException == "Throw")
-            {
-                throw new Exception("Rule Failed");
-            }
-            return PropertyErrors.None;
-        }
+        return PropertyErrors.None;
     }
 }

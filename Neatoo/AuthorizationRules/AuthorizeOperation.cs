@@ -1,7 +1,6 @@
-﻿namespace Neatoo.AuthorizationRules
+﻿namespace Neatoo.AuthorizationRules;
+
+public enum AuthorizeOperation
 {
-    public enum AuthorizeOperation
-    {
-        Create, Fetch, Update, Delete
-    }
+    Create, Fetch, Update, Delete
 }

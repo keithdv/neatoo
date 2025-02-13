@@ -8,158 +8,157 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace HorseBarn.Dal.Ef.Migrations
+namespace HorseBarn.Dal.Ef.Migrations;
+
+[DbContext(typeof(HorseBarnContext))]
+[Migration("20250119020916_InitialCreate")]
+partial class InitialCreate
 {
-    [DbContext(typeof(HorseBarnContext))]
-    [Migration("20250119020916_InitialCreate")]
-    partial class InitialCreate
+    /// <inheritdoc />
+    protected override void BuildTargetModel(ModelBuilder modelBuilder)
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
-        {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
+        modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
 
-            modelBuilder.Entity("HorseBarn.Dal.Ef.Cart", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+        modelBuilder.Entity("HorseBarn.Dal.Ef.Cart", b =>
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("INTEGER");
 
-                    b.Property<int>("CartType")
-                        .HasColumnType("INTEGER");
+                b.Property<int>("CartType")
+                    .HasColumnType("INTEGER");
 
-                    b.Property<int>("HorseBarnId")
-                        .HasColumnType("INTEGER");
+                b.Property<int>("HorseBarnId")
+                    .HasColumnType("INTEGER");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
+                b.Property<string>("Name")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("TEXT");
 
-                    b.Property<int>("NumberOfHorses")
-                        .HasColumnType("INTEGER");
+                b.Property<int>("NumberOfHorses")
+                    .HasColumnType("INTEGER");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("HorseBarnId");
+                b.HasIndex("HorseBarnId");
 
-                    b.ToTable("Cart");
-                });
+                b.ToTable("Cart");
+            });
 
-            modelBuilder.Entity("HorseBarn.Dal.Ef.Horse", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+        modelBuilder.Entity("HorseBarn.Dal.Ef.Horse", b =>
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("INTEGER");
 
-                    b.Property<DateOnly>("BirthDate")
-                        .HasColumnType("TEXT");
+                b.Property<DateOnly>("BirthDate")
+                    .HasColumnType("TEXT");
 
-                    b.Property<int>("Breed")
-                        .HasColumnType("INTEGER");
+                b.Property<int>("Breed")
+                    .HasColumnType("INTEGER");
 
-                    b.Property<int?>("CartId")
-                        .HasColumnType("INTEGER");
+                b.Property<int?>("CartId")
+                    .HasColumnType("INTEGER");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
+                b.Property<string>("Name")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("TEXT");
 
-                    b.Property<int?>("PastureId")
-                        .HasColumnType("INTEGER");
+                b.Property<int?>("PastureId")
+                    .HasColumnType("INTEGER");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("CartId");
+                b.HasIndex("CartId");
 
-                    b.HasIndex("PastureId");
+                b.HasIndex("PastureId");
 
-                    b.ToTable("Horse");
-                });
+                b.ToTable("Horse");
+            });
 
-            modelBuilder.Entity("HorseBarn.Dal.Ef.HorseBarn", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+        modelBuilder.Entity("HorseBarn.Dal.Ef.HorseBarn", b =>
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("INTEGER");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("HorseBarn");
-                });
+                b.ToTable("HorseBarn");
+            });
 
-            modelBuilder.Entity("HorseBarn.Dal.Ef.Pasture", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+        modelBuilder.Entity("HorseBarn.Dal.Ef.Pasture", b =>
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("INTEGER");
 
-                    b.Property<int>("HorseBarnId")
-                        .HasColumnType("INTEGER");
+                b.Property<int>("HorseBarnId")
+                    .HasColumnType("INTEGER");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("HorseBarnId")
-                        .IsUnique();
+                b.HasIndex("HorseBarnId")
+                    .IsUnique();
 
-                    b.ToTable("Pasture");
-                });
+                b.ToTable("Pasture");
+            });
 
-            modelBuilder.Entity("HorseBarn.Dal.Ef.Cart", b =>
-                {
-                    b.HasOne("HorseBarn.Dal.Ef.HorseBarn", "HorseBarn")
-                        .WithMany("Carts")
-                        .HasForeignKey("HorseBarnId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+        modelBuilder.Entity("HorseBarn.Dal.Ef.Cart", b =>
+            {
+                b.HasOne("HorseBarn.Dal.Ef.HorseBarn", "HorseBarn")
+                    .WithMany("Carts")
+                    .HasForeignKey("HorseBarnId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("HorseBarn");
-                });
+                b.Navigation("HorseBarn");
+            });
 
-            modelBuilder.Entity("HorseBarn.Dal.Ef.Horse", b =>
-                {
-                    b.HasOne("HorseBarn.Dal.Ef.Cart", "Cart")
-                        .WithMany("Horses")
-                        .HasForeignKey("CartId");
+        modelBuilder.Entity("HorseBarn.Dal.Ef.Horse", b =>
+            {
+                b.HasOne("HorseBarn.Dal.Ef.Cart", "Cart")
+                    .WithMany("Horses")
+                    .HasForeignKey("CartId");
 
-                    b.HasOne("HorseBarn.Dal.Ef.Pasture", null)
-                        .WithMany("Horses")
-                        .HasForeignKey("PastureId");
+                b.HasOne("HorseBarn.Dal.Ef.Pasture", null)
+                    .WithMany("Horses")
+                    .HasForeignKey("PastureId");
 
-                    b.Navigation("Cart");
-                });
+                b.Navigation("Cart");
+            });
 
-            modelBuilder.Entity("HorseBarn.Dal.Ef.Pasture", b =>
-                {
-                    b.HasOne("HorseBarn.Dal.Ef.HorseBarn", "HorseBarn")
-                        .WithOne("Pasture")
-                        .HasForeignKey("HorseBarn.Dal.Ef.Pasture", "HorseBarnId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+        modelBuilder.Entity("HorseBarn.Dal.Ef.Pasture", b =>
+            {
+                b.HasOne("HorseBarn.Dal.Ef.HorseBarn", "HorseBarn")
+                    .WithOne("Pasture")
+                    .HasForeignKey("HorseBarn.Dal.Ef.Pasture", "HorseBarnId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("HorseBarn");
-                });
+                b.Navigation("HorseBarn");
+            });
 
-            modelBuilder.Entity("HorseBarn.Dal.Ef.Cart", b =>
-                {
-                    b.Navigation("Horses");
-                });
+        modelBuilder.Entity("HorseBarn.Dal.Ef.Cart", b =>
+            {
+                b.Navigation("Horses");
+            });
 
-            modelBuilder.Entity("HorseBarn.Dal.Ef.HorseBarn", b =>
-                {
-                    b.Navigation("Carts");
+        modelBuilder.Entity("HorseBarn.Dal.Ef.HorseBarn", b =>
+            {
+                b.Navigation("Carts");
 
-                    b.Navigation("Pasture")
-                        .IsRequired();
-                });
+                b.Navigation("Pasture")
+                    .IsRequired();
+            });
 
-            modelBuilder.Entity("HorseBarn.Dal.Ef.Pasture", b =>
-                {
-                    b.Navigation("Horses");
-                });
+        modelBuilder.Entity("HorseBarn.Dal.Ef.Pasture", b =>
+            {
+                b.Navigation("Horses");
+            });
 #pragma warning restore 612, 618
-        }
     }
 }

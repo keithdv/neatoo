@@ -2,51 +2,49 @@
 using Neatoo;
 using Neatoo.Portal;
 
-namespace HorseBarn.lib.Cart
+namespace HorseBarn.lib.Cart;
+
+
+
+public interface ICartList : IEditListBase<ICart>
+
 {
 
+    internal Task RemoveHorse(IHorse horse);
+}
 
-    public interface ICartList : IEditListBase<ICart>
-
+internal class CartList : EditListBase<CartList, ICart>, ICartList
+{
+    public CartList(IEditListBaseServices<CartList, ICart> services) : base(services)
     {
 
-        internal Task RemoveHorse(IHorse horse);
     }
 
-    internal class CartList : EditListBase<CartList, ICart>, ICartList
+    public async Task RemoveHorse(IHorse horse)
     {
-        public CartList(IEditListBaseServices<CartList, ICart> services) : base(services)
+        foreach(var c in this)
         {
-
+            await c.RemoveHorse(horse);
         }
-
-        public async Task RemoveHorse(IHorse horse)
-        {
-            foreach(var c in this)
-            {
-                await c.RemoveHorse(horse);
-            }
-        }
+    }
 
 #if !CLIENT
 
-        [FetchChild]
-        public async Task FetchChild(ICollection<Dal.Ef.Cart> carts, IReadPortalChild<IRacingChariot> racingChariotPortal, IReadPortalChild<IWagon> wagonPortal)
+    [FetchChild]
+    public async Task FetchChild(ICollection<Dal.Ef.Cart> carts, IReadPortalChild<IRacingChariot> racingChariotPortal, IReadPortalChild<IWagon> wagonPortal)
+    {
+        foreach (var cart in carts)
         {
-            foreach (var cart in carts)
+            if (cart.CartType == (int)CartType.RacingChariot)
             {
-                if (cart.CartType == (int)CartType.RacingChariot)
-                {
-                    Add(await racingChariotPortal.FetchChild(cart));
-                }
-                else if(cart.CartType == (int)CartType.Wagon)
-                {
-                    Add(await wagonPortal.FetchChild(cart));
-                }
+                Add(await racingChariotPortal.FetchChild(cart));
+            }
+            else if(cart.CartType == (int)CartType.Wagon)
+            {
+                Add(await wagonPortal.FetchChild(cart));
             }
         }
-
-#endif
     }
 
+#endif
 }

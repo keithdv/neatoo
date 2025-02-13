@@ -7,82 +7,81 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neatoo.UnitTest.ValidateBaseTests
+namespace Neatoo.UnitTest.ValidateBaseTests;
+
+
+public interface ISharedShortNameRule : IValidateBase
+{
+    string ShortName { get; set; }
+    string FirstName { get; set; }
+    string LastName { get; set; }
+}
+
+public class SharedShortNameRule<T> : Rules.AsyncRuleBase<T> where T : ISharedShortNameRule
 {
 
-    public interface ISharedShortNameRule : IValidateBase
+    public SharedShortNameRule() : base()
     {
-        string ShortName { get; set; }
-        string FirstName { get; set; }
-        string LastName { get; set; }
+        base.AddTriggerProperties(_=> _.ShortName, _=>_.FirstName, _=>_.LastName);
     }
 
-    public class SharedShortNameRule<T> : Rules.AsyncRuleBase<T> where T : ISharedShortNameRule
+    public override async Task<PropertyErrors> Execute(T target, CancellationToken token)
     {
+        await Task.Delay(10);
 
-        public SharedShortNameRule() : base()
-        {
-            base.AddTriggerProperties(_=> _.ShortName, _=>_.FirstName, _=>_.LastName);
-        }
+        var sn = $"{target.FirstName} {target.LastName}";
 
-        public override async Task<PropertyErrors> Execute(T target, CancellationToken token)
-        {
-            await Task.Delay(10);
+        // Prevent cascading rules or any PropertyChanged events
+        LoadProperty(target, _ => _.ShortName, sn);
 
-            var sn = $"{target.FirstName} {target.LastName}";
-
-            // Prevent cascading rules or any PropertyChanged events
-            LoadProperty(target, _ => _.ShortName, sn);
-
-            return PropertyErrors.None;
-
-        }
-    }
-
-    public interface ISharedAsyncRuleObject : IPersonBase { }
-
-    public class SharedAsyncRuleObject : PersonValidateBase<SharedAsyncRuleObject>, ISharedAsyncRuleObject, ISharedShortNameRule
-    {
-
-        public SharedAsyncRuleObject(IValidateBaseServices<SharedAsyncRuleObject> services) : base(services)
-        {
-            RuleManager.AddRule(new SharedShortNameRule<SharedAsyncRuleObject>());
-        }
+        return PropertyErrors.None;
 
     }
+}
 
-    [TestClass]
-    public class SharedAsyncRuleTests
+public interface ISharedAsyncRuleObject : IPersonBase { }
+
+public class SharedAsyncRuleObject : PersonValidateBase<SharedAsyncRuleObject>, ISharedAsyncRuleObject, ISharedShortNameRule
+{
+
+    public SharedAsyncRuleObject(IValidateBaseServices<SharedAsyncRuleObject> services) : base(services)
     {
+        RuleManager.AddRule(new SharedShortNameRule<SharedAsyncRuleObject>());
+    }
 
-        private IServiceScope scope;
-        private ISharedAsyncRuleObject target;
+}
 
-        [TestInitialize]
-        public void TestInitailize()
-        {
-            scope = UnitTestServices.GetLifetimeScope();
-            target = scope.GetRequiredService<ISharedAsyncRuleObject>();
+[TestClass]
+public class SharedAsyncRuleTests
+{
 
-        }
+    private IServiceScope scope;
+    private ISharedAsyncRuleObject target;
+
+    [TestInitialize]
+    public void TestInitailize()
+    {
+        scope = UnitTestServices.GetLifetimeScope();
+        target = scope.GetRequiredService<ISharedAsyncRuleObject>();
+
+    }
 
 
-        [TestCleanup]
-        public void TestInitalize()
-        {
-            scope.Dispose();
-        }
+    [TestCleanup]
+    public void TestInitalize()
+    {
+        scope.Dispose();
+    }
 
-        [TestMethod]
-        public async Task SharedAsyncRuleTests_ShortName()
-        {
-            target.FirstName = "John";
-            target.LastName = "Smith";
+    [TestMethod]
+    public async Task SharedAsyncRuleTests_ShortName()
+    {
+        target.FirstName = "John";
+        target.LastName = "Smith";
 
-            await target.WaitForTasks();
+        await target.WaitForTasks();
 
-            Assert.AreEqual("John Smith", target.ShortName);
+        Assert.AreEqual("John Smith", target.ShortName);
 
-        }
     }
 }

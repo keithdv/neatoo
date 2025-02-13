@@ -5,171 +5,170 @@ using Neatoo.Portal;
 using System;
 using System.Threading.Tasks;
 
-namespace Neatoo.UnitTest.BaseTests.Authorization
+namespace Neatoo.UnitTest.BaseTests.Authorization;
+
+public interface IAuthorizationGrantedRule : IAuthorizationRule
 {
-    public interface IAuthorizationGrantedRule : IAuthorizationRule
+    int IntCriteria { get; set; }
+    Guid? GuidCriteria { get; set; }
+    bool ExecuteCreateCalled { get; }
+    bool ExecuteFetchCalled { get; set; }
+    bool ExecuteUpdateCalled { get; set; }
+    bool ExecuteDeleteCalled { get; set; }
+}
+public class AuthorizationGrantedRule : AuthorizationRule, IAuthorizationGrantedRule
+{
+    public int IntCriteria { get; set; }
+    public Guid? GuidCriteria { get; set; }
+    public bool ExecuteCreateCalled { get; set; }
+
+    [Execute(AuthorizeOperation.Create)]
+    public IAuthorizationRuleResult ExecuteCreate()
     {
-        int IntCriteria { get; set; }
-        Guid? GuidCriteria { get; set; }
-        bool ExecuteCreateCalled { get; }
-        bool ExecuteFetchCalled { get; set; }
-        bool ExecuteUpdateCalled { get; set; }
-        bool ExecuteDeleteCalled { get; set; }
-    }
-    public class AuthorizationGrantedRule : AuthorizationRule, IAuthorizationGrantedRule
-    {
-        public int IntCriteria { get; set; }
-        public Guid? GuidCriteria { get; set; }
-        public bool ExecuteCreateCalled { get; set; }
-
-        [Execute(AuthorizeOperation.Create)]
-        public IAuthorizationRuleResult ExecuteCreate()
-        {
-            ExecuteCreateCalled = true;
-            return AuthorizationRuleResult.AccessGranted();
-        }
-
-        [Execute(AuthorizeOperation.Create)]
-        public IAuthorizationRuleResult ExecuteCreate(int criteria)
-        {
-            ExecuteCreateCalled = true;
-            IntCriteria = criteria;
-            return AuthorizationRuleResult.AccessGranted();
-        }
-
-        [Execute(AuthorizeOperation.Create)]
-        public IAuthorizationRuleResult ExecuteCreate(int intCriteria, Guid? guidCriteria)
-        {
-            ExecuteCreateCalled = true;
-            IntCriteria = intCriteria;
-            GuidCriteria = guidCriteria;
-            return AuthorizationRuleResult.AccessGranted();
-        }
-
-        public bool ExecuteFetchCalled { get; set; }
-        [Execute(AuthorizeOperation.Fetch)]
-        public IAuthorizationRuleResult ExecuteFetch()
-        {
-            ExecuteFetchCalled = true;
-            return AuthorizationRuleResult.AccessGranted();
-        }
-
-        [Execute(AuthorizeOperation.Fetch)]
-        public IAuthorizationRuleResult ExecuteFetch(int criteria)
-        {
-            ExecuteFetchCalled = true;
-            IntCriteria = criteria;
-            return AuthorizationRuleResult.AccessGranted();
-        }
-
-        public bool ExecuteUpdateCalled { get; set; }
-        [Execute(AuthorizeOperation.Update)]
-        public IAuthorizationRuleResult ExecuteUpdate()
-        {
-            ExecuteUpdateCalled = true;
-            return AuthorizationRuleResult.AccessGranted();
-        }
-
-        public bool ExecuteDeleteCalled { get; set; }
-        [Execute(AuthorizeOperation.Delete)]
-        public IAuthorizationRuleResult ExecuteDelete()
-        {
-            ExecuteDeleteCalled = true;
-            return AuthorizationRuleResult.AccessGranted();
-        }
+        ExecuteCreateCalled = true;
+        return AuthorizationRuleResult.AccessGranted();
     }
 
-    public interface IBaseAuthorizationGrantedObject : IBase { }
-
-    public class BaseAuthorizationGrantedObject : Base<BaseAuthorizationGrantedObject>, IBaseAuthorizationGrantedObject
+    [Execute(AuthorizeOperation.Create)]
+    public IAuthorizationRuleResult ExecuteCreate(int criteria)
     {
+        ExecuteCreateCalled = true;
+        IntCriteria = criteria;
+        return AuthorizationRuleResult.AccessGranted();
+    }
 
-        public BaseAuthorizationGrantedObject(IBaseServices<BaseAuthorizationGrantedObject> services) : base(services)
-        {
+    [Execute(AuthorizeOperation.Create)]
+    public IAuthorizationRuleResult ExecuteCreate(int intCriteria, Guid? guidCriteria)
+    {
+        ExecuteCreateCalled = true;
+        IntCriteria = intCriteria;
+        GuidCriteria = guidCriteria;
+        return AuthorizationRuleResult.AccessGranted();
+    }
 
-        }
+    public bool ExecuteFetchCalled { get; set; }
+    [Execute(AuthorizeOperation.Fetch)]
+    public IAuthorizationRuleResult ExecuteFetch()
+    {
+        ExecuteFetchCalled = true;
+        return AuthorizationRuleResult.AccessGranted();
+    }
 
-        [AuthorizationRules]
-        public static void RegisterAuthorizationRules(IAuthorizationRuleManager authorizationRuleManager)
-        {
-            authorizationRuleManager.AddRule<IAuthorizationGrantedRule>();
-        }
+    [Execute(AuthorizeOperation.Fetch)]
+    public IAuthorizationRuleResult ExecuteFetch(int criteria)
+    {
+        ExecuteFetchCalled = true;
+        IntCriteria = criteria;
+        return AuthorizationRuleResult.AccessGranted();
+    }
 
-        [Create]
-        public void Create(int criteria) { }
+    public bool ExecuteUpdateCalled { get; set; }
+    [Execute(AuthorizeOperation.Update)]
+    public IAuthorizationRuleResult ExecuteUpdate()
+    {
+        ExecuteUpdateCalled = true;
+        return AuthorizationRuleResult.AccessGranted();
+    }
 
-        [Create]
-        public void Create(int i, Guid? g) { }
+    public bool ExecuteDeleteCalled { get; set; }
+    [Execute(AuthorizeOperation.Delete)]
+    public IAuthorizationRuleResult ExecuteDelete()
+    {
+        ExecuteDeleteCalled = true;
+        return AuthorizationRuleResult.AccessGranted();
+    }
+}
 
-        [Fetch]
-        private void Fetch() { }
+public interface IBaseAuthorizationGrantedObject : IBase { }
 
-        [Fetch]
-        public void Fetch(int criteria) { }
+public class BaseAuthorizationGrantedObject : Base<BaseAuthorizationGrantedObject>, IBaseAuthorizationGrantedObject
+{
+
+    public BaseAuthorizationGrantedObject(IBaseServices<BaseAuthorizationGrantedObject> services) : base(services)
+    {
 
     }
 
-    [TestClass]
-    public class BaseAuthorizationGrantedTests
+    [AuthorizationRules]
+    public static void RegisterAuthorizationRules(IAuthorizationRuleManager authorizationRuleManager)
     {
+        authorizationRuleManager.AddRule<IAuthorizationGrantedRule>();
+    }
 
-        IServiceScope scope;
-        IReadPortal<IBaseAuthorizationGrantedObject> portal;
+    [Create]
+    public void Create(int criteria) { }
 
-        [TestInitialize]
-        public void TestInitialize()
-        {
-            scope = UnitTestServices.GetLifetimeScope(true);
-            portal = scope.GetRequiredService<IReadPortal<IBaseAuthorizationGrantedObject>>();
-        }
+    [Create]
+    public void Create(int i, Guid? g) { }
 
-        [TestMethod]
-        public async Task BaseAuthorization_Create()
-        {
-            var obj = await portal.Create();
-            var authRule = scope.GetRequiredService<IAuthorizationGrantedRule>();
-            Assert.IsTrue(authRule.ExecuteCreateCalled);
-        }
+    [Fetch]
+    private void Fetch() { }
 
-        [TestMethod]
-        public async Task BaseAuthorization_Create_Criteria()
-        {
-            var criteria = DateTime.Now.Millisecond;
-            var obj = await portal.Create(criteria);
-            var authRule = scope.GetRequiredService<IAuthorizationGrantedRule>();
-            Assert.IsTrue(authRule.ExecuteCreateCalled);
-            Assert.AreEqual(criteria, authRule.IntCriteria);
-        }
+    [Fetch]
+    public void Fetch(int criteria) { }
 
-        [TestMethod]
-        public async Task BaseAuthorization_Create_MultipleCriteria()
-        {
-            var intC = DateTime.Now.Millisecond;
-            var guidC = Guid.NewGuid();
+}
 
-            var obj = await portal.Create(intC, guidC);
-            var authRule = scope.GetRequiredService<IAuthorizationGrantedRule>();
-            Assert.IsTrue(authRule.ExecuteCreateCalled);
-            Assert.AreEqual(intC, authRule.IntCriteria);
-            Assert.AreEqual(guidC, authRule.GuidCriteria.Value);
-        }
+[TestClass]
+public class BaseAuthorizationGrantedTests
+{
 
-        [TestMethod]
-        public async Task BaseAuthorization_Fetch()
-        {
-            var obj = await portal.Fetch();
-            var authRule = scope.GetRequiredService<IAuthorizationGrantedRule>();
-            Assert.IsTrue(authRule.ExecuteFetchCalled);
-        }
+    IServiceScope scope;
+    IReadPortal<IBaseAuthorizationGrantedObject> portal;
 
-        [TestMethod]
-        public async Task BaseAuthorization_Fetch_Criteria()
-        {
-            var criteria = DateTime.Now.Millisecond;
-            var obj = await portal.Fetch(criteria);
-            var authRule = scope.GetRequiredService<IAuthorizationGrantedRule>();
-            Assert.IsTrue(authRule.ExecuteFetchCalled);
-            Assert.AreEqual(criteria, authRule.IntCriteria);
-        }
+    [TestInitialize]
+    public void TestInitialize()
+    {
+        scope = UnitTestServices.GetLifetimeScope(true);
+        portal = scope.GetRequiredService<IReadPortal<IBaseAuthorizationGrantedObject>>();
+    }
+
+    [TestMethod]
+    public async Task BaseAuthorization_Create()
+    {
+        var obj = await portal.Create();
+        var authRule = scope.GetRequiredService<IAuthorizationGrantedRule>();
+        Assert.IsTrue(authRule.ExecuteCreateCalled);
+    }
+
+    [TestMethod]
+    public async Task BaseAuthorization_Create_Criteria()
+    {
+        var criteria = DateTime.Now.Millisecond;
+        var obj = await portal.Create(criteria);
+        var authRule = scope.GetRequiredService<IAuthorizationGrantedRule>();
+        Assert.IsTrue(authRule.ExecuteCreateCalled);
+        Assert.AreEqual(criteria, authRule.IntCriteria);
+    }
+
+    [TestMethod]
+    public async Task BaseAuthorization_Create_MultipleCriteria()
+    {
+        var intC = DateTime.Now.Millisecond;
+        var guidC = Guid.NewGuid();
+
+        var obj = await portal.Create(intC, guidC);
+        var authRule = scope.GetRequiredService<IAuthorizationGrantedRule>();
+        Assert.IsTrue(authRule.ExecuteCreateCalled);
+        Assert.AreEqual(intC, authRule.IntCriteria);
+        Assert.AreEqual(guidC, authRule.GuidCriteria.Value);
+    }
+
+    [TestMethod]
+    public async Task BaseAuthorization_Fetch()
+    {
+        var obj = await portal.Fetch();
+        var authRule = scope.GetRequiredService<IAuthorizationGrantedRule>();
+        Assert.IsTrue(authRule.ExecuteFetchCalled);
+    }
+
+    [TestMethod]
+    public async Task BaseAuthorization_Fetch_Criteria()
+    {
+        var criteria = DateTime.Now.Millisecond;
+        var obj = await portal.Fetch(criteria);
+        var authRule = scope.GetRequiredService<IAuthorizationGrantedRule>();
+        Assert.IsTrue(authRule.ExecuteFetchCalled);
+        Assert.AreEqual(criteria, authRule.IntCriteria);
     }
 }

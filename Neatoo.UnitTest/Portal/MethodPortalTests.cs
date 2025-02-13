@@ -2,62 +2,61 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
-namespace Neatoo.UnitTest.Portal
+namespace Neatoo.UnitTest.Portal;
+
+
+public class IMethodPortal<S> where S : Delegate
 {
 
-    public class IMethodPortal<S> where S : Delegate
+
+}
+
+public class MethodPortal<S> where S : Delegate
+{
+
+    public MethodPortal(S method)
     {
-
-
+        Method = method;
     }
 
-    public class MethodPortal<S> where S : Delegate
+    public S Method { get; }
+
+    public T Execute<P, T>(P param)
     {
+        return (T)Method.Method.Invoke(Method.Target, new object[1] { param });
+    }
+}
 
-        public MethodPortal(S method)
-        {
-            Method = method;
-        }
+[TestClass]
+public class MethodPortalTests
+{
+    private IServiceProvider container;
 
-        public S Method { get; }
+    public delegate bool RemoteMethod(int number);
 
-        public T Execute<P, T>(P param)
-        {
-            return (T)Method.Method.Invoke(Method.Target, new object[1] { param });
-        }
+    public static bool RemoteMethod_(int number)
+    {
+        return number == 10;
     }
 
-    [TestClass]
-    public class MethodPortalTests
+
+    [TestInitialize]
+    public void TestInitialize()
     {
-        private IServiceProvider container;
-
-        public delegate bool RemoteMethod(int number);
-
-        public static bool RemoteMethod_(int number)
+        var containerBuilder = new ServiceCollection();
+        containerBuilder.AddTransient<RemoteMethod>(cc =>
         {
-            return number == 10;
-        }
+            return i => RemoteMethod_(i);
+        });
+        containerBuilder.AddTransient(typeof(MethodPortal<>));
+        container = containerBuilder.BuildServiceProvider();
+    }
 
-
-        [TestInitialize]
-        public void TestInitialize()
-        {
-            var containerBuilder = new ServiceCollection();
-            containerBuilder.AddTransient<RemoteMethod>(cc =>
-            {
-                return i => RemoteMethod_(i);
-            });
-            containerBuilder.AddTransient(typeof(MethodPortal<>));
-            container = containerBuilder.BuildServiceProvider();
-        }
-
-        [TestMethod]
-        public void MethodPortalTest()
-        {
-            var mp = container.GetRequiredService<MethodPortal<RemoteMethod>>();
-            var result = mp.Execute<int, bool>(10);
-        }
+    [TestMethod]
+    public void MethodPortalTest()
+    {
+        var mp = container.GetRequiredService<MethodPortal<RemoteMethod>>();
+        var result = mp.Execute<int, bool>(10);
     }
 }
 

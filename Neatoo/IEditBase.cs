@@ -1,19 +1,17 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Neatoo
+namespace Neatoo;
+
+public interface IEditBase : IValidateBase, IEditMetaProperties
 {
-    public interface IEditBase : IValidateBase, IEditMetaProperties
-    {
-        IEnumerable<string> ModifiedProperties { get; }
+    IEnumerable<string> ModifiedProperties { get; }
 
-        /// <summary>
-        /// Marks the object as deleted
-        /// </summary>
-        void Delete();
-        void UnDelete();
+    /// <summary>
+    /// Marks the object as deleted
+    /// </summary>
+    void Delete();
+    void UnDelete();
 
-        Task<IEditBase> Save();
-    }
-
+    Task<IEditBase> Save();
 }

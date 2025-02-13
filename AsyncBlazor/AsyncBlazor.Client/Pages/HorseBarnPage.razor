@@ -19,9 +19,9 @@
             <div class="col" style="background-color: lightblue;">
                 <div>
                     @foreach (var cart in HorseBarn.Carts)
-                    {
-                        <AsyncBlazor.Client.Components.CartComponent Cart="cart" />
-                    }
+                {
+                    <AsyncBlazor.Client.Components.CartComponent Cart="cart" />
+                }
                 </div>
             </div>
             <div class="col" style="background-color: lightgray;" @ondrop="HandleDragDrop" @ondragover="HandleDragOver">
@@ -46,32 +46,32 @@
 
 @code {
 
-    [Inject]
-    public IReadPortal<IHorseBarn> readPortal { get; set; } = default!;
+[Inject]
+public IReadPortal<IHorseBarn> readPortal { get; set; } = default!;
 
-    public IHorseBarn HorseBarn { get; set; } = default!;
+public IHorseBarn HorseBarn { get; set; } = default!;
 
-    protected override async Task OnInitializedAsync()
-    {
+protected override async Task OnInitializedAsync()
+{
 
-        HorseBarn = await readPortal.Fetch();
+    HorseBarn = await readPortal.Fetch();
 
-        await base.OnInitializedAsync();
+    await base.OnInitializedAsync();
 
-    }
+}
 
-    private Task HandleDragDrop(DragEventArgs e)
-    {
-        throw new NotImplementedException();
-    }
+private Task HandleDragDrop(DragEventArgs e)
+{
+    throw new NotImplementedException();
+}
 
 
-    private Task HandleDragOver(DragEventArgs e)
-    {
-        throw new NotImplementedException();
-    }
-    private Task Save(MouseEventArgs e)
-    {
-        throw new NotImplementedException();
-    }
+private Task HandleDragOver(DragEventArgs e)
+{
+    throw new NotImplementedException();
+}
+private Task Save(MouseEventArgs e)
+{
+    throw new NotImplementedException();
+}
 }

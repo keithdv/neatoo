@@ -1,7 +1,5 @@
 ﻿using Neatoo.Core;
-using Neatoo.Portal;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
@@ -12,8 +10,7 @@ namespace Neatoo;
 
 public interface IBase : INeatooObject, INotifyPropertyChanged, INotifyNeatooPropertyChanged, IBaseMetaProperties
 {
-    IBase Parent { get; }
-
+    IBase? Parent { get; }
     internal void AddChildTask(Task task);
     internal IProperty GetProperty(string propertyName);
     internal IProperty this[string propertyName] { get => GetProperty(propertyName); }
@@ -24,12 +21,11 @@ public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeseria
     where T : Base<T>
 {
     // Fields
-    protected AsyncTaskSequencer AsyncTaskSequencer { get; private set; } = new AsyncTaskSequencer();
-
+    protected AsyncTasks AsyncTaskSequencer { get; private set; } = new AsyncTasks();
     // Properties
     protected IPropertyManager<IProperty> PropertyManager { get; set; }
     IPropertyManager<IProperty> IBase.PropertyManager => PropertyManager;
-    public IBase Parent { get; protected set; }
+    public IBase? Parent { get; protected set; }
     protected IProperty this[string propertyName] { get => GetProperty(propertyName); }
     public bool IsSelfBusy => !AsyncTaskSequencer.AllDone.IsCompleted || PropertyManager.IsSelfBusy;
     public bool IsBusy => IsSelfBusy || PropertyManager.IsBusy;
@@ -53,12 +49,12 @@ public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeseria
     }
 
     // Methods
-    protected virtual void SetParent(IBase parent)
+    protected virtual void SetParent(IBase? parent)
     {
         Parent = parent;
     }
 
-    void ISetParent.SetParent(IBase parent)
+    void ISetParent.SetParent(IBase? parent)
     {
         SetParent(parent);
     }
@@ -78,7 +74,7 @@ public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeseria
         Debug.Assert(PropertyManager.GetProperties.Any(p => p.Name == breadCrumbs.PropertyName), "Property not found");
 
         // This is for databinding only - not other Neatoo objects
-        return NeatooPropertyChanged?.Invoke(new PropertyChangedBreadCrumbs(breadCrumbs.PropertyName, this, breadCrumbs.PreviousPropertyName)) ?? Task.CompletedTask;
+        return NeatooPropertyChanged?.Invoke(new PropertyChangedBreadCrumbs(breadCrumbs.PropertyName, this, breadCrumbs.InnerBreadCrumb)) ?? Task.CompletedTask;
     }
 
     protected virtual Task ChildNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
@@ -112,22 +108,17 @@ public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeseria
         return (P?) PropertyManager[propertyName]?.Value;
     }
     
-    private List<(object, Task)> tasksRan = new List<(object, Task)>();
-
     protected virtual void Setter<P>(P? value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
     {
-        var task = PropertyManager[propertyName].SetValue(value);
-
-        tasksRan.Add((this, task));
+        var task = PropertyManager[propertyName].SetPrivateValue(value);
 
         if (Parent != null)
         {
             Parent.AddChildTask(task);
         } 
-        else
-        {
-            AsyncTaskSequencer.AddTask((t) => task);
-        }
+
+        AsyncTaskSequencer.AddTask(task);
+
     }
 
     public virtual void AddChildTask(Task task)
@@ -138,16 +129,12 @@ public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeseria
         //AsyncTaskSequencer.AddTask((t) => task);
         //Parent?.AddChildTask(task);
 
-        tasksRan.Add((this, task));
-
         if (Parent != null)
         {
             Parent.AddChildTask(task);
         } 
-        else
-        {
-            AsyncTaskSequencer.AddTask((t) => task);
-        }
+
+        AsyncTaskSequencer.AddTask(task);
     }
 
     public IProperty GetProperty(string propertyName)

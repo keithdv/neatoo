@@ -1,7 +1,6 @@
-﻿namespace Neatoo.Core
-{
-    //internal interface ISetTarget
-    //{
-    //    void SetTarget(IBase target);
-    //}
-}
+﻿namespace Neatoo.Core;
+
+//internal interface ISetTarget
+//{
+//    void SetTarget(IBase target);
+//}

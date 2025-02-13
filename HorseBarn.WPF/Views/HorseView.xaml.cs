@@ -1,15 +1,14 @@
 ﻿using System.Windows.Controls;
 
-namespace HorseBarn.WPF.Views
+namespace HorseBarn.WPF.Views;
+
+/// <summary>
+/// Interaction logic for HorseView.xaml
+/// </summary>
+public partial class HorseView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for HorseView.xaml
-    /// </summary>
-    public partial class HorseView : UserControl
+    public HorseView()
     {
-        public HorseView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

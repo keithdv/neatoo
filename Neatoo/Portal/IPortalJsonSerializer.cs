@@ -1,4 +1,1 @@
-﻿namespace Neatoo.Portal
-{
-
-}
+﻿namespace Neatoo.Portal;

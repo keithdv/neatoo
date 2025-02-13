@@ -1,7 +1,6 @@
-﻿namespace HorseBarn.lib.Cart
+﻿namespace HorseBarn.lib.Cart;
+
+internal enum CartType
 {
-    internal enum CartType
-    {
-        RacingChariot, Wagon
-    }
+    RacingChariot, Wagon
 }

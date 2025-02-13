@@ -1,6 +1,5 @@
-﻿namespace HorseBarn.WPF.Converters
+﻿namespace HorseBarn.WPF.Converters;
+
+public class IsValueConverter<T1, T2>
 {
-    public class IsValueConverter<T1, T2>
-    {
-    }
 }

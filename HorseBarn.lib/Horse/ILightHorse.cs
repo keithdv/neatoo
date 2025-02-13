@@ -1,7 +1,6 @@
-﻿namespace HorseBarn.lib.Horse
+﻿namespace HorseBarn.lib.Horse;
+
+public interface ILightHorse : IHorse
 {
-    public interface ILightHorse : IHorse
-    {
-        double TopSpeed { get; set; }
-    }
+    double TopSpeed { get; set; }
 }

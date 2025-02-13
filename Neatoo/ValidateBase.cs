@@ -93,11 +93,6 @@ namespace Neatoo
             CheckIfMetaPropertiesChanged();
         }
 
-        protected virtual Task AddAsyncMethod(Func<Task, Task> method, bool runOnException = false)
-        {
-            return AsyncTaskSequencer.AddTask(method, runOnException);
-        }
-
         public IReadOnlyList<string> BrokenRuleMessages => PropertyManager.ErrorMessages;
 
         /// <summary>
@@ -172,7 +167,7 @@ namespace Neatoo
         {
             this[nameof(ObjectInvalid)].ClearAllErrors();
 
-            await AddAsyncMethod((t) => RuleManager.CheckAllRules(token));
+            await RuleManager.CheckAllRules(token);
             await AsyncTaskSequencer.AllDone;
         }
 

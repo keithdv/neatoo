@@ -30,40 +30,40 @@ class="@GetInputClass()"
 title="@GetErrorMessage()" />
 @code {
 
-    [Parameter]
-    public IValidateProperty ValidateProperty { get; set; }
+[Parameter]
+public IValidateProperty ValidateProperty { get; set; }
 
-    override protected void OnInitialized()
+override protected void OnInitialized()
+{
+    base.OnInitialized();
+
+
+    ValidateProperty.PropertyChanged += (sender, e) =>
     {
-        base.OnInitialized();
-
-
-        ValidateProperty.PropertyChanged += (sender, e) =>
+        if (e.PropertyName == nameof(IProperty.IsBusy))
         {
-            if (e.PropertyName == nameof(IProperty.IsBusy))
-            {
-                InvokeAsync(() => StateHasChanged());
-            }
-        };
-
-    }
-
-
-    private string GetInputClass()
-    {
-        if (ValidateProperty.IsBusy)
-        {
-            return "text-box disabled";
+            InvokeAsync(() => StateHasChanged());
         }
-        if (!ValidateProperty.IsValid)
-        {
-            return "text-box invalid";
-        }
-        return "text-box";
-    }
+    };
 
-    private string GetErrorMessage()
+}
+
+
+private string GetInputClass()
+{
+    if (ValidateProperty.IsBusy)
     {
-        return ValidateProperty.ErrorMessages.Any() ? string.Join(", ", ValidateProperty.ErrorMessages) : string.Empty;
+        return "text-box disabled";
     }
+    if (!ValidateProperty.IsValid)
+    {
+        return "text-box invalid";
+    }
+    return "text-box";
+}
+
+private string GetErrorMessage()
+{
+    return ValidateProperty.ErrorMessages.Any() ? string.Join(", ", ValidateProperty.ErrorMessages) : string.Empty;
+}
 }

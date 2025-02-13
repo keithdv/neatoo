@@ -1,6 +1,5 @@
-﻿namespace Neatoo.Portal.Core
+﻿namespace Neatoo.Portal.Core;
+
+public class RemoteMethodCall
 {
-    public class RemoteMethodCall
-    {
-    }
 }

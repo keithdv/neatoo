@@ -1,10 +1,9 @@
-﻿namespace Neatoo.Rules
+﻿namespace Neatoo.Rules;
+
+public class RuleProxy
 {
-    public class RuleProxy
-    {
 
-        public IValidateBase Target { get; set; }
+    public IValidateBase Target { get; set; }
 
 
-    }
 }

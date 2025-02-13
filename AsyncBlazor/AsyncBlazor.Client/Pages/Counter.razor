@@ -19,18 +19,18 @@
 
 @code {
 
-    private AsyncValidate asyncValidate = new AsyncValidate();
+private AsyncValidate asyncValidate = new AsyncValidate();
 
-    [Inject]
-    public IReadPortal<IHorseBarn> ReadPortal { get; set; } = default!;
+[Inject]
+public IReadPortal<IHorseBarn> ReadPortal { get; set; } = default!;
 
-    public IHorseBarn HorseBarn { get; set; } = default!;
+public IHorseBarn HorseBarn { get; set; } = default!;
 
-    public IHorse horse { get; set; } = default!;
-    protected override async Task OnInitializedAsync()
-    {
-        HorseBarn = await ReadPortal.Fetch();
+public IHorse horse { get; set; } = default!;
+protected override async Task OnInitializedAsync()
+{
+    HorseBarn = await ReadPortal.Fetch();
 
-        horse = HorseBarn.Horses.First();
-    }
+    horse = HorseBarn.Horses.First();
+}
 }

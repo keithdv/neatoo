@@ -3,35 +3,34 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Portal;
 using Neatoo.UnitTest.ObjectPortal;
 
-namespace Neatoo.UnitTest.Portal
+namespace Neatoo.UnitTest.Portal;
+
+[TestClass]
+public class PortalEditListSaveTests
 {
-    [TestClass]
-    public class PortalEditListSaveTests
+
+    private IServiceScope scope = UnitTestServices.GetLifetimeScope(true);
+    private IReadWritePortal<IEditObjectList> portal;
+    private IEditObjectList list;
+    private IEditObject child;
+
+    [TestInitialize]
+    public void TestInitialize()
     {
+        portal = scope.GetRequiredService<IReadWritePortal<IEditObjectList>>();
+        list = portal.Fetch().Result;
+        child = list.CreateAdd().Result;
+        child.MarkUnmodified();
+        child.MarkOld();
 
-        private IServiceScope scope = UnitTestServices.GetLifetimeScope(true);
-        private IReadWritePortal<IEditObjectList> portal;
-        private IEditObjectList list;
-        private IEditObject child;
-
-        [TestInitialize]
-        public void TestInitialize()
-        {
-            portal = scope.GetRequiredService<IReadWritePortal<IEditObjectList>>();
-            list = portal.Fetch().Result;
-            child = list.CreateAdd().Result;
-            child.MarkUnmodified();
-            child.MarkOld();
-
-            Assert.IsFalse(list.IsModified);
-
-        }
-
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            scope.Dispose();
-        }
+        Assert.IsFalse(list.IsModified);
 
     }
+
+    [TestCleanup]
+    public void TestCleanup()
+    {
+        scope.Dispose();
+    }
+
 }

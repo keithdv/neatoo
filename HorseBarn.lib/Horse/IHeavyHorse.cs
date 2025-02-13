@@ -1,6 +1,5 @@
-﻿namespace HorseBarn.lib.Horse
+﻿namespace HorseBarn.lib.Horse;
+
+public interface IHeavyHorse : IHorse
 {
-    public interface IHeavyHorse : IHorse
-    {
-    }
 }

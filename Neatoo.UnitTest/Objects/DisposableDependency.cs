@@ -1,31 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Neatoo.UnitTest.Objects
+namespace Neatoo.UnitTest.Objects;
+
+
+public class DisposableDependencyList : List<DisposableDependency> { }
+
+public interface IDisposableDependency : IDisposable
 {
+    Guid UniqueId { get; }
+    bool IsDisposed { get; set; }
+}
 
-    public class DisposableDependencyList : List<DisposableDependency> { }
-
-    public interface IDisposableDependency : IDisposable
+public class DisposableDependency : IDisposableDependency
+{
+    public DisposableDependency(DisposableDependencyList list)
     {
-        Guid UniqueId { get; }
-        bool IsDisposed { get; set; }
+        list.Add(this);
     }
 
-    public class DisposableDependency : IDisposableDependency
+    public Guid UniqueId { get; } = Guid.NewGuid();
+    public bool IsDisposed { get; set; } = false;
+
+    public void Dispose()
     {
-        public DisposableDependency(DisposableDependencyList list)
-        {
-            list.Add(this);
-        }
-
-        public Guid UniqueId { get; } = Guid.NewGuid();
-        public bool IsDisposed { get; set; } = false;
-
-        public void Dispose()
-        {
-            if (IsDisposed) throw new Exception("Already Disposed!");
-            IsDisposed = true;
-        }
+        if (IsDisposed) throw new Exception("Already Disposed!");
+        IsDisposed = true;
     }
 }

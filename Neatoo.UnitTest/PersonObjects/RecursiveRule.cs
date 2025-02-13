@@ -1,26 +1,25 @@
 ﻿using Neatoo.Rules;
 
-namespace Neatoo.UnitTest.PersonObjects
-{
-    internal interface IRecursiveRule : IRule<IPersonBase> { }
+namespace Neatoo.UnitTest.PersonObjects;
 
-    internal class RecursiveRule : RuleBase<IPersonBase>, IRecursiveRule
+internal interface IRecursiveRule : IRule<IPersonBase> { }
+
+internal class RecursiveRule : RuleBase<IPersonBase>, IRecursiveRule
+{
+    public RecursiveRule() : base()
     {
-        public RecursiveRule() : base()
+        AddTriggerProperties(_ => _.ShortName);
+    }
+    public override PropertyErrors Execute(IPersonBase target)
+    {
+        if (target.ShortName == "Recursive")
         {
-            AddTriggerProperties(_ => _.ShortName);
+            target.ShortName = "Recursive change";
         }
-        public override PropertyErrors Execute(IPersonBase target)
+        else if (target.ShortName == "Recursive Error")
         {
-            if (target.ShortName == "Recursive")
-            {
-                target.ShortName = "Recursive change";
-            }
-            else if (target.ShortName == "Recursive Error")
-            {
-                target.FirstName = "Error"; // trigger the ShortNameRule error
-            }
-            return PropertyErrors.None;
+            target.FirstName = "Error"; // trigger the ShortNameRule error
         }
+        return PropertyErrors.None;
     }
 }

@@ -3,11 +3,11 @@ using HorseBarn.lib.Horse;
 using Moq;
 using Neatoo.Portal;
 using Neatoo;
+using Xunit;
 
 namespace HorseBarn.lib.UnitTests
 {
-    [TestClass]
-    public sealed class HorseBarnTests
+    public sealed class HorseBarnTests : IDisposable
     {
         private Mock<IReadWritePortalChild<ILightHorse>> mockLightHorsePortal;
         private Mock<IReadWritePortalChild<IHeavyHorse>> mockHeavyHorsePortal;
@@ -20,16 +20,15 @@ namespace HorseBarn.lib.UnitTests
         private Mock<IPasture> mockPasture;
         private Mock<ICartList> mockCartList;
 
-        [TestInitialize]
-        public async Task TestInitialize()
+        public HorseBarnTests()
         {
-            mockLightHorsePortal = new Mock<IReadWritePortalChild<ILightHorse>>();
-            mockHeavyHorsePortal = new Mock<IReadWritePortalChild<IHeavyHorse>>();
-            mockRacingChariotPortal = new Mock<IReadWritePortalChild<IRacingChariot>>();
-            mockWagonPortal = new Mock<IReadWritePortalChild<IWagon>>();
-            mockPasturePortal = new Mock<IReadWritePortalChild<IPasture>>();
-            mockCartListPortal = new Mock<IReadWritePortalChild<ICartList>>();
-            mockHorseBarnPortal = new Mock<IReadWritePortal<HorseBarn>>();
+            mockLightHorsePortal = new Mock<IReadWritePortalChild<ILightHorse>>(MockBehavior.Strict);
+            mockHeavyHorsePortal = new Mock<IReadWritePortalChild<IHeavyHorse>>(MockBehavior.Strict);
+            mockRacingChariotPortal = new Mock<IReadWritePortalChild<IRacingChariot>>(MockBehavior.Strict);
+            mockWagonPortal = new Mock<IReadWritePortalChild<IWagon>>(MockBehavior.Strict);
+            mockPasturePortal = new Mock<IReadWritePortalChild<IPasture>>(MockBehavior.Strict);
+            mockCartListPortal = new Mock<IReadWritePortalChild<ICartList>>(MockBehavior.Strict);
+            mockHorseBarnPortal = new Mock<IReadWritePortal<HorseBarn>>(MockBehavior.Strict);
 
             horseBarn = new HorseBarn(new EditBaseServices<HorseBarn>(mockHorseBarnPortal.Object), mockLightHorsePortal.Object, mockHeavyHorsePortal.Object, mockRacingChariotPortal.Object, mockWagonPortal.Object);
 
@@ -39,17 +38,17 @@ namespace HorseBarn.lib.UnitTests
             mockPasturePortal.Setup(p => p.CreateChild()).ReturnsAsync(mockPasture.Object);
             mockCartListPortal.Setup(c => c.CreateChild()).ReturnsAsync(mockCartList.Object);
 
-            await horseBarn.Create(mockPasturePortal.Object, mockCartListPortal.Object);
+            horseBarn.Create(mockPasturePortal.Object, mockCartListPortal.Object).Wait();
         }
 
-        [TestMethod]
+        [Fact]
         public void HorseBarn_Create()
         {
-            Assert.AreEqual(mockPasture.Object, horseBarn.Pasture);
-            Assert.AreEqual(mockCartList.Object, horseBarn.Carts);
+            Assert.Equal(mockPasture.Object, horseBarn.Pasture);
+            Assert.Equal(mockCartList.Object, horseBarn.Carts);
         }
 
-        [TestMethod]
+        [Fact]
         public async Task HorseBarn_AddRacingCart()
         {
             var mockRacingChariot = new Mock<IRacingChariot>();
@@ -58,11 +57,11 @@ namespace HorseBarn.lib.UnitTests
 
             var racingChariot = await horseBarn.AddRacingChariot();
 
-            Assert.AreEqual(mockRacingChariot.Object, racingChariot);
+            Assert.Equal(mockRacingChariot.Object, racingChariot);
             mockCartListPortal.Verify(c => c.CreateChild(), Times.Once);
         }
 
-        [TestMethod]
+        [Fact]
         public async Task HorseBarn_AddWagon()
         {
             var mockWagon = new Mock<IWagon>();
@@ -71,58 +70,88 @@ namespace HorseBarn.lib.UnitTests
 
             var wagon = await horseBarn.AddWagon();
 
-            Assert.AreEqual(mockWagon.Object, wagon);
+            Assert.Equal(mockWagon.Object, wagon);
             mockCartListPortal.Verify(c => c.CreateChild(), Times.Once);
         }
 
-        [TestMethod]
+        [Fact]
         public async Task HorseBarn_AddNewHorse_LightHorse()
         {
             var mockLightHorse = new Mock<ILightHorse>();
             var criteria = Mock.Of<IHorseCriteria>();
             criteria.Breed = Breed.Thoroughbred;
 
-            mockLightHorsePortal.Setup(p => p.CreateChild(It.IsAny<Breed>())).ReturnsAsync(mockLightHorse.Object);
+            mockLightHorsePortal.Setup(p => p.CreateChild(criteria)).ReturnsAsync(mockLightHorse.Object);
+            mockPasture.Setup(p => p.HorseList.Add(It.IsAny<IHorse>()));
 
             var lightHorse = await horseBarn.AddNewHorse(criteria);
 
-            Assert.AreEqual(mockLightHorse.Object, lightHorse);
-            mockLightHorse.Verify(h => h.RunAllRules(CancellationToken.None), Times.Once);
+            Assert.Equal(mockLightHorse.Object, lightHorse);
+            mockPasture.Verify(p => p.HorseList.Add(It.IsAny<IHorse>()), Times.Once);
         }
 
-        [TestMethod]
+        [Fact]
         public async Task HorseBarn_AddNewHorse_HeavyHorse()
         {
             var mockHeavyHorse = new Mock<IHeavyHorse>();
+            var criteria = Mock.Of<IHorseCriteria>();
 
-            mockHeavyHorsePortal.Setup(p => p.CreateChild(It.IsAny<IHorseCriteria>())).ReturnsAsync(mockHeavyHorse.Object);
+            criteria.Breed = Breed.Clydesdale;
+            mockHeavyHorsePortal.Setup(p => p.CreateChild(criteria)).ReturnsAsync(mockHeavyHorse.Object);
+            mockPasture.Setup(p => p.HorseList.Add(It.IsAny<IHorse>()));
 
-            var heavyHorse = await horseBarn.AddNewHorse(Mock.Of<IHorseCriteria>());
+            var heavyHorse = await horseBarn.AddNewHorse(criteria);
 
-            Assert.AreEqual(mockHeavyHorse.Object, heavyHorse);
-            mockHeavyHorse.Verify(h => h.RunAllRules(CancellationToken.None), Times.Once);
+            Assert.Same(mockHeavyHorse.Object, heavyHorse);
+            mockPasture.Verify(p => p.HorseList.Add(It.IsAny<IHorse>()), Times.Once);
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(Exception))]
+        [Fact]
         public async Task HorseBarn_AddNewHorse_InvalidBreed()
         {
             var criteria = Mock.Of<IHorseCriteria>();
-            criteria.Breed = (Breed) 999;
+            criteria.Breed = (Breed)999;
 
-            await horseBarn.AddNewHorse(criteria); // Invalid breed
+            await Assert.ThrowsAsync<Exception>(() => horseBarn.AddNewHorse(criteria)); // Invalid breed
         }
 
-        [TestMethod]
+
+        [Fact]
         public async Task HorseBarn_MoveHorseToCart()
         {
             var mockHeavyHorse = new Mock<IHeavyHorse>();
             var mockWagon = new Mock<ICart>();
 
+            mockWagon.Setup(w => w.AddHorse(mockHeavyHorse.Object)).Returns(Task.CompletedTask);
+            mockWagon.Setup(w => w.RunAllRules(CancellationToken.None)).Returns(Task.CompletedTask);
+            mockPasture.Setup(p => p.RemoveHorse(mockHeavyHorse.Object)).Verifiable();
+            mockCartList.Setup(c => c.RemoveHorse(mockHeavyHorse.Object)).Returns(Task.CompletedTask).Verifiable();
+
             await horseBarn.MoveHorseToCart(mockHeavyHorse.Object, mockWagon.Object);
 
-            mockWagon.Verify(w => w.HorseList.Add(mockHeavyHorse.Object), Times.Once);
-            mockWagon.Verify(w => w.RunAllRules(CancellationToken.None), Times.Once);
+            mockPasture.Verify(p => p.RemoveHorse(mockHeavyHorse.Object), Times.Once);
+            mockCartList.Verify(c => c.RemoveHorse(mockHeavyHorse.Object), Times.Once);
+            mockWagon.Verify(w => w.AddHorse(mockHeavyHorse.Object), Times.Once);
+        }
+
+        [Fact]
+        public async Task HorseBarn_MoveHorseToPasture()
+        {
+            var mockHeavyHorse = new Mock<IHeavyHorse>();
+
+            mockCartList.Setup(c => c.RemoveHorse(mockHeavyHorse.Object)).Returns(Task.CompletedTask).Verifiable();
+            mockPasture.Setup(p => p.HorseList.Contains(mockHeavyHorse.Object)).Returns(false);
+            mockPasture.Setup(p => p.HorseList.Add(mockHeavyHorse.Object)).Verifiable();
+
+            await horseBarn.MoveHorseToPasture(mockHeavyHorse.Object);
+
+            mockCartList.Verify(c => c.RemoveHorse(mockHeavyHorse.Object), Times.Once);
+            mockPasture.Verify(p => p.HorseList.Add(mockHeavyHorse.Object), Times.Once);
+        }
+
+        public void Dispose()
+        {
+            // Cleanup code, if needed
         }
     }
 }

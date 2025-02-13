@@ -1,22 +1,19 @@
 ﻿using Neatoo.Portal;
 using System;
 
-namespace Neatoo.Core
+namespace Neatoo.Core;
+
+
+public class Paused : IDisposable
 {
-
-    public class Paused : IDisposable
+    IPortalTarget Target { get; }
+    public Paused(IPortalTarget target)
     {
-        IPortalTarget Target { get; }
-        public Paused(IPortalTarget target)
-        {
-            this.Target = target;
-        }
-
-        public void Dispose()
-        {
-            Target.ResumeAllActions();
-        }
+        this.Target = target;
     }
 
-
+    public void Dispose()
+    {
+        Target.ResumeAllActions();
+    }
 }

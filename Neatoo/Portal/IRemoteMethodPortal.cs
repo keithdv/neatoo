@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace Neatoo.Portal
+namespace Neatoo.Portal;
+
+public interface IRemoteMethodPortal<D> where D : Delegate
 {
-    public interface IRemoteMethodPortal<D> where D : Delegate
-    {
 
-        Task<T> Execute<T>(params object[] p);
-
-    }
+    Task<T> Execute<T>(params object[] p);
 
 }

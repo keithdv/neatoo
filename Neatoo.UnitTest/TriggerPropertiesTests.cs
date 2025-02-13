@@ -2,36 +2,35 @@
 using Neatoo.Rules;
 using System.Linq.Expressions;
 
-namespace Neatoo.UnitTest
+namespace Neatoo.UnitTest;
+
+
+public class TriggerPropertiesTestSubject
+{
+    public TriggerPropertiesTestSubjectChild Child { get; set; }
+
+}
+
+
+public class TriggerPropertiesTestSubjectChild
+{
+    public string ChildProperty { get; set; }
+}
+
+[TestClass]
+public class TriggerPropertiesTests
 {
 
-    public class TriggerPropertiesTestSubject
+    [TestMethod]
+    public void TriggerProperty_WithExpression()
     {
-        public TriggerPropertiesTestSubjectChild Child { get; set; }
+        var testSubject = new TriggerPropertiesTestSubject();
 
+        var triggerProperty = new TriggerProperty<TriggerPropertiesTestSubject, string>((TriggerPropertiesTestSubject t) => t.Child.ChildProperty);
+        // Act
+        var result = triggerProperty.IsMatch(testSubject, "Child.ChildProperty");
+        // Assert
+        Assert.IsTrue(result);
     }
 
-
-    public class TriggerPropertiesTestSubjectChild
-    {
-        public string ChildProperty { get; set; }
-    }
-
-    [TestClass]
-    public class TriggerPropertiesTests
-    {
-
-        [TestMethod]
-        public void TriggerProperty_WithExpression()
-        {
-            var testSubject = new TriggerPropertiesTestSubject();
-
-            var triggerProperty = new TriggerProperty<TriggerPropertiesTestSubject, string>((TriggerPropertiesTestSubject t) => t.Child.ChildProperty);
-            // Act
-            var result = triggerProperty.IsMatch(testSubject, "Child.ChildProperty");
-            // Assert
-            Assert.IsTrue(result);
-        }
-
-    }
 }

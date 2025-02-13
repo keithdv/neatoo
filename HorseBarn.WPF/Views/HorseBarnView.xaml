@@ -19,8 +19,6 @@
         <conv:InterfaceDataTemplateSelector x:Key="InterfaceDataTemplateSelector">
             <conv:InterfaceDataTemplateSelector.DataTemplates>
                 <x:Array Type="DataTemplate">
-
-
                     <DataTemplate DataType="{x:Type cart:IRacingChariot}">
                         <Grid Background="{Binding Path=Cart.IsValid, Converter={StaticResource IsValidToRedConverter}}">
                             <Grid.ColumnDefinitions>
@@ -31,7 +29,7 @@
                                 <RowDefinition Height="auto" />
                                 <RowDefinition Height="auto" />
                             </Grid.RowDefinitions>
-                            <Label Grid.Row="0" Content="Racing Chariot" />
+                            <Label Grid.Row="0" Content="Racing Chariot"/>
                             <TextBox Grid.Row="1" Text="{Binding Path=Cart.NumberOfHorses, Mode=TwoWay}"/>
                             <TextBox Grid.Row="2" Text="{Binding Path=Cart.Name, Mode=TwoWay}"/>
                         </Grid>

@@ -1,7 +1,5 @@
-﻿namespace Neatoo
-{
-    public interface INeatooObject
-    {
-    }
+﻿namespace Neatoo;
 
+public interface INeatooObject
+{
 }

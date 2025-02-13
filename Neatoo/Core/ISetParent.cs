@@ -1,7 +1,6 @@
-﻿namespace Neatoo.Core
+﻿namespace Neatoo.Core;
+
+internal interface ISetParent
 {
-    internal interface ISetParent
-    {
-        void SetParent(IBase? parent);
-    }
+    void SetParent(IBase? parent);
 }

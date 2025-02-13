@@ -7,15 +7,15 @@
 else
 {
     @foreach (var horse in Pasture.Horses)
-    {
-        <HorseComponent Horse="horse" />
-    }
+{
+    <HorseComponent Horse="horse" />
+}
 }
 
 @code {
 
 
-    [Parameter]
-    public IPasture Pasture { get; set; } = default!;
+[Parameter]
+public IPasture Pasture { get; set; } = default!;
 
 }
