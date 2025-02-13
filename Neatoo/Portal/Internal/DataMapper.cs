@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Neatoo.AuthorizationRules;
+using Neatoo.Portal.Internal;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,15 +9,25 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace Neatoo.Portal.Core;
+namespace Neatoo.Portal.Internal;
 
-
-
-public class PortalOperationManager<T> : IPortalOperationManager<T>
+public interface IDataMapper
+{
+    void RegisterOperation(DataMapperMethod operation, string methodName);
+    void RegisterOperation(DataMapperMethod operation, MethodInfo method);
+    Task<bool> TryCallOperation(object target, DataMapperMethod operation);
+    Task<bool> TryCallOperation(object target, DataMapperMethod operation, object[] criteria);
+    Task<object> HandlePortalRequest(RemoteDataMapperRequest portalRequest);
+}
+public interface IDataMapper<T> : IDataMapper
 {
 
-    // TODO (?) make these depedencies that can be set to single instance??
-    protected static IDictionary<PortalOperation, List<MethodInfo>> RegisteredOperations { get; } = new ConcurrentDictionary<PortalOperation, List<MethodInfo>>();
+
+}
+
+public class DataMapper<T> : IDataMapper<T>
+{
+    protected static IDictionary<DataMapperMethod, List<MethodInfo>> RegisteredOperations { get; } = new ConcurrentDictionary<DataMapperMethod, List<MethodInfo>>();
     protected static bool IsRegistered { get; set; }
     protected static object lockIsRegistered = new object();
     private readonly IServiceProviderIsService serviceProviderIsService;
@@ -25,9 +36,9 @@ public class PortalOperationManager<T> : IPortalOperationManager<T>
 
     protected IAuthorizationRuleManager AuthorizationRuleManager { get; }
 
-    protected IPortalJsonSerializer jsonSerializer { get; }
+    protected INeatooJsonSerializer jsonSerializer { get; }
 
-    public PortalOperationManager(IServiceProvider scope, IPortalJsonSerializer jsonSerializer, IServiceProviderIsService serviceProviderIsService)
+    public DataMapper(IServiceProvider scope, INeatooJsonSerializer jsonSerializer, IServiceProviderIsService serviceProviderIsService)
     {
 #if DEBUG
         if (typeof(T).IsInterface) { throw new Exception($"PortalOperationManager should be service type not an interface. {typeof(T).FullName}"); }
@@ -47,11 +58,11 @@ public class PortalOperationManager<T> : IPortalOperationManager<T>
             if (!IsRegistered)
             {
                 var methods = typeof(T).GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)
-                    .Where(m => m.GetCustomAttributes<PortalOperationAttributeAttribute>() != null);
+                    .Where(m => m.GetCustomAttributes<DataMapperMethodAttribute>().Any()).ToList();
 
                 foreach (var m in methods)
                 {
-                    var attributes = m.GetCustomAttributes<PortalOperationAttributeAttribute>();
+                    var attributes = m.GetCustomAttributes<DataMapperMethodAttribute>().ToList();
                     foreach (var o in attributes)
                     {
                         RegisterOperation(o.Operation, m);
@@ -62,15 +73,14 @@ public class PortalOperationManager<T> : IPortalOperationManager<T>
         }
     }
 
-    public void RegisterOperation(PortalOperation operation, string methodName)
+    public void RegisterOperation(DataMapperMethod operation, string methodName)
     {
         var method = typeof(T).GetMethod(methodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance) ?? throw new Exception("No method found");
         RegisterOperation(operation, method);
     }
 
-    public void RegisterOperation(PortalOperation operation, MethodInfo method)
+    public void RegisterOperation(DataMapperMethod operation, MethodInfo method)
     {
-
         var returnType = method.ReturnType;
 
         if (!(returnType == typeof(void) || returnType == typeof(Task)))
@@ -84,10 +94,9 @@ public class PortalOperationManager<T> : IPortalOperationManager<T>
         }
 
         methodList.Add(method);
-
     }
 
-    public IEnumerable<MethodInfo> MethodsForOperation(PortalOperation operation)
+    public IEnumerable<MethodInfo>? MethodsForOperation(DataMapperMethod operation)
     {
         if (!RegisteredOperations.TryGetValue(operation, out var methods))
         {
@@ -98,10 +107,10 @@ public class PortalOperationManager<T> : IPortalOperationManager<T>
     }
 
 
-    public MethodInfo MethodForOperation(PortalOperation operation, IEnumerable<Type> criteriaTypes)
+    public MethodInfo? MethodForOperation(DataMapperMethod operation, IEnumerable<Type> criteriaTypes)
     {
         var methods = MethodsForOperation(operation);
-        MethodInfo matchingMethod = null;
+        MethodInfo? matchingMethod = null;
 
         if (methods != null)
         {
@@ -175,23 +184,22 @@ public class PortalOperationManager<T> : IPortalOperationManager<T>
         await AuthorizationRuleManager.CheckAccess(operation, criteria);
     }
 
-    public async Task<bool> TryCallOperation(object target, PortalOperation operation)
+    public async Task<bool> TryCallOperation(object target, DataMapperMethod operation)
     {
         await CheckAccess(operation.ToAuthorizationOperation());
 
         var invoked = false;
         var methods = MethodsForOperation(operation) ?? new List<MethodInfo>();
 
-        IDisposable stopAllActions = null;
+        IDisposable? stopAllActions = null;
 
-        if (target is IPortalTarget portalTarget)
+        if (target is IDataMapperTarget portalTarget)
         {
             stopAllActions = portalTarget.PauseAllActions();
         }
 
         using (stopAllActions)
         {
-
             foreach (var method in methods)
             {
                 var success = true;
@@ -220,11 +228,11 @@ public class PortalOperationManager<T> : IPortalOperationManager<T>
 
                     invoked = true;
 
-                    var result = method.Invoke(target, parameterValues);
+                    var result = method.Invoke(target, parameterValues) as Task;
 
-                    if (method.ReturnType == typeof(Task))
+                    if (result != null)
                     {
-                        await (Task)result;
+                        await result;
                     }
 
                     break;
@@ -237,12 +245,13 @@ public class PortalOperationManager<T> : IPortalOperationManager<T>
         return invoked;
         
     }
-    public async Task<bool> TryCallOperation(object target, PortalOperation operation, object[] criteria)
+    public async Task<bool> TryCallOperation(object target, DataMapperMethod operation, object[] criteria)
     {
         await CheckAccess(operation.ToAuthorizationOperation(), criteria);
 
-        IDisposable stopAllActions = null;
-        if (target is IPortalTarget portalTarget)
+        IDisposable? stopAllActions = null;
+
+        if (target is IDataMapperTarget portalTarget)
         {
             stopAllActions = portalTarget.PauseAllActions();
         }
@@ -302,35 +311,35 @@ public class PortalOperationManager<T> : IPortalOperationManager<T>
         return true;
     }
 
-    protected virtual void PostOperation(object target, PortalOperation operation)
+    protected virtual void PostOperation(object target, DataMapperMethod operation)
     {
-        var editTarget = target as IPortalEditTarget;
+        var editTarget = target as IDataMapperEditTarget;
         if (editTarget != null)
         {
 
 
             switch (operation)
             {
-                case PortalOperation.Create:
+                case DataMapperMethod.Create:
                     editTarget.MarkNew();
                     break;
-                case PortalOperation.CreateChild:
+                case DataMapperMethod.CreateChild:
                     editTarget.MarkAsChild();
                     editTarget.MarkNew();
                     break;
-                case PortalOperation.Fetch:
+                case DataMapperMethod.Fetch:
                     break;
-                case PortalOperation.FetchChild:
+                case DataMapperMethod.FetchChild:
                     editTarget.MarkAsChild();
                     break;
-                case PortalOperation.Delete:
+                case DataMapperMethod.Delete:
                     break;
-                case PortalOperation.DeleteChild:
+                case DataMapperMethod.DeleteChild:
                     break;
-                case PortalOperation.Insert:
-                case PortalOperation.InsertChild:
-                case PortalOperation.Update:
-                case PortalOperation.UpdateChild:
+                case DataMapperMethod.Insert:
+                case DataMapperMethod.InsertChild:
+                case DataMapperMethod.Update:
+                case DataMapperMethod.UpdateChild:
                     editTarget.MarkUnmodified();
                     editTarget.MarkOld();
                     break;
@@ -340,19 +349,19 @@ public class PortalOperationManager<T> : IPortalOperationManager<T>
         }
     }
 
-    public async Task<object> HandlePortalRequest(PortalRequest portalRequest)
+    public async Task<object> HandlePortalRequest(RemoteDataMapperRequest portalRequest)
     {
         Debug.Assert(portalRequest.Target != null, "PortalRequest.Target is null");
         Debug.Assert(!string.IsNullOrEmpty(portalRequest.Target.AssemblyType), "PortalRequest.Target.Type is null");
 
         object target = null;
 
-        var request = jsonSerializer.FromPortalRequest(portalRequest);
+        var request = jsonSerializer.FromDataMapperRequest(portalRequest);
 
-        if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Read) == (int)PortalOperationType.Read)
+        if (((int)portalRequest.DataMapperOperation & (int)DataMapperMethodType.Read) == (int)DataMapperMethodType.Read)
         {
             Debug.Assert(string.IsNullOrEmpty(portalRequest.Target.Json), "PortalRequest.Target.Json should not be defined for PortalOperationType.Create");
-            target = Scope.GetRequiredService(IPortalJsonSerializer.ToType(portalRequest.Target.AssemblyType)) ?? throw new InvalidOperationException("Type is not an IPortalTarget");
+            target = Scope.GetRequiredService(INeatooJsonSerializer.ToType(portalRequest.Target.AssemblyType)) ?? throw new InvalidOperationException("Type is not an IPortalTarget");
         }
         else
         {
@@ -360,25 +369,25 @@ public class PortalOperationManager<T> : IPortalOperationManager<T>
         }
 
 
-        if (((int)portalRequest.PortalOperation & (int)PortalOperationType.Read) == (int)PortalOperationType.Read
+        if (((int)portalRequest.DataMapperOperation & (int)DataMapperMethodType.Read) == (int)DataMapperMethodType.Read
             && portalRequest.Criteria != null)
         {
             var criteria = request.criteria;
 
-            var success = await TryCallOperation(target, portalRequest.PortalOperation, criteria);
+            var success = await TryCallOperation(target, portalRequest.DataMapperOperation, criteria);
 
             if (!success)
             {
-                throw new Exception($"Failed on Server - Operation {portalRequest.PortalOperation.ToString()} with criteria {string.Join(',', criteria.Select(c => c.GetType().FullName))} not found");
+                throw new Exception($"Failed on Server - Operation {portalRequest.DataMapperOperation.ToString()} with criteria {string.Join(',', criteria.Select(c => c.GetType().FullName))} not found");
             }
         }
         else
         {
-            var success = await TryCallOperation(target, portalRequest.PortalOperation);
+            var success = await TryCallOperation(target, portalRequest.DataMapperOperation);
 
-            if (!success && !((((int)portalRequest.PortalOperation) & ((int)PortalOperationType.Read)) == ((int)PortalOperationType.Read)))
+            if (!success && !((((int)portalRequest.DataMapperOperation) & ((int)DataMapperMethodType.Read)) == ((int)DataMapperMethodType.Read)))
             {
-                throw new Exception($"Failed on Server - Operation {portalRequest.PortalOperation.ToString()} not found on {target.GetType().FullName}");
+                throw new Exception($"Failed on Server - Operation {portalRequest.DataMapperOperation.ToString()} not found on {target.GetType().FullName}");
             }
         }
 

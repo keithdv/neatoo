@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace Neatoo.Portal.Core;
+namespace Neatoo.Portal.Internal;
 
 public class LocalMethodPortal<D> : IRemoteMethodPortal<D> where D : Delegate
 {

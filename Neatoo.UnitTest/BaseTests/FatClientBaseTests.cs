@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using Neatoo.Portal;
 using Neatoo.UnitTest.BaseTests.Objects;
+using Neatoo.Portal.Internal;
 
 namespace Neatoo.UnitTest.BaseTests;
 

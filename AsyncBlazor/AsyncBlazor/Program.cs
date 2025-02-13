@@ -11,7 +11,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddControllers();
-builder.Services.AddNeatooServices(PortalServer.Local);
+builder.Services.AddNeatooServices(DataMapperHost.Local);
 builder.Services.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));
 builder.Services.AddScoped<IHorseBarnContext, HorseBarnContext>();
 

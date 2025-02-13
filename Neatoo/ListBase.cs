@@ -1,5 +1,6 @@
 ﻿using Neatoo.Core;
-using Neatoo.Portal;
+using Neatoo.Internal;
+using Neatoo.Portal.Internal;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -35,11 +36,11 @@ public interface IListBase<I> : IListBase, IReadOnlyListBase<I>, IEnumerable<I>,
 }
 
 
-public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, ISetParent, IJsonOnDeserialized, IJsonOnDeserializing, IBaseMetaProperties, IPortalTarget
+public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, ISetParent, IJsonOnDeserialized, IJsonOnDeserializing, IBaseMetaProperties, IDataMapperTarget
     where T : ListBase<T, I>
     where I : IBase
 {
-    protected IReadPortalChild<I> ItemPortal { get; }
+    protected INeatooPortal<I> ItemPortal { get; }
 
     public ListBase(IListBaseServices<T, I> services)
     {
@@ -104,16 +105,16 @@ public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, I
         return item;
     }
 
-    IDisposable? IPortalTarget.PauseAllActions()
+    IDisposable? IDataMapperTarget.PauseAllActions()
     {
         return default;
     }
 
-    void IPortalTarget.ResumeAllActions()
+    void IDataMapperTarget.ResumeAllActions()
     {
     }
 
-    Task IPortalTarget.PostPortalConstruct()
+    Task IDataMapperTarget.PostPortalConstruct()
     {
         return this.PostPortalConstruct();
     }

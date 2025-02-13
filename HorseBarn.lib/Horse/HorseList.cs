@@ -30,8 +30,8 @@ internal class HorseList : EditListBase<HorseList, IHorse>, IHorseList
 
     [FetchChild] 
     public async Task FetchChild(ICollection<Dal.Ef.Horse> horses,
-                                    IReadPortalChild<ILightHorse> lightHorsePortal,
-                                    IReadPortalChild<IHeavyHorse> heavyHorsePortal)
+                                    INeatooPortal<ILightHorse> lightHorsePortal,
+                                    INeatooPortal<IHeavyHorse> heavyHorsePortal)
     {
         foreach (var horse in horses)
         {

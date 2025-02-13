@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Neatoo.UnitTest.BaseTests.Objects;
 using Neatoo.Core;
+using Neatoo.Portal.Internal;
 
 namespace Neatoo.UnitTest.BaseTests;
 

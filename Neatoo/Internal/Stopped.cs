@@ -1,4 +1,4 @@
-﻿using Neatoo.Portal;
+﻿using Neatoo.Portal.Internal;
 using System;
 
 namespace Neatoo.Core;
@@ -6,8 +6,8 @@ namespace Neatoo.Core;
 
 public class Paused : IDisposable
 {
-    IPortalTarget Target { get; }
-    public Paused(IPortalTarget target)
+    IDataMapperTarget Target { get; }
+    public Paused(IDataMapperTarget target)
     {
         this.Target = target;
     }

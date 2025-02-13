@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neatoo.Portal;
 using System;
 using System.Threading.Tasks;
 
@@ -11,13 +10,13 @@ namespace Neatoo.UnitTest.ObjectPortal;
 public class ReadWritePortalTests
 {
     private IServiceScope scope = UnitTestServices.GetLifetimeScope(true);
-    private IReadWritePortal<IEditObject> portal;
+    private INeatooPortal<IEditObject> portal;
     private IEditObject editObject;
 
     [TestInitialize]
     public void TestInitialize()
     {
-        portal = scope.GetRequiredService<IReadWritePortal<IEditObject>>();
+        portal = scope.GetRequiredService<INeatooPortal<IEditObject>>();
     }
 
     [TestCleanup]

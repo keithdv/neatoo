@@ -2,7 +2,7 @@
 using HorseBarn.lib;
 using HorseBarn.lib.Cart;
 using HorseBarn.lib.Horse;
-using Neatoo.Portal;
+using Neatoo;
 using System.Collections.Specialized;
 using System.Windows;
 
@@ -11,20 +11,20 @@ namespace HorseBarn.WPF.ViewModels;
 public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
 {
     private readonly IWindowManager windowManager;
-    private readonly IReadPortal<IHorseBarn> readWritePortalHorseBarn;
+    private readonly INeatooPortal<IHorseBarn> readWritePortalHorseBarn;
     private readonly IEventAggregator eventAggregator;
     private readonly CreateHorseViewModel createHorseViewModel;
     private readonly CartViewModel.Factory createCartViewModel;
     private readonly HorseViewModel.Factory horseViewModelFactory;
-    private readonly IReadPortal<IHorseCriteria> horseCriteriaPortal;
+    private readonly INeatooPortal<IHorseCriteria> horseCriteriaPortal;
 
     public HorseBarnViewModel(IWindowManager windowManager,
-        IReadPortal<IHorseBarn> readWritePortalHorseBarn,
+        INeatooPortal<IHorseBarn> readWritePortalHorseBarn,
         IEventAggregator eventAggregator,
         CreateHorseViewModel createHorseViewModel,
         CartViewModel.Factory createCartViewModel,
         HorseViewModel.Factory horseViewModelFactory,
-        IReadPortal<IHorseCriteria> horseCriteriaPortal)
+        INeatooPortal<IHorseCriteria> horseCriteriaPortal)
     {
         this.windowManager = windowManager;
         this.readWritePortalHorseBarn = readWritePortalHorseBarn;

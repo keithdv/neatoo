@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neatoo.Portal;
+using Neatoo.Portal.Internal;
 using Neatoo.UnitTest.PersonObjects;
 using System;
 using System.Collections.Generic;
@@ -31,7 +31,7 @@ public class EditListBaseTests
         child.MarkOld();
         child.MarkAsChild();
 
-        using (((IPortalTarget)list).PauseAllActions())
+        using (((IDataMapperTarget)list).PauseAllActions())
         {
             list.Add(child);
         }

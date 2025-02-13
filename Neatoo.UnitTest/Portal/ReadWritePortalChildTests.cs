@@ -1,23 +1,21 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neatoo.Portal;
 using System;
 using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ObjectPortal;
 
-
 [TestClass]
 public class ReadWritePortalChildTests
 {
     private IServiceScope scope = UnitTestServices.GetLifetimeScope(true);
-    private IReadWritePortalChild<IEditObject> portal;
+    private INeatooPortal<IEditObject> portal;
     private IEditObject editObject;
 
     [TestInitialize]
     public void TestInitialize()
     {
-        portal = scope.GetRequiredService<IReadWritePortalChild<IEditObject>>();
+        portal = scope.GetRequiredService<INeatooPortal<IEditObject>>();
     }
 
     [TestCleanup]
@@ -90,7 +88,7 @@ public class ReadWritePortalChildTests
     {
         editObject = await portal.FetchChild();
         editObject.ID = Guid.NewGuid();
-        await portal.UpdateChild(editObject);
+        await portal.Update(editObject);
         Assert.IsTrue(editObject.UpdateChildCalled);
         Assert.IsFalse(editObject.IsNew);
         Assert.IsTrue(editObject.IsChild);
@@ -100,7 +98,7 @@ public class ReadWritePortalChildTests
     public async Task ReadWritePortalChild_InsertChild()
     {
         editObject = await portal.CreateChild();
-        await portal.UpdateChild(editObject);
+        await portal.Update(editObject);
         Assert.IsTrue(editObject.InsertChildCalled);
         Assert.IsFalse(editObject.IsNew);
         Assert.IsTrue(editObject.IsChild);
@@ -113,7 +111,7 @@ public class ReadWritePortalChildTests
     {
         editObject = await portal.FetchChild();
         editObject.Delete();
-        await portal.UpdateChild(editObject);
+        await portal.Update(editObject);
         Assert.IsTrue(editObject.DeleteChildCalled);
     }
 
@@ -123,7 +121,7 @@ public class ReadWritePortalChildTests
         // Want it to do nothing
         editObject = await portal.CreateChild();
         editObject.Delete();
-        await portal.UpdateChild(editObject);
+        await portal.Update(editObject);
         Assert.IsFalse(editObject.DeleteChildCalled);
     }
 

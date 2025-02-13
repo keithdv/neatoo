@@ -107,13 +107,13 @@ public class BaseAuthorizationGrantedAsyncTests
 {
 
     IServiceScope scope;
-    IReadPortal<IBaseAuthorizationGrantedAsyncObject> portal;
+    INeatooPortal<IBaseAuthorizationGrantedAsyncObject> portal;
 
     [TestInitialize]
     public void TestInitialize()
     {
         scope = UnitTestServices.GetLifetimeScope(true);
-        portal = scope.GetRequiredService<IReadPortal<IBaseAuthorizationGrantedAsyncObject>>();
+        portal = scope.GetRequiredService<INeatooPortal<IBaseAuthorizationGrantedAsyncObject>>();
     }
 
     [TestMethod]

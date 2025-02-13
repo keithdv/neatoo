@@ -1,6 +1,4 @@
-﻿using Neatoo.Portal;
-
-namespace Neatoo;
+﻿namespace Neatoo;
 
 /// <summary>
 /// Wrap the NeatooBase services into an interface so that 
@@ -20,7 +18,7 @@ public class ValidateListBaseServices<T, I> : ListBaseServices<T, I>, IValidateL
     where I : IValidateBase
 {
 
-    public ValidateListBaseServices(IReadPortalChild<I> portal) : base(portal)
+    public ValidateListBaseServices(INeatooPortal<I> portal) : base(portal)
     {
     }
 }

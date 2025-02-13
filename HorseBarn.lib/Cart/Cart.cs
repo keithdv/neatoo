@@ -80,7 +80,7 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
 
 
     [CreateChild]
-    public async void CreateChild(IReadWritePortalChild<IHorseList> horsePortal)
+    public async void CreateChild(INeatooPortal<IHorseList> horsePortal)
     {
         this.HorseList = await horsePortal.CreateChild();
         this.NumberOfHorses = 1;
@@ -88,7 +88,7 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
     }
 
     [FetchChild]
-    public async Task FetchChild(Dal.Ef.Cart cart, IReadPortalChild<IHorseList> horsePortal)
+    public async Task FetchChild(Dal.Ef.Cart cart, INeatooPortal<IHorseList> horsePortal)
     {
         this.Id = cart.Id;
         this.Name = cart.Name;
@@ -97,7 +97,7 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
     }
 
     [InsertChild]
-    protected async Task Insert(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<IHorseList> horseList)
+    protected async Task Insert(Dal.Ef.HorseBarn horseBarn, INeatooPortal<IHorseList> horseList)
     {
         Dal.Ef.Cart cart = new Dal.Ef.Cart();
 
@@ -109,11 +109,11 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
 
         horseBarn.Carts.Add(cart);
 
-        await horseList.UpdateChild(this.HorseList, cart);
+        await horseList.Update(this.HorseList, cart);
     }
 
     [UpdateChild]
-    protected async Task Update(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<IHorseList> horseList)
+    protected async Task Update(Dal.Ef.HorseBarn horseBarn, INeatooPortal<IHorseList> horseList)
     {
         var cart = horseBarn.Carts.First(c => c.Id == this.Id);
 
@@ -121,7 +121,7 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
 
         cart.Name = this.Name;
         cart.NumberOfHorses = this.NumberOfHorses;
-        await horseList.UpdateChild(this.HorseList, cart);
+        await horseList.Update(this.HorseList, cart);
     }
 #endif
 }

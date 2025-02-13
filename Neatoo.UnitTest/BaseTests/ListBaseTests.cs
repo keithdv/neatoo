@@ -13,12 +13,12 @@ namespace Neatoo.UnitTest.BaseTests;
 public class ListBaseTests
 {
     private IBaseObjectList list;
-    private MockReadPortalChild<IBaseObject> mock;
+    private MockDataMapper<IBaseObject> mock;
 
     [TestInitialize]
     public void TestInitialize()
     {
-        mock = new MockReadPortalChild<IBaseObject>();
+        mock = new MockDataMapper<IBaseObject>();
         list = new BaseObjectList(new ListBaseServices<BaseObjectList, IBaseObject>(mock.MockPortal.Object));
     }
 

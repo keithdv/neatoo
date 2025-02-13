@@ -45,21 +45,21 @@ public class EditObject : EditBase<EditObject>, IEditObject
     }
 
     [Create]
-    private void Create()
+    public void Create()
     {
         ID = Guid.NewGuid();
         CreateCalled = true;
     }
 
     [Create]
-    private void Create(int criteria)
+    public void Create(int criteria)
     {
         IntCriteria = criteria;
         CreateCalled = true;
     }
 
     [Create]
-    private void Create(Guid criteria, IDisposableDependency dependency)
+    public void Create(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -69,21 +69,21 @@ public class EditObject : EditBase<EditObject>, IEditObject
     public bool CreateChildCalled { get; set; } = false;
 
     [CreateChild]
-    private void CreateChild()
+    public void CreateChild()
     {
         ID = Guid.NewGuid();
         CreateChildCalled = true;
     }
 
     [CreateChild]
-    private void CreateChild(int criteria)
+    public void CreateChild(int criteria)
     {
         IntCriteria = criteria;
         CreateChildCalled = true;
     }
     
     [CreateChild]
-    private void CreateChild(Guid criteria, IDisposableDependency dependency)
+    public void CreateChild(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -93,21 +93,21 @@ public class EditObject : EditBase<EditObject>, IEditObject
     public bool FetchCalled { get; set; } = false;
 
     [Fetch]
-    private void Fetch()
+    public void Fetch()
     {
         ID = Guid.NewGuid();
         FetchCalled = true;
     }
 
     [Fetch]
-    private void Fetch(int criteria)
+    public void Fetch(int criteria)
     {
         IntCriteria = criteria;
         FetchCalled = true;
     }
 
     [Fetch]
-    private void Fetch(Guid criteria, IDisposableDependency dependency)
+    public void Fetch(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -117,21 +117,21 @@ public class EditObject : EditBase<EditObject>, IEditObject
     public bool FetchChildCalled { get; set; } = false;
 
     [FetchChild]
-    private void FetchChild()
+    public void FetchChild()
     {
         ID = Guid.NewGuid();
         FetchChildCalled = true;
     }
 
     [FetchChild]
-    private void FetchChild(int criteria)
+    public void FetchChild(int criteria)
     {
         IntCriteria = criteria;
         FetchChildCalled = true;
     }
 
     [FetchChild]
-    private void FetchChild(Guid criteria, IDisposableDependency dependency)
+    public void FetchChild(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -141,23 +141,21 @@ public class EditObject : EditBase<EditObject>, IEditObject
     public bool InsertCalled { get; set; } = false;
 
     [Insert]
-    private void Insert()
+    public void Insert()
     {
         ID = Guid.NewGuid();
         InsertCalled = true;
     }
 
-
     [Insert]
-    private void Insert(int criteria)
+    public void Insert(int criteria)
     {
         InsertCalled = true;
         IntCriteria = criteria;
     }
 
-
     [Insert]
-    private void Insert(Guid criteria, IDisposableDependency dependency)
+    public void Insert(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         InsertCalled = true;
@@ -167,21 +165,21 @@ public class EditObject : EditBase<EditObject>, IEditObject
     public bool InsertChildCalled { get; set; } = false;
 
     [InsertChild]
-    private void InsertChild()
+    public void InsertChild()
     {
         ID = Guid.NewGuid();
         InsertChildCalled = true;
     }
 
     [InsertChild]
-    private void InsertChild(int criteria)
+    public void InsertChild(int criteria)
     {
         IntCriteria = criteria;
         InsertChildCalled = true;
     }
 
     [InsertChild]
-    private void InsertChild(Guid criteria, IDisposableDependency dependency)
+    public void InsertChild(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -191,7 +189,7 @@ public class EditObject : EditBase<EditObject>, IEditObject
     public bool UpdateCalled { get; set; } = false;
 
     [Update]
-    private void Update()
+    public void Update()
     {
         ID = Guid.NewGuid();
         UpdateCalled = true;
@@ -199,7 +197,7 @@ public class EditObject : EditBase<EditObject>, IEditObject
 
 
     [Update]
-    private void Update(int criteria)
+    public void Update(int criteria)
     {
         IntCriteria = criteria;
         UpdateCalled = true;
@@ -207,7 +205,7 @@ public class EditObject : EditBase<EditObject>, IEditObject
 
 
     [Update]
-    private void Update(Guid criteria, IDisposableDependency dependency)
+    public void Update(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -217,14 +215,14 @@ public class EditObject : EditBase<EditObject>, IEditObject
     public bool UpdateChildCalled { get; set; } = false;
 
     [UpdateChild]
-    private void UpdateChild()
+    public void UpdateChild()
     {
         ID = Guid.NewGuid();
         UpdateChildCalled = true;
     }
 
     [UpdateChild]
-    private void UpdateChild(int criteria)
+    public void UpdateChild(int criteria)
     {
         IntCriteria = criteria;
         UpdateChildCalled = true;
@@ -232,7 +230,7 @@ public class EditObject : EditBase<EditObject>, IEditObject
 
 
     [UpdateChild]
-    private void UpdateChild(Guid criteria, IDisposableDependency dependency)
+    public void UpdateChild(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -242,20 +240,20 @@ public class EditObject : EditBase<EditObject>, IEditObject
     public bool DeleteCalled { get; set; } = false;
 
     [Delete]
-    private void Delete_()
+    public void Delete_()
     {
         DeleteCalled = true;
     }
 
     [Delete]
-    private void Delete(int criteria)
+    public void Delete(int criteria)
     {
         IntCriteria = criteria;
         DeleteCalled = true;
     }
 
     [Delete]
-    private void Delete(Guid criteria, IDisposableDependency dependency)
+    public void Delete(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -265,20 +263,20 @@ public class EditObject : EditBase<EditObject>, IEditObject
     public bool DeleteChildCalled { get; set; } = false;
 
     [DeleteChild]
-    private void DeleteChild()
+    public void DeleteChild()
     {
         DeleteChildCalled = true;
     }
 
     [DeleteChild]
-    private void DeleteChild(int criteria)
+    public void DeleteChild(int criteria)
     {
         IntCriteria = criteria;
         DeleteChildCalled = true;
     }
 
     [DeleteChild]
-    private void DeleteChild(Guid criteria, IDisposableDependency dependency)
+    public void DeleteChild(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;

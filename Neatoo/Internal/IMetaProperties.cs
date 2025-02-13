@@ -1,7 +1,13 @@
 ﻿using System.Threading.Tasks;
 using System.Threading;
 
-namespace Neatoo;
+/* Unmerged change from project 'Neatoo (net7.0)'
+Added:
+using Neatoo;
+using Neatoo.Internal;
+*/
+
+namespace Neatoo.Internal;
 
 
 public interface IBaseMetaProperties

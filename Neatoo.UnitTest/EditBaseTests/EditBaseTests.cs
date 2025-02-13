@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Neatoo.Portal;
 using Neatoo.UnitTest.PersonObjects;
 using System;
 using System.Collections.Generic;
@@ -157,7 +156,7 @@ public class EditBaseTests
     [TestMethod]
     public async Task EditBaseTest_Save()
     {
-        var mock = (MockReadWritePortal<EditPerson>)  scope.GetRequiredService<IReadWritePortal<EditPerson>>();
+        var mock = (MockDataMapper<EditPerson>)  scope.GetRequiredService<INeatooPortal<EditPerson>>();
 
         mock.MockPortal.Setup(x => x.Update((EditPerson) editPerson)).Returns(Task.FromResult((EditPerson) editPerson));
 

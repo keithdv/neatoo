@@ -1,5 +1,6 @@
 ﻿using Neatoo.Core;
-using Neatoo.Portal;
+using Neatoo.Internal;
+using Neatoo.Portal.Internal;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 namespace Neatoo;
 
 
-public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, IPortalEditTarget, IEditMetaProperties, IJsonOnDeserializing, IJsonOnDeserialized
+public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, IDataMapperEditTarget, IEditMetaProperties, IJsonOnDeserializing, IJsonOnDeserialized
     where T : EditBase<T>
 {
     protected new IEditPropertyManager PropertyManager => (IEditPropertyManager)base.PropertyManager;
@@ -26,7 +27,7 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
     public bool IsDeleted { get; protected set; }
     public IEnumerable<string> ModifiedProperties => PropertyManager.ModifiedProperties;
     public bool IsChild { get; protected set; }
-    protected IReadWritePortal<T> ReadWritePortal { get; }
+    protected INeatooPortal<T> ReadWritePortal { get; }
 
     protected (bool IsModified, bool IsSelfModified, bool IsSavable, bool IsDeleted) EditMetaState { get; private set; }
 
@@ -71,7 +72,7 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
         }
     }
 
-    void IPortalEditTarget.MarkAsChild()
+    void IDataMapperEditTarget.MarkAsChild()
     {
         MarkAsChild();
     }
@@ -88,7 +89,7 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
         }
     }
 
-    void IPortalEditTarget.MarkUnmodified()
+    void IDataMapperEditTarget.MarkUnmodified()
     {
         MarkUnmodified();
     }
@@ -102,7 +103,7 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
         }
     }
 
-    void IPortalEditTarget.MarkModified()
+    void IDataMapperEditTarget.MarkModified()
     {
         MarkModified();
     }
@@ -115,7 +116,7 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
         }
     }
 
-    void IPortalEditTarget.MarkNew()
+    void IDataMapperEditTarget.MarkNew()
     {
         MarkNew();
     }
@@ -127,7 +128,7 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
             IsNew = false;
         }
     }
-    void IPortalEditTarget.MarkOld()
+    void IDataMapperEditTarget.MarkOld()
     {
         MarkOld();
     }
@@ -141,7 +142,7 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
         }
     }
 
-    void IPortalEditTarget.MarkDeleted()
+    void IDataMapperEditTarget.MarkDeleted()
     {
         MarkDeleted();
     }

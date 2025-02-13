@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using Neatoo.Portal;
 using System.Threading.Tasks;
+using Neatoo.Portal.Internal;
 
 namespace Neatoo.UnitTest.SystemTextJson;
 

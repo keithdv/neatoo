@@ -1,4 +1,5 @@
 ﻿using Neatoo.Core;
+using Neatoo.Internal;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;

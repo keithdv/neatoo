@@ -12,16 +12,16 @@ namespace HorseBarn.lib;
 
 internal partial class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
 {
-    private readonly IReadWritePortalChild<ILightHorse> lightHorsePortal;
-    private readonly IReadWritePortalChild<IHeavyHorse> heavyHorsePortal;
-    private readonly IReadWritePortalChild<IRacingChariot> racingChariotPortal;
-    private readonly IReadWritePortalChild<IWagon> wagonPortal;
+    private readonly INeatooPortal<ILightHorse> lightHorsePortal;
+    private readonly INeatooPortal<IHeavyHorse> heavyHorsePortal;
+    private readonly INeatooPortal<IRacingChariot> racingChariotPortal;
+    private readonly INeatooPortal<IWagon> wagonPortal;
 
     public HorseBarn(EditBaseServices<HorseBarn> services,
-                        IReadWritePortalChild<ILightHorse> lightHorsePortal,
-                        IReadWritePortalChild<IHeavyHorse> heavyHorsePortal,
-                        IReadWritePortalChild<IRacingChariot> racingChariotPortal,
-                        IReadWritePortalChild<IWagon> wagonPortal) : base(services)
+                        INeatooPortal<ILightHorse> lightHorsePortal,
+                        INeatooPortal<IHeavyHorse> heavyHorsePortal,
+                        INeatooPortal<IRacingChariot> racingChariotPortal,
+                        INeatooPortal<IWagon> wagonPortal) : base(services)
     {
         this.lightHorsePortal = lightHorsePortal;
         this.heavyHorsePortal = heavyHorsePortal;
@@ -92,7 +92,7 @@ internal partial class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
 #if !CLIENT
 
     [Create]
-    public async Task Create(IReadWritePortalChild<IPasture> pasturePortal, IReadWritePortalChild<ICartList> cartListPortal)
+    public async Task Create(INeatooPortal<IPasture> pasturePortal, INeatooPortal<ICartList> cartListPortal)
     {
         this.Pasture = await pasturePortal.CreateChild();
         this.Carts = await cartListPortal.CreateChild();
@@ -100,8 +100,8 @@ internal partial class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
 
     [Fetch]
     public async Task Fetch(IHorseBarnContext horseBarnContext,
-                            IReadPortalChild<IPasture> pasturePortal,
-                            IReadPortalChild<ICartList> cartPortal)
+                            INeatooPortal<IPasture> pasturePortal,
+                            INeatooPortal<ICartList> cartPortal)
     {
 
         var horseBarn = await horseBarnContext.HorseBarns.FirstOrDefaultAsync();
@@ -115,15 +115,15 @@ internal partial class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
 
     [Insert]
     public async Task Insert(IHorseBarnContext horseBarnContext,
-                            IReadWritePortalChild<IPasture> pasturePortal,
-                            IReadWritePortalChild<ICartList> cartPortal)
+                            INeatooPortal<IPasture> pasturePortal,
+                            INeatooPortal<ICartList> cartPortal)
     {
         var horseBarn = new Dal.Ef.HorseBarn();
 
         horseBarn.PropertyChanged += HandleIdPropertyChanged;
 
-        await pasturePortal.UpdateChild(this.Pasture, horseBarn);
-        await cartPortal.UpdateChild(this.Carts, horseBarn);
+        await pasturePortal.Update(this.Pasture, horseBarn);
+        await cartPortal.Update(this.Carts, horseBarn);
 
         horseBarnContext.HorseBarns.Add(horseBarn);
 
@@ -132,18 +132,18 @@ internal partial class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
 
     [Update]
     public async Task Update(IHorseBarnContext horseBarnContext,
-                            IReadWritePortalChild<IPasture> pasturePortal,
-                            IReadWritePortalChild<ICartList> cartPortal)
+                            INeatooPortal<IPasture> pasturePortal,
+                            INeatooPortal<ICartList> cartPortal)
     {
         var horseBarn = await horseBarnContext.HorseBarns.FirstAsync(hb => hb.Id == this.Id);
         if (this.Pasture.IsModified)
         {
-            await pasturePortal.UpdateChild(this.Pasture, horseBarn.Pasture);
+            await pasturePortal.Update(this.Pasture, horseBarn.Pasture);
         }
 
         if (this.Carts.IsModified)
         {
-            await cartPortal.UpdateChild(this.Carts, horseBarn);
+            await cartPortal.Update(this.Carts, horseBarn);
         }
 
         await horseBarnContext.SaveChangesAsync();

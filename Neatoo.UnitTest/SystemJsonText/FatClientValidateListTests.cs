@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
 using Neatoo.Portal;
+using Neatoo.Portal.Internal;
 
 namespace Neatoo.UnitTest.SystemTextJson.ValidateTests;
 

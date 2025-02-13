@@ -4,8 +4,8 @@ using HorseBarn.lib.Horse;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
-using Neatoo.Portal;
 using System.Data;
+using Neatoo;
 
 namespace HorseBarn.lib.integration.tests;
 
@@ -13,7 +13,7 @@ namespace HorseBarn.lib.integration.tests;
 public sealed class HorseBarnTests
 {
     private IServiceScope scope;
-    private IReadWritePortal<IHorseBarn> portal;
+    private INeatooPortal<IHorseBarn> portal;
     private HorseBarnContext horseBarnContext;
     private IDbContextTransaction transaction;
 
@@ -22,7 +22,7 @@ public sealed class HorseBarnTests
     {
 
         scope = UnitTestContainer.GetLifetimeScope();
-        portal = scope.ServiceProvider.GetRequiredService<IReadWritePortal<IHorseBarn>>();
+        portal = scope.ServiceProvider.GetRequiredService<INeatooPortal<IHorseBarn>>();
         horseBarnContext = scope.ServiceProvider.GetRequiredService<HorseBarnContext>();
 
         await horseBarnContext.Horses.ExecuteDeleteAsync();

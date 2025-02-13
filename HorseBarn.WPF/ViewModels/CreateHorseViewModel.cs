@@ -1,6 +1,6 @@
 ﻿using Caliburn.Micro;
 using HorseBarn.lib.Horse;
-using Neatoo.Portal;
+using Neatoo;
 using System.Windows;
 
 namespace HorseBarn.WPF.ViewModels;
@@ -9,14 +9,14 @@ public class CreateHorseViewModel : Caliburn.Micro.Screen
 {
     private readonly IEventAggregator eventAggregator;
 
-    public CreateHorseViewModel(IReadPortal<IHorseCriteria> horseCriteriaPortal,
+    public CreateHorseViewModel(INeatooPortal<IHorseCriteria> horseCriteriaPortal,
         IEventAggregator eventAggregator)
     {
         HorseCriteriaPortal = horseCriteriaPortal;
         this.eventAggregator = eventAggregator;
     }
 
-    public IReadPortal<IHorseCriteria> HorseCriteriaPortal { get; }
+    public INeatooPortal<IHorseCriteria> HorseCriteriaPortal { get; }
 
     public IHorseCriteria HorseCriteria { get; private set; }
 

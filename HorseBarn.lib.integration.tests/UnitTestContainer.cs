@@ -16,7 +16,7 @@ internal class UnitTestContainer
         if (Container == null)
         {
 
-            IServiceProvider CreateContainer(Neatoo.PortalServer portal)
+            IServiceProvider CreateContainer(Neatoo.DataMapperHost portal)
             {
                 var builder = new ServiceCollection();
 
@@ -33,7 +33,7 @@ internal class UnitTestContainer
             }
 
             // 2-Tier tests
-            Container = CreateContainer(PortalServer.Local);
+            Container = CreateContainer(DataMapperHost.Local);
 
         }
 

@@ -35,7 +35,7 @@ internal class ValidateObject : PersonValidateBase<ValidateObject>, IValidateObj
 
     [Fetch]
     [FetchChild]
-    public async Task Fetch(PersonDto person, IReadPortalChild<IValidateObject> portal, IReadOnlyList<PersonDto> personTable)
+    public async Task Fetch(PersonDto person, INeatooPortal<IValidateObject> portal, IReadOnlyList<PersonDto> personTable)
     {
         base.FillFromDto(person);
 

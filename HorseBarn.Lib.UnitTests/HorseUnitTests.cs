@@ -6,7 +6,6 @@ using Neatoo;
 using Neatoo.Rules;
 using System;
 using HorseBarn.Dal.Ef;
-using Neatoo.Portal;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using System.Net.Sockets;
@@ -18,14 +17,14 @@ namespace HorseBarn.lib.UnitTests
 
     internal class HorseSubject : Horse<HorseSubject>
     {
-        public HorseSubject(IReadWritePortal<HorseSubject> readWritePortal) : base(new EditBaseServices<HorseSubject>(readWritePortal))
+        public HorseSubject(INeatooPortal<HorseSubject> readWritePortal) : base(new EditBaseServices<HorseSubject>(readWritePortal))
         {
         }
     }
 
     public class HorseTests
     {
-        Mock<IReadWritePortal<HorseSubject>> _mockPortal = new Mock<IReadWritePortal<HorseSubject>>();
+        Mock<INeatooPortal<HorseSubject>> _mockPortal = new Mock<INeatooPortal<HorseSubject>>();
 
         private readonly Mock<IRuleManager<HorseSubject>> _mockRuleManager;
         private readonly HorseSubject _horse;

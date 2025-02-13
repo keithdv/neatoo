@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddNeatooServices(PortalServer.Local);
+builder.Services.AddNeatooServices(DataMapperHost.Local);
 
 builder.Services.AutoRegisterAssemblyTypes(Assembly.GetExecutingAssembly());
 

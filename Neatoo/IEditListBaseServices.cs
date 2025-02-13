@@ -1,6 +1,4 @@
-﻿using Neatoo.Portal;
-
-namespace Neatoo;
+﻿namespace Neatoo;
 
 /// <summary>
 /// Wrap the NeatooBase services into an interface so that 
@@ -11,7 +9,7 @@ public interface IEditListBaseServices<T, I> : IValidateListBaseServices<T, I>
     where T : EditListBase<T, I>
     where I : IEditBase
 {
-    IReadWritePortalChild<I> ReadWritePortalChild { get; }
+    INeatooPortal<I> ReadWritePortalChild { get; }
 }
 
 public class EditListBaseServices<T, I> : ValidateListBaseServices<T, I>, IEditListBaseServices<T, I>
@@ -19,9 +17,9 @@ public class EditListBaseServices<T, I> : ValidateListBaseServices<T, I>, IEditL
     where I : IEditBase
 {
 
-    public IReadWritePortalChild<I> ReadWritePortalChild { get; }
+    public INeatooPortal<I> ReadWritePortalChild { get; }
 
-    public EditListBaseServices(IReadWritePortalChild<I> readWritePortalChild)
+    public EditListBaseServices(INeatooPortal<I> readWritePortalChild)
         : base(readWritePortalChild)
     {
         ReadWritePortalChild = readWritePortalChild;

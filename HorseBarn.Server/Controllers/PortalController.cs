@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Neatoo;
 using Neatoo.Portal;
-using Neatoo.Portal.Core;
 
 namespace HorseBarn.Server.Controllers;
 
@@ -19,7 +19,7 @@ public class PortalController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<PortalResponse> Post(PortalRequest portalRequest)
+    public async Task<RemoteDataMapperResponse> Post(RemoteDataMapperRequest portalRequest)
     {
         return await handlePortalRequestDelegate(portalRequest);
     }

@@ -1,4 +1,6 @@
-﻿using Neatoo.Portal;
+﻿using Neatoo.Internal;
+using Neatoo.Portal;
+using Neatoo.Portal.Internal;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -23,7 +25,7 @@ public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject
     where I : IEditBase
 {
 
-    protected new IReadWritePortalChild<I> ItemPortal { get; }
+    protected new INeatooPortal<I> ItemPortal { get; }
 
     public EditListBase(IEditListBaseServices<T, I> services) : base(services)
     {
@@ -78,7 +80,7 @@ public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject
 
             if (!item.IsNew)
             {
-                ((IPortalEditTarget)item).MarkModified();
+                ((IDataMapperEditTarget)item).MarkModified();
             }
         }
 
@@ -129,7 +131,7 @@ public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject
         {
             if (d.IsDeleted) // May have been moved to a different parent
             {
-                await ItemPortal.UpdateChild(d);
+                await ItemPortal.Update(d);
             }
         }
 
@@ -137,7 +139,7 @@ public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject
 
         foreach (var i in this.Where(i => i.IsModified).ToList())
         {
-            await ItemPortal.UpdateChild(i);
+            await ItemPortal.Update(i);
         }
     }
 
@@ -145,14 +147,14 @@ public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject
     {
         foreach (var d in DeletedList)
         {
-            await ItemPortal.UpdateChild(d, criteria);
+            await ItemPortal.Update(d, criteria);
         }
 
         DeletedList.Clear();
 
         foreach (var i in this.Where(i => i.IsModified).ToList())
         {
-            await ItemPortal.UpdateChild(i, criteria);
+            await ItemPortal.Update(i, criteria);
         }
     }
 

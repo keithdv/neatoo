@@ -1,7 +1,6 @@
 ﻿using HorseBarn.lib.Cart;
 using HorseBarn.lib.Horse;
 using Moq;
-using Neatoo.Portal;
 using Neatoo;
 using Xunit;
 
@@ -9,26 +8,26 @@ namespace HorseBarn.lib.UnitTests
 {
     public sealed class HorseBarnTests : IDisposable
     {
-        private Mock<IReadWritePortalChild<ILightHorse>> mockLightHorsePortal;
-        private Mock<IReadWritePortalChild<IHeavyHorse>> mockHeavyHorsePortal;
-        private Mock<IReadWritePortalChild<IRacingChariot>> mockRacingChariotPortal;
-        private Mock<IReadWritePortalChild<IWagon>> mockWagonPortal;
-        private Mock<IReadWritePortalChild<IPasture>> mockPasturePortal;
-        private Mock<IReadWritePortalChild<ICartList>> mockCartListPortal;
-        private Mock<IReadWritePortal<HorseBarn>> mockHorseBarnPortal;
+        private Mock<INeatooPortal<ILightHorse>> mockLightHorsePortal;
+        private Mock<INeatooPortal<IHeavyHorse>> mockHeavyHorsePortal;
+        private Mock<INeatooPortal<IRacingChariot>> mockRacingChariotPortal;
+        private Mock<INeatooPortal<IWagon>> mockWagonPortal;
+        private Mock<INeatooPortal<IPasture>> mockPasturePortal;
+        private Mock<INeatooPortal<ICartList>> mockCartListPortal;
+        private Mock<INeatooPortal<HorseBarn>> mockHorseBarnPortal;
         private HorseBarn horseBarn;
         private Mock<IPasture> mockPasture;
         private Mock<ICartList> mockCartList;
 
         public HorseBarnTests()
         {
-            mockLightHorsePortal = new Mock<IReadWritePortalChild<ILightHorse>>(MockBehavior.Strict);
-            mockHeavyHorsePortal = new Mock<IReadWritePortalChild<IHeavyHorse>>(MockBehavior.Strict);
-            mockRacingChariotPortal = new Mock<IReadWritePortalChild<IRacingChariot>>(MockBehavior.Strict);
-            mockWagonPortal = new Mock<IReadWritePortalChild<IWagon>>(MockBehavior.Strict);
-            mockPasturePortal = new Mock<IReadWritePortalChild<IPasture>>(MockBehavior.Strict);
-            mockCartListPortal = new Mock<IReadWritePortalChild<ICartList>>(MockBehavior.Strict);
-            mockHorseBarnPortal = new Mock<IReadWritePortal<HorseBarn>>(MockBehavior.Strict);
+            mockLightHorsePortal = new Mock<INeatooPortal<ILightHorse>>(MockBehavior.Strict);
+            mockHeavyHorsePortal = new Mock<INeatooPortal<IHeavyHorse>>(MockBehavior.Strict);
+            mockRacingChariotPortal = new Mock<INeatooPortal<IRacingChariot>>(MockBehavior.Strict);
+            mockWagonPortal = new Mock<INeatooPortal<IWagon>>(MockBehavior.Strict);
+            mockPasturePortal = new Mock<INeatooPortal<IPasture>>(MockBehavior.Strict);
+            mockCartListPortal = new Mock<INeatooPortal<ICartList>>(MockBehavior.Strict);
+            mockHorseBarnPortal = new Mock<INeatooPortal<HorseBarn>>(MockBehavior.Strict);
 
             horseBarn = new HorseBarn(new EditBaseServices<HorseBarn>(mockHorseBarnPortal.Object), mockLightHorsePortal.Object, mockHeavyHorsePortal.Object, mockRacingChariotPortal.Object, mockWagonPortal.Object);
 

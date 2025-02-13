@@ -45,7 +45,7 @@ internal class ValidateAsyncObject : PersonValidateBase<ValidateAsyncObject>, IV
 
     [Fetch]
     [FetchChild]
-    public async Task Fetch(PersonDto person, IReadPortalChild<IValidateAsyncObject> portal, IReadOnlyList<PersonDto> personTable)
+    public async Task Fetch(PersonDto person, INeatooPortal<IValidateAsyncObject> portal, IReadOnlyList<PersonDto> personTable)
     {
         base.FillFromDto(person);
 

@@ -2,7 +2,7 @@
 using Neatoo.AuthorizationRules;
 using Neatoo.Core;
 using Neatoo.Portal;
-using Neatoo.Portal.Core;
+using Neatoo.Portal.Internal;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
 using System;
@@ -14,7 +14,7 @@ using System.Reflection;
 namespace Neatoo;
 
 
-public enum PortalServer
+public enum DataMapperHost
 {
     Local,
     Remote
@@ -26,7 +26,7 @@ public delegate Type GetImplementationType(Type type);
 public static class AddNeatooServicesExtension
 {
 
-    public static void AddNeatooServices(this IServiceCollection services, PortalServer portalServer)
+    public static void AddNeatooServices(this IServiceCollection services, DataMapperHost portalServer)
     {
 
         services.AddTransient<GetImplementationType>(s =>
@@ -56,15 +56,15 @@ public static class AddNeatooServicesExtension
 
         services.AddTransient<ServerHandlePortalRequest>(s =>
         {
-            return async (PortalRequest portalRequest) =>
+            return async (RemoteDataMapperRequest portalRequest) =>
             {
-                var t = IPortalJsonSerializer.ToType(portalRequest.Target.AssemblyType) ?? throw new Exception($"Type {portalRequest.Target.AssemblyType} not found");
+                var t = INeatooJsonSerializer.ToType(portalRequest.Target.AssemblyType) ?? throw new Exception($"Type {portalRequest.Target.AssemblyType} not found");
 
-                var portal = s.GetRequiredService(typeof(IPortalOperationManager<>).MakeGenericType(t)) as IPortalOperationManager;
+                var portal = s.GetRequiredService(typeof(IDataMapper<>).MakeGenericType(t)) as IDataMapper;
 
                 var result = await portal.HandlePortalRequest(portalRequest);
 
-                var portalResponse = new PortalResponse(s.GetRequiredService<IPortalJsonSerializer>().Serialize(result), portalRequest.Target.AssemblyType);
+                var portalResponse = new RemoteDataMapperResponse(s.GetRequiredService<INeatooJsonSerializer>().Serialize(result), portalRequest.Target.AssemblyType);
 
                 return portalResponse;
             };
@@ -82,10 +82,10 @@ public static class AddNeatooServicesExtension
 
         // This was single instance; but now it resolves the Authorization Rules 
         // When single instance it receives the root scopewhich is no good
-        services.AddScoped(typeof(IPortalOperationManager<>), typeof(PortalOperationManager<>));
+        services.AddScoped(typeof(IDataMapper<>), typeof(DataMapper<>));
 
 
-        services.AddScopedSelf<IPortalJsonSerializer, NeatooJsonSerializer>();
+        services.AddScopedSelf<INeatooJsonSerializer, NeatooJsonSerializer>();
 
         services.AddTransient<NeatooJsonConverterFactory>();
 
@@ -141,32 +141,16 @@ public static class AddNeatooServicesExtension
             };
         });
 
-        services.AddScoped(typeof(ILocalReadPortal<>), typeof(LocalReadPortal<>));
-        services.AddScoped(typeof(ILocalReadWritePortal<>), typeof(LocalReadWritePortal<>));
-        services.AddScoped(typeof(IClientReadPortal<>), typeof(ClientReadPortal<>));
-        services.AddScoped(typeof(IClientReadWritePortal<>), typeof(ClientReadWritePortal<>));
-
-        if (portalServer == PortalServer.Local)
+        if (portalServer == DataMapperHost.Local)
         {
-            // Takes IServiceProvider so these need to match it's lifetime
-            services.AddScoped(typeof(IReadPortal<>), typeof(LocalReadPortal<>));
-            services.AddScoped(typeof(IReadPortalChild<>), typeof(LocalReadPortal<>));
-
-            services.AddScoped(typeof(IReadWritePortal<>), typeof(LocalReadWritePortal<>));
-            services.AddScoped(typeof(IReadWritePortalChild<>), typeof(LocalReadWritePortal<>));
-
             services.AddScoped(typeof(IRemoteMethodPortal<>), typeof(LocalMethodPortal<>));
 
-            services.AddScoped(typeof(IPortal<>), typeof(Portal<>));
+            services.AddScoped(typeof(INeatooPortal<>), typeof(NeatooPortalHost<>));
 
         }
-        else if (portalServer == PortalServer.Remote)
+        else if (portalServer == DataMapperHost.Remote)
         {
-            services.AddScoped(typeof(IReadPortal<>), typeof(ClientReadPortal<>));
-            services.AddScoped(typeof(IReadPortalChild<>), typeof(ClientReadPortal<>));
-
-            services.AddScoped(typeof(IReadWritePortal<>), typeof(ClientReadWritePortal<>));
-            services.AddScoped(typeof(IReadWritePortalChild<>), typeof(ClientReadWritePortal<>));
+            services.AddScoped(typeof(INeatooPortal<>), typeof(NeatooPortalClient<>));
         }
 
         // Simple wrapper - Always InstancePerDependency
@@ -179,14 +163,12 @@ public static class AddNeatooServicesExtension
 
         services.AddTransient<RequestFromServerDelegate>(cc =>
         {
-
             var httpClient = cc.GetRequiredService<HttpClient>();
-            var portalJsonSerializer = cc.GetRequiredService<IPortalJsonSerializer>();
+            var portalJsonSerializer = cc.GetRequiredService<INeatooJsonSerializer>();
 
             return async (portalRequest) =>
             {
-
-                var response = await httpClient.PostAsync("portal", JsonContent.Create(portalRequest, typeof(PortalRequest)));
+                var response = await httpClient.PostAsync("portal", JsonContent.Create(portalRequest, typeof(RemoteDataMapperRequest)));
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -194,7 +176,7 @@ public static class AddNeatooServicesExtension
                     throw new HttpRequestException($"Failed to call portal. Status code: {response.StatusCode} {issue}");
                 }
 
-                var result = await response.Content.ReadFromJsonAsync<PortalResponse>();
+                var result = await response.Content.ReadFromJsonAsync<RemoteDataMapperResponse>() ?? throw new HttpRequestException($"Successful Code but empty response.");;
 
                 return result;
             };

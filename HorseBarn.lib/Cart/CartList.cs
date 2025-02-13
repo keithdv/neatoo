@@ -31,7 +31,7 @@ internal class CartList : EditListBase<CartList, ICart>, ICartList
 #if !CLIENT
 
     [FetchChild]
-    public async Task FetchChild(ICollection<Dal.Ef.Cart> carts, IReadPortalChild<IRacingChariot> racingChariotPortal, IReadPortalChild<IWagon> wagonPortal)
+    public async Task FetchChild(ICollection<Dal.Ef.Cart> carts, INeatooPortal<IRacingChariot> racingChariotPortal, INeatooPortal<IWagon> wagonPortal)
     {
         foreach (var cart in carts)
         {

@@ -2,12 +2,7 @@
 @using AsyncBlazor.Client.Components
 @using HorseBarn.lib
 @using HorseBarn.lib.Horse
-@using Microsoft.AspNetCore.Components.Web
 @using Neatoo
-@using Neatoo.Core
-@using Neatoo.Portal
-@using Neatoo.Rules
-@using System.ComponentModel
 
 
 <ValidatePropertyTextBox ValidateProperty="@asyncValidate[nameof(AsyncValidate.AsyncPropertyA)]" />
@@ -22,7 +17,7 @@
 private AsyncValidate asyncValidate = new AsyncValidate();
 
 [Inject]
-public IReadPortal<IHorseBarn> ReadPortal { get; set; } = default!;
+public INeatooPortal<IHorseBarn> ReadPortal { get; set; } = default!;
 
 public IHorseBarn HorseBarn { get; set; } = default!;
 

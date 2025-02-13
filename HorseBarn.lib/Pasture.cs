@@ -29,14 +29,14 @@ internal class Pasture : CustomEditBase<Pasture>, IPasture
 #if !CLIENT
 
     [CreateChild]
-    public async Task CreateChild(IReadWritePortalChild<IHorseList> horseListPortal)
+    public async Task CreateChild(INeatooPortal<IHorseList> horseListPortal)
     {
         HorseList = await horseListPortal.CreateChild(); 
         await RunAllRules();
     }
 
     [FetchChild]
-    public async Task FetchChild(Dal.Ef.Pasture pasture, IReadPortalChild<IHorseList> horseListPortal)
+    public async Task FetchChild(Dal.Ef.Pasture pasture, INeatooPortal<IHorseList> horseListPortal)
     {
         this.Id = pasture.Id;
 
@@ -44,19 +44,19 @@ internal class Pasture : CustomEditBase<Pasture>, IPasture
     }
 
     [InsertChild]
-    public async Task InsertChild(Dal.Ef.HorseBarn horseBarn, IReadWritePortalChild<IHorseList> horseListPortal)
+    public async Task InsertChild(Dal.Ef.HorseBarn horseBarn, INeatooPortal<IHorseList> horseListPortal)
     {
         var pasture = new Dal.Ef.Pasture();
         pasture.PropertyChanged += HandleIdPropertyChanged;
         horseBarn.Pasture = pasture;
-        await horseListPortal.UpdateChild(HorseList, pasture);
+        await horseListPortal.Update(HorseList, pasture);
     }
 
     [UpdateChild]
-    public async Task UpdateChild(Dal.Ef.Pasture pasture, IReadWritePortalChild<IHorseList> horseListPortal)
+    public async Task UpdateChild(Dal.Ef.Pasture pasture, INeatooPortal<IHorseList> horseListPortal)
     {
         Debug.Assert(pasture.Id == this.Id, "Unexpected Id");
-        await horseListPortal.UpdateChild(HorseList, pasture);
+        await horseListPortal.Update(HorseList, pasture);
     }
 
 #endif

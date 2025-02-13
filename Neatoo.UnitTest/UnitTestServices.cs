@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.Portal;
 using System;
 using System.Collections.Generic;
 using Neatoo.UnitTest.Portal;
@@ -25,19 +24,15 @@ public static class UnitTestServices
             if (Container == null)
             {
 
-                IServiceProvider CreateContainer(PortalServer? portal)
+                IServiceProvider CreateContainer(DataMapperHost? portal)
                 {
                     var services = new ServiceCollection();
 
-                    services.AddNeatooServices(PortalServer.Local);
+                    services.AddNeatooServices(DataMapperHost.Local);
 
                     if (portal == null)
                     {
-                        services.AddScoped(typeof(IReadPortal<>), typeof(MockReadPortal<>));
-                        services.AddScoped(typeof(IReadPortalChild<>), typeof(MockReadPortalChild<>));
-                        services.AddScoped(typeof(IReadWritePortal<>), typeof(MockReadWritePortal<>));
-                        services.AddScoped(typeof(IReadWritePortalChild<>), typeof(MockReadWritePortalChild<>));
-
+                        services.AddScoped(typeof(INeatooPortal<>), typeof(MockDataMapper<>));
                     }
 
                     services.AutoRegisterAssemblyTypes(Assembly.GetExecutingAssembly());
@@ -65,7 +60,7 @@ public static class UnitTestServices
                 }
 
                 Container = CreateContainer(null);
-                LocalPortalContainer = CreateContainer(PortalServer.Local);
+                LocalPortalContainer = CreateContainer(DataMapperHost.Local);
 
             }
 

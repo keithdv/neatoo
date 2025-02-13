@@ -115,13 +115,13 @@ public class BaseAuthorizationGrantedDependencyTests
 {
 
     IServiceScope scope;
-    IReadPortal<IBaseAuthorizationGrantedDependencyObject> portal;
+    INeatooPortal<IBaseAuthorizationGrantedDependencyObject> portal;
 
     [TestInitialize]
     public void TestInitialize()
     {
         scope = UnitTestServices.GetLifetimeScope(true);
-        portal = scope.GetRequiredService<IReadPortal<IBaseAuthorizationGrantedDependencyObject>>();
+        portal = scope.GetRequiredService<INeatooPortal<IBaseAuthorizationGrantedDependencyObject>>();
     }
 
     [TestMethod]

@@ -1,5 +1,6 @@
 ﻿using Neatoo.Core;
-using Neatoo.Portal;
+using Neatoo.Internal;
+using Neatoo.Portal.Internal;
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -20,7 +21,7 @@ public interface IValidateListBase<I> : IListBase<I>, IValidateListBase, IValida
 
 }
 
-public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase<I>, IValidateListBase, INotifyPropertyChanged, IPortalTarget
+public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase<I>, IValidateListBase, INotifyPropertyChanged, IDataMapperTarget
     where T : ValidateListBase<T, I>
     where I : IValidateBase
 {
@@ -116,12 +117,12 @@ public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase
         }
     }
 
-    IDisposable? IPortalTarget.PauseAllActions()
+    IDisposable? IDataMapperTarget.PauseAllActions()
     {
         return PauseAllActions();
     }
 
-    void IPortalTarget.ResumeAllActions()
+    void IDataMapperTarget.ResumeAllActions()
     {
         ResumeAllActions();
     }

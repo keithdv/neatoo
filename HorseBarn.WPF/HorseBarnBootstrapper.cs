@@ -117,7 +117,7 @@ public class HorseBarnBootstrapper : BootstrapperBase
             return (horse) => new HorseViewModel(horse);
         });
 
-        services.AddNeatooServices(PortalServer.Remote);
+        services.AddNeatooServices(DataMapperHost.Remote);
 
         services.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));
     }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Portal;
+using Neatoo.Portal.Internal;
 using Neatoo.UnitTest.ObjectPortal;
 using System;
 using System.Threading.Tasks;
@@ -8,12 +9,12 @@ using System.Threading.Tasks;
 namespace Neatoo.UnitTest.Portal;
 
 [TestClass]
-public class PortalOperationManagerTests
+public class DataMapperOperationTests
 {
     IServiceScope scope;
     IEditObject target;
-    IPortalJsonSerializer resolver;
-    IPortalOperationManager portal;
+    INeatooJsonSerializer resolver;
+    IDataMapper portal;
 
     [TestInitialize]
     public void TestInitailize()
@@ -21,16 +22,16 @@ public class PortalOperationManagerTests
         scope = UnitTestServices.GetLifetimeScope();
         target = scope.GetRequiredService<IEditObject>();
         target.ID = Guid.NewGuid();
-        resolver = scope.GetRequiredService<IPortalJsonSerializer>();
-        portal = scope.GetRequiredService<IPortalOperationManager<EditObject>>();
+        resolver = scope.GetRequiredService<INeatooJsonSerializer>();
+        portal = scope.GetRequiredService<IDataMapper<EditObject>>();
     }
 
     [TestMethod]
     public async Task ServerValidate_Create()
     {
-        var portalRequest = new PortalRequest()
+        var portalRequest = new RemoteDataMapperRequest()
         {
-            PortalOperation = PortalOperation.Create,
+            DataMapperOperation = DataMapperMethod.Create,
             Target = new ObjectTypeJson() { AssemblyType = typeof(IEditObject).FullName }
         };
 
@@ -44,7 +45,7 @@ public class PortalOperationManagerTests
     [TestMethod]
     public async Task ServerValidate_CreateCriteria()
     {
-        var portalRequest = resolver.ToPortalRequest(PortalOperation.Create, typeof(IEditObject), target.ID);
+        var portalRequest = resolver.ToDataMapperHostRequest(DataMapperMethod.Create, typeof(IEditObject), target.ID);
 
         var result = await portal.HandlePortalRequest(portalRequest) as IEditObject;
 
@@ -58,7 +59,7 @@ public class PortalOperationManagerTests
     public async Task ServerValidate_Update()
     {
 
-        var portalRequest = resolver.ToPortalRequest(PortalOperation.Update, target);
+        var portalRequest = resolver.ToDataMapperHostRequest(DataMapperMethod.Update, target);
 
         var result = await portal.HandlePortalRequest(portalRequest) as IEditObject;
 

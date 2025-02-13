@@ -1,6 +1,4 @@
-﻿using Neatoo.Portal;
-
-namespace Neatoo;
+﻿namespace Neatoo;
 
 /// <summary>
 /// Wrap the NeatooBase services into an interface so that 
@@ -11,7 +9,7 @@ public interface IListBaseServices<T, I>
     where T : ListBase<T, I>
     where I : IBase
 {
-    IReadPortalChild<I> ReadPortal { get; }
+    INeatooPortal<I> ReadPortal { get; }
 }
 
 public class ListBaseServices<T, I> : IListBaseServices<T, I>
@@ -21,10 +19,10 @@ public class ListBaseServices<T, I> : IListBaseServices<T, I>
 
     public ListBaseServices()        {        }
 
-    public ListBaseServices(IReadPortalChild<I> readPortal)
+    public ListBaseServices(INeatooPortal<I> readPortal)
     {
         ReadPortal = readPortal;
     }
 
-    public IReadPortalChild<I> ReadPortal { get; }
+    public INeatooPortal<I> ReadPortal { get; }
 }

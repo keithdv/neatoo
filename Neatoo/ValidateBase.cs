@@ -1,5 +1,7 @@
 ﻿using Neatoo.Core;
+using Neatoo.Internal;
 using Neatoo.Portal;
+using Neatoo.Portal.Internal;
 using Neatoo.Rules;
 using System;
 using System.Collections.Generic;
@@ -30,7 +32,7 @@ namespace Neatoo
         new internal IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
     }
 
-    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IPortalTarget
+    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IDataMapperTarget
         where T : ValidateBase<T>
     {
         protected new IValidatePropertyManager<IValidateProperty> PropertyManager => (IValidatePropertyManager<IValidateProperty>)base.PropertyManager;
@@ -134,12 +136,12 @@ namespace Neatoo
             }
         }
 
-        IDisposable IPortalTarget.PauseAllActions()
+        IDisposable IDataMapperTarget.PauseAllActions()
         {
             return PauseAllActions();
         }
 
-        void IPortalTarget.ResumeAllActions()
+        void IDataMapperTarget.ResumeAllActions()
         {
             ResumeAllActions();
         }

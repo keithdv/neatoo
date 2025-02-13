@@ -1,6 +1,6 @@
 ﻿@page "/horsebarn"
 @using HorseBarn.lib
-@using Neatoo.Portal
+@using Neatoo
 
 <h1>HorseBarn</h1>
 
@@ -47,7 +47,7 @@
 @code {
 
 [Inject]
-public IReadPortal<IHorseBarn> readPortal { get; set; } = default!;
+public INeatooPortal<IHorseBarn> readPortal { get; set; } = default!;
 
 public IHorseBarn HorseBarn { get; set; } = default!;
 
