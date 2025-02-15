@@ -2,5 +2,5 @@
 
 public enum AuthorizeOperation
 {
-    Create, Fetch, Update, Delete
+    Create, Fetch, Update, Delete, Execute
 }

@@ -14,8 +14,6 @@
     <Window.Resources>
         <conv:IsValidToRedConverter x:Key="IsValidToRedConverter" />
 
-
-
         <conv:InterfaceDataTemplateSelector x:Key="InterfaceDataTemplateSelector">
             <conv:InterfaceDataTemplateSelector.DataTemplates>
                 <x:Array Type="DataTemplate">
@@ -37,7 +35,6 @@
                 </x:Array>
             </conv:InterfaceDataTemplateSelector.DataTemplates>
         </conv:InterfaceDataTemplateSelector>
-        
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>

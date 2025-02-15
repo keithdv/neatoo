@@ -42,7 +42,7 @@
         </StackPanel>
         <DockPanel>
             <Label>Name:</Label>
-            <TextBox Text="{Binding Path=Cart.Name, Mode=TwoWay}"/>
+            <TextBox DataContext="{Binding Path=Cart[Name]}"/>
         </DockPanel>
         <Label Content="Horses:"></Label>
         <ListBox x:Name="HorseViewModels"></ListBox>

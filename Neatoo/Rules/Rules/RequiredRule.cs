@@ -11,7 +11,7 @@ public interface IRequiredRule<T> : IRule<T>
 
 }
 
-    internal class RequiredRule<T> : RuleBase<T>, IRequiredRule<T>
+internal class RequiredRule<T> : RuleBase<T>, IRequiredRule<T>
     where T : IValidateBase
 {
     public RequiredRule(IPropertyInfo propertyInfo) : base() {
@@ -51,5 +51,4 @@ public interface IRequiredRule<T> : IRule<T>
         }
         return PropertyErrors.None;
     }
-
 }

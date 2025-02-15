@@ -11,8 +11,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddControllers();
-builder.Services.AddNeatooServices(DataMapperHost.Local);
-builder.Services.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));
+builder.Services.AddNeatooServices(NeatooHost.Local, Assembly.GetAssembly(typeof(IHorseBarn)));
 builder.Services.AddScoped<IHorseBarnContext, HorseBarnContext>();
 
 var app = builder.Build();

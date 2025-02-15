@@ -14,6 +14,13 @@ public class DataMapperMethodAttribute : Attribute
     }
 }
 
+public sealed class ExecuteAttribute<D> : DataMapperMethodAttribute where D : Delegate
+{
+    public ExecuteAttribute() : base(DataMapperMethod.Execute)
+    {
+    }    
+}
+
 public sealed class CreateAttribute : DataMapperMethodAttribute
 {
     public CreateAttribute() : base(DataMapperMethod.Create)

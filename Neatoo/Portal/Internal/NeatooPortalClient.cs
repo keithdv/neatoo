@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 namespace Neatoo.Portal.Internal;
 
 
-public delegate Task<RemoteDataMapperResponse> RequestFromServerDelegate(RemoteDataMapperRequest request);
+public delegate Task<RemoteResponse> RequestFromServerDelegate(RemoteRequest request);
 
 public class NeatooPortalClient<T> : INeatooPortal<T>
     where T : notnull
@@ -55,7 +55,7 @@ public class NeatooPortalClient<T> : INeatooPortal<T>
         return RequestFromServer(DataMapperMethod.FetchChild, criteria0);
     }
 
-    protected async Task<T> RequestFromServer(RemoteDataMapperRequest request)
+    protected async Task<T> RequestFromServer(RemoteRequest request)
     {
         var result = await this.requestFromServerDelegate(request);
 
@@ -64,28 +64,28 @@ public class NeatooPortalClient<T> : INeatooPortal<T>
 
     protected Task<T> RequestFromServer(DataMapperMethod portalOperation)
     {
-        var portalRequest = portalJsonSerializer.ToDataMapperHostRequest(portalOperation, typeof(T));
+        var portalRequest = portalJsonSerializer.ToRemoteRequest(portalOperation, typeof(T));
 
         return RequestFromServer(portalRequest);
     }
 
     protected Task<T> RequestFromServer(DataMapperMethod portalOperation, object[] criteria)
     {
-        var portalRequest = portalJsonSerializer.ToDataMapperHostRequest(portalOperation, typeof(T), criteria);     
+        var portalRequest = portalJsonSerializer.ToRemoteRequest(portalOperation, typeof(T), criteria);     
 
         return RequestFromServer(portalRequest);
     }
 
     protected Task<T> RequestFromServer(DataMapperMethod portalOperation, T target)
     {
-        var portalRequest = portalJsonSerializer.ToDataMapperHostRequest(portalOperation, target);
+        var portalRequest = portalJsonSerializer.ToRemoteRequest(portalOperation, target);
 
         return RequestFromServer(portalRequest);
     }
 
     protected Task<T> RequestFromServer(DataMapperMethod portalOperation, T target, object[] criteria)
     {
-        var portalRequest = portalJsonSerializer.ToDataMapperHostRequest(portalOperation, target, criteria);
+        var portalRequest = portalJsonSerializer.ToRemoteRequest(portalOperation, target, criteria);
 
         return RequestFromServer(portalRequest);
     }
@@ -95,8 +95,8 @@ public class NeatooPortalClient<T> : INeatooPortal<T>
     {
         var operation = target.GetDataMapperOperation();
         if (operation == null) { return Task.FromResult<T?>(default); }
-        var portalRequest = portalJsonSerializer.ToDataMapperHostRequest(operation.Value, target);
-        return RequestFromServer(portalRequest);
+        var portalRequest = portalJsonSerializer.ToRemoteRequest(operation.Value, target);
+        return RequestFromServer(portalRequest)!;
     }
 
 

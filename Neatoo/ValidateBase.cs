@@ -27,9 +27,9 @@ namespace Neatoo
 
         internal string ObjectInvalid { get; }
 
-        internal new IValidateProperty GetProperty(string propertyName);
+        new IValidateProperty GetProperty(string propertyName);
 
-        new internal IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
+        new IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
     }
 
     public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IDataMapperTarget
@@ -111,12 +111,12 @@ namespace Neatoo
 
         public string ObjectInvalid { get => Getter<string>(); protected set => Setter(value); }
 
-        new protected IValidateProperty GetProperty(string propertyName)
+        new public IValidateProperty GetProperty(string propertyName)
         {
             return PropertyManager[propertyName];
         }
 
-        new protected IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
+        new public IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
 
         public bool IsPaused { get; protected set; }
 

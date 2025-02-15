@@ -19,7 +19,7 @@ public class PortalController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<RemoteDataMapperResponse> Post(RemoteDataMapperRequest portalRequest)
+    public async Task<RemoteResponse> Post(RemoteRequest portalRequest)
     {
         return await handlePortalRequestDelegate(portalRequest);
     }

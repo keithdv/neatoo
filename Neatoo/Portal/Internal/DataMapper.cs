@@ -17,7 +17,7 @@ public interface IDataMapper
     void RegisterOperation(DataMapperMethod operation, MethodInfo method);
     Task<bool> TryCallOperation(object target, DataMapperMethod operation);
     Task<bool> TryCallOperation(object target, DataMapperMethod operation, object[] criteria);
-    Task<object> HandlePortalRequest(RemoteDataMapperRequest portalRequest);
+    Task<object> HandlePortalRequest(RemoteRequest portalRequest);
 }
 public interface IDataMapper<T> : IDataMapper
 {
@@ -349,12 +349,12 @@ public class DataMapper<T> : IDataMapper<T>
         }
     }
 
-    public async Task<object> HandlePortalRequest(RemoteDataMapperRequest portalRequest)
+    public async Task<object> HandlePortalRequest(RemoteRequest portalRequest)
     {
         Debug.Assert(portalRequest.Target != null, "PortalRequest.Target is null");
         Debug.Assert(!string.IsNullOrEmpty(portalRequest.Target.AssemblyType), "PortalRequest.Target.Type is null");
 
-        object target = null;
+        object? target = null;
 
         var request = jsonSerializer.FromDataMapperRequest(portalRequest);
 

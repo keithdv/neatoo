@@ -18,6 +18,7 @@ public enum DataMapperMethodType
 
 public enum DataMapperMethod
 {
+    Execute = DataMapperMethodType.Read,
     Create = DataMapperMethodType.Create | DataMapperMethodType.Read,
     CreateChild = DataMapperMethodType.Create | DataMapperMethodType.Read | DataMapperMethodType.Child,
     Fetch = DataMapperMethodType.Fetch | DataMapperMethodType.Read, 
@@ -85,6 +86,8 @@ public static class DataMapperExtension
             case DataMapperMethod.Delete:
             case DataMapperMethod.DeleteChild:
                 return AuthorizationRules.AuthorizeOperation.Delete;
+            case DataMapperMethod.Execute:
+                return AuthorizationRules.AuthorizeOperation.Execute;
             default:
                 break;
         }

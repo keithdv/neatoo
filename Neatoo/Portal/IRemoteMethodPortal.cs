@@ -3,9 +3,12 @@ using System.Threading.Tasks;
 
 namespace Neatoo.Portal;
 
-public interface IRemoteMethodPortal<D> where D : Delegate
+public interface IRemoteMethodPortal<T>
 {
+    Task<T> Execute();
+}
 
-    Task<T> Execute<T>(params object[] p);
-
+public interface IRemoteMethodPortal<P, T> 
+{
+    Task<T> Execute(P parameters);
 }

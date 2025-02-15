@@ -7,24 +7,34 @@
         xmlns:horse="clr-namespace:HorseBarn.lib.Horse;assembly=HorseBarn.lib"
         xmlns:conv="clr-namespace:HorseBarn.WPF.Converters"
         mc:Ignorable="d"
-        Title="Create Horse" Height="450" Width="800" SizeToContent="Width">
+        Title="Create Horse" Height="450" Width="400" SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <conv:DateTimeDateOnlyConverter x:Key="DateTimeDateOnlyConverter"/>
     </Window.Resources>
-    <Grid>
+    <Grid Margin="20">
         <StackPanel>
-            <TextBlock Text="Horse Criteria" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+            <TextBlock Text="Horse Criteria" FontWeight="Bold" FontSize="18" Margin="0,0,0,20" HorizontalAlignment="Center"/>
 
-            <TextBlock Text="Name:"/>
-            <TextBox Text="{Binding HorseCriteria.Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <TextBlock Text="Name:" Width="100" VerticalAlignment="Center"/>
+                <TextBox DataContext="{Binding Path=HorseCriteria[Name]}" Width="200"/>
+            </StackPanel>
 
-            <TextBlock Text="Breed:"/>
-            <ComboBox ItemsSource="{Binding Breeds}" SelectedItem="{Binding HorseCriteria.Breed, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <TextBlock Text="Breed:" Width="100" VerticalAlignment="Center"/>
+                <ComboBox ItemsSource="{Binding Breeds}" SelectedItem="{Binding HorseCriteria.Breed, UpdateSourceTrigger=PropertyChanged}" Width="200"/>
+            </StackPanel>
 
-            <TextBlock Text="BirthDay:"/>
-            <DatePicker SelectedDate="{Binding HorseCriteria.BirthDay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource DateTimeDateOnlyConverter}}" Margin="0,0,0,10"/>
-            <Button x:Name="create" IsEnabled="{Binding HorseCriteria.IsValid}">Create</Button>
-            <Button x:Name="cancel">Cancel</Button>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                <TextBlock Text="BirthDay:" Width="100" VerticalAlignment="Center"/>
+                <DatePicker SelectedDate="{Binding HorseCriteria.BirthDay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource DateTimeDateOnlyConverter}}" Width="200"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="create" Content="Create" IsEnabled="{Binding HorseCriteria.IsValid}" Width="80" Margin="0,0,10,0"/>
+                <Button x:Name="cancel" Content="Cancel" Width="80"/>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </Window>

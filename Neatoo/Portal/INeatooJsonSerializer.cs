@@ -8,12 +8,12 @@ public interface INeatooJsonSerializer
     string Serialize(object target);
     T Deserialize<T>(string json);
     object Deserialize(string json, Type type);
-    RemoteDataMapperRequest ToDataMapperHostRequest(DataMapperMethod portalOperation, Type targetType);
-    RemoteDataMapperRequest ToDataMapperHostRequest(DataMapperMethod portalOperation, Type targetType, params object[] criteria);
-    RemoteDataMapperRequest ToDataMapperHostRequest(DataMapperMethod portalOperation, object target);
-    RemoteDataMapperRequest ToDataMapperHostRequest(DataMapperMethod portalOperation, object target, params object[] criteria);
-    (object target, object[] criteria) FromDataMapperRequest(RemoteDataMapperRequest portalRequest);
-    object FromPortalResponse(RemoteDataMapperResponse portalResponse);
+    RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type targetType);
+    RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type targetType, params object[] criteria);
+    RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, object target);
+    RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, object target, params object[] criteria);
+    (object? target, object[]? criteria) FromDataMapperRequest(RemoteRequest portalRequest);
+    object FromPortalResponse(RemoteResponse portalResponse);
 
     public static Type? ToType(string fullName)
     {

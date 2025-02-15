@@ -29,7 +29,7 @@ public class DataMapperOperationTests
     [TestMethod]
     public async Task ServerValidate_Create()
     {
-        var portalRequest = new RemoteDataMapperRequest()
+        var portalRequest = new RemoteRequest()
         {
             DataMapperOperation = DataMapperMethod.Create,
             Target = new ObjectTypeJson() { AssemblyType = typeof(IEditObject).FullName }
@@ -45,7 +45,7 @@ public class DataMapperOperationTests
     [TestMethod]
     public async Task ServerValidate_CreateCriteria()
     {
-        var portalRequest = resolver.ToDataMapperHostRequest(DataMapperMethod.Create, typeof(IEditObject), target.ID);
+        var portalRequest = resolver.ToRemoteRequest(DataMapperMethod.Create, typeof(IEditObject), target.ID);
 
         var result = await portal.HandlePortalRequest(portalRequest) as IEditObject;
 
@@ -59,7 +59,7 @@ public class DataMapperOperationTests
     public async Task ServerValidate_Update()
     {
 
-        var portalRequest = resolver.ToDataMapperHostRequest(DataMapperMethod.Update, target);
+        var portalRequest = resolver.ToRemoteRequest(DataMapperMethod.Update, target);
 
         var result = await portal.HandlePortalRequest(portalRequest) as IEditObject;
 

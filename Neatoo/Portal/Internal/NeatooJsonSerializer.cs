@@ -48,19 +48,19 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         return JsonSerializer.Deserialize(json, type, Options);
     }
 
-    public RemoteDataMapperRequest ToDataMapperHostRequest(DataMapperMethod portalOperation, Type targetType)
+    public RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type targetType)
     {
-        return new RemoteDataMapperRequest()
+        return new RemoteRequest()
         {
             DataMapperOperation = portalOperation,
             Target = new ObjectTypeJson() { AssemblyType = getImplementationType(targetType).FullName },
         };
     }
 
-    public RemoteDataMapperRequest ToDataMapperHostRequest(DataMapperMethod portalOperation, Type targetType, params object[] criteria)
+    public RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type targetType, params object[] criteria)
     {
         var criteriaJson = criteria.Select(c => ToObjectTypeJson(c)).ToList();
-        return new RemoteDataMapperRequest()
+        return new RemoteRequest()
         {
             DataMapperOperation = portalOperation,
             Target = new ObjectTypeJson() { AssemblyType = getImplementationType(targetType).FullName },
@@ -68,21 +68,21 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         };
     }
 
-    public RemoteDataMapperRequest ToDataMapperHostRequest(DataMapperMethod portalOperation, object target)
+    public RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, object target)
     {
         var targetJson = ToObjectTypeJson(target);
-        return new RemoteDataMapperRequest()
+        return new RemoteRequest()
         {
             DataMapperOperation = portalOperation,
             Target = targetJson
         };
     }
 
-    public RemoteDataMapperRequest ToDataMapperHostRequest(DataMapperMethod portalOperation, object target, params object[] criteria)
+    public RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, object target, params object[] criteria)
     {
         var targetJson = ToObjectTypeJson(target);
         var criteriaJson = criteria.Select(c => ToObjectTypeJson(c)).ToList();
-        return new RemoteDataMapperRequest()
+        return new RemoteRequest()
         {
             DataMapperOperation = portalOperation,
             Target = targetJson,
@@ -107,11 +107,11 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         };
     }
 
-    public (object target, object[] criteria) FromDataMapperRequest(RemoteDataMapperRequest portalRequest)
+    public (object? target, object[]? criteria) FromDataMapperRequest(RemoteRequest portalRequest)
     {
 
-        object target = null;
-        object[] criteria = null;
+        object? target = null;
+        object[]? criteria = null;
 
         if (portalRequest.Target != null && !string.IsNullOrEmpty(portalRequest.Target.Json))
         {
@@ -125,7 +125,7 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         return (target, criteria);
     }
 
-    public object FromPortalResponse(RemoteDataMapperResponse portalResponse)
+    public object FromPortalResponse(RemoteResponse portalResponse)
     {
         return Deserialize(portalResponse.ObjectJson, INeatooJsonSerializer.ToType(portalResponse.AssemblyType));
     }

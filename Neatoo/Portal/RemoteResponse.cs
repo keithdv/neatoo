@@ -1,8 +1,8 @@
 ﻿namespace Neatoo.Portal;
 
-public class RemoteDataMapperResponse
+public class RemoteResponse
 {
-    public RemoteDataMapperResponse(string objectJson, string assemblyType)
+    public RemoteResponse(string objectJson, string assemblyType)
     {
         ObjectJson = objectJson;
         AssemblyType = assemblyType;

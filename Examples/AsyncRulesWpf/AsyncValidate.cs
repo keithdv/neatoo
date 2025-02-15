@@ -28,13 +28,13 @@ public class AsyncValidate : ValidateBase<AsyncValidate>
         ruleManager.AddActionAsync(async (AsyncValidate t) =>
         {
             await Task.Delay(1000);
-            t.AsyncPropertyD = t.AsyncPropertyC /  2;
+            t.AsyncPropertyD = t.AsyncPropertyC / 2;
         }, _ => _.AsyncPropertyC);
 
         ruleManager.AddValidationAsync(async (AsyncValidate t) =>
         {
             await Task.Delay(1000);
-            if(t.AsyncPropertyA == 100)
+            if (t.AsyncPropertyA == 100)
             {
                 return "AsyncPropertyA cannot be 100";
             }
@@ -74,7 +74,7 @@ public class AsyncValidate : ValidateBase<AsyncValidate>
 
     new public IValidateProperty this[string propertyName] => base[propertyName];
 
-    public uint AsyncPropertyA        {            get => Getter<uint>();            set => Setter(value);        }
+    public uint AsyncPropertyA { get => Getter<uint>(); set => Setter(value); }
 
     public uint AsyncPropertyB { get => Getter<uint>(); set => Setter(value); }
 

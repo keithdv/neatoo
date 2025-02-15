@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Neatoo.Internal;
+using Neatoo.Portal;
 using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest;
@@ -52,5 +53,17 @@ public class MockDataMapper<T> : INeatooPortal<T>
     public Task<T> FetchChild(object[] criteria)
     {
         return MockPortal.Object.FetchChild(criteria);
+    }
+
+    public Task<T> Execute<T1>() where T1 : IRemoteMethodPortal<T>, T
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public Task<T> Execute<T1, P>(P parameters)
+        where T1 : IRemoteMethodPortal<T, P>, T
+        where P : notnull
+    {
+        throw new System.NotImplementedException();
     }
 }

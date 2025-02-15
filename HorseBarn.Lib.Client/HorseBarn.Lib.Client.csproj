@@ -24,10 +24,12 @@
     <Compile Include="..\HorseBarn.lib\Horse\Horse.cs" Link="Horse\Horse.cs" />
     <Compile Include="..\HorseBarn.lib\Horse\HorseCriteria.cs" Link="Horse\HorseCriteria.cs" />
     <Compile Include="..\HorseBarn.lib\Horse\HorseList.cs" Link="Horse\HorseList.cs" />
+    <Compile Include="..\HorseBarn.lib\Horse\HorseNameUniqueRule.cs" Link="Horse\HorseNameUniqueRule.cs" />
     <Compile Include="..\HorseBarn.lib\Horse\IHeavyHorse.cs" Link="Horse\IHeavyHorse.cs" />
     <Compile Include="..\HorseBarn.lib\Horse\IHorse.cs" Link="Horse\IHorse.cs" />
     <Compile Include="..\HorseBarn.lib\Horse\IHorseList.cs" Link="Horse\IHorseList.cs" />
     <Compile Include="..\HorseBarn.lib\Horse\ILightHorse.cs" Link="Horse\ILightHorse.cs" />
+    <Compile Include="..\HorseBarn.lib\Horse\IsHorseNameUnique.cs" Link="Horse\IsHorseNameUnique.cs" />
     <Compile Include="..\HorseBarn.lib\Horse\LightHorse.cs" Link="Horse\LightHorse.cs" />
     <Compile Include="..\HorseBarn.lib\IHorseBarn.cs" Link="IHorseBarn.cs" />
     <Compile Include="..\HorseBarn.lib\IPasture.cs" Link="IPasture.cs" />

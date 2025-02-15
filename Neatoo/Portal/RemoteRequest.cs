@@ -2,7 +2,7 @@
 
 namespace Neatoo.Portal;
 
-public class RemoteDataMapperRequest
+public class RemoteRequest
 {
     public DataMapperMethod DataMapperOperation { get; set; }
     public ObjectTypeJson Target { get; set; }

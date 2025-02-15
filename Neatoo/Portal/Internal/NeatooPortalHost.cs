@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 
 namespace Neatoo.Portal.Internal;
 
-
-
 /// <summary>
 /// Provide Authorization Check
 /// </summary>
@@ -26,14 +24,17 @@ public class NeatooPortalHost<T> : INeatooPortal<T>
     {
         return CallReadOperationMethod(DataMapperMethod.Create, false);
     }
+
     public Task<T> Fetch()
     {
         return CallReadOperationMethod(DataMapperMethod.Fetch, true);
     }
+
     public Task<T> CreateChild()
     {
         return CallReadOperationMethod(DataMapperMethod.CreateChild, false);
     }
+
     public Task<T> FetchChild()
     {
         return CallReadOperationMethod(DataMapperMethod.FetchChild, true);
@@ -148,6 +149,18 @@ public class NeatooPortalHost<T> : INeatooPortal<T>
         {
             throw new DataMapperMethodCallFailedException($"{operation.ToString()} method on {target.GetType().FullName} with criteria [{string.Join(", ", criteria.Select(x => x.GetType().FullName))}] not found.");
         }
+    }
+
+    public Task<T> Execute<T1>() where T1 : IRemoteMethodPortal<T>, T
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<T> Execute<T1, P>(P parameters)
+        where T1 : IRemoteMethodPortal<T, P>, T
+        where P : notnull
+    {
+        throw new NotImplementedException();
     }
 }
 

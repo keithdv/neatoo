@@ -10,11 +10,13 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Reflection;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Neatoo;
 
 
-public enum DataMapperHost
+public enum NeatooHost
 {
     Local,
     Remote
@@ -26,7 +28,7 @@ public delegate Type GetImplementationType(Type type);
 public static class AddNeatooServicesExtension
 {
 
-    public static void AddNeatooServices(this IServiceCollection services, DataMapperHost portalServer)
+    public static void AddNeatooServices(this IServiceCollection services, NeatooHost portalServer, params Assembly[] assemblies)
     {
 
         services.AddTransient<GetImplementationType>(s =>
@@ -56,17 +58,40 @@ public static class AddNeatooServicesExtension
 
         services.AddTransient<ServerHandlePortalRequest>(s =>
         {
-            return async (RemoteDataMapperRequest portalRequest) =>
+            var seralizer = s.GetRequiredService<INeatooJsonSerializer>();
+
+            return async (RemoteRequest portalRequest) =>
             {
                 var t = INeatooJsonSerializer.ToType(portalRequest.Target.AssemblyType) ?? throw new Exception($"Type {portalRequest.Target.AssemblyType} not found");
 
-                var portal = s.GetRequiredService(typeof(IDataMapper<>).MakeGenericType(t)) as IDataMapper;
+                if (portalRequest.DataMapperOperation != DataMapperMethod.Execute)
+                {
+                    var portal = s.GetRequiredService(typeof(IDataMapper<>).MakeGenericType(t)) as IDataMapper;
 
-                var result = await portal.HandlePortalRequest(portalRequest);
+                    var result = await portal.HandlePortalRequest(portalRequest);
 
-                var portalResponse = new RemoteDataMapperResponse(s.GetRequiredService<INeatooJsonSerializer>().Serialize(result), portalRequest.Target.AssemblyType);
+                    var portalResponse = new RemoteResponse(seralizer.Serialize(result), portalRequest.Target.AssemblyType);
 
-                return portalResponse;
+                    return portalResponse;
+                }
+                else
+                {
+                    Delegate method = (Delegate)s.GetRequiredService(t);
+
+                    var request = seralizer.FromDataMapperRequest(portalRequest);
+
+                    Object result = method.DynamicInvoke(request.criteria);
+
+                    if(result is Task task)
+                    {
+                        await task;
+                        result = task.GetType().GetProperty("Result").GetValue(task);
+                    }
+
+                    var portalResponse = new RemoteResponse(seralizer.Serialize(result), result.GetType().FullName);
+
+                    return portalResponse;
+                }
             };
         });
 
@@ -141,16 +166,17 @@ public static class AddNeatooServicesExtension
             };
         });
 
-        if (portalServer == DataMapperHost.Local)
+        if (portalServer == NeatooHost.Local)
         {
-            services.AddScoped(typeof(IRemoteMethodPortal<>), typeof(LocalMethodPortal<>));
+            //services.AddScoped(typeof(IRemoteMethodPortal<,>), typeof(MethodPortal<,>));
 
             services.AddScoped(typeof(INeatooPortal<>), typeof(NeatooPortalHost<>));
 
         }
-        else if (portalServer == DataMapperHost.Remote)
+        else if (portalServer == NeatooHost.Remote)
         {
             services.AddScoped(typeof(INeatooPortal<>), typeof(NeatooPortalClient<>));
+            services.AddScoped(typeof(RemoteMethodClient<,>));
         }
 
         // Simple wrapper - Always InstancePerDependency
@@ -168,7 +194,7 @@ public static class AddNeatooServicesExtension
 
             return async (portalRequest) =>
             {
-                var response = await httpClient.PostAsync("portal", JsonContent.Create(portalRequest, typeof(RemoteDataMapperRequest)));
+                var response = await httpClient.PostAsync("portal", JsonContent.Create(portalRequest, typeof(RemoteRequest)));
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -176,12 +202,17 @@ public static class AddNeatooServicesExtension
                     throw new HttpRequestException($"Failed to call portal. Status code: {response.StatusCode} {issue}");
                 }
 
-                var result = await response.Content.ReadFromJsonAsync<RemoteDataMapperResponse>() ?? throw new HttpRequestException($"Successful Code but empty response.");;
+                var result = await response.Content.ReadFromJsonAsync<RemoteResponse>() ?? throw new HttpRequestException($"Successful Code but empty response."); ;
 
                 return result;
             };
         });
 
+
+        foreach (var assembly in assemblies)
+        {
+            services.AutoRegisterAssemblyTypes(assembly, portalServer);
+        }
     }
 
     /// <summary>
@@ -191,7 +222,7 @@ public static class AddNeatooServicesExtension
     /// </summary>
     /// <param name="builder"></param>
     /// <param name="assembly"></param>
-    public static void AutoRegisterAssemblyTypes(this IServiceCollection services, Assembly assembly)
+    public static void AutoRegisterAssemblyTypes(this IServiceCollection services, Assembly assembly, NeatooHost portalServer)
     {
 
         var types = assembly.GetTypes().Where(t => t.IsClass && !t.IsAbstract).ToList();
@@ -220,6 +251,53 @@ public static class AddNeatooServicesExtension
                 //{
                 //    reg.SingleInstance();
                 //}
+            }
+        }
+
+        if (portalServer == NeatooHost.Local)
+        {
+            var executeMethods = assembly.GetTypes()
+                                .Where(t => t.IsClass && !t.IsAbstract)
+                                .SelectMany(t => t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+                                .Where(m => m.GetCustomAttributes(typeof(ExecuteAttribute<>)).Any())
+                                .ToList();
+
+            foreach (var method in executeMethods)
+            {
+                var attribute = method.GetCustomAttribute(typeof(ExecuteAttribute<>));
+                if (attribute != null)
+                {
+                    var delegateType = attribute.GetType().GetGenericArguments()[0];
+
+
+                    services.AddScoped(delegateType, cc =>
+                    {
+                        return Delegate.CreateDelegate(delegateType, cc.GetRequiredService(method.DeclaringType), method.Name);
+                    });
+
+                    services.AddScoped(method.DeclaringType);
+
+                }
+            }
+        }
+
+        if (portalServer == NeatooHost.Remote)
+        {
+            var delegateTypes = assembly.GetTypes()
+                .Where(t => t.BaseType == typeof(MulticastDelegate))
+                .ToList();
+
+            foreach (var delegateType in delegateTypes)
+            {
+                var parameterType = delegateType.GetMethod("Invoke")?.GetParameters()[0].ParameterType ?? throw new Exception("No Invoke method found on Delegate");
+                var returnType = delegateType.GetMethod("Invoke")?.ReturnType.GenericTypeArguments[0];
+
+                services.AddScoped(delegateType, cc =>
+                {
+                    IRemoteMethodClient remoteMethodClient = (IRemoteMethodClient)cc.GetRequiredService(typeof(RemoteMethodClient<,>).MakeGenericType(parameterType, returnType));
+                    remoteMethodClient.DelegateType = delegateType;
+                    return Delegate.CreateDelegate(delegateType, remoteMethodClient, "Call");
+                });
             }
         }
     }

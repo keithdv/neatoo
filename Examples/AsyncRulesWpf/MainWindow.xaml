@@ -22,7 +22,6 @@
                     <Setter Property="IsEnabled" Value="True"></Setter>
                     <Setter Property="Background" Value="Red"></Setter>
                 </DataTrigger>
-
             </Style.Triggers>
         </Style>
         <Style TargetType="TextBlock">
