@@ -114,14 +114,6 @@ public class ReadPortalTests
     }
 
     [TestMethod]
-    public async Task ReadPortal_FetchGuidCriteriaCalled()
-    {
-        var crit = Guid.NewGuid();
-        domainObject = await portal.Fetch(crit);
-        Assert.AreEqual(crit, domainObject.GuidCriteria);
-    }
-
-    [TestMethod]
     public async Task ReadPortal_FetchIntCriteriaCalled()
     {
         int crit = DateTime.Now.Millisecond;

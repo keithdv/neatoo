@@ -9,9 +9,12 @@ public interface INeatooJsonSerializer
     T Deserialize<T>(string json);
     object Deserialize(string json, Type type);
     RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type targetType);
-    RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type targetType, params object[] criteria);
+    RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type targetType, params object[]? criteria);
     RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, object target);
-    RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, object target, params object[] criteria);
+    RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, object target, params object[]? criteria);
+
+    RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type targetType, object target, params object[]? criteria);
+
     (object? target, object[]? criteria) FromDataMapperRequest(RemoteRequest portalRequest);
     object FromPortalResponse(RemoteResponse portalResponse);
 

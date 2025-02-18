@@ -16,6 +16,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1177F00B-E945-48C9-8328-D0D60C7BAF5C}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HorseBarn.WPF", "HorseBarn.WPF\HorseBarn.WPF.csproj", "{73C71A5C-14A7-44A3-863C-A34C49552F79}"
@@ -35,6 +36,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncBlazor", "AsyncBlazor\AsyncBlazor\AsyncBlazor.csproj", "{195209DE-B0E8-440B-B055-B55AA8C80C95}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncBlazor.Client", "AsyncBlazor\AsyncBlazor.Client\AsyncBlazor.Client.csproj", "{4A5F952A-C4E1-49F9-96C6-CA38265E0A08}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neatoo.CodeAnalysis", "Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.csproj", "{6689BC29-3B3B-4E07-8083-AB99A0003940}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neatoo.CodeAnalysis.Test", "Neatoo.CodeAnalysis.Test\Neatoo.CodeAnalysis.Test.csproj", "{6100A6A1-D24C-4DD8-982A-FF3AFFFFC74E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -94,6 +99,14 @@ Global
 		{4A5F952A-C4E1-49F9-96C6-CA38265E0A08}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A5F952A-C4E1-49F9-96C6-CA38265E0A08}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A5F952A-C4E1-49F9-96C6-CA38265E0A08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6689BC29-3B3B-4E07-8083-AB99A0003940}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6689BC29-3B3B-4E07-8083-AB99A0003940}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6689BC29-3B3B-4E07-8083-AB99A0003940}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6689BC29-3B3B-4E07-8083-AB99A0003940}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6100A6A1-D24C-4DD8-982A-FF3AFFFFC74E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6100A6A1-D24C-4DD8-982A-FF3AFFFFC74E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6100A6A1-D24C-4DD8-982A-FF3AFFFFC74E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6100A6A1-D24C-4DD8-982A-FF3AFFFFC74E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

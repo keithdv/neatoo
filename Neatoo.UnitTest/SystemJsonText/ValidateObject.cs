@@ -49,12 +49,6 @@ public class ValidateObject : ValidateBase<ValidateObject>, IValidateObject
         this.ID = ID;
         this.Name = Name;
     }
-
-    [Update]
-    public void Update()
-    {
-        this.Name = "Updated";
-    }
 }
 
 public interface IValidateObjectList : IValidateListBase<IValidateObject>

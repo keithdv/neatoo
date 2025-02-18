@@ -11,7 +11,7 @@ namespace HorseBarn.WPF.ViewModels;
 public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
 {
     private readonly IWindowManager windowManager;
-    private readonly INeatooPortal<IHorseBarn> readWritePortalHorseBarn;
+    private readonly HorseBarnFactory horseBarnFactory;
     private readonly IEventAggregator eventAggregator;
     private readonly CreateHorseViewModel createHorseViewModel;
     private readonly CartViewModel.Factory createCartViewModel;
@@ -19,7 +19,7 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
     private readonly INeatooPortal<IHorseCriteria> horseCriteriaPortal;
 
     public HorseBarnViewModel(IWindowManager windowManager,
-        INeatooPortal<IHorseBarn> readWritePortalHorseBarn,
+        HorseBarnFactory horseBarnFactory,
         IEventAggregator eventAggregator,
         CreateHorseViewModel createHorseViewModel,
         CartViewModel.Factory createCartViewModel,
@@ -27,7 +27,7 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
         INeatooPortal<IHorseCriteria> horseCriteriaPortal)
     {
         this.windowManager = windowManager;
-        this.readWritePortalHorseBarn = readWritePortalHorseBarn;
+        this.horseBarnFactory = horseBarnFactory;
         this.eventAggregator = eventAggregator;
         this.createHorseViewModel = createHorseViewModel;
         this.createCartViewModel = createCartViewModel;
@@ -43,13 +43,13 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
     {
         await base.OnInitializeAsync(cancellationToken);
 
-        HorseBarn = await readWritePortalHorseBarn.Fetch();
+        HorseBarn = await horseBarnFactory.FetchHorseBarn();
 
         // TODO - Improve fetch when the object is not found
         // how does CSLA handle this?
         if (HorseBarn.Pasture is null)
         {
-            HorseBarn = await readWritePortalHorseBarn.Create();
+            HorseBarn = await horseBarnFactory.CreateHorseBarn();
 
             var horseCriteria = await horseCriteriaPortal.Create();
             horseCriteria.Name = "Secretariat";

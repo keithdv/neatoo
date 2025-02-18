@@ -15,58 +15,47 @@ public class BaseObject : Base<BaseObject>, IBaseObject
     {
     }
 
-    public Guid GuidCriteria { get; set; } = Guid.Empty;
-    public int IntCriteria { get; set; } = -1;
-    public object[] MultipleCriteria { get; set; }
+    public Guid GuidCriteria { get => Getter<Guid>(); set => Setter(value); }
+    public int IntCriteria { get => Getter<int>(); set => Setter(value); }
+    public object[] MultipleCriteria { get => Getter<object[]>(); set => Setter(value); }
 
-    public bool CreateCalled { get; set; } = false;
+    public bool CreateCalled { get => Getter<bool>(); set => Setter(value); }
 
     [Create]
-    private async Task Create()
+    public async Task Create()
     {
         CreateCalled = true;
         await Task.CompletedTask;
     }
 
     [Create]
-    private void Create(int criteria)
+    public void CreateInt(int criteria)
     {
         IntCriteria = criteria;
     }
 
     [Create]
-    private void CreateMultiple(int i, string s)
+    public void CreateIntString(int i, string s)
     {
         MultipleCriteria = new object[] { i, s };
     }
 
     [Create]
-    private void CreateMultiple(int i, double d, IDisposableDependency dep)
+    public void CreateDependency(int i, double d, [Service] IDisposableDependency dep)
     {
         Assert.IsNotNull(dep);
         MultipleCriteria = new object[] { i, d };
     }
 
     [Create]
-    private void CreateErrorDuplicate(uint i)
-    {
-        Assert.Fail("Should not have reached");
-    }
-    [Create]
-    private void CreateErrorDuplicate(uint i, IDisposableDependency dep)
-    {
-        Assert.Fail("Should not have reached");
-    }
-
-    [Create]
-    private void CreateInfertype(ICollection collection)
+    public void CreateInferType(ICollection collection)
     {
         Assert.IsNotNull(collection);
         CreateCalled = true;
     }
 
     [Create]
-    private void CreateNullCriteria(List<int> a, List<int> b, IDisposableDependency dep)
+    public void CreateNullCriteria(List<int> a, List<int> b, [Service] IDisposableDependency dep)
     {
         Assert.IsNotNull(dep);
         CreateCalled = true;
@@ -74,7 +63,7 @@ public class BaseObject : Base<BaseObject>, IBaseObject
     }
 
     [Create]
-    private void Create(Guid criteria, IDisposableDependency dependency)
+    public void CreateGuid(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -83,19 +72,19 @@ public class BaseObject : Base<BaseObject>, IBaseObject
     public bool CreateChildCalled { get; set; } = false;
 
     [CreateChild]
-    private void CreateChild()
+    public void CreateChild()
     {
         CreateChildCalled = true;
     }
 
     [CreateChild]
-    private void CreateChild(int criteria)
+    public void CreateChild(int criteria)
     {
         IntCriteria = criteria;
     }
 
     [CreateChild]
-    private void CreateChild(Guid criteria, IDisposableDependency dependency)
+    public void CreateChild(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -104,19 +93,20 @@ public class BaseObject : Base<BaseObject>, IBaseObject
     public bool FetchCalled { get; set; } = false;
 
     [Fetch]
-    private void Fetch()
+    public void Fetch()
     {
         FetchCalled = true;
     }
 
     [Fetch]
-    private void Fetch(int criteria)
+    public void FetchInt(int criteria)
     {
         IntCriteria = criteria;
     }
 
+    
     [Fetch]
-    private void Fetch(Guid criteria, IDisposableDependency dependency)
+    public void FetchGuidDependency(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -125,19 +115,19 @@ public class BaseObject : Base<BaseObject>, IBaseObject
     public bool FetchChildCalled { get; set; } = false;
 
     [FetchChild]
-    private void FetchChild()
+    public void FetchChild()
     {
         FetchChildCalled = true;
     }
 
     [FetchChild]
-    private void FetchChild(int criteria)
+    public void FetchChild(int criteria)
     {
         IntCriteria = criteria;
     }
 
     [FetchChild]
-    private void FetchChild(Guid criteria, IDisposableDependency dependency)
+    public void FetchChild(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;

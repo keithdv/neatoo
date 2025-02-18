@@ -21,6 +21,7 @@ public class AuthorizationGrantedAsyncRule : AuthorizationRule, IAuthorizationGr
 {
     public int Criteria { get; set; }
     public bool ExecuteCreateCalled { get; set; }
+
     [Execute(AuthorizeOperation.Create)]
     public async Task<IAuthorizationRuleResult> ExecuteCreate()
     {
@@ -39,6 +40,7 @@ public class AuthorizationGrantedAsyncRule : AuthorizationRule, IAuthorizationGr
     }
 
     public bool ExecuteFetchCalled { get; set; }
+
     [Execute(AuthorizeOperation.Fetch)]
     public async Task<IAuthorizationRuleResult> ExecuteFetch()
     {
@@ -57,6 +59,7 @@ public class AuthorizationGrantedAsyncRule : AuthorizationRule, IAuthorizationGr
     }
 
     public bool ExecuteUpdateCalled { get; set; }
+
     [Execute(AuthorizeOperation.Update)]
     public async Task<IAuthorizationRuleResult> ExecuteUpdate()
     {
@@ -66,6 +69,7 @@ public class AuthorizationGrantedAsyncRule : AuthorizationRule, IAuthorizationGr
     }
 
     public bool ExecuteDeleteCalled { get; set; }
+
     [Execute(AuthorizeOperation.Delete)]
     public async Task<IAuthorizationRuleResult> ExecuteDelete()
     {
@@ -95,7 +99,7 @@ public class BaseAuthorizationGrantedAsyncObject : Base<BaseAuthorizationGranted
     public void Create(int criteria) { }
 
     [Fetch]
-    private void Fetch() { }
+    public void Fetch() { }
 
     [Fetch]
     public void Fetch(int criteria) { }

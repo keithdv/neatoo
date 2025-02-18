@@ -8,7 +8,7 @@ namespace Neatoo.UnitTest.ObjectPortal;
 public class EditObject : EditBase<EditObject>, IEditObject
 {
 
-    public EditObject(EditBaseServices<EditObject> baseServices) : base(baseServices)
+    public EditObject(IEditBaseServices<EditObject> baseServices) : base(baseServices)
     {
 
     }
@@ -16,8 +16,9 @@ public class EditObject : EditBase<EditObject>, IEditObject
     public Guid? ID { get => Getter<Guid?>(); set => Setter(value); }
     public Guid GuidCriteria { get => Getter<Guid>(); set => Setter(value); }
     public int IntCriteria { get => Getter<int>(); set => Setter(value); }
+    public object[] MultipleCriteria { get => Getter<object[]>(); set => Setter(value); }
 
-    public bool CreateCalled { get; set; } = false;
+    public bool CreateCalled { get => Getter<bool>(); set => Setter(value); }
 
     void IEditObject.MarkAsChild()
     {
@@ -52,21 +53,22 @@ public class EditObject : EditBase<EditObject>, IEditObject
     }
 
     [Create]
-    public void Create(int criteria)
+    public void CreateInt(int criteria)
     {
         IntCriteria = criteria;
         CreateCalled = true;
     }
 
+
     [Create]
-    public void Create(Guid criteria, IDisposableDependency dependency)
+    public void CreateDependency(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         CreateCalled = true;
     }
 
-    public bool CreateChildCalled { get; set; } = false;
+    public bool CreateChildCalled { get => Getter<bool>(); set => Setter(value); }
 
     [CreateChild]
     public void CreateChild()
@@ -83,7 +85,7 @@ public class EditObject : EditBase<EditObject>, IEditObject
     }
     
     [CreateChild]
-    public void CreateChild(Guid criteria, IDisposableDependency dependency)
+    public void CreateChild(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -107,14 +109,14 @@ public class EditObject : EditBase<EditObject>, IEditObject
     }
 
     [Fetch]
-    public void Fetch(Guid criteria, IDisposableDependency dependency)
+    public void FetchGuidDependency(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         FetchCalled = true;
     }
 
-    public bool FetchChildCalled { get; set; } = false;
+    public bool FetchChildCalled { get => Getter<bool>(); set => Setter(value); }
 
     [FetchChild]
     public void FetchChild()
@@ -131,155 +133,173 @@ public class EditObject : EditBase<EditObject>, IEditObject
     }
 
     [FetchChild]
-    public void FetchChild(Guid criteria, IDisposableDependency dependency)
+    public void FetchChild(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         FetchChildCalled = true;
     }
 
-    public bool InsertCalled { get; set; } = false;
+    public bool InsertCalled { get => Getter<bool>(); set => Setter(value); }
 
     [Insert]
-    public void Insert()
+    public Task Insert()
     {
         ID = Guid.NewGuid();
         InsertCalled = true;
+        return Task.CompletedTask;
     }
 
     [Insert]
-    public void Insert(int criteria)
+    public Task Insert(int criteria)
     {
         InsertCalled = true;
         IntCriteria = criteria;
+        return Task.CompletedTask;
     }
 
     [Insert]
-    public void Insert(Guid criteria, IDisposableDependency dependency)
+    public Task Insert(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         InsertCalled = true;
         GuidCriteria = criteria;
+        return Task.CompletedTask;
     }
 
-    public bool InsertChildCalled { get; set; } = false;
+    public bool InsertChildCalled { get => Getter<bool>(); set => Setter(value); }
 
     [InsertChild]
-    public void InsertChild()
+    public Task InsertChild()
     {
         ID = Guid.NewGuid();
         InsertChildCalled = true;
+        return Task.CompletedTask;
     }
 
     [InsertChild]
-    public void InsertChild(int criteria)
+    public Task InsertChild(int criteria)
     {
         IntCriteria = criteria;
         InsertChildCalled = true;
+        return Task.CompletedTask;
     }
 
     [InsertChild]
-    public void InsertChild(Guid criteria, IDisposableDependency dependency)
+    public Task InsertChild(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         InsertChildCalled = true;
+        return Task.CompletedTask;
     }
 
-    public bool UpdateCalled { get; set; } = false;
+    public bool UpdateCalled { get => Getter<bool>(); set => Setter(value); }
 
     [Update]
-    public void Update()
+    public Task Update()
     {
         ID = Guid.NewGuid();
         UpdateCalled = true;
-    }
-
-
-    [Update]
-    public void Update(int criteria)
-    {
-        IntCriteria = criteria;
-        UpdateCalled = true;
+        return Task.CompletedTask;
     }
 
 
     [Update]
-    public void Update(Guid criteria, IDisposableDependency dependency)
+    public Task Update(int criteria)
+    {
+        IntCriteria = criteria;
+        UpdateCalled = true;
+        return Task.CompletedTask;
+    }
+
+
+    [Update]
+    public Task Update(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         UpdateCalled = true;
+        return Task.CompletedTask;
     }
 
-    public bool UpdateChildCalled { get; set; } = false;
+    public bool UpdateChildCalled { get => Getter<bool>(); set => Setter(value); }
 
     [UpdateChild]
-    public void UpdateChild()
+    public Task UpdateChild()
     {
         ID = Guid.NewGuid();
         UpdateChildCalled = true;
+        return Task.CompletedTask;
     }
 
     [UpdateChild]
-    public void UpdateChild(int criteria)
+    public Task UpdateChild(int criteria)
     {
         IntCriteria = criteria;
         UpdateChildCalled = true;
+        return Task.CompletedTask;
     }
 
 
     [UpdateChild]
-    public void UpdateChild(Guid criteria, IDisposableDependency dependency)
+    public Task UpdateChild(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         UpdateChildCalled = true;
+        return Task.CompletedTask;
     }
 
-    public bool DeleteCalled { get; set; } = false;
+    public bool DeleteCalled { get => Getter<bool>(); set => Setter(value); }
 
     [Delete]
-    public void Delete_()
+    public Task Delete()
     {
         DeleteCalled = true;
+        return Task.CompletedTask;
     }
 
     [Delete]
-    public void Delete(int criteria)
+    public Task Delete(int criteria)
     {
         IntCriteria = criteria;
         DeleteCalled = true;
+        return Task.CompletedTask;
     }
 
     [Delete]
-    public void Delete(Guid criteria, IDisposableDependency dependency)
+    public Task Delete(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         DeleteCalled = true;
+        return Task.CompletedTask;
     }
 
-    public bool DeleteChildCalled { get; set; } = false;
+    public bool DeleteChildCalled { get => Getter<bool>(); set => Setter(value); }
 
     [DeleteChild]
-    public void DeleteChild()
+    public Task DeleteChild()
     {
         DeleteChildCalled = true;
+        return Task.CompletedTask;
     }
 
     [DeleteChild]
-    public void DeleteChild(int criteria)
+    public Task DeleteChild(int criteria)
     {
         IntCriteria = criteria;
         DeleteChildCalled = true;
+        return Task.CompletedTask;
     }
 
     [DeleteChild]
-    public void DeleteChild(Guid criteria, IDisposableDependency dependency)
+    public Task DeleteChild(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         DeleteChildCalled = true;
+        return Task.CompletedTask;
     }
 }

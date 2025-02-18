@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ObjectPortal;
 
@@ -11,5 +12,6 @@ public interface IBaseObject : IBase
     bool CreateChildCalled { get; set; }
     bool FetchCalled { get; set; }
     bool FetchChildCalled { get; set; }
+
 
 }

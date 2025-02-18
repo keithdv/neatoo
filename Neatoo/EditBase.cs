@@ -14,7 +14,7 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
 {
     protected new IEditPropertyManager PropertyManager => (IEditPropertyManager)base.PropertyManager;
 
-    public EditBase(EditBaseServices<T> services) : base(services)
+    public EditBase(IEditBaseServices<T> services) : base(services)
     {
         ReadWritePortal = services.ReadWritePortal;
     }

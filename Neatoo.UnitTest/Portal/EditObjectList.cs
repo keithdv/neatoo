@@ -16,20 +16,20 @@ public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditOb
     public bool CreateCalled { get; set; } = false;
 
     [Create]
-    private void Create()
+    public void Create()
     {
         CreateCalled = true;
     }
 
     [Create]
-    private void Create(int criteria)
+    public void Create(int criteria)
     {
         CreateCalled = true;
     }
 
 
     [Create]
-    private void Create(Guid criteria, IDisposableDependency dependency)
+    public void Create(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         CreateCalled = true;
@@ -38,19 +38,19 @@ public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditOb
     public bool CreateChildCalled { get; set; } = false;
 
     [CreateChild]
-    private void CreateChild()
+    public void CreateChild()
     {
         CreateChildCalled = true;
     }
 
     [CreateChild]
-    private void CreateChild(int criteria)
+    public void CreateChild(int criteria)
     {
         CreateChildCalled = true;
     }
 
     [CreateChild]
-    private void CreateChild(Guid criteria, IDisposableDependency dependency)
+    public void CreateChild(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         CreateChildCalled = true;
@@ -59,20 +59,20 @@ public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditOb
     public bool FetchCalled { get; set; } = false;
 
     [Fetch]
-    private void Fetch()
+    public void Fetch()
     {
         FetchCalled = true;
     }
 
     [Fetch]
-    private void Fetch(int criteria)
+    public void Fetch(int criteria)
     {
         FetchCalled = true;
     }
 
 
     [Fetch]
-    private void Fetch(Guid criteria, IDisposableDependency dependency)
+    public void Fetch(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         FetchCalled = true;
@@ -81,19 +81,19 @@ public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditOb
     public bool FetchChildCalled { get; set; } = false;
 
     [FetchChild]
-    private void FetchChild()
+    public void FetchChild()
     {
         FetchChildCalled = true;
     }
 
     [FetchChild]
-    private void FetchChild(int criteria)
+    public void FetchChild(int criteria)
     {
         FetchChildCalled = true;
     }
 
     [FetchChild]
-    private void FetchChild(Guid criteria, IDisposableDependency dependency)
+    public void FetchChild(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         FetchChildCalled = true;
@@ -102,46 +102,52 @@ public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditOb
     public bool InsertCalled { get; set; } = false;
 
     [Insert]
-    private void Insert()
+    public Task Insert()
     {
         InsertCalled = true;
+        return Task.CompletedTask;
     }
 
 
     [Insert]
-    private void Insert(int criteria)
+    public Task Insert(int criteria)
     {
         InsertCalled = true;
+        return Task.CompletedTask;
     }
 
 
     [Insert]
-    private void Insert(Guid criteria, IDisposableDependency dependency)
+    public Task Insert(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         InsertCalled = true;
+        return Task.CompletedTask;
     }
 
     public bool InsertChildCalled { get; set; } = false;
 
     [InsertChild]
-    private void InsertChild()
+    public Task InsertChild()
     {
         InsertChildCalled = true;
+        return Task.CompletedTask;
     }
 
     [InsertChild]
-    private void InsertChild(int criteria)
+    public Task InsertChild(int criteria)
     {
         InsertChildCalled = true;
+        return Task.CompletedTask;
     }
 
 
     [InsertChild]
-    private void InsertChild(Guid criteria, IDisposableDependency dependency)
+    public Task InsertChild(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         InsertChildCalled = true;
+        return Task.CompletedTask;
     }
 
     public bool UpdateCalled { get; set; } = false;
@@ -153,81 +159,91 @@ public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditOb
     }
 
     [Update]
-    private void Update(int criteria)
+    public Task Update(int criteria)
     {
         UpdateCalled = true;
+        return Task.CompletedTask;
     }
 
 
     [Update]
-    private void Update(Guid criteria, IDisposableDependency dependency)
+    public Task Update(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         UpdateCalled = true;
+        return Task.CompletedTask;
     }
 
     public bool UpdateChildCalled { get; set; } = false;
 
     [UpdateChild]
-    private void UpdateChild()
+    public Task UpdateChild()
     {
         UpdateChildCalled = true;
+        return Task.CompletedTask;
     }
 
     [UpdateChild]
-    private void UpdateChild(int criteria)
+    public Task UpdateChild(int criteria)
     {
         UpdateChildCalled = true;
+        return Task.CompletedTask;
     }
 
 
     [UpdateChild]
-    private void UpdateChild(Guid criteria, IDisposableDependency dependency)
+    public Task UpdateChild(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         UpdateChildCalled = true;
+        return Task.CompletedTask;
     }
 
     public bool DeleteCalled { get; set; } = false;
 
     [Delete]
-    private void Delete_()
+    public Task Delete_()
     {
         DeleteCalled = true;
+        return Task.CompletedTask;
     }
 
     [Delete]
-    private void Delete(int criteria)
+    public Task Delete(int criteria)
     {
         DeleteCalled = true;
+        return Task.CompletedTask;
     }
 
     [Delete]
-    private void Delete(Guid criteria, IDisposableDependency dependency)
+    public Task Delete(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         DeleteCalled = true;
+        return Task.CompletedTask;
     }
 
     public bool DeleteChildCalled { get; set; } = false;
 
     [DeleteChild]
-    private void DeleteChild()
+    public Task DeleteChild()
     {
         DeleteChildCalled = true;
+        return Task.CompletedTask;
     }
 
     [DeleteChild]
-    private void DeleteChild(int criteria)
+    public Task DeleteChild(int criteria)
     {
         DeleteChildCalled = true;
+        return Task.CompletedTask;
     }
 
     [DeleteChild]
-    private void DeleteChild(Guid criteria, IDisposableDependency dependency)
+    public Task DeleteChild(Guid criteria, IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         DeleteChildCalled = true;
+        return Task.CompletedTask;
     }
-
 }

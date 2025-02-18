@@ -103,7 +103,7 @@ public class BaseAuthorizationGrantedDependencyObject : Base<BaseAuthorizationGr
     public void Create(int criteria) { }
 
     [Fetch]
-    private void Fetch() { }
+    public void Fetch() { }
 
     [Fetch]
     public void Fetch(int criteria) { }

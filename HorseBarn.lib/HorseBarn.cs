@@ -30,7 +30,7 @@ internal partial class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
     }
 
     public IPasture Pasture { get => Getter<IPasture>()!; private set => Setter(value); }
-    public ICartList Carts {  get => Getter<ICartList>()!; private set => Setter(value); }
+    public ICartList Carts { get => Getter<ICartList>()!; private set => Setter(value); }
     public IEnumerable<IHorse> Horses => Carts.SelectMany(c => c.Horses).Union(Pasture.HorseList);
 
     IReadOnlyListBase<ICart> IHorseBarn.Carts => this.Carts;
@@ -65,7 +65,7 @@ internal partial class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
         {
             throw new Exception($"Cannot create child horse for breed {horseCriteria.Breed}");
         }
-        
+
         this.Pasture.HorseList.Add(horse);
         return horse;
     }

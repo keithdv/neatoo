@@ -46,7 +46,7 @@ public class EditPersonList : EditListBase<EditPersonList, IEditPerson>, IEditPe
     }
 
     [Fetch]
-    private async Task FillFromDto(PersonDto dto, IReadOnlyList<PersonDto> personTable)
+    public async Task FillFromDto(PersonDto dto, IReadOnlyList<PersonDto> personTable)
     {
         Id = dto.PersonId;
         // These will not mark IsModified to true

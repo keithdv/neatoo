@@ -14,12 +14,14 @@ public class DataMapperMethodAttribute : Attribute
     }
 }
 
-public sealed class ExecuteAttribute<D> : DataMapperMethodAttribute where D : Delegate
+[System.AttributeUsage(AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
+public sealed class ServiceAttribute : Attribute
 {
-    public ExecuteAttribute() : base(DataMapperMethod.Execute)
+    public ServiceAttribute()
     {
-    }    
+    }
 }
+
 
 public sealed class CreateAttribute : DataMapperMethodAttribute
 {
@@ -86,6 +88,15 @@ public sealed class DeleteAttribute : DataMapperMethodAttribute
 public sealed class DeleteChildAttribute : DataMapperMethodAttribute
 {
     public DeleteChildAttribute() : base(DataMapperMethod.DeleteChild)
+    {
+    }
+}
+
+
+[System.AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+public sealed class LocalAttribute<D> : Attribute where D : Delegate
+{
+    public LocalAttribute()
     {
     }
 }

@@ -107,6 +107,8 @@ public class HorseBarnBootstrapper : BootstrapperBase
         services.AddTransient<CartViewModel>();
         services.AddTransient<HorseViewModel>();
 
+        services.AddTransient<HorseBarnFactory>();
+
         services.AddTransient<CartViewModel.Factory>(services =>
         {
             return (horseBarn, cart) => new CartViewModel(horseBarn, cart, services.GetRequiredService<HorseViewModel.Factory>());

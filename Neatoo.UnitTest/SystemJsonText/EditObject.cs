@@ -58,17 +58,19 @@ public class EditObject : EditBase<EditObject>, IEditObject
     }
 
     [Create]
-    public void Create(Guid ID, string Name)
+    public Task Create(Guid ID, string Name)
     {
         this.ID = ID;
         this.Name = Name;
+        return Task.CompletedTask;
     }
 
     [Update]
     [Insert]
-    public void Update()
+    public Task Update()
     {
         this.Name = "Updated";
+        return Task.CompletedTask;
     }
 }
 

@@ -6,6 +6,7 @@ using Neatoo.Portal.Internal;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -22,6 +23,10 @@ public enum NeatooHost
     Remote
 }
 
+public class NeatooConfiguration
+{
+    public NeatooHost NeatooHost { get; init; }
+}
 
 public delegate Type GetImplementationType(Type type);
 
@@ -30,6 +35,8 @@ public static class AddNeatooServicesExtension
 
     public static void AddNeatooServices(this IServiceCollection services, NeatooHost portalServer, params Assembly[] assemblies)
     {
+
+        services.AddSingleton<NeatooConfiguration>(new NeatooConfiguration() {  NeatooHost = portalServer });
 
         services.AddTransient<GetImplementationType>(s =>
         {
@@ -176,7 +183,15 @@ public static class AddNeatooServicesExtension
         else if (portalServer == NeatooHost.Remote)
         {
             services.AddScoped(typeof(INeatooPortal<>), typeof(NeatooPortalClient<>));
-            services.AddScoped(typeof(RemoteMethodClient<,>));
+            services.AddScoped<RemoteRead>(cc =>
+            {
+                var neatooJsonSerializer = cc.GetRequiredService<INeatooJsonSerializer>();
+                var requestFromServer = cc.GetRequiredService<RequestFromServerDelegate>();
+                return (Type delegateType, object[]? parameters) =>
+                {
+                    return RemoteMethod.Read(delegateType, parameters, neatooJsonSerializer, requestFromServer);
+                };
+            });
         }
 
         // Simple wrapper - Always InstancePerDependency
@@ -184,13 +199,12 @@ public static class AddNeatooServicesExtension
         services.AddTransient(typeof(IListBaseServices<,>), typeof(ListBaseServices<,>));
         services.AddTransient(typeof(IValidateBaseServices<>), typeof(ValidateBaseServices<>));
         services.AddTransient(typeof(IValidateListBaseServices<,>), typeof(ValidateListBaseServices<,>));
-        services.AddTransient(typeof(EditBaseServices<>), typeof(EditBaseServices<>));
+        services.AddTransient(typeof(IEditBaseServices<>), typeof(EditBaseServices<>));
         services.AddTransient(typeof(IEditListBaseServices<,>), typeof(EditListBaseServices<,>));
 
         services.AddTransient<RequestFromServerDelegate>(cc =>
         {
             var httpClient = cc.GetRequiredService<HttpClient>();
-            var portalJsonSerializer = cc.GetRequiredService<INeatooJsonSerializer>();
 
             return async (portalRequest) =>
             {
@@ -208,7 +222,7 @@ public static class AddNeatooServicesExtension
             };
         });
 
-
+        
         foreach (var assembly in assemblies)
         {
             services.AutoRegisterAssemblyTypes(assembly, portalServer);
@@ -228,18 +242,18 @@ public static class AddNeatooServicesExtension
         var types = assembly.GetTypes().Where(t => t.IsClass && !t.IsAbstract).ToList();
         var interfaces = assembly.GetTypes().Where(t => t.IsInterface).ToDictionary(x => x.FullName);
 
+        var remoteMethodCallMethodInfo = typeof(RemoteMethod).GetMethod(nameof(RemoteMethod.Read))!;
+
         foreach (var t in types)
         {
             if (interfaces.TryGetValue($"{t.Namespace}.I{t.Name}", out var i))
             {
-                var singleConstructor = t.GetConstructors().SingleOrDefault();
-                var zeroConstructorParams = singleConstructor != null && !singleConstructor.GetParameters().Any();
-
+                //var singleConstructor = t.GetConstructors().SingleOrDefault();
+                //var zeroConstructorParams = singleConstructor != null && !singleConstructor.GetParameters().Any();
 
                 // AsSelf required for Deserialization
                 services.AddTransient(i, t);
                 services.AddTransient(t);
-
 
                 // I forget why this didn't work...
 
@@ -256,48 +270,41 @@ public static class AddNeatooServicesExtension
 
         if (portalServer == NeatooHost.Local)
         {
-            var executeMethods = assembly.GetTypes()
-                                .Where(t => t.IsClass && !t.IsAbstract)
-                                .SelectMany(t => t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-                                .Where(m => m.GetCustomAttributes(typeof(ExecuteAttribute<>)).Any())
-                                .ToList();
+            var delegateTypes = assembly.GetTypes()
+                .Where(t => t.BaseType == typeof(MulticastDelegate))
+                .ToList();
 
-            foreach (var method in executeMethods)
+            var localMethods = assembly.GetTypes()
+                    .Where(t => t.IsClass && !t.IsAbstract && !t.IsGenericType)
+                    .SelectMany(t => t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+                    .Where(m => m.GetCustomAttributes(typeof(LocalAttribute<>)).Any())
+                    .ToList();
+
+            foreach (var localMethod in localMethods)
             {
-                var attribute = method.GetCustomAttribute(typeof(ExecuteAttribute<>));
-                if (attribute != null)
+                var delegateType = localMethod.GetCustomAttribute(typeof(LocalAttribute<>))!.GetType().GetGenericArguments()[0];
+
+                services.AddScoped(delegateType, cc =>
                 {
-                    var delegateType = attribute.GetType().GetGenericArguments()[0];
+                    var factory = cc.GetRequiredService(localMethod.DeclaringType);
+                    return Delegate.CreateDelegate(delegateType, factory, localMethod.Name);
+                });
 
-
-                    services.AddScoped(delegateType, cc =>
-                    {
-                        return Delegate.CreateDelegate(delegateType, cc.GetRequiredService(method.DeclaringType), method.Name);
-                    });
-
-                    services.AddScoped(method.DeclaringType);
-
-                }
+                services.AddScoped(localMethod.DeclaringType);
             }
         }
 
         if (portalServer == NeatooHost.Remote)
         {
-            var delegateTypes = assembly.GetTypes()
-                .Where(t => t.BaseType == typeof(MulticastDelegate))
+            var factoryTypes = assembly.GetTypes()
+                .Where(t => t.BaseType == typeof(MulticastDelegate) && t.DeclaringType != null)
+                .Select(t => t.DeclaringType!)
+                .Distinct()
                 .ToList();
 
-            foreach (var delegateType in delegateTypes)
+            foreach (var factoryType in factoryTypes)
             {
-                var parameterType = delegateType.GetMethod("Invoke")?.GetParameters()[0].ParameterType ?? throw new Exception("No Invoke method found on Delegate");
-                var returnType = delegateType.GetMethod("Invoke")?.ReturnType.GenericTypeArguments[0];
-
-                services.AddScoped(delegateType, cc =>
-                {
-                    IRemoteMethodClient remoteMethodClient = (IRemoteMethodClient)cc.GetRequiredService(typeof(RemoteMethodClient<,>).MakeGenericType(parameterType, returnType));
-                    remoteMethodClient.DelegateType = delegateType;
-                    return Delegate.CreateDelegate(delegateType, remoteMethodClient, "Call");
-                });
+                services.AddScoped(factoryType);
             }
         }
     }

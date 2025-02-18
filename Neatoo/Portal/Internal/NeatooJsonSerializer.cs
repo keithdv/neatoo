@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
@@ -57,9 +58,14 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         };
     }
 
-    public RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type targetType, params object[] criteria)
+    public RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type targetType, params object[]? criteria)
     {
-        var criteriaJson = criteria.Select(c => ToObjectTypeJson(c)).ToList();
+        List<ObjectTypeJson>? criteriaJson = null;
+
+        if (criteria != null)
+        {
+            criteriaJson = criteria.Select(c => ToObjectTypeJson(c)).ToList();
+        }
         return new RemoteRequest()
         {
             DataMapperOperation = portalOperation,
@@ -90,6 +96,18 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         };
     }
 
+    public RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type delegateType, object target, params object[] criteria)
+    {
+        var targetJson = ToObjectTypeJson(target, delegateType);
+        var criteriaJson = criteria.Select(c => ToObjectTypeJson(c)).ToList();
+        return new RemoteRequest()
+        {
+            DataMapperOperation = portalOperation,
+            Target = targetJson,
+            Criteria = criteriaJson
+        };
+    }
+
     public ObjectTypeJson ToObjectTypeJson<T>()
     {
         return new ObjectTypeJson()
@@ -98,12 +116,12 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         };
     }
 
-    public ObjectTypeJson ToObjectTypeJson(object target)
+    public ObjectTypeJson ToObjectTypeJson(object target, Type? type = null)
     {
         return new ObjectTypeJson()
         {
             Json = target != null ? Serialize(target) : null,
-            AssemblyType = getImplementationType(target.GetType()).FullName
+            AssemblyType = getImplementationType(type ?? target.GetType()).FullName
         };
     }
 
