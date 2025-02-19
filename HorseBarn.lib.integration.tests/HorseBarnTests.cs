@@ -13,8 +13,9 @@ namespace HorseBarn.lib.integration.tests;
 public sealed class HorseBarnTests
 {
     private IServiceScope scope;
-    private INeatooPortal<IHorseBarn> portal;
+    private HorseBarnFactory portal;
     private HorseBarnContext horseBarnContext;
+    private HorseCriteriaFactory horseCriteriaFactory;
     private IDbContextTransaction transaction;
 
     [TestInitialize]
@@ -22,8 +23,9 @@ public sealed class HorseBarnTests
     {
 
         scope = UnitTestContainer.GetLifetimeScope();
-        portal = scope.ServiceProvider.GetRequiredService<INeatooPortal<IHorseBarn>>();
+        portal = scope.ServiceProvider.GetRequiredService<HorseBarnFactory>();
         horseBarnContext = scope.ServiceProvider.GetRequiredService<HorseBarnContext>();
+        horseCriteriaFactory = scope.ServiceProvider.GetRequiredService<HorseCriteriaFactory>();
 
         await horseBarnContext.Horses.ExecuteDeleteAsync();
         await horseBarnContext.Carts.ExecuteDeleteAsync();
@@ -51,7 +53,7 @@ public sealed class HorseBarnTests
 
         async Task AddCartToHorseBarn()
         {
-            var criteria = Mock.Of<IHorseCriteria>();
+            var criteria = await horseCriteriaFactory.Create();
 
             criteria.Name = "Heavy Horse A";
             criteria.Breed = Breed.Clydesdale;
@@ -103,7 +105,7 @@ public sealed class HorseBarnTests
 
         await AddCartToHorseBarn();
 
-        horseBarn = (IHorseBarn) await horseBarn.Save();
+        horseBarn = (IHorseBarn)await portal.Save(horseBarn);
 
         var horseBarnContext = scope.ServiceProvider.GetRequiredService<IHorseBarnContext>();
 
@@ -130,7 +132,7 @@ public sealed class HorseBarnTests
         var horseNames = horseBarn.Horses.Select(h => h.Name).ToList();
 
         // Mix of Inserts and Updates
-        horseBarn = (IHorseBarn) await horseBarn.Save();
+        horseBarn = (IHorseBarn) await portal.Save(horseBarn);
 
         Assert.IsFalse(horseBarn.IsModified); // TODO
         CollectionAssert.AreEquivalent(horseNames, horseBarnContext.Horses.Select(h => h.Name).ToList());

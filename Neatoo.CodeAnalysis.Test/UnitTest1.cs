@@ -14,7 +14,20 @@ using Neatoo;
 
 namespace Neatoo;
 
-public class BaseObject {
+[Factory]
+internal class BaseHasAttributes : SharedObject<BaseHasAttributes> {
+
+}
+
+internal class SharedObject<T> {
+    [Create]
+    public void Create(long sharedParameter){
+
+    }
+
+}
+
+internal class BaseObject : SharedObject<BaseObject> {
 
 
     [Create]
@@ -28,12 +41,12 @@ public class BaseObject {
     }
 
     [Create]
-    public Task CreateString(string parameter){
+    public Task Create(string parameter){
 
     }
 
     [Create]
-    public Task CreateDependency(Guid parameter, [Service] IDependency dependency){
+    public Task Create(Guid parameter, [Service] IDependency dependency){
 
     }
 
@@ -48,12 +61,12 @@ public class BaseObject {
     }
 
     [Fetch]
-    public Task FetchString(string parameter1, int parameter2){
+    public Task Fetch(string parameter1, int parameter2){
 
     }
 
     [Fetch]
-    public Task FetchDependency(Guid parameter, [Service] IDependency dependency){
+    public Task Fetch(Guid parameter, [Service] IDependency dependency){
 
     }
 
@@ -71,32 +84,36 @@ public class BaseObject {
     }
 
     [Insert]
-    public Task InsertCriteria(int parameter, [Service] IDependency dependency){
+    public Task Insert(int parameter, [Service] IDependency dependency){
 
     }
 
     [Update]
-    public Task UpdateCriteria(int parameter, [Service] IDependency dependency){
+    public Task Update(int parameter, [Service] IDependency dependency){
     }
 
     [Delete]
-    public Task DeleteCriteria(int parameter, [Service] IDependency dependency){
+    public Task Delete(int parameter, [Service] IDependency dependency){
     }
 
 
     [Insert]
-    public Task InsertCriteria(string parameter, [Service] IDependency dependency){
+    public void Insert(string parameter){
 
     }
 
     [Update]
-    public Task UpdateCriteria(string parameter, [Service] IDependency dependency){
+    public Task Update(string parameter, [Service] IDependency dependency){
     }
 
     [Delete]
-    public Task DeleteCriteria(string parameter, [Service] IDependency dependency){
+    public void Delete(string parameter){
     }
 
+    [Update]
+    public Task UpdateList(Guid makeUnique){
+        // Lists only have an update, don't force to have a corresponding insert and delete
+    }
 }
 ";
 

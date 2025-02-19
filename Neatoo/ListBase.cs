@@ -29,9 +29,6 @@ public interface IListBase : INeatooObject, INotifyCollectionChanged, INotifyPro
 public interface IListBase<I> : IListBase, IReadOnlyListBase<I>, IEnumerable<I>, ICollection<I>, IList<I>
     where I : IBase
 {
-    Task<I> CreateAdd();
-    Task<I> CreateAdd(params object[] criteria);
-
     new int Count { get; }
 }
 
@@ -40,11 +37,9 @@ public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, I
     where T : ListBase<T, I>
     where I : IBase
 {
-    protected INeatooPortal<I> ItemPortal { get; }
 
     public ListBase(IListBaseServices<T, I> services)
     {
-        ItemPortal = services.ReadPortal;
     }
 
     public IBase? Parent { get; protected set; }
@@ -89,20 +84,6 @@ public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, I
         base.RemoveItem(index);
 
         RaiseNeatooPropertyChanged(new PropertyChangedBreadCrumbs(nameof(Count), this));
-    }
-
-    public async Task<I> CreateAdd()
-    {
-        var item = await ItemPortal.CreateChild();
-        Add(item);
-        return item;
-    }
-
-    public async Task<I> CreateAdd(params object[] criteria)
-    {
-        var item = await ItemPortal.CreateChild(criteria);
-        Add(item);
-        return item;
     }
 
     IDisposable? IDataMapperTarget.PauseAllActions()

@@ -1,4 +1,6 @@
-﻿namespace Neatoo;
+﻿using Neatoo.Portal.Internal;
+
+namespace Neatoo;
 
 /// <summary>
 /// Wrap the NeatooBase services into an interface so that 
@@ -9,7 +11,6 @@ public interface IListBaseServices<T, I>
     where T : ListBase<T, I>
     where I : IBase
 {
-    INeatooPortal<I> ReadPortal { get; }
 }
 
 public class ListBaseServices<T, I> : IListBaseServices<T, I>
@@ -19,10 +20,4 @@ public class ListBaseServices<T, I> : IListBaseServices<T, I>
 
     public ListBaseServices()        {        }
 
-    public ListBaseServices(INeatooPortal<I> readPortal)
-    {
-        ReadPortal = readPortal;
-    }
-
-    public INeatooPortal<I> ReadPortal { get; }
 }

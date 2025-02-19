@@ -153,17 +153,17 @@ public class EditBaseTests
         Assert.IsTrue(editPerson.IsSavable);
     }
 
-    [TestMethod]
-    public async Task EditBaseTest_Save()
-    {
-        var mock = (MockDataMapper<EditPerson>)  scope.GetRequiredService<INeatooPortal<EditPerson>>();
+    //[TestMethod]
+    //public async Task EditBaseTest_Save()
+    //{
+    //    var mock = (MockDataMapper<EditPerson>)  scope.GetRequiredService<INeatooPortal<EditPerson>>();
 
-        mock.MockPortal.Setup(x => x.Update((EditPerson) editPerson)).Returns(Task.FromResult((EditPerson) editPerson));
+    //    mock.MockPortal.Setup(x => x.Update((EditPerson) editPerson)).Returns(Task.FromResult((EditPerson) editPerson));
 
-        editPerson.FirstName = Guid.NewGuid().ToString();
-        await editPerson.Save();
+    //    editPerson.FirstName = Guid.NewGuid().ToString();
+    //    await editPerson.Save();
 
-        mock.MockPortal.Verify(x => x.Update((EditPerson)editPerson), Times.Once);
-    }
+    //    mock.MockPortal.Verify(x => x.Update((EditPerson)editPerson), Times.Once);
+    //}
 }
 

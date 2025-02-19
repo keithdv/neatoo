@@ -53,7 +53,7 @@ public class EditObject : EditBase<EditObject>, IEditObject
     }
 
     [Create]
-    public void CreateInt(int criteria)
+    public void Create(int criteria)
     {
         IntCriteria = criteria;
         CreateCalled = true;
@@ -61,35 +61,11 @@ public class EditObject : EditBase<EditObject>, IEditObject
 
 
     [Create]
-    public void CreateDependency(Guid criteria, [Service] IDisposableDependency dependency)
+    public void Create(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         CreateCalled = true;
-    }
-
-    public bool CreateChildCalled { get => Getter<bool>(); set => Setter(value); }
-
-    [CreateChild]
-    public void CreateChild()
-    {
-        ID = Guid.NewGuid();
-        CreateChildCalled = true;
-    }
-
-    [CreateChild]
-    public void CreateChild(int criteria)
-    {
-        IntCriteria = criteria;
-        CreateChildCalled = true;
-    }
-    
-    [CreateChild]
-    public void CreateChild(Guid criteria, [Service] IDisposableDependency dependency)
-    {
-        Assert.IsNotNull(dependency);
-        GuidCriteria = criteria;
-        CreateChildCalled = true;
     }
 
     public bool FetchCalled { get; set; } = false;
@@ -109,35 +85,11 @@ public class EditObject : EditBase<EditObject>, IEditObject
     }
 
     [Fetch]
-    public void FetchGuidDependency(Guid criteria, [Service] IDisposableDependency dependency)
+    public void Fetch(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         FetchCalled = true;
-    }
-
-    public bool FetchChildCalled { get => Getter<bool>(); set => Setter(value); }
-
-    [FetchChild]
-    public void FetchChild()
-    {
-        ID = Guid.NewGuid();
-        FetchChildCalled = true;
-    }
-
-    [FetchChild]
-    public void FetchChild(int criteria)
-    {
-        IntCriteria = criteria;
-        FetchChildCalled = true;
-    }
-
-    [FetchChild]
-    public void FetchChild(Guid criteria, [Service] IDisposableDependency dependency)
-    {
-        Assert.IsNotNull(dependency);
-        GuidCriteria = criteria;
-        FetchChildCalled = true;
     }
 
     public bool InsertCalled { get => Getter<bool>(); set => Setter(value); }
@@ -167,33 +119,6 @@ public class EditObject : EditBase<EditObject>, IEditObject
         return Task.CompletedTask;
     }
 
-    public bool InsertChildCalled { get => Getter<bool>(); set => Setter(value); }
-
-    [InsertChild]
-    public Task InsertChild()
-    {
-        ID = Guid.NewGuid();
-        InsertChildCalled = true;
-        return Task.CompletedTask;
-    }
-
-    [InsertChild]
-    public Task InsertChild(int criteria)
-    {
-        IntCriteria = criteria;
-        InsertChildCalled = true;
-        return Task.CompletedTask;
-    }
-
-    [InsertChild]
-    public Task InsertChild(Guid criteria, [Service] IDisposableDependency dependency)
-    {
-        Assert.IsNotNull(dependency);
-        GuidCriteria = criteria;
-        InsertChildCalled = true;
-        return Task.CompletedTask;
-    }
-
     public bool UpdateCalled { get => Getter<bool>(); set => Setter(value); }
 
     [Update]
@@ -204,7 +129,6 @@ public class EditObject : EditBase<EditObject>, IEditObject
         return Task.CompletedTask;
     }
 
-
     [Update]
     public Task Update(int criteria)
     {
@@ -213,41 +137,12 @@ public class EditObject : EditBase<EditObject>, IEditObject
         return Task.CompletedTask;
     }
 
-
     [Update]
     public Task Update(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         UpdateCalled = true;
-        return Task.CompletedTask;
-    }
-
-    public bool UpdateChildCalled { get => Getter<bool>(); set => Setter(value); }
-
-    [UpdateChild]
-    public Task UpdateChild()
-    {
-        ID = Guid.NewGuid();
-        UpdateChildCalled = true;
-        return Task.CompletedTask;
-    }
-
-    [UpdateChild]
-    public Task UpdateChild(int criteria)
-    {
-        IntCriteria = criteria;
-        UpdateChildCalled = true;
-        return Task.CompletedTask;
-    }
-
-
-    [UpdateChild]
-    public Task UpdateChild(Guid criteria, [Service] IDisposableDependency dependency)
-    {
-        Assert.IsNotNull(dependency);
-        GuidCriteria = criteria;
-        UpdateChildCalled = true;
         return Task.CompletedTask;
     }
 
@@ -274,32 +169,6 @@ public class EditObject : EditBase<EditObject>, IEditObject
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         DeleteCalled = true;
-        return Task.CompletedTask;
-    }
-
-    public bool DeleteChildCalled { get => Getter<bool>(); set => Setter(value); }
-
-    [DeleteChild]
-    public Task DeleteChild()
-    {
-        DeleteChildCalled = true;
-        return Task.CompletedTask;
-    }
-
-    [DeleteChild]
-    public Task DeleteChild(int criteria)
-    {
-        IntCriteria = criteria;
-        DeleteChildCalled = true;
-        return Task.CompletedTask;
-    }
-
-    [DeleteChild]
-    public Task DeleteChild(Guid criteria, [Service] IDisposableDependency dependency)
-    {
-        Assert.IsNotNull(dependency);
-        GuidCriteria = criteria;
-        DeleteChildCalled = true;
         return Task.CompletedTask;
     }
 }

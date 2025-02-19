@@ -1,8 +1,11 @@
-﻿namespace Neatoo.Portal;
+﻿using System.Text.Json.Serialization;
 
-public class RemoteResponse
+namespace Neatoo.Portal;
+
+public class RemoteResponseDto
 {
-    public RemoteResponse(string objectJson, string assemblyType)
+    [JsonConstructor]
+    public RemoteResponseDto(string objectJson, string assemblyType)
     {
         ObjectJson = objectJson;
         AssemblyType = assemblyType;

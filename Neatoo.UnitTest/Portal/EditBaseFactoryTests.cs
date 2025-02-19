@@ -48,10 +48,10 @@ namespace Neatoo.UnitTest.Portal
                     clientCollection.AddScoped<ServerServiceProvider>();
                     clientCollection.AddScoped<ServerServiceProvider>();
 
-                    clientCollection.AddScoped<RequestFromServerDelegate>(cc =>
+                    clientCollection.AddScoped<SendRemoteRequestToServer>(cc =>
                     {
                         var serverServiceProvider = cc.GetRequiredService<ServerServiceProvider>().serverProvider;
-                        return (RemoteRequest remoteRequest) =>
+                        return (RemoteRequestDto remoteRequest) =>
                         {
                             return serverServiceProvider.GetRequiredService<ServerHandlePortalRequest>()(remoteRequest);
                         };
@@ -87,7 +87,7 @@ namespace Neatoo.UnitTest.Portal
 
             var criteria = 10;
 
-            var result = await factory.CreateInt(criteria);
+            var result = await factory.Create(criteria);
 
             Assert.AreEqual(criteria, result.IntCriteria);
             Assert.IsTrue(result.IsNew);
@@ -99,7 +99,7 @@ namespace Neatoo.UnitTest.Portal
         {
             var factory = clientScope.GetRequiredService<EditObjectFactory>();
             var guidCriteria = Guid.NewGuid();
-            var result = await factory.CreateDependency(guidCriteria);
+            var result = await factory.Create(guidCriteria);
 
             Assert.IsNotNull(result.GuidCriteria);
             Assert.IsTrue(result.IsNew);
@@ -125,7 +125,7 @@ namespace Neatoo.UnitTest.Portal
 
             var guidCriteria = Guid.NewGuid();
 
-            var result = await factory.FetchGuidDependency(guidCriteria);
+            var result = await factory.Fetch(guidCriteria);
 
             Assert.AreEqual(guidCriteria, result.GuidCriteria);
             Assert.IsFalse(result.IsNew);

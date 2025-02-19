@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Neatoo.Portal;
+using System;
 
 namespace Neatoo.UnitTest.PersonObjects;
 
@@ -7,7 +8,7 @@ public abstract class PersonEditBase<T> : EditBase<T>, IPersonBase
     where T : PersonEditBase<T>
 {
 
-    public PersonEditBase(EditBaseServices<T> services) : base(services)
+    public PersonEditBase(IEditBaseServices<T> services) : base(services)
     {
     }
 
@@ -26,6 +27,7 @@ public abstract class PersonEditBase<T> : EditBase<T>, IPersonBase
     public uint? Age { get => Getter<uint?>(); set => Setter(value); }
     string IPersonBase.FirstName { get => FirstName; set => FirstName = value; }
 
+    [Fetch]
     public void FillFromDto(PersonDto dto)
     {
          this[nameof(Id)].LoadValue(dto.PersonId);

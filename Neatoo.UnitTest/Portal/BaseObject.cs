@@ -10,7 +10,6 @@ namespace Neatoo.UnitTest.ObjectPortal;
 
 public class BaseObject : Base<BaseObject>, IBaseObject
 {
-
     public BaseObject(IBaseServices<BaseObject> baseServices) : base(baseServices)
     {
     }
@@ -29,62 +28,26 @@ public class BaseObject : Base<BaseObject>, IBaseObject
     }
 
     [Create]
-    public void CreateInt(int criteria)
+    public void Create(int criteria)
     {
         IntCriteria = criteria;
     }
 
     [Create]
-    public void CreateIntString(int i, string s)
+    public void Create(int i, string s)
     {
         MultipleCriteria = new object[] { i, s };
     }
 
     [Create]
-    public void CreateDependency(int i, double d, [Service] IDisposableDependency dep)
+    public void Create(int i, double d, [Service] IDisposableDependency dep)
     {
         Assert.IsNotNull(dep);
         MultipleCriteria = new object[] { i, d };
     }
 
     [Create]
-    public void CreateInferType(ICollection collection)
-    {
-        Assert.IsNotNull(collection);
-        CreateCalled = true;
-    }
-
-    [Create]
-    public void CreateNullCriteria(List<int> a, List<int> b, [Service] IDisposableDependency dep)
-    {
-        Assert.IsNotNull(dep);
-        CreateCalled = true;
-        MultipleCriteria = new object[] { a, b };
-    }
-
-    [Create]
-    public void CreateGuid(Guid criteria, [Service] IDisposableDependency dependency)
-    {
-        Assert.IsNotNull(dependency);
-        GuidCriteria = criteria;
-    }
-
-    public bool CreateChildCalled { get; set; } = false;
-
-    [CreateChild]
-    public void CreateChild()
-    {
-        CreateChildCalled = true;
-    }
-
-    [CreateChild]
-    public void CreateChild(int criteria)
-    {
-        IntCriteria = criteria;
-    }
-
-    [CreateChild]
-    public void CreateChild(Guid criteria, [Service] IDisposableDependency dependency)
+    public void Create(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -99,38 +62,15 @@ public class BaseObject : Base<BaseObject>, IBaseObject
     }
 
     [Fetch]
-    public void FetchInt(int criteria)
+    public void Fetch(int criteria)
     {
         IntCriteria = criteria;
     }
-
     
     [Fetch]
-    public void FetchGuidDependency(Guid criteria, [Service] IDisposableDependency dependency)
+    public void Fetch(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
     }
-
-    public bool FetchChildCalled { get; set; } = false;
-
-    [FetchChild]
-    public void FetchChild()
-    {
-        FetchChildCalled = true;
-    }
-
-    [FetchChild]
-    public void FetchChild(int criteria)
-    {
-        IntCriteria = criteria;
-    }
-
-    [FetchChild]
-    public void FetchChild(Guid criteria, [Service] IDisposableDependency dependency)
-    {
-        Assert.IsNotNull(dependency);
-        GuidCriteria = criteria;
-    }
-
 }

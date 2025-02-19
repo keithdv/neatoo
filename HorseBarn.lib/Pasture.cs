@@ -12,7 +12,7 @@ namespace HorseBarn.lib;
 
 internal class Pasture : CustomEditBase<Pasture>, IPasture
 {
-    public Pasture(EditBaseServices<Pasture> services) : base(services)
+    public Pasture(IEditBaseServices<Pasture> services) : base(services)
     {
 
     }
@@ -28,35 +28,36 @@ internal class Pasture : CustomEditBase<Pasture>, IPasture
 
 #if !CLIENT
 
-    [CreateChild]
-    public async Task CreateChild(INeatooPortal<IHorseList> horseListPortal)
+    [Create]
+    public async Task Create([Service] HorseListFactory horseListPortal)
     {
-        HorseList = await horseListPortal.CreateChild(); 
+        HorseList = await horseListPortal.Create(); 
         await RunAllRules();
     }
 
-    [FetchChild]
-    public async Task FetchChild(Dal.Ef.Pasture pasture, INeatooPortal<IHorseList> horseListPortal)
+    [Fetch]
+    public async Task Fetch(Dal.Ef.Pasture pasture,[Service] HorseListFactory horseListPortal)
     {
         this.Id = pasture.Id;
 
-        this.HorseList = await horseListPortal.FetchChild(pasture.Horses);
+        this.HorseList = await horseListPortal.Fetch(pasture.Horses);
     }
 
-    [InsertChild]
-    public async Task InsertChild(Dal.Ef.HorseBarn horseBarn, INeatooPortal<IHorseList> horseListPortal)
+    [Insert]
+    public async Task Insert(Dal.Ef.HorseBarn horseBarn,[Service] HorseListFactory horseListPortal)
     {
         var pasture = new Dal.Ef.Pasture();
         pasture.PropertyChanged += HandleIdPropertyChanged;
         horseBarn.Pasture = pasture;
-        await horseListPortal.Update(HorseList, pasture);
+        await horseListPortal.Save(HorseList, pasture);
     }
 
-    [UpdateChild]
-    public async Task UpdateChild(Dal.Ef.Pasture pasture, INeatooPortal<IHorseList> horseListPortal)
+    [Update]
+    public async Task Update(Dal.Ef.HorseBarn horseBarn, [Service] HorseListFactory horseListPortal)
     {
+        var pasture = horseBarn.Pasture;
         Debug.Assert(pasture.Id == this.Id, "Unexpected Id");
-        await horseListPortal.Update(HorseList, pasture);
+        await horseListPortal.Save(HorseList, pasture);
     }
 
 #endif

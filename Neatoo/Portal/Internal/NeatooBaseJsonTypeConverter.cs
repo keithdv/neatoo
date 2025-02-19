@@ -75,7 +75,7 @@ public class NeatooBaseJsonTypeConverter<T> : JsonConverter<T>
             else if (propertyName == "$type")
             {
                 var typeString = reader.GetString();
-                var type = INeatooJsonSerializer.ToType(typeString);
+                var type = INeatooJsonSerializer.FindType(typeString);
                 result = (T)scope.GetRequiredService(type);
 
                 if (result is IJsonOnDeserializing jsonOnDeserializing)

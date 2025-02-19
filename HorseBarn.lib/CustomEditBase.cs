@@ -16,7 +16,7 @@ internal interface ICustomEditBase<T>
 internal abstract class CustomEditBase<T> : EditBase<T>
     where T : CustomEditBase<T>
 {
-    public CustomEditBase(EditBaseServices<T> services) : base(services)
+    public CustomEditBase(IEditBaseServices<T> services) : base(services)
     {
     }
 

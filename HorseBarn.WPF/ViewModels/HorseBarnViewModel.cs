@@ -16,7 +16,7 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
     private readonly CreateHorseViewModel createHorseViewModel;
     private readonly CartViewModel.Factory createCartViewModel;
     private readonly HorseViewModel.Factory horseViewModelFactory;
-    private readonly INeatooPortal<IHorseCriteria> horseCriteriaPortal;
+    private readonly HorseCriteriaFactory horseCriteriaPortal;
 
     public HorseBarnViewModel(IWindowManager windowManager,
         HorseBarnFactory horseBarnFactory,
@@ -24,7 +24,7 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
         CreateHorseViewModel createHorseViewModel,
         CartViewModel.Factory createCartViewModel,
         HorseViewModel.Factory horseViewModelFactory,
-        INeatooPortal<IHorseCriteria> horseCriteriaPortal)
+        HorseCriteriaFactory horseCriteriaPortal)
     {
         this.windowManager = windowManager;
         this.horseBarnFactory = horseBarnFactory;
@@ -43,13 +43,13 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
     {
         await base.OnInitializeAsync(cancellationToken);
 
-        HorseBarn = await horseBarnFactory.FetchHorseBarn();
+        HorseBarn = await horseBarnFactory.Fetch();
 
         // TODO - Improve fetch when the object is not found
         // how does CSLA handle this?
         if (HorseBarn.Pasture is null)
         {
-            HorseBarn = await horseBarnFactory.CreateHorseBarn();
+            HorseBarn = await horseBarnFactory.Create();
 
             var horseCriteria = await horseCriteriaPortal.Create();
             horseCriteria.Name = "Secretariat";
@@ -90,7 +90,7 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
 
             await HorseBarn.RunAllRules();
 
-            HorseBarn = (IHorseBarn) await HorseBarn.Save();
+            HorseBarn = (IHorseBarn) await horseBarnFactory.Save(HorseBarn);
         }
 
         LoadHorseBarn();

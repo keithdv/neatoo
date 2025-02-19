@@ -6,11 +6,24 @@ using System.Threading.Tasks;
 
 namespace Neatoo.Portal.Internal
 {
+    public delegate Task<T> Save<T>(T target) where T : IEditBase;
+
+    public class DoSave<T> where T : IEditBase
+    {
+        public Task<T> Save(T target)
+        {
+            throw new Exception("Save not implemented");
+        }
+    }
+
     public class FactoryBase
     {
 
         protected async Task DoMapperMethodCall(object target, DataMapperMethod operation, Func<Task> mapperMethodCall)
         {
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(mapperMethodCall, nameof(mapperMethodCall));
+
             // TODO : Rosyln authorization
             //await CheckAccess(operation.ToAuthorizationOperation(), criteria);
 
@@ -41,23 +54,12 @@ namespace Neatoo.Portal.Internal
                     case DataMapperMethod.Create:
                         editTarget.MarkNew();
                         break;
-                    case DataMapperMethod.CreateChild:
-                        editTarget.MarkAsChild();
-                        editTarget.MarkNew();
-                        break;
                     case DataMapperMethod.Fetch:
-                        break;
-                    case DataMapperMethod.FetchChild:
-                        editTarget.MarkAsChild();
                         break;
                     case DataMapperMethod.Delete:
                         break;
-                    case DataMapperMethod.DeleteChild:
-                        break;
                     case DataMapperMethod.Insert:
-                    case DataMapperMethod.InsertChild:
                     case DataMapperMethod.Update:
-                    case DataMapperMethod.UpdateChild:
                         editTarget.MarkUnmodified();
                         editTarget.MarkOld();
                         break;

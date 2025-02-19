@@ -13,24 +13,11 @@ namespace Neatoo.UnitTest.BaseTests;
 public class ListBaseTests
 {
     private IBaseObjectList list;
-    private MockDataMapper<IBaseObject> mock;
 
     [TestInitialize]
     public void TestInitialize()
     {
-        mock = new MockDataMapper<IBaseObject>();
-        list = new BaseObjectList(new ListBaseServices<BaseObjectList, IBaseObject>(mock.MockPortal.Object));
+        list = new BaseObjectList(new ListBaseServices<BaseObjectList, IBaseObject>());
     }
 
-    [TestMethod]
-    public async Task ListBase_CreateAdd()
-    {
-        mock.MockPortal.Setup(x => x.CreateChild()).ReturnsAsync(new BaseObject());
-
-        var result = await list.CreateAdd();
-        Assert.IsTrue(list.Count == 1);
-        Assert.AreSame(result, list.Single());
-
-        mock.MockPortal.Verify(x => x.CreateChild(), Times.Once);
-    }
 }

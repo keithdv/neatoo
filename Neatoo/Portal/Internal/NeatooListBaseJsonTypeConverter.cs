@@ -62,7 +62,7 @@ public class NeatooListBaseJsonTypeConverter<T> : JsonConverter<T>
             else if (propertyName == "$type")
             {
                 var typeString = reader.GetString();
-                var type = INeatooJsonSerializer.ToType(typeString);
+                var type = INeatooJsonSerializer.FindType(typeString);
                 list = (T)scope.GetRequiredService(type);
 
                 if (list is IJsonOnDeserializing jsonOnDeserializing)
@@ -91,7 +91,7 @@ public class NeatooListBaseJsonTypeConverter<T> : JsonConverter<T>
                         if (propertyName == "$type")
                         {
                             var typeString = reader.GetString();
-                            type = INeatooJsonSerializer.ToType(typeString);
+                            type = INeatooJsonSerializer.FindType(typeString);
                         }
                         else if (propertyName == "$value")
                         {

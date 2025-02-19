@@ -5,13 +5,12 @@ namespace HorseBarn.lib.Horse;
 
 internal class HeavyHorse : Horse<HeavyHorse>, IHeavyHorse
 {
-    public HeavyHorse(EditBaseServices<HeavyHorse> services) : base(services)
+    public HeavyHorse(IEditBaseServices<HeavyHorse> services) : base(services)
     {
     }
 
     [Create]
-    [CreateChild]
-    public void createChild(IHorseCriteria horseCriteria)
+    public void Create(IHorseCriteria horseCriteria)
     {
 
         if (!IHorse.IsHeavyHorse(horseCriteria.Breed))
@@ -19,6 +18,6 @@ internal class HeavyHorse : Horse<HeavyHorse>, IHeavyHorse
             throw new Exception($"Incorrect Breed: {horseCriteria.Breed.ToString()}");
         }
 
-        Create(horseCriteria);
+        base.Create(horseCriteria);
     }
 }

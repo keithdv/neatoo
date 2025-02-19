@@ -34,8 +34,7 @@ internal class ValidateObject : PersonValidateBase<ValidateObject>, IValidateObj
     public IValidateObject Child { get { return Getter<IValidateObject>(); } set { Setter(value); } }
 
     [Fetch]
-    [FetchChild]
-    public async Task Fetch(PersonDto person, INeatooPortal<IValidateObject> portal, IReadOnlyList<PersonDto> personTable)
+    public async Task Fetch(PersonDto person, [Service] ValidateObjectFactory portal, [Service] IReadOnlyList<PersonDto> personTable)
     {
         base.FillFromDto(person);
 
@@ -43,7 +42,7 @@ internal class ValidateObject : PersonValidateBase<ValidateObject>, IValidateObj
 
         if (childDto != null)
         {
-            Child = await portal.FetchChild(childDto);
+            Child = await portal.Fetch(childDto);
         }
     }
 

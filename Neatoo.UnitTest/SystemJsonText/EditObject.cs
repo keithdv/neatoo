@@ -23,7 +23,7 @@ public interface IEditObject : IEditBase
 
 public class EditObject : EditBase<EditObject>, IEditObject
 {
-    public EditObject(EditBaseServices<EditObject> services) : base(services)
+    public EditObject(IEditBaseServices<EditObject> services) : base(services)
     {
     }
 

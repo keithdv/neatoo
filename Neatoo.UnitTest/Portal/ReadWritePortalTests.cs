@@ -10,13 +10,13 @@ namespace Neatoo.UnitTest.ObjectPortal;
 public class ReadWritePortalTests
 {
     private IServiceScope scope = UnitTestServices.GetLifetimeScope(true);
-    private INeatooPortal<IEditObject> portal;
+    private EditObjectFactory portal;
     private IEditObject editObject;
 
     [TestInitialize]
     public void TestInitialize()
     {
-        portal = scope.GetRequiredService<INeatooPortal<IEditObject>>();
+        portal = scope.GetRequiredService<EditObjectFactory>();
     }
 
     [TestCleanup]
@@ -95,7 +95,7 @@ public class ReadWritePortalTests
         editObject = await portal.Fetch();
         var id = Guid.NewGuid();
         editObject.ID = Guid.NewGuid();
-        await portal.Update(editObject);
+        await portal.Save(editObject);
         Assert.AreNotEqual(id, editObject.ID);
         Assert.IsTrue(editObject.UpdateCalled);
         Assert.IsFalse(editObject.IsNew);
@@ -110,7 +110,7 @@ public class ReadWritePortalTests
     {
         editObject = await portal.Create();
         editObject.ID = Guid.Empty;
-        await portal.Update(editObject);
+        await portal.Save(editObject);
         Assert.AreNotEqual(Guid.Empty, editObject.ID);
         Assert.IsTrue(editObject.InsertCalled);
         Assert.IsFalse(editObject.IsNew);
@@ -124,7 +124,7 @@ public class ReadWritePortalTests
     {
         editObject = await portal.Fetch();
         editObject.Delete();
-        await portal.Update(editObject);
+        await portal.Save(editObject);
         Assert.IsTrue(editObject.DeleteCalled);
     }
 

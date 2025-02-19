@@ -25,11 +25,9 @@ public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject
     where I : IEditBase
 {
 
-    protected new INeatooPortal<I> ItemPortal { get; }
-
     public EditListBase(IEditListBaseServices<T, I> services) : base(services)
     {
-        this.ItemPortal = services.ReadWritePortalChild;
+
     }
 
     public bool IsModified => this.Any(c => c.IsModified) || DeletedList.Any();
@@ -100,62 +98,6 @@ public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject
         }
 
         base.RemoveItem(index);
-    }
-
-
-    [Update]
-    [UpdateChild]
-    protected virtual async Task Update()
-    {
-        if (IsSelfModified)
-        {
-            throw new Exception($"{this.GetType().FullName} is modified you must override and define Update().");
-        }
-        await UpdateList();
-    }
-
-    [Update]
-    [UpdateChild]
-    protected virtual async Task Update(object[] criteria)
-    {
-        if (IsSelfModified)
-        {
-            throw new Exception($"{this.GetType().FullName} is modified you must override and define Update().");
-        }
-        await UpdateList(criteria);
-    }
-
-    protected async Task UpdateList()
-    {
-        foreach (var d in DeletedList)
-        {
-            if (d.IsDeleted) // May have been moved to a different parent
-            {
-                await ItemPortal.Update(d);
-            }
-        }
-
-        DeletedList.Clear();
-
-        foreach (var i in this.Where(i => i.IsModified).ToList())
-        {
-            await ItemPortal.Update(i);
-        }
-    }
-
-    protected async Task UpdateList(object[] criteria)
-    {
-        foreach (var d in DeletedList)
-        {
-            await ItemPortal.Update(d, criteria);
-        }
-
-        DeletedList.Clear();
-
-        foreach (var i in this.Where(i => i.IsModified).ToList())
-        {
-            await ItemPortal.Update(i, criteria);
-        }
     }
 
     public override void OnDeserializing()

@@ -3,9 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,20 +19,26 @@ namespace Neatoo.CodeAnalysis
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
                 transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
                 .Where(static m => m is not null),
-                static (ctx, source) => Execute(ctx, source!));
+                static (ctx, source) => Execute(ctx, source!.Value.classDeclaration, source.Value.semanticModel));
         }
 
         private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
         {
             // We are looking for methods with attributes
             return node is ClassDeclarationSyntax classDeclarationSyntax &&
-                    !(classDeclarationSyntax.TypeParameterList?.Parameters.Any() ?? false) &&
-                   classDeclarationSyntax.Members.OfType<MethodDeclarationSyntax>().Any(m => m.AttributeLists.Any());
+                    !(classDeclarationSyntax.TypeParameterList?.Parameters.Any() ?? false || classDeclarationSyntax.Modifiers.Any(SyntaxKind.AbstractKeyword)) &&
+                   (classDeclarationSyntax.Members.OfType<MethodDeclarationSyntax>().Any(m => m.AttributeLists.Any())
+                   || classDeclarationSyntax.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Factory"));
         }
 
-        private static ClassDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
+        private static (ClassDeclarationSyntax classDeclaration, SemanticModel semanticModel)? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
         {
             var classDeclaration = (ClassDeclarationSyntax)context.Node;
+
+            if(classDeclaration.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Factory"))
+            {
+                return (classDeclaration, context.SemanticModel);
+            }
 
             foreach (var methodDeclaration in classDeclaration.Members.OfType<MethodDeclarationSyntax>())
             {
@@ -45,7 +49,7 @@ namespace Neatoo.CodeAnalysis
                     {
                         if (dataMapperAttributes.Contains(attribute.Name.ToString()))
                         {
-                            return classDeclaration;
+                            return (classDeclaration, context.SemanticModel);
                         }
                     }
                 }
@@ -54,31 +58,27 @@ namespace Neatoo.CodeAnalysis
             return null;
         }
 
-        private static List<string> dataMapperAttributes = ["Create", "Fetch", "Insert", "Update", "Delete"];
-        private static List<string> dataMapperSaveAttributes = ["Insert", "Update", "Delete"];
+        private static List<string> dataMapperAttributes = new() { "Create", "Fetch", "Insert", "Update", "Delete" };
+        private static List<string> dataMapperSaveAttributes = new() { "Insert", "Update", "Delete" };
 
-        private static void Execute(SourceProductionContext context, ClassDeclarationSyntax classDeclarationSyntax)
+        private static void Execute(SourceProductionContext context, ClassDeclarationSyntax classDeclarationSyntax, SemanticModel semanticModel)
         {
-            var compilationUnitSyntax = classDeclarationSyntax.SyntaxTree.GetCompilationUnitRoot();
-            var usingDirectives = new StringBuilder();
+            var usingDirectives = new List<string>();
 
             var methodNames = new List<string>();
-
 
             var delegates = new StringBuilder();
             var delegateAssignmentLocal = new StringBuilder();
             var delegateAssignmentRemote = new StringBuilder();
 
             var propertyDeclarations = new StringBuilder();
+            var publicMethods = new StringBuilder();
             var localMethods = new StringBuilder();
             var remoteMethods = new StringBuilder();
             var saveMethods = new StringBuilder();
-            Dictionary<string, (string parameterIdentifiersText, string parameterDeclarationText, string saveMethodName, string? insertMethodName, string? updateMethodName, string? deleteMethodName)> saveMethodSets = new();
+            Dictionary<string, (string parameterIdentifiersText, string parameterDeclarationText, string saveMethodName, string saveUniqueMethodName,
+                                    string? insertMethodName, string? updateMethodName, string? deleteMethodName)> saveMethodSets = new();
 
-            foreach (var using_ in compilationUnitSyntax.Usings)
-            {
-                usingDirectives.AppendLine(using_.ToString());
-            }
 
 
             // Generate the source code for the found method
@@ -94,169 +94,190 @@ namespace Neatoo.CodeAnalysis
                 namespaceName = parentClassDeclarationSyntax.Name.ToString();
             }
 
-            
-            foreach (var methodDeclaration in classDeclarationSyntax.Members.OfType<MethodDeclarationSyntax>())
+            while (classDeclarationSyntax != null)
             {
-                foreach (var attribute in methodDeclaration.AttributeLists.SelectMany(a => a.Attributes))
+                var compilationUnitSyntax = classDeclarationSyntax.SyntaxTree.GetCompilationUnitRoot();
+                foreach (var using_ in compilationUnitSyntax.Usings)
                 {
-                    if (dataMapperAttributes.Contains(attribute.Name.ToString()))
+                    if (!usingDirectives.Contains(using_.ToString()))
                     {
-                        var attributeName = attribute.Name.ToString();
-                        var uniqueMethodName = methodDeclaration.Identifier.Text;
-                        var methodName = methodDeclaration.Identifier.Text;
-                        var saveMethodName = string.Empty;
-                        var isSaveMethod = dataMapperSaveAttributes.Contains(attributeName);
+                        usingDirectives.Add(using_.ToString());
+                    }
+                }
 
-                        if (methodNames.Contains(uniqueMethodName))
+                foreach (var methodDeclaration in classDeclarationSyntax.Members.OfType<MethodDeclarationSyntax>())
+                {
+                    foreach (var attribute in methodDeclaration.AttributeLists.SelectMany(a => a.Attributes))
+                    {
+                        if (dataMapperAttributes.Contains(attribute.Name.ToString()))
                         {
-                            var count = 1;
-                            while (methodNames.Contains($"{uniqueMethodName}{count}"))
+                            var attributeName = attribute.Name.ToString();
+                            var uniqueMethodName = methodDeclaration.Identifier.Text;
+                            var methodName = methodDeclaration.Identifier.Text;
+                            var isSaveMethod = dataMapperSaveAttributes.Contains(attributeName);
+
+                            if (methodNames.Contains(uniqueMethodName))
                             {
-                                count += 1;
+                                var count = 1;
+                                while (methodNames.Contains($"{uniqueMethodName}{count}"))
+                                {
+                                    count += 1;
+                                }
+                                uniqueMethodName = $"{uniqueMethodName}{count}";
                             }
-                            uniqueMethodName = $"{uniqueMethodName}{count}";
-                        }
-                        methodNames.Add(uniqueMethodName);
+                            methodNames.Add(uniqueMethodName);
 
-                        if (isSaveMethod)
-                        {
-                            saveMethodName = $"Save{uniqueMethodName.Replace("Insert", "").Replace("Update", "")}";
-                        }
+                            var parameters = methodDeclaration.ParameterList.Parameters;
+                            var parameterIdentifiers = parameters.Select(p => p.Identifier.ToString()).ToList();
+                            var serviceAssignmentsText = new StringBuilder();
+                            var parameterIdentifiersNoServices = new List<string>();
+                            var parameterDeclarationsNoServices = new List<string>();
 
-                        var parameters = methodDeclaration.ParameterList.Parameters;
-                        var parameterIdentifiers = parameters.Select(p => p.Identifier.ToString()).ToList();
-                        var serviceAssignmentsText = new StringBuilder();
-                        var parameterIdentifiersNoServices = new List<string>();
-                        var parameterDeclarationsNoServices = new List<string>();
-
-                        foreach (var parameter in parameters)
-                        {
-                            if (parameter.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Service"))
+                            foreach (var parameter in parameters)
                             {
-                                serviceAssignmentsText.AppendLine($"\t\t\tvar {parameter.Identifier} = ServiceProvider.GetService<{parameter.Type}>();");
+                                if (parameter.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Service"))
+                                {
+                                    serviceAssignmentsText.AppendLine($"\t\t\tvar {parameter.Identifier} = ServiceProvider.GetService<{parameter.Type}>();");
+                                }
+                                else
+                                {
+                                    parameterDeclarationsNoServices.Add($"{parameter.Type} {parameter.Identifier}");
+                                    parameterIdentifiersNoServices.Add($"{parameter.Identifier}");
+                                }
+                            }
+
+                            var parameterIdentifiersText = string.Join(", ", parameters.Select(p => p.Identifier.ToString()));
+                            var parameterIdentifiersNoServicesText = string.Join(", ", parameterIdentifiersNoServices);
+                            var parameterDeclarationsNoServicesText = string.Join(", ", parameterDeclarationsNoServices);
+                            var delegateName = $"{uniqueMethodName}Delegate";
+
+                            // Consumer Delegates
+                            propertyDeclarations.AppendLine($"protected {delegateName} {uniqueMethodName}Property {{ get; }}");
+                            delegateAssignmentLocal.AppendLine($"{uniqueMethodName}Property = Local{uniqueMethodName};");
+
+                            // Local method implementations
+                            if (!isSaveMethod)
+                            {
+                                delegates.AppendLine($"protected internal delegate Task<I{className}> {delegateName}({parameterDeclarationsNoServicesText});");
+
+                                publicMethods.AppendLine($"public Task<I{className}> {methodName}({parameterDeclarationsNoServicesText})");
+                                publicMethods.AppendLine("{");
+                                publicMethods.AppendLine($"return {uniqueMethodName}Property({parameterIdentifiersNoServicesText});");
+                                publicMethods.AppendLine("}");
+
+                                localMethods.AppendLine($"[Local<{delegateName}>]");
+                                localMethods.AppendLine($"protected async Task<I{className}> Local{uniqueMethodName}({parameterDeclarationsNoServicesText})");
+                                localMethods.AppendLine("{");
+                                localMethods.AppendLine($"var target = ServiceProvider.GetRequiredService<{className}>();");
+                                localMethods.AppendLine($"{serviceAssignmentsText.ToString()}");
+
+                                if (methodDeclaration.ReturnType.ToString() == "Task")
+                                {
+                                    localMethods.AppendLine($"await DoMapperMethodCall(target, DataMapperMethod.{attributeName}, () => target.{methodName}({parameterIdentifiersText}));");
+                                }
+                                else
+                                {
+                                    localMethods.AppendLine($"await DoMapperMethodCall(target, DataMapperMethod.{attributeName}, () => {{ target.{methodName}({parameterIdentifiersText});");
+                                    localMethods.AppendLine("return Task.CompletedTask;");
+                                    localMethods.AppendLine("});");
+                                }
+
+                                localMethods.AppendLine($" return target;");
+                                localMethods.AppendLine("}");
+                                localMethods.AppendLine("");
                             }
                             else
                             {
-                                parameterDeclarationsNoServices.Add($"{parameter.Type} {parameter.Identifier}");
-                                parameterIdentifiersNoServices.Add($"{parameter.Identifier}");
-                            }
-                        }
+                                delegates.AppendLine($"protected internal delegate Task {delegateName}(I{className} target, {parameterDeclarationsNoServicesText});");
 
-                        var parameterIdentifiersText = string.Join(", ", parameters.Select(p => p.Identifier.ToString()));
-                        var parameterIdentifiersNoServicesText = string.Join(", ", parameterIdentifiersNoServices);
-                        var parameterDeclarationsNoServicesText = string.Join(", ", parameterDeclarationsNoServices);
-                        var delegateName = $"{uniqueMethodName}Delegate";
+                                localMethods.AppendLine($"protected async Task Local{uniqueMethodName}(I{className} itarget, {parameterDeclarationsNoServicesText})");
+                                localMethods.AppendLine("{");
+                                localMethods.AppendLine($"var target = ({className})itarget ?? throw new Exception(\"{className} must implement I{className}\");");
+                                localMethods.AppendLine($"{serviceAssignmentsText.ToString()}");
+                                if (methodDeclaration.ReturnType.ToString() == "Task")
+                                {
+                                    localMethods.AppendLine($"await DoMapperMethodCall(target, DataMapperMethod.{attributeName}, () => target.{methodName}({parameterIdentifiersText}));");
+                                }
+                                else
+                                {
+                                    localMethods.AppendLine($"await DoMapperMethodCall(target, DataMapperMethod.{attributeName}, () => {{ target.{methodName}({parameterIdentifiersText});");
+                                    localMethods.AppendLine("return Task.CompletedTask;");
+                                    localMethods.AppendLine("});");
+                                }
 
-                        var @public = "public";
-
-                        if (isSaveMethod)
-                        {
-                            @public = "private";
-                        }
-
-                        //Consumer Delegates
-
-                        propertyDeclarations.AppendLine($"{@public} {delegateName} {uniqueMethodName} {{ get; }}");
-                        delegateAssignmentLocal.AppendLine($"{uniqueMethodName} = Local{uniqueMethodName};");
-
-                        // Local method implementations
-                        if (!isSaveMethod)
-                        {
-                            delegates.AppendLine($"{@public} delegate Task<I{className}> {delegateName}({parameterDeclarationsNoServicesText});"); localMethods.AppendLine($"[Local<{delegateName}>]");
-                            localMethods.AppendLine($"protected async Task<I{className}> Local{uniqueMethodName}({parameterDeclarationsNoServicesText})");
-                            localMethods.AppendLine("{");
-                            localMethods.AppendLine($"var target = ServiceProvider.GetRequiredService<{className}>();");
-                            localMethods.AppendLine($"{serviceAssignmentsText.ToString()}");
-
-                            if (methodDeclaration.ReturnType.ToString() == "Task")
-                            {
-                                localMethods.AppendLine($"await DoMapperMethodCall(target, DataMapperMethod.{attributeName}, () => target.{methodName}({parameterIdentifiersText}));");
-                            }
-                            else
-                            {
-                                localMethods.AppendLine($"await DoMapperMethodCall(target, DataMapperMethod.{attributeName}, () => {{ target.{methodName}({parameterIdentifiersText});");
-                                localMethods.AppendLine("return Task.CompletedTask;");
-                                localMethods.AppendLine("});");
+                                localMethods.AppendLine("}");
+                                localMethods.AppendLine("");
                             }
 
-                            localMethods.AppendLine($" return target;");
-                            localMethods.AppendLine("}");
-                            localMethods.AppendLine("");
-                        }
-                        else
-                        {
-                            delegates.AppendLine($"{@public} delegate Task {delegateName}({className} target, {parameterDeclarationsNoServicesText});");
-                            localMethods.AppendLine($"protected async Task Local{uniqueMethodName}({className} target, {parameterDeclarationsNoServicesText})");
-                            localMethods.AppendLine("{");
-                            localMethods.AppendLine($"{serviceAssignmentsText.ToString()}");
-                            localMethods.AppendLine($"await DoMapperMethodCall(target, DataMapperMethod.{attributeName}, () => target.{methodName}({parameterIdentifiersText}));");
-                            localMethods.AppendLine("}");
-                            localMethods.AppendLine("");
-                        }
-
-                        if (!isSaveMethod)
-                        {
-                            delegateAssignmentRemote.AppendLine($"{uniqueMethodName} = Remote{uniqueMethodName};");
-
-                            // Remote method implementations
-                            remoteMethods.AppendLine($"protected async Task<I{className}?> Remote{uniqueMethodName}({parameterDeclarationsNoServicesText})");
-                            remoteMethods.AppendLine("{");
-                            remoteMethods.AppendLine($" return (I{className}?) await RemoteRead(typeof({delegateName}), [{parameterIdentifiersNoServicesText}]);");
-                            remoteMethods.AppendLine("}");
-                            remoteMethods.AppendLine("");
-                        }
-
-                        if (isSaveMethod && methodDeclaration.ReturnType.ToString() == "Task")
-                        {
-                            (string parameterIdentifiersText, string parameterDeclarationText, string saveMethodName, string? insertMethodName, string? updateMethodName, string? deleteMethodName) saveMethodSet = (parameterIdentifiersNoServicesText, parameterDeclarationsNoServicesText, saveMethodName, null, null, null);
-
-                            if (!saveMethodSets.ContainsKey(parameterDeclarationsNoServicesText))
+                            if (!isSaveMethod)
                             {
-                                saveMethodSets.Add(parameterDeclarationsNoServicesText, saveMethodSet);
-                            } else
-                            {
-                                saveMethodSet = saveMethodSets[parameterDeclarationsNoServicesText];
+                                delegateAssignmentRemote.AppendLine($"{uniqueMethodName}Property = Remote{uniqueMethodName};");
+
+                                // Remote method implementations
+                                remoteMethods.AppendLine($"protected async Task<I{className}?> Remote{uniqueMethodName}({parameterDeclarationsNoServicesText})");
+                                remoteMethods.AppendLine("{");
+                                remoteMethods.AppendLine($" return (I{className}?) await DoRemoteRequest(typeof({delegateName}), [{parameterIdentifiersNoServicesText}]);");
+                                remoteMethods.AppendLine("}");
+                                remoteMethods.AppendLine("");
                             }
 
-                            if (attributeName == "Insert")
+                            if (isSaveMethod)
                             {
-                                saveMethodSet.insertMethodName = uniqueMethodName;
-                            }
-                            else if (attributeName == "Update")
-                            {
-                                saveMethodSet.updateMethodName = uniqueMethodName;
-                            }
-                            else if (attributeName == "Delete")
-                            {
-                                saveMethodSet.deleteMethodName = uniqueMethodName;
-                            }
+                                (string parameterIdentifiersText, string parameterDeclarationText, string saveMethodName, string saveUniqueMethodName,
+                                        string? insertMethodName, string? updateMethodName, string? deleteMethodName) saveMethodSet = (parameterIdentifiersNoServicesText, parameterDeclarationsNoServicesText,
+                                        $"Save{methodName.Replace("Insert", "").Replace("Update", "")}",
+                                        $"Save{uniqueMethodName.Replace("Insert", "").Replace("Update", "")}", null, null, null);
 
-                            saveMethodSets[parameterDeclarationsNoServicesText] = saveMethodSet;
+                                if (!saveMethodSets.ContainsKey(parameterDeclarationsNoServicesText))
+                                {
+                                    saveMethodSets.Add(parameterDeclarationsNoServicesText, saveMethodSet);
+                                }
+                                else
+                                {
+                                    saveMethodSet = saveMethodSets[parameterDeclarationsNoServicesText];
+                                }
+
+                                if (attributeName == "Insert")
+                                {
+                                    saveMethodSet.insertMethodName = uniqueMethodName;
+                                }
+                                else if (attributeName == "Update")
+                                {
+                                    saveMethodSet.updateMethodName = uniqueMethodName;
+                                }
+                                else if (attributeName == "Delete")
+                                {
+                                    saveMethodSet.deleteMethodName = uniqueMethodName;
+                                }
+
+                                saveMethodSets[parameterDeclarationsNoServicesText] = saveMethodSet;
+                            }
                         }
                     }
                 }
+
+
+                classDeclarationSyntax = GetBaseClassDeclarationSyntax(semanticModel, classDeclarationSyntax);
             }
 
             foreach (var saveMethodSet in saveMethodSets.Select(s => s.Value))
             {
-                delegates.AppendLine($"public delegate Task<I{className}?> {saveMethodSet.saveMethodName}Delegate(I{className} target, {saveMethodSet.parameterDeclarationText});");
-                propertyDeclarations.AppendLine($"public {saveMethodSet.saveMethodName}Delegate {saveMethodSet.saveMethodName} {{ get; private set; }}");
-                delegateAssignmentLocal.AppendLine($"{saveMethodSet.saveMethodName} = Local{saveMethodSet.saveMethodName};");
-                delegateAssignmentRemote.AppendLine($"{saveMethodSet.saveMethodName} = Remote{saveMethodSet.saveMethodName};");
+                delegates.AppendLine($"protected internal delegate Task<I{className}?> {saveMethodSet.saveUniqueMethodName}Delegate(I{className} target, {saveMethodSet.parameterDeclarationText});");
+                propertyDeclarations.AppendLine($"protected {saveMethodSet.saveUniqueMethodName}Delegate {saveMethodSet.saveUniqueMethodName}Property {{ get; set; }}");
+                delegateAssignmentLocal.AppendLine($"{saveMethodSet.saveUniqueMethodName}Property = Local{saveMethodSet.saveUniqueMethodName};");
+                delegateAssignmentRemote.AppendLine($"{saveMethodSet.saveUniqueMethodName}Property = Remote{saveMethodSet.saveUniqueMethodName};");
 
-                saveMethods.AppendLine($@"[Local<{saveMethodSet.saveMethodName}Delegate>]");
+                publicMethods.AppendLine($"public Task<I{className}> {saveMethodSet.saveMethodName}(I{className} target, {saveMethodSet.parameterDeclarationText})");
+                publicMethods.AppendLine("{");
+                publicMethods.AppendLine($"return {saveMethodSet.saveUniqueMethodName}Property(target, {saveMethodSet.parameterIdentifiersText});");
+                publicMethods.AppendLine("}");
+
+                saveMethods.AppendLine($@"[Local<{saveMethodSet.saveUniqueMethodName}Delegate>]");
                 saveMethods.AppendLine($@"
-protected async Task<I{className}?> Local{saveMethodSet.saveMethodName}(I{className} iTarget, {saveMethodSet.parameterDeclarationText})
+protected async Task<I{className}?> Local{saveMethodSet.saveUniqueMethodName}(I{className} target, {saveMethodSet.parameterDeclarationText})
 {{");
 
-                if (saveMethodSet.updateMethodName == null ||
-                    saveMethodSet.insertMethodName == null ||
-                    saveMethodSet.deleteMethodName == null)
-                {
-                    saveMethods.AppendLine($@"/* Missing method for {saveMethodSet.saveMethodName}");
-                }
                 saveMethods.AppendLine($@"
-        var target = ({className})iTarget ?? throw new Exception(""{className} must implement I{className}"");
 
                 if (target.IsDeleted)
         {{
@@ -264,37 +285,29 @@ protected async Task<I{className}?> Local{saveMethodSet.saveMethodName}(I{classN
             {{
                 return null;
             }}
-            await {saveMethodSet.deleteMethodName ?? "MISSING"}(target, {saveMethodSet.parameterIdentifiersText}); 
+            {(saveMethodSet.deleteMethodName != null ? $"await Local{saveMethodSet.deleteMethodName}(target, {saveMethodSet.parameterIdentifiersText});" : $"throw new NotImplementedException(\"{className}Factory.Update()\");")}
         }}
         else if (target.IsNew)
         {{
-            await {saveMethodSet.insertMethodName ?? "MISSING"}(target, {saveMethodSet.parameterIdentifiersText});
+            {(saveMethodSet.insertMethodName != null ? $"await Local{saveMethodSet.insertMethodName}(target, {saveMethodSet.parameterIdentifiersText});" : $"throw new NotImplementedException(\"{className}Factory.Update()\");")}
         }}
         else
         {{
-            await {saveMethodSet.updateMethodName ?? "MISSING"}(target, {saveMethodSet.parameterIdentifiersText});
+            {(saveMethodSet.updateMethodName!= null ? $"await Local{saveMethodSet.updateMethodName}(target, {saveMethodSet.parameterIdentifiersText});" : $"throw new NotImplementedException(\"{className}Factory.Update()\");")}
         }}
         return target;
 ");
 
-                if (saveMethodSet.updateMethodName == null ||
-    saveMethodSet.insertMethodName == null ||
-    saveMethodSet.deleteMethodName == null)
-                {
-                    saveMethods.AppendLine($@"*/");
-                    saveMethods.AppendLine($"throw new NotImplementedException();");
-                    
-                }
                 saveMethods.AppendLine("}");
 
-                saveMethods.AppendLine($@"protected async Task<I{className}?> Remote{saveMethodSet.saveMethodName}(I{className} target, {saveMethodSet.parameterDeclarationText}){{");
-                saveMethods.AppendLine($@"return (I{className}?) await RemoteRead(typeof({saveMethodSet.saveMethodName}Delegate), [target, {saveMethodSet.parameterIdentifiersText}]);");
+                saveMethods.AppendLine($@"protected async Task<I{className}?> Remote{saveMethodSet.saveUniqueMethodName}(I{className} target, {saveMethodSet.parameterDeclarationText}){{");
+                saveMethods.AppendLine($@"return (I{className}?) await DoRemoteRequest(typeof({saveMethodSet.saveUniqueMethodName}Delegate), [target, {saveMethodSet.parameterIdentifiersText}]);");
                 saveMethods.AppendLine("}");
             }
             var source = $@"
 using Microsoft.Extensions.DependencyInjection;
 using Neatoo.Portal.Internal;
-{usingDirectives.ToString()}
+{string.Join("\n", usingDirectives)}
 
 namespace {namespaceName}
 {{
@@ -303,7 +316,7 @@ namespace {namespaceName}
     {{
     
         private readonly IServiceProvider ServiceProvider;  
-        private readonly RemoteRead RemoteRead;
+        private readonly DoRemoteRequest DoRemoteRequest;
 
 {delegates.ToString()}
 
@@ -315,15 +328,15 @@ namespace {namespaceName}
                 {delegateAssignmentLocal.ToString()}
         }}
 
-        public {className}Factory(IServiceProvider serviceProvider, RemoteRead remoteMethodDelegate)
+        public {className}Factory(IServiceProvider serviceProvider, DoRemoteRequest remoteMethodDelegate)
         {{
                 this.ServiceProvider = serviceProvider;
-                this.RemoteRead = remoteMethodDelegate;
+                this.DoRemoteRequest = remoteMethodDelegate;
                 {delegateAssignmentRemote.ToString()}
         }}
 
+{publicMethods.ToString()}
 {localMethods.ToString()}
-
 {remoteMethods.ToString()}
 {saveMethods.ToString()}
     }}
@@ -332,6 +345,33 @@ namespace {namespaceName}
             source = source.Replace(", )", ")");
             source = CSharpSyntaxTree.ParseText(source).GetRoot().NormalizeWhitespace().SyntaxTree.GetText().ToString();
             context.AddSource($"{namespaceName}.{className}Factory.g.cs", source);
+        }
+
+        private static ClassDeclarationSyntax? GetBaseClassDeclarationSyntax(SemanticModel semanticModel, ClassDeclarationSyntax classDeclaration)
+        {
+            try
+            {
+                var classSymbol = semanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
+
+                if (classSymbol?.BaseType == null)
+                {
+                    return null;
+                }
+
+                var baseTypeSymbol = classSymbol.BaseType;
+                var baseTypeSyntaxReference = baseTypeSymbol.DeclaringSyntaxReferences.FirstOrDefault();
+
+                if (baseTypeSyntaxReference == null)
+                {
+                    return null;
+                }
+
+                var baseTypeSyntaxNode = baseTypeSyntaxReference.GetSyntax() as ClassDeclarationSyntax;
+                return baseTypeSyntaxNode;
+            } catch(Exception ex)
+            {
+                return null;
+            }
         }
     }
 }

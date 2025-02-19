@@ -9,11 +9,11 @@ using Microsoft.EntityFrameworkCore;
 #endif
 namespace HorseBarn.lib.Horse;
 
-// TODO : Abstract causes portal methods (ex [CreateChild]) to not be recognized by PortalOperationManager and I don't know why
+// TODO : Abstract causes portal methods (ex [Create]) to not be recognized by PortalOperationManager and I don't know why
 internal class Horse<H> : CustomEditBase<H>, IHorse
     where H : Horse<H>
 {
-    public Horse(EditBaseServices<H> services) : base(services)
+    public Horse(IEditBaseServices<H> services) : base(services)
     {
         AddRules(RuleManager);
     }
@@ -49,13 +49,7 @@ internal class Horse<H> : CustomEditBase<H>, IHorse
 
 #if !CLIENT
 
-    [Create]
-    internal void Create()
-    {
-        throw new Exception("This method should not be called.");
-    }
-
-    [FetchChild]
+    [Fetch]
     internal void Fetch(Dal.Ef.Horse horse)
     {
         this.Id = horse.Id;
@@ -66,7 +60,7 @@ internal class Horse<H> : CustomEditBase<H>, IHorse
 
     Dal.Ef.Horse? horse;
 
-    [InsertChild]
+    [Insert]
     internal void Insert(Dal.Ef.Pasture pasture)
     {
         horse = new Dal.Ef.Horse();
@@ -79,7 +73,7 @@ internal class Horse<H> : CustomEditBase<H>, IHorse
         horse.PropertyChanged += HandleIdPropertyChanged;
     }
 
-    [InsertChild]
+    [Insert]
     internal void Insert(Dal.Ef.Cart cart)
     {
         var horse = new Dal.Ef.Horse();
@@ -92,8 +86,8 @@ internal class Horse<H> : CustomEditBase<H>, IHorse
         horse.PropertyChanged += HandleIdPropertyChanged;
     }
 
-    [UpdateChild]
-    internal async Task Update(Dal.Ef.Pasture pasture, IHorseBarnContext horseBarnContext)
+    [Update]
+    internal async Task Update(Dal.Ef.Pasture pasture, [Service] IHorseBarnContext horseBarnContext)
     {
         var horse = await horseBarnContext.Horses.SingleAsync(h => h.Id == this.Id);
 
@@ -108,8 +102,8 @@ internal class Horse<H> : CustomEditBase<H>, IHorse
         pasture.Horses.Add(horse);
     }
 
-    [UpdateChild]
-    internal async Task Update(Dal.Ef.Cart cart, IHorseBarnContext horseBarnContext)
+    [Update]
+    internal async Task Update(Dal.Ef.Cart cart, [Service] IHorseBarnContext horseBarnContext)
     {
         var horse = await horseBarnContext.Horses.SingleAsync(h => h.Id == this.Id);
 
@@ -123,14 +117,14 @@ internal class Horse<H> : CustomEditBase<H>, IHorse
         cart.Horses.Add(horse);
     }
 
-    [DeleteChild]
+    [Delete]
     internal void Delete(Dal.Ef.Cart cart)
     {
         var horse = cart.Horses.First(h => h.Id == this.Id);
         cart.Horses.Remove(horse);
     }
 
-    [DeleteChild]
+    [Delete]
     internal void Delete(Dal.Ef.Pasture pasture)
     {
         var horse = pasture.Horses.First(h => h.Id == this.Id);

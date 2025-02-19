@@ -1,411 +1,411 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.AuthorizationRules;
-using Neatoo.Portal.Internal;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
+﻿//using Microsoft.Extensions.DependencyInjection;
+//using Neatoo.AuthorizationRules;
+//using Neatoo.Portal.Internal;
+//using System;
+//using System.Collections.Concurrent;
+//using System.Collections.Generic;
+//using System.Diagnostics;
+//using System.Linq;
+//using System.Reflection;
+//using System.Threading.Tasks;
 
-namespace Neatoo.Portal.Internal;
+//namespace Neatoo.Portal.Internal;
 
-public interface IDataMapper
-{
-    void RegisterOperation(DataMapperMethod operation, string methodName);
-    void RegisterOperation(DataMapperMethod operation, MethodInfo method);
-    Task<bool> TryCallOperation(object target, DataMapperMethod operation);
-    Task<bool> TryCallOperation(object target, DataMapperMethod operation, object[] criteria);
-    Task<object> HandlePortalRequest(RemoteRequest portalRequest);
-}
-public interface IDataMapper<T> : IDataMapper
-{
-
-
-}
-
-public class DataMapper<T> : IDataMapper<T>
-{
-    protected static IDictionary<DataMapperMethod, List<MethodInfo>> RegisteredOperations { get; } = new ConcurrentDictionary<DataMapperMethod, List<MethodInfo>>();
-    protected static bool IsRegistered { get; set; }
-    protected static object lockIsRegistered = new object();
-    private readonly IServiceProviderIsService serviceProviderIsService;
-
-    private IServiceProvider Scope { get; }
-
-    protected IAuthorizationRuleManager AuthorizationRuleManager { get; }
-
-    protected INeatooJsonSerializer jsonSerializer { get; }
-
-    public DataMapper(IServiceProvider scope, INeatooJsonSerializer jsonSerializer, IServiceProviderIsService serviceProviderIsService)
-    {
-#if DEBUG
-        if (typeof(T).IsInterface) { throw new Exception($"PortalOperationManager should be service type not an interface. {typeof(T).FullName}"); }
-#endif
-        RegisterPortalOperations();
-        Scope = scope;
-        this.jsonSerializer = jsonSerializer;
-        this.serviceProviderIsService = serviceProviderIsService;
-        AuthorizationRuleManager = scope.GetRequiredService<IAuthorizationRuleManager<T>>();
-    }
+//public interface IDataMapper
+//{
+//    void RegisterOperation(DataMapperMethod operation, string methodName);
+//    void RegisterOperation(DataMapperMethod operation, MethodInfo method);
+//    Task<bool> TryCallOperation(object target, DataMapperMethod operation);
+//    Task<bool> TryCallOperation(object target, DataMapperMethod operation, object[] criteria);
+//    Task<object> HandlePortalRequest(RemoteRequest portalRequest);
+//}
+//public interface IDataMapper<T> : IDataMapper
+//{
 
 
-    protected virtual void RegisterPortalOperations()
-    {
-        lock (lockIsRegistered)
-        {
-            if (!IsRegistered)
-            {
-                var methods = typeof(T).GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)
-                    .Where(m => m.GetCustomAttributes<DataMapperMethodAttribute>().Any()).ToList();
+//}
 
-                foreach (var m in methods)
-                {
-                    var attributes = m.GetCustomAttributes<DataMapperMethodAttribute>().ToList();
-                    foreach (var o in attributes)
-                    {
-                        RegisterOperation(o.Operation, m);
-                    }
-                }
-                IsRegistered = true;
-            }
-        }
-    }
+//public class DataMapper<T> : IDataMapper<T>
+//{
+//    protected static IDictionary<DataMapperMethod, List<MethodInfo>> RegisteredOperations { get; } = new ConcurrentDictionary<DataMapperMethod, List<MethodInfo>>();
+//    protected static bool IsRegistered { get; set; }
+//    protected static object lockIsRegistered = new object();
+//    private readonly IServiceProviderIsService serviceProviderIsService;
 
-    public void RegisterOperation(DataMapperMethod operation, string methodName)
-    {
-        var method = typeof(T).GetMethod(methodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance) ?? throw new Exception("No method found");
-        RegisterOperation(operation, method);
-    }
+//    private IServiceProvider Scope { get; }
 
-    public void RegisterOperation(DataMapperMethod operation, MethodInfo method)
-    {
-        var returnType = method.ReturnType;
+//    protected IAuthorizationRuleManager AuthorizationRuleManager { get; }
 
-        if (!(returnType == typeof(void) || returnType == typeof(Task)))
-        {
-            throw new OperationMethodException($"{method.Name} must be void or return Task");
-        }
+//    protected INeatooJsonSerializer jsonSerializer { get; }
 
-        if (!RegisteredOperations.TryGetValue(operation, out var methodList))
-        {
-            RegisteredOperations.Add(operation, methodList = new List<MethodInfo>());
-        }
-
-        methodList.Add(method);
-    }
-
-    public IEnumerable<MethodInfo>? MethodsForOperation(DataMapperMethod operation)
-    {
-        if (!RegisteredOperations.TryGetValue(operation, out var methods))
-        {
-            return null;
-        }
-
-        return methods.AsReadOnly();
-    }
+//    public DataMapper(IServiceProvider scope, INeatooJsonSerializer jsonSerializer, IServiceProviderIsService serviceProviderIsService)
+//    {
+//#if DEBUG
+//        if (typeof(T).IsInterface) { throw new Exception($"PortalOperationManager should be service type not an interface. {typeof(T).FullName}"); }
+//#endif
+//        RegisterPortalOperations();
+//        Scope = scope;
+//        this.jsonSerializer = jsonSerializer;
+//        this.serviceProviderIsService = serviceProviderIsService;
+//        AuthorizationRuleManager = scope.GetRequiredService<IAuthorizationRuleManager<T>>();
+//    }
 
 
-    public MethodInfo? MethodForOperation(DataMapperMethod operation, IEnumerable<Type> criteriaTypes)
-    {
-        var methods = MethodsForOperation(operation);
-        MethodInfo? matchingMethod = null;
+//    protected virtual void RegisterPortalOperations()
+//    {
+//        lock (lockIsRegistered)
+//        {
+//            if (!IsRegistered)
+//            {
+//                var methods = typeof(T).GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)
+//                    .Where(m => m.GetCustomAttributes<DataMapperMethodAttribute>().Any()).ToList();
 
-        if (methods != null)
-        {
+//                foreach (var m in methods)
+//                {
+//                    var attributes = m.GetCustomAttributes<DataMapperMethodAttribute>().ToList();
+//                    foreach (var o in attributes)
+//                    {
+//                        RegisterOperation(o.Operation, m);
+//                    }
+//                }
+//                IsRegistered = true;
+//            }
+//        }
+//    }
 
-            foreach (var m in methods)
-            {
-                var parameters = m.GetParameters();
+//    public void RegisterOperation(DataMapperMethod operation, string methodName)
+//    {
+//        var method = typeof(T).GetMethod(methodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance) ?? throw new Exception("No method found");
+//        RegisterOperation(operation, method);
+//    }
 
-                // No criteria
-                if (!criteriaTypes.Any() && !parameters.Any())
-                {
-                    return m;
-                }
-                else if (parameters.Count() == 1 && parameters[0].ParameterType == typeof(object[]))
-                {
-                    matchingMethod = m;
-                }
-                else if (criteriaTypes.Any() && parameters.Any() && parameters.Count() >= criteriaTypes.Count())
-                {
+//    public void RegisterOperation(DataMapperMethod operation, MethodInfo method)
+//    {
+//        var returnType = method.ReturnType;
 
-                    var match = true;
-                    var critEnum = criteriaTypes.GetEnumerator();
-                    var paramEnum = parameters.Cast<ParameterInfo>().Select(p => p.ParameterType).GetEnumerator();
+//        if (!(returnType == typeof(void) || returnType == typeof(Task)))
+//        {
+//            throw new OperationMethodException($"{method.Name} must be void or return Task");
+//        }
 
-                    // With Array's Current doesn't become null
-                    var paramHasValue = paramEnum.MoveNext();
-                    var critHasValue = critEnum.MoveNext();
+//        if (!RegisteredOperations.TryGetValue(operation, out var methodList))
+//        {
+//            RegisteredOperations.Add(operation, methodList = new List<MethodInfo>());
+//        }
 
-                    // All of the criteria parameter types match up
-                    // And any left over are registered
-                    while (match && paramHasValue)
-                    {
+//        methodList.Add(method);
+//    }
 
-                        if (critHasValue && !paramEnum.Current.IsAssignableFrom(critEnum.Current))
-                        {
-                            match = false;
-                        }
-                        else if (!critHasValue && !serviceProviderIsService.IsService(paramEnum.Current)) // For recognizing multiple positives for the same criteria
-                        {
-                            match = false;
-                        }
+//    public IEnumerable<MethodInfo>? MethodsForOperation(DataMapperMethod operation)
+//    {
+//        if (!RegisteredOperations.TryGetValue(operation, out var methods))
+//        {
+//            return null;
+//        }
 
-                        paramHasValue = paramEnum.MoveNext();
-                        critHasValue = critEnum.MoveNext();
+//        return methods.AsReadOnly();
+//    }
 
-                    }
 
-                    // At the end of the Crit list
-                    // The parameter list can 
-                    if (match)
-                    {
-                        if (matchingMethod != null) { throw new Exception($"More then one method for {operation.ToString()} with criteria [{string.Join(",", criteriaTypes)}] on {typeof(T).FullName}"); }
+//    public MethodInfo? MethodForOperation(DataMapperMethod operation, IEnumerable<Type> criteriaTypes)
+//    {
+//        var methods = MethodsForOperation(operation);
+//        MethodInfo? matchingMethod = null;
 
-                        matchingMethod = m;
-                    }
-                }
-            }
-        }
-        return matchingMethod;
-    }
+//        if (methods != null)
+//        {
 
-    protected async Task CheckAccess(AuthorizeOperation operation)
-    {
-        await AuthorizationRuleManager.CheckAccess(operation);
-    }
+//            foreach (var m in methods)
+//            {
+//                var parameters = m.GetParameters();
 
-    protected async Task CheckAccess(AuthorizeOperation operation, params object[] criteria)
-    {
-        if (criteria == null) { throw new ArgumentNullException(nameof(criteria)); }
+//                // No criteria
+//                if (!criteriaTypes.Any() && !parameters.Any())
+//                {
+//                    return m;
+//                }
+//                else if (parameters.Count() == 1 && parameters[0].ParameterType == typeof(object[]))
+//                {
+//                    matchingMethod = m;
+//                }
+//                else if (criteriaTypes.Any() && parameters.Any() && parameters.Count() >= criteriaTypes.Count())
+//                {
 
-        await AuthorizationRuleManager.CheckAccess(operation, criteria);
-    }
+//                    var match = true;
+//                    var critEnum = criteriaTypes.GetEnumerator();
+//                    var paramEnum = parameters.Cast<ParameterInfo>().Select(p => p.ParameterType).GetEnumerator();
 
-    public async Task<bool> TryCallOperation(object target, DataMapperMethod operation)
-    {
-        await CheckAccess(operation.ToAuthorizationOperation());
+//                    // With Array's Current doesn't become null
+//                    var paramHasValue = paramEnum.MoveNext();
+//                    var critHasValue = critEnum.MoveNext();
 
-        var invoked = false;
-        var methods = MethodsForOperation(operation) ?? new List<MethodInfo>();
+//                    // All of the criteria parameter types match up
+//                    // And any left over are registered
+//                    while (match && paramHasValue)
+//                    {
 
-        IDisposable? stopAllActions = null;
+//                        if (critHasValue && !paramEnum.Current.IsAssignableFrom(critEnum.Current))
+//                        {
+//                            match = false;
+//                        }
+//                        else if (!critHasValue && !serviceProviderIsService.IsService(paramEnum.Current)) // For recognizing multiple positives for the same criteria
+//                        {
+//                            match = false;
+//                        }
 
-        if (target is IDataMapperTarget portalTarget)
-        {
-            stopAllActions = portalTarget.PauseAllActions();
-        }
+//                        paramHasValue = paramEnum.MoveNext();
+//                        critHasValue = critEnum.MoveNext();
 
-        using (stopAllActions)
-        {
-            foreach (var method in methods)
-            {
-                var success = true;
-                var parameters = method.GetParameters().ToList();
-                var parameterValues = new object[parameters.Count()];
+//                    }
 
-                for (var i = 0; i < parameterValues.Length; i++)
-                {
-                    var parameter = parameters[i];
-                    if (!serviceProviderIsService.IsService(parameter.ParameterType))
-                    {
-                        // Assume it's a criteria not a dependency
-                        success = false;
-                        break;
-                    }
-                }
+//                    // At the end of the Crit list
+//                    // The parameter list can 
+//                    if (match)
+//                    {
+//                        if (matchingMethod != null) { throw new Exception($"More then one method for {operation.ToString()} with criteria [{string.Join(",", criteriaTypes)}] on {typeof(T).FullName}"); }
 
-                if (success)
-                {
-                    // No parameters or all of the parameters are dependencies
-                    for (var i = 0; i < parameterValues.Length; i++)
-                    {
-                        var parameter = parameters[i];
-                        parameterValues[i] = Scope.GetRequiredService(parameter.ParameterType);
-                    }
+//                        matchingMethod = m;
+//                    }
+//                }
+//            }
+//        }
+//        return matchingMethod;
+//    }
 
-                    invoked = true;
+//    protected async Task CheckAccess(AuthorizeOperation operation)
+//    {
+//        await AuthorizationRuleManager.CheckAccess(operation);
+//    }
 
-                    var result = method.Invoke(target, parameterValues) as Task;
+//    protected async Task CheckAccess(AuthorizeOperation operation, params object[] criteria)
+//    {
+//        if (criteria == null) { throw new ArgumentNullException(nameof(criteria)); }
 
-                    if (result != null)
-                    {
-                        await result;
-                    }
+//        await AuthorizationRuleManager.CheckAccess(operation, criteria);
+//    }
 
-                    break;
-                }
-            }
-        }
+//    public async Task<bool> TryCallOperation(object target, DataMapperMethod operation)
+//    {
+//        await CheckAccess(operation.ToAuthorizationOperation());
 
-        PostOperation(target, operation);
+//        var invoked = false;
+//        var methods = MethodsForOperation(operation) ?? new List<MethodInfo>();
 
-        return invoked;
+//        IDisposable? stopAllActions = null;
+
+//        if (target is IDataMapperTarget portalTarget)
+//        {
+//            stopAllActions = portalTarget.PauseAllActions();
+//        }
+
+//        using (stopAllActions)
+//        {
+//            foreach (var method in methods)
+//            {
+//                var success = true;
+//                var parameters = method.GetParameters().ToList();
+//                var parameterValues = new object[parameters.Count()];
+
+//                for (var i = 0; i < parameterValues.Length; i++)
+//                {
+//                    var parameter = parameters[i];
+//                    if (!serviceProviderIsService.IsService(parameter.ParameterType))
+//                    {
+//                        // Assume it's a criteria not a dependency
+//                        success = false;
+//                        break;
+//                    }
+//                }
+
+//                if (success)
+//                {
+//                    // No parameters or all of the parameters are dependencies
+//                    for (var i = 0; i < parameterValues.Length; i++)
+//                    {
+//                        var parameter = parameters[i];
+//                        parameterValues[i] = Scope.GetRequiredService(parameter.ParameterType);
+//                    }
+
+//                    invoked = true;
+
+//                    var result = method.Invoke(target, parameterValues) as Task;
+
+//                    if (result != null)
+//                    {
+//                        await result;
+//                    }
+
+//                    break;
+//                }
+//            }
+//        }
+
+//        PostOperation(target, operation);
+
+//        return invoked;
         
-    }
-    public async Task<bool> TryCallOperation(object target, DataMapperMethod operation, object[] criteria)
-    {
-        await CheckAccess(operation.ToAuthorizationOperation(), criteria);
+//    }
+//    public async Task<bool> TryCallOperation(object target, DataMapperMethod operation, object[] criteria)
+//    {
+//        await CheckAccess(operation.ToAuthorizationOperation(), criteria);
 
-        IDisposable? stopAllActions = null;
+//        IDisposable? stopAllActions = null;
 
-        if (target is IDataMapperTarget portalTarget)
-        {
-            stopAllActions = portalTarget.PauseAllActions();
-        }
+//        if (target is IDataMapperTarget portalTarget)
+//        {
+//            stopAllActions = portalTarget.PauseAllActions();
+//        }
 
-        using (stopAllActions)
-        {
-            var method = MethodForOperation(operation, criteria.Select(c => c.GetType()).ToArray());
+//        using (stopAllActions)
+//        {
+//            var method = MethodForOperation(operation, criteria.Select(c => c.GetType()).ToArray());
 
-            if (method == null)
-            {
-                return false;
-            }
+//            if (method == null)
+//            {
+//                return false;
+//            }
 
-            var parameters = method.GetParameters().ToList();
-            var parameterValues = new object[parameters.Count()];
+//            var parameters = method.GetParameters().ToList();
+//            var parameterValues = new object[parameters.Count()];
 
-            if (parameters.Count == 1 && parameters[0].ParameterType == typeof(object[]))
-            {
-                parameterValues = [criteria];
-            }
-            else
-            {
-
-
-                var criteriaE = criteria.GetEnumerator();
-
-                for (var i = 0; i < parameterValues.Length; i++)
-                {
-                    if (criteriaE.MoveNext())
-                    {
-                        // Use up the criteria values first
-                        // Assume MethodForOperation got the types right
-                        parameterValues[i] = criteriaE.Current;
-                    }
-                    else
-                    {
-                        var parameter = parameters[i];
-                        var pv = Scope.GetService(parameter.ParameterType);
-                        if (pv != null)
-                        {
-                            parameterValues[i] = pv;
-                        }
-                    }
-                }
-            }
-            var result = method.Invoke(target, parameterValues);
-
-            if (method.ReturnType == typeof(Task))
-            {
-                await (Task)result;
-            }
-
-        }
-
-        PostOperation(target, operation);
-
-        return true;
-    }
-
-    protected virtual void PostOperation(object target, DataMapperMethod operation)
-    {
-        var editTarget = target as IDataMapperEditTarget;
-        if (editTarget != null)
-        {
+//            if (parameters.Count == 1 && parameters[0].ParameterType == typeof(object[]))
+//            {
+//                parameterValues = [criteria];
+//            }
+//            else
+//            {
 
 
-            switch (operation)
-            {
-                case DataMapperMethod.Create:
-                    editTarget.MarkNew();
-                    break;
-                case DataMapperMethod.CreateChild:
-                    editTarget.MarkAsChild();
-                    editTarget.MarkNew();
-                    break;
-                case DataMapperMethod.Fetch:
-                    break;
-                case DataMapperMethod.FetchChild:
-                    editTarget.MarkAsChild();
-                    break;
-                case DataMapperMethod.Delete:
-                    break;
-                case DataMapperMethod.DeleteChild:
-                    break;
-                case DataMapperMethod.Insert:
-                case DataMapperMethod.InsertChild:
-                case DataMapperMethod.Update:
-                case DataMapperMethod.UpdateChild:
-                    editTarget.MarkUnmodified();
-                    editTarget.MarkOld();
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
+//                var criteriaE = criteria.GetEnumerator();
 
-    public async Task<object> HandlePortalRequest(RemoteRequest portalRequest)
-    {
-        Debug.Assert(portalRequest.Target != null, "PortalRequest.Target is null");
-        Debug.Assert(!string.IsNullOrEmpty(portalRequest.Target.AssemblyType), "PortalRequest.Target.Type is null");
+//                for (var i = 0; i < parameterValues.Length; i++)
+//                {
+//                    if (criteriaE.MoveNext())
+//                    {
+//                        // Use up the criteria values first
+//                        // Assume MethodForOperation got the types right
+//                        parameterValues[i] = criteriaE.Current;
+//                    }
+//                    else
+//                    {
+//                        var parameter = parameters[i];
+//                        var pv = Scope.GetService(parameter.ParameterType);
+//                        if (pv != null)
+//                        {
+//                            parameterValues[i] = pv;
+//                        }
+//                    }
+//                }
+//            }
+//            var result = method.Invoke(target, parameterValues);
 
-        object? target = null;
+//            if (method.ReturnType == typeof(Task))
+//            {
+//                await (Task)result;
+//            }
 
-        var request = jsonSerializer.FromDataMapperRequest(portalRequest);
+//        }
 
-        if (((int)portalRequest.DataMapperOperation & (int)DataMapperMethodType.Read) == (int)DataMapperMethodType.Read)
-        {
-            Debug.Assert(string.IsNullOrEmpty(portalRequest.Target.Json), "PortalRequest.Target.Json should not be defined for PortalOperationType.Create");
-            target = Scope.GetRequiredService(INeatooJsonSerializer.ToType(portalRequest.Target.AssemblyType)) ?? throw new InvalidOperationException("Type is not an IPortalTarget");
-        }
-        else
-        {
-            target = request.target;
-        }
+//        PostOperation(target, operation);
+
+//        return true;
+//    }
+
+//    protected virtual void PostOperation(object target, DataMapperMethod operation)
+//    {
+//        var editTarget = target as IDataMapperEditTarget;
+//        if (editTarget != null)
+//        {
 
 
-        if (((int)portalRequest.DataMapperOperation & (int)DataMapperMethodType.Read) == (int)DataMapperMethodType.Read
-            && portalRequest.Criteria != null)
-        {
-            var criteria = request.criteria;
+//            switch (operation)
+//            {
+//                case DataMapperMethod.Create:
+//                    editTarget.MarkNew();
+//                    break;
+//                case DataMapperMethod.CreateChild:
+//                    editTarget.MarkAsChild();
+//                    editTarget.MarkNew();
+//                    break;
+//                case DataMapperMethod.Fetch:
+//                    break;
+//                case DataMapperMethod.FetchChild:
+//                    editTarget.MarkAsChild();
+//                    break;
+//                case DataMapperMethod.Delete:
+//                    break;
+//                case DataMapperMethod.DeleteChild:
+//                    break;
+//                case DataMapperMethod.Insert:
+//                case DataMapperMethod.InsertChild:
+//                case DataMapperMethod.Update:
+//                case DataMapperMethod.UpdateChild:
+//                    editTarget.MarkUnmodified();
+//                    editTarget.MarkOld();
+//                    break;
+//                default:
+//                    break;
+//            }
+//        }
+//    }
 
-            var success = await TryCallOperation(target, portalRequest.DataMapperOperation, criteria);
+//    public async Task<object> HandlePortalRequest(RemoteRequest portalRequest)
+//    {
+//        Debug.Assert(portalRequest.Target != null, "PortalRequest.Target is null");
+//        Debug.Assert(!string.IsNullOrEmpty(portalRequest.Target.AssemblyType), "PortalRequest.Target.Type is null");
 
-            if (!success)
-            {
-                throw new Exception($"Failed on Server - Operation {portalRequest.DataMapperOperation.ToString()} with criteria {string.Join(',', criteria.Select(c => c.GetType().FullName))} not found");
-            }
-        }
-        else
-        {
-            var success = await TryCallOperation(target, portalRequest.DataMapperOperation);
+//        object? target = null;
 
-            if (!success && !((((int)portalRequest.DataMapperOperation) & ((int)DataMapperMethodType.Read)) == ((int)DataMapperMethodType.Read)))
-            {
-                throw new Exception($"Failed on Server - Operation {portalRequest.DataMapperOperation.ToString()} not found on {target.GetType().FullName}");
-            }
-        }
+//        var request = jsonSerializer.FromDataMapperRequest(portalRequest);
 
-
-
-        return target;
-    }
-
-}
+//        if (((int)portalRequest.DataMapperOperation & (int)DataMapperMethodType.Read) == (int)DataMapperMethodType.Read)
+//        {
+//            Debug.Assert(string.IsNullOrEmpty(portalRequest.Target.Json), "PortalRequest.Target.Json should not be defined for PortalOperationType.Create");
+//            target = Scope.GetRequiredService(INeatooJsonSerializer.ToType(portalRequest.Target.AssemblyType)) ?? throw new InvalidOperationException("Type is not an IPortalTarget");
+//        }
+//        else
+//        {
+//            target = request.target;
+//        }
 
 
-[Serializable]
-public class OperationMethodException : Exception
-{
-    public OperationMethodException() { }
-    public OperationMethodException(string message) : base(message) { }
-    public OperationMethodException(string message, Exception inner) : base(message, inner) { }
-    protected OperationMethodException(
-      System.Runtime.Serialization.SerializationInfo info,
-      System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
-}
+//        if (((int)portalRequest.DataMapperOperation & (int)DataMapperMethodType.Read) == (int)DataMapperMethodType.Read
+//            && portalRequest.Criteria != null)
+//        {
+//            var criteria = request.criteria;
+
+//            var success = await TryCallOperation(target, portalRequest.DataMapperOperation, criteria);
+
+//            if (!success)
+//            {
+//                throw new Exception($"Failed on Server - Operation {portalRequest.DataMapperOperation.ToString()} with criteria {string.Join(',', criteria.Select(c => c.GetType().FullName))} not found");
+//            }
+//        }
+//        else
+//        {
+//            var success = await TryCallOperation(target, portalRequest.DataMapperOperation);
+
+//            if (!success && !((((int)portalRequest.DataMapperOperation) & ((int)DataMapperMethodType.Read)) == ((int)DataMapperMethodType.Read)))
+//            {
+//                throw new Exception($"Failed on Server - Operation {portalRequest.DataMapperOperation.ToString()} not found on {target.GetType().FullName}");
+//            }
+//        }
+
+
+
+//        return target;
+//    }
+
+//}
+
+
+//[Serializable]
+//public class OperationMethodException : Exception
+//{
+//    public OperationMethodException() { }
+//    public OperationMethodException(string message) : base(message) { }
+//    public OperationMethodException(string message, Exception inner) : base(message, inner) { }
+//    protected OperationMethodException(
+//      System.Runtime.Serialization.SerializationInfo info,
+//      System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
+//}

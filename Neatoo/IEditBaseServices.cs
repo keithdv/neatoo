@@ -1,4 +1,5 @@
 ﻿using Neatoo.Core;
+using Neatoo.Portal.Internal;
 using Neatoo.Rules;
 
 namespace Neatoo;
@@ -14,13 +15,13 @@ public interface IEditBaseServices<T> : IValidateBaseServices<T>
 {
 
     IEditPropertyManager EditPropertyManager { get; }
-    INeatooPortal<T> ReadWritePortal { get; }
+    Save<T> Save { get; }
 }
 
 public class EditBaseServices<T> : ValidateBaseServices<T>, IEditBaseServices<T>
     where T : EditBase<T>
 {
-    public INeatooPortal<T> ReadWritePortal { get; }
+    public Save<T> Save { get; }
 
     public IEditPropertyManager EditPropertyManager { get; }
 
@@ -28,20 +29,20 @@ public class EditBaseServices<T> : ValidateBaseServices<T>, IEditBaseServices<T>
 
     public new IPropertyManager<IProperty> PropertyManager => EditPropertyManager;
 
-    public EditBaseServices(INeatooPortal<T> readWritePortal) : base() {
+    public EditBaseServices(Save<T> save) : base() {
 
         PropertyInfoList = new PropertyInfoList<T>((System.Reflection.PropertyInfo pi) => new PropertyInfoWrapper(pi));
 
         EditPropertyManager = new EditPropertyManager(PropertyInfoList, new DefaultFactory());
-        ReadWritePortal = readWritePortal;  
+        Save = save;  
     }
 
-    public EditBaseServices(CreateEditPropertyManager propertyManager, IPropertyInfoList<T> propertyInfoList, RuleManagerFactory<T> ruleManager, INeatooPortal<T> readWritePortal)
+    public EditBaseServices(CreateEditPropertyManager propertyManager, IPropertyInfoList<T> propertyInfoList, RuleManagerFactory<T> ruleManager, Save<T> save)
     {
         PropertyInfoList = propertyInfoList;
         this.ruleManagerFactory = ruleManager;
         EditPropertyManager = propertyManager(propertyInfoList);
-        ReadWritePortal = readWritePortal;
+        Save = save;
     }
 
 }

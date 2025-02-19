@@ -11,7 +11,7 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
     where C : Cart<C, H>
     where H : IHorse
 {
-    public Cart(EditBaseServices<C> services,
+    public Cart(IEditBaseServices<C> services,
                 ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services)
     {
         RuleManager.AddRule(cartNumberOfHorsesRule);
@@ -76,28 +76,27 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
 
     protected virtual CartType CartType => throw new NotImplementedException();
 
-#if !CLIENT
-
-
-    [CreateChild]
-    public async void CreateChild(INeatooPortal<IHorseList> horsePortal)
+    [Create]
+    public async Task Create([Service] HorseListFactory horsePortal)
     {
-        this.HorseList = await horsePortal.CreateChild();
+        this.HorseList = await horsePortal.Create();
         this.NumberOfHorses = 1;
         await this.RunSelfRules();
     }
 
-    [FetchChild]
-    public async Task FetchChild(Dal.Ef.Cart cart, INeatooPortal<IHorseList> horsePortal)
+#if !CLIENT
+
+    [Fetch]
+    internal async Task Fetch(Dal.Ef.Cart cart, [Service] HorseListFactory horsePortal)
     {
         this.Id = cart.Id;
         this.Name = cart.Name;
         this.NumberOfHorses = cart.NumberOfHorses;
-        this.HorseList = await horsePortal.FetchChild(cart.Horses);
+        this.HorseList = await horsePortal.Fetch(cart.Horses);
     }
 
-    [InsertChild]
-    protected async Task Insert(Dal.Ef.HorseBarn horseBarn, INeatooPortal<IHorseList> horseList)
+    [Insert]
+    internal async Task Insert(Dal.Ef.HorseBarn horseBarn, [Service] HorseListFactory horsePortal)
     {
         Dal.Ef.Cart cart = new Dal.Ef.Cart();
 
@@ -109,11 +108,11 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
 
         horseBarn.Carts.Add(cart);
 
-        await horseList.Update(this.HorseList, cart);
+        await horsePortal.Save(this.HorseList, cart);
     }
 
-    [UpdateChild]
-    protected async Task Update(Dal.Ef.HorseBarn horseBarn, INeatooPortal<IHorseList> horseList)
+    [Update]
+    internal async Task Update(Dal.Ef.HorseBarn horseBarn, [Service] HorseListFactory horsePortal)
     {
         var cart = horseBarn.Carts.First(c => c.Id == this.Id);
 
@@ -121,7 +120,8 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
 
         cart.Name = this.Name;
         cart.NumberOfHorses = this.NumberOfHorses;
-        await horseList.Update(this.HorseList, cart);
+        await horsePortal.Save(this.HorseList, cart);
     }
+
 #endif
 }

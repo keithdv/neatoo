@@ -67,27 +67,15 @@ public static class AddNeatooServicesExtension
         {
             var seralizer = s.GetRequiredService<INeatooJsonSerializer>();
 
-            return async (RemoteRequest portalRequest) =>
+            return async (RemoteRequestDto portalRequest) =>
             {
-                var t = INeatooJsonSerializer.ToType(portalRequest.Target.AssemblyType) ?? throw new Exception($"Type {portalRequest.Target.AssemblyType} not found");
+                var delegateType = INeatooJsonSerializer.FindType(portalRequest.DelegateAssemblyType) ?? throw new Exception($"Type {portalRequest.DelegateAssemblyType} not found");
 
-                if (portalRequest.DataMapperOperation != DataMapperMethod.Execute)
-                {
-                    var portal = s.GetRequiredService(typeof(IDataMapper<>).MakeGenericType(t)) as IDataMapper;
+                    Delegate method = (Delegate)s.GetRequiredService(delegateType);
 
-                    var result = await portal.HandlePortalRequest(portalRequest);
+                    var request = seralizer.DeserializeRemoteRequest(portalRequest);
 
-                    var portalResponse = new RemoteResponse(seralizer.Serialize(result), portalRequest.Target.AssemblyType);
-
-                    return portalResponse;
-                }
-                else
-                {
-                    Delegate method = (Delegate)s.GetRequiredService(t);
-
-                    var request = seralizer.FromDataMapperRequest(portalRequest);
-
-                    Object result = method.DynamicInvoke(request.criteria);
+                    object? result = method.DynamicInvoke(request.parameters);
 
                     if(result is Task task)
                     {
@@ -95,10 +83,9 @@ public static class AddNeatooServicesExtension
                         result = task.GetType().GetProperty("Result").GetValue(task);
                     }
 
-                    var portalResponse = new RemoteResponse(seralizer.Serialize(result), result.GetType().FullName);
+                    var portalResponse = new RemoteResponseDto(seralizer.Serialize(result), result.GetType().FullName);
 
                     return portalResponse;
-                }
             };
         });
 
@@ -110,12 +97,6 @@ public static class AddNeatooServicesExtension
         // This will not change during runtime
         // So SingleInstance
         services.AddSingleton(typeof(IPropertyInfoList<>), typeof(PropertyInfoList<>));
-
-
-        // This was single instance; but now it resolves the Authorization Rules 
-        // When single instance it receives the root scopewhich is no good
-        services.AddScoped(typeof(IDataMapper<>), typeof(DataMapper<>));
-
 
         services.AddScopedSelf<INeatooJsonSerializer, NeatooJsonSerializer>();
 
@@ -173,23 +154,15 @@ public static class AddNeatooServicesExtension
             };
         });
 
-        if (portalServer == NeatooHost.Local)
+        if (portalServer == NeatooHost.Remote)
         {
-            //services.AddScoped(typeof(IRemoteMethodPortal<,>), typeof(MethodPortal<,>));
-
-            services.AddScoped(typeof(INeatooPortal<>), typeof(NeatooPortalHost<>));
-
-        }
-        else if (portalServer == NeatooHost.Remote)
-        {
-            services.AddScoped(typeof(INeatooPortal<>), typeof(NeatooPortalClient<>));
-            services.AddScoped<RemoteRead>(cc =>
+            services.AddScoped<DoRemoteRequest>(cc =>
             {
                 var neatooJsonSerializer = cc.GetRequiredService<INeatooJsonSerializer>();
-                var requestFromServer = cc.GetRequiredService<RequestFromServerDelegate>();
+                var requestFromServer = cc.GetRequiredService<SendRemoteRequestToServer>();
                 return (Type delegateType, object[]? parameters) =>
                 {
-                    return RemoteMethod.Read(delegateType, parameters, neatooJsonSerializer, requestFromServer);
+                    return RemoteMethod.DoRemoteRequest(delegateType, parameters, neatooJsonSerializer, requestFromServer);
                 };
             });
         }
@@ -202,13 +175,15 @@ public static class AddNeatooServicesExtension
         services.AddTransient(typeof(IEditBaseServices<>), typeof(EditBaseServices<>));
         services.AddTransient(typeof(IEditListBaseServices<,>), typeof(EditListBaseServices<,>));
 
-        services.AddTransient<RequestFromServerDelegate>(cc =>
+        services.AddTransient(typeof(DoSave<>));
+
+        services.AddTransient<SendRemoteRequestToServer>(cc =>
         {
             var httpClient = cc.GetRequiredService<HttpClient>();
 
             return async (portalRequest) =>
             {
-                var response = await httpClient.PostAsync("portal", JsonContent.Create(portalRequest, typeof(RemoteRequest)));
+                var response = await httpClient.PostAsync("portal", JsonContent.Create(portalRequest, typeof(RemoteRequestDto)));
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -216,7 +191,7 @@ public static class AddNeatooServicesExtension
                     throw new HttpRequestException($"Failed to call portal. Status code: {response.StatusCode} {issue}");
                 }
 
-                var result = await response.Content.ReadFromJsonAsync<RemoteResponse>() ?? throw new HttpRequestException($"Successful Code but empty response."); ;
+                var result = await response.Content.ReadFromJsonAsync<RemoteResponseDto>() ?? throw new HttpRequestException($"Successful Code but empty response."); ;
 
                 return result;
             };
@@ -242,7 +217,7 @@ public static class AddNeatooServicesExtension
         var types = assembly.GetTypes().Where(t => t.IsClass && !t.IsAbstract).ToList();
         var interfaces = assembly.GetTypes().Where(t => t.IsInterface).ToDictionary(x => x.FullName);
 
-        var remoteMethodCallMethodInfo = typeof(RemoteMethod).GetMethod(nameof(RemoteMethod.Read))!;
+        var remoteMethodCallMethodInfo = typeof(RemoteMethod).GetMethod(nameof(RemoteMethod.DoRemoteRequest))!;
 
         foreach (var t in types)
         {
@@ -254,6 +229,20 @@ public static class AddNeatooServicesExtension
                 // AsSelf required for Deserialization
                 services.AddTransient(i, t);
                 services.AddTransient(t);
+
+                if(typeof(IEditBase).IsAssignableFrom(i))
+                {
+                    services.AddTransient(typeof(Save<>).MakeGenericType(i), cc =>
+                    {
+                        var saveClass = cc.GetRequiredService(typeof(DoSave<>).MakeGenericType(t));
+                        return Delegate.CreateDelegate(typeof(Save<>).MakeGenericType(i), saveClass, "Save");
+                    });
+                    services.AddTransient(typeof(Save<>).MakeGenericType(t), cc =>
+                    {
+                        var saveClass = cc.GetRequiredService(typeof(DoSave<>).MakeGenericType(t));
+                        return Delegate.CreateDelegate(typeof(Save<>).MakeGenericType(t), saveClass, "Save");
+                    });
+                }
 
                 // I forget why this didn't work...
 

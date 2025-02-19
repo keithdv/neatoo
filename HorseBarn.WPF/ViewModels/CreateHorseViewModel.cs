@@ -9,14 +9,14 @@ public class CreateHorseViewModel : Caliburn.Micro.Screen
 {
     private readonly IEventAggregator eventAggregator;
 
-    public CreateHorseViewModel(INeatooPortal<IHorseCriteria> horseCriteriaPortal,
+    public CreateHorseViewModel(HorseCriteriaFactory horseCriteriaPortal,
         IEventAggregator eventAggregator)
     {
         HorseCriteriaPortal = horseCriteriaPortal;
         this.eventAggregator = eventAggregator;
     }
 
-    public INeatooPortal<IHorseCriteria> HorseCriteriaPortal { get; }
+    public HorseCriteriaFactory HorseCriteriaPortal { get; }
 
     public IHorseCriteria HorseCriteria { get; private set; }
 

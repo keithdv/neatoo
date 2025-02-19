@@ -5,6 +5,25 @@ using System.Text.Json;
 
 namespace Neatoo.Portal.Internal;
 
+public interface INeatooJsonSerializer
+{
+    string Serialize(object target);
+    T? Deserialize<T>(string json);
+    object? Deserialize(string json, Type type);
+    RemoteRequestDto ToRemoteRequest(Type delegateType, params object[]? parameters);
+    RemoteRequestDto ToRemoteRequest(Type delegateType, object saveTarget, params object[]? parameters);
+    (object? saveTarget, object[]? parameters) DeserializeRemoteRequest(RemoteRequestDto remoteRequest);
+    object DeserializeRemoteResponse(RemoteResponseDto remoteResponse);
+
+    public static Type? FindType(string fullName)
+    {
+        var types = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType(fullName));
+        var type = types.FirstOrDefault(t => t != null);
+
+        return type;
+    }
+}
+
 public class NeatooJsonSerializer : INeatooJsonSerializer
 {
     private readonly GetImplementationType getImplementationType;
@@ -27,13 +46,15 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
 
     public string Serialize(object target)
     {
+        ArgumentNullException.ThrowIfNull(target, nameof(target));
+
         using var rr = new NeatooReferenceResolver();
         MyReferenceHandler.asyncLocal.Value = rr;
 
         return JsonSerializer.Serialize(target, Options);
     }
 
-    public T Deserialize<T>(string json)
+    public T? Deserialize<T>(string json)
     {
         using var rr = new NeatooReferenceResolver();
         MyReferenceHandler.asyncLocal.Value = rr;
@@ -41,7 +62,7 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         return JsonSerializer.Deserialize<T>(json, Options);
     }
 
-    public object Deserialize(string json, Type type)
+    public object? Deserialize(string json, Type type)
     {
         using var rr = new NeatooReferenceResolver();
         MyReferenceHandler.asyncLocal.Value = rr;
@@ -49,108 +70,75 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         return JsonSerializer.Deserialize(json, type, Options);
     }
 
-    public RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type targetType)
+    public RemoteRequestDto ToRemoteRequest(Type delegateType, params object[]? parameters)
     {
-        return new RemoteRequest()
-        {
-            DataMapperOperation = portalOperation,
-            Target = new ObjectTypeJson() { AssemblyType = getImplementationType(targetType).FullName },
-        };
-    }
+        List<ObjectTypeJson>? parameterJson = null;
 
-    public RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type targetType, params object[]? criteria)
-    {
-        List<ObjectTypeJson>? criteriaJson = null;
-
-        if (criteria != null)
+        if (parameters != null)
         {
-            criteriaJson = criteria.Select(c => ToObjectTypeJson(c)).ToList();
+            parameterJson = parameters.Select(c => ToObjectTypeJson(c)).ToList();
         }
-        return new RemoteRequest()
+
+        return new RemoteRequestDto
         {
-            DataMapperOperation = portalOperation,
-            Target = new ObjectTypeJson() { AssemblyType = getImplementationType(targetType).FullName },
-            Criteria = criteriaJson
+            DelegateAssemblyType = delegateType.FullName,
+            Parameters = parameterJson
         };
     }
 
-    public RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, object target)
+    public RemoteRequestDto ToRemoteRequest(Type delegateType, object saveTarget, params object[]? parameters)
     {
-        var targetJson = ToObjectTypeJson(target);
-        return new RemoteRequest()
+        ArgumentNullException.ThrowIfNull(delegateType, nameof(delegateType));
+        ArgumentNullException.ThrowIfNull(saveTarget, nameof(saveTarget));
+
+        List<ObjectTypeJson>? parameterJson = null;
+
+        if (parameters != null)
         {
-            DataMapperOperation = portalOperation,
-            Target = targetJson
+            parameterJson = parameters.Select(c => ToObjectTypeJson(c)).ToList();
+        }
+        return new RemoteRequestDto
+        {
+            DelegateAssemblyType = delegateType.FullName,
+            Parameters = parameterJson,
+            SaveTarget = ToObjectTypeJson(saveTarget)
         };
     }
 
-    public RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, object target, params object[] criteria)
+    public ObjectTypeJson ToObjectTypeJson(object target)
     {
-        var targetJson = ToObjectTypeJson(target);
-        var criteriaJson = criteria.Select(c => ToObjectTypeJson(c)).ToList();
-        return new RemoteRequest()
-        {
-            DataMapperOperation = portalOperation,
-            Target = targetJson,
-            Criteria = criteriaJson
-        };
+        ArgumentNullException.ThrowIfNull(target, nameof(target));
+        ArgumentNullException.ThrowIfNull(target.GetType().FullName, nameof(Type.FullName));
+        return new ObjectTypeJson(Serialize(target), target.GetType().FullName!);
     }
 
-    public RemoteRequest ToRemoteRequest(DataMapperMethod portalOperation, Type delegateType, object target, params object[] criteria)
+    public (object? saveTarget, object[]? parameters) DeserializeRemoteRequest(RemoteRequestDto remoteRequest)
     {
-        var targetJson = ToObjectTypeJson(target, delegateType);
-        var criteriaJson = criteria.Select(c => ToObjectTypeJson(c)).ToList();
-        return new RemoteRequest()
-        {
-            DataMapperOperation = portalOperation,
-            Target = targetJson,
-            Criteria = criteriaJson
-        };
-    }
-
-    public ObjectTypeJson ToObjectTypeJson<T>()
-    {
-        return new ObjectTypeJson()
-        {
-            AssemblyType = getImplementationType(typeof(T)).FullName
-        };
-    }
-
-    public ObjectTypeJson ToObjectTypeJson(object target, Type? type = null)
-    {
-        return new ObjectTypeJson()
-        {
-            Json = target != null ? Serialize(target) : null,
-            AssemblyType = getImplementationType(type ?? target.GetType()).FullName
-        };
-    }
-
-    public (object? target, object[]? criteria) FromDataMapperRequest(RemoteRequest portalRequest)
-    {
+        ArgumentNullException.ThrowIfNull(remoteRequest, nameof(remoteRequest));
 
         object? target = null;
-        object[]? criteria = null;
+        object[]? parameters = null;
 
-        if (portalRequest.Target != null && !string.IsNullOrEmpty(portalRequest.Target.Json))
+        if (remoteRequest.SaveTarget != null && !string.IsNullOrEmpty(remoteRequest.SaveTarget.Json))
         {
-            target = FromObjectTypeJson(portalRequest.Target);
+            target = FromObjectTypeJson(remoteRequest.SaveTarget);
         }
-        if(portalRequest.Criteria != null)
+        if(remoteRequest.Parameters != null)
         {
-            criteria = portalRequest.Criteria.Select(c => FromObjectTypeJson(c)).ToArray();
+            parameters = remoteRequest.Parameters.Select(c => FromObjectTypeJson(c)).ToArray();
         }
 
-        return (target, criteria);
+        return (target, parameters);
     }
 
-    public object FromPortalResponse(RemoteResponse portalResponse)
+    public object DeserializeRemoteResponse(RemoteResponseDto portalResponse)
     {
-        return Deserialize(portalResponse.ObjectJson, INeatooJsonSerializer.ToType(portalResponse.AssemblyType));
+        return Deserialize(portalResponse.ObjectJson, INeatooJsonSerializer.FindType(portalResponse.AssemblyType));
     }
 
     public object FromObjectTypeJson(ObjectTypeJson objectTypeJson)
     {
-        return Deserialize(objectTypeJson.Json, INeatooJsonSerializer.ToType(objectTypeJson.AssemblyType));
+        return Deserialize(objectTypeJson.Json, INeatooJsonSerializer.FindType(objectTypeJson.AssemblyType));
     }
 
 }

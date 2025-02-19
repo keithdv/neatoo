@@ -16,9 +16,10 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
 
     public EditBase(IEditBaseServices<T> services) : base(services)
     {
-        ReadWritePortal = services.ReadWritePortal;
+        this.Save_ = services.Save;
     }
 
+    protected Save<T> Save_ { get; set; }
     public bool IsMarkedModified { get; protected set; } = false;
     public bool IsModified => PropertyManager.IsModified || IsDeleted || IsNew || IsSelfModified;
     public bool IsSelfModified { get => PropertyManager.IsSelfModified || IsDeleted || IsMarkedModified; protected set => IsMarkedModified = value; }
@@ -27,7 +28,6 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
     public bool IsDeleted { get; protected set; }
     public IEnumerable<string> ModifiedProperties => PropertyManager.ModifiedProperties;
     public bool IsChild { get; protected set; }
-    protected INeatooPortal<T> ReadWritePortal { get; }
 
     protected (bool IsModified, bool IsSelfModified, bool IsSavable, bool IsDeleted) EditMetaState { get; private set; }
 
@@ -202,7 +202,7 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
             }
         }
 
-        return await ReadWritePortal.Update((T)(IEditBase)this);
+        return await Save_((T)(IEditBase)this);
     }
 
     new protected IEditProperty GetProperty(string propertyName)
