@@ -3,34 +3,33 @@ using Neatoo.UnitTest.Objects;
 using System;
 
 
-namespace Neatoo.UnitTest.PersonObjects
-{
-    public interface IFullNameDependencyRule<T> : IRule<T> where T : IPersonBase { }
+namespace Neatoo.UnitTest.PersonObjects;
 
-    public class FullNameDependencyRule<T> : RuleBase<T>, IFullNameDependencyRule<T>
-        where T : IPersonBase
+public interface IFullNameDependencyRule<T> : IRule<T> where T : IPersonBase { }
+
+public class FullNameDependencyRule<T> : RuleBase<T>, IFullNameDependencyRule<T>
+    where T : IPersonBase
+{
+
+    public FullNameDependencyRule(IDisposableDependency dd) : base()
+    {
+        AddTriggerProperties(_ => _.Title);
+        AddTriggerProperties(_ => _.ShortName);
+
+        this.DisposableDependency = dd;
+    }
+
+    private IDisposableDependency DisposableDependency { get; }
+
+    public override PropertyErrors Execute(T target)
     {
 
-        public FullNameDependencyRule(IDisposableDependency dd) : base()
-        {
-            AddTriggerProperties(nameof(IPersonBase.Title));
-            AddTriggerProperties(nameof(IPersonBase.ShortName));
+        var dd = DisposableDependency ?? throw new ArgumentNullException(nameof(DisposableDependency));
 
-            this.DisposableDependency = dd;
-        }
+        target.FullName = $"{target.Title} {target.ShortName}";
 
-        private IDisposableDependency DisposableDependency { get; }
-
-        public override PropertyErrors Execute(T target)
-        {
-
-            var dd = DisposableDependency ?? throw new ArgumentNullException(nameof(DisposableDependency));
-
-            target.FullName = $"{target.Title} {target.ShortName}";
-
-            return PropertyErrors.None;
-
-        }
+        return PropertyErrors.None;
 
     }
+
 }

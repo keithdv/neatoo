@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using HorseBarn.lib;
 using System.Reflection;
 using HorseBarn.Dal.Ef;
@@ -9,11 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddNeatooServices(PortalServer.Local);
+builder.Services.AddNeatooServices(NeatooHost.Local, Assembly.GetExecutingAssembly(), Assembly.GetAssembly(typeof(IHorseBarn)));
 
-builder.Services.AutoRegisterAssemblyTypes(Assembly.GetExecutingAssembly());
-
-builder.Services.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));
 
 builder.Services.AddScoped<IHorseBarnContext, HorseBarnContext>();
 

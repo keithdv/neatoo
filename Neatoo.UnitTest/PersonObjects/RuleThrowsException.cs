@@ -1,31 +1,25 @@
 ﻿using Neatoo.Rules;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace Neatoo.UnitTest.PersonObjects
+namespace Neatoo.UnitTest.PersonObjects;
+
+public interface IRuleThrowsException : IRule<IPersonBase>
 {
-    public interface IRuleThrowsException : IRule<IPersonBase>
+}
+
+public class RuleThrowsException : RuleBase<IPersonBase>, IRuleThrowsException
+{
+    public RuleThrowsException() : base()
     {
+        AddTriggerProperties(_ => _.FirstName);
     }
 
-    public class RuleThrowsException : RuleBase<IPersonBase>, IRuleThrowsException
+    public override PropertyErrors Execute(IPersonBase target)
     {
-        public RuleThrowsException() : base()
+        if (target.FirstName == "Throw")
         {
-            AddTriggerProperties(nameof(IPersonBase.FirstName));
+            throw new Exception("Rule Failed");
         }
-
-        public override PropertyErrors Execute(IPersonBase target)
-        {
-            if (target.FirstName == "Throw")
-            {
-                throw new Exception("Rule Failed");
-            }
-            return PropertyErrors.None;
-        }
+        return PropertyErrors.None;
     }
 }

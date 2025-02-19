@@ -1,44 +1,38 @@
-﻿using Neatoo.AuthorizationRules;
-using Neatoo.Core;
-using Neatoo.Portal;
-using System;
-using System.Collections.Generic;
+﻿using Neatoo.Core;
 using System.Reflection;
-using System.Text;
 
-namespace Neatoo
+namespace Neatoo;
+
+
+/// <summary>
+/// Wrap the NeatooBase services into an interface so that 
+/// the inheriting classes don't need to list all services
+/// and services can be added
+/// </summary>
+public interface IBaseServices<T>
 {
+    IPropertyManager<IProperty> PropertyManager { get; }
+    IPropertyInfoList<T> PropertyInfoList { get; }
+}
 
-    /// <summary>
-    /// Wrap the NeatooBase services into an interface so that 
-    /// the inheriting classes don't need to list all services
-    /// and services can be added
-    /// </summary>
-    public interface IBaseServices<T>
+
+public class BaseServices<T> : IBaseServices<T>
+    where T : Base<T> // Important - I need the concrete type at least once. This is where I get it
+{
+    public BaseServices()
     {
-        IPropertyManager<IProperty> PropertyManager { get; }
-        IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
+        PropertyInfoList = new PropertyInfoList<T>((PropertyInfo pi) => new PropertyInfoWrapper(pi));
+        PropertyManager = new PropertyManager<IProperty>(PropertyInfoList, new DefaultFactory());
+    }
+
+    public BaseServices(CreatePropertyManager propertyManager, IPropertyInfoList<T> propertyInfoList)
+    {
+        PropertyInfoList = propertyInfoList;
+        PropertyManager = propertyManager(PropertyInfoList);
     }
 
 
-    public class BaseServices<T> : IBaseServices<T>
-        where T : Base<T> // Important - I need the concrete type at least once. This is where I get it
-    {
-        public BaseServices()
-        {
-            RegisteredPropertyManager = new RegisteredPropertyManager<T>((PropertyInfo pi) => new RegisteredProperty(pi));
-            PropertyManager = new PropertyManager<IProperty>(RegisteredPropertyManager, new DefaultFactory());
-        }
+    public IPropertyManager<IProperty> PropertyManager { get; protected set; }
+    public IPropertyInfoList<T> PropertyInfoList { get; }
 
-        public BaseServices(CreatePropertyManager propertyManager, IRegisteredPropertyManager<T> registeredPropertyManager)
-        {
-            RegisteredPropertyManager = registeredPropertyManager;
-            PropertyManager = propertyManager(RegisteredPropertyManager);
-        }
-
-
-        public IPropertyManager<IProperty> PropertyManager { get; protected set; }
-        public IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
-
-    }
 }

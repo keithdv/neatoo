@@ -1,101 +1,70 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.AuthorizationRules;
-using Neatoo.Core;
-using Neatoo.Portal;
-using Neatoo.Portal.Core;
-using Neatoo.UnitTest.ObjectPortal;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Linq;
-using Neatoo.Rules;
 using Neatoo.UnitTest.Portal;
 using System.Reflection;
-using Neatoo.UnitTest.EditBaseTests;
 using Neatoo.UnitTest.Objects;
+using Neatoo.Portal;
 
-namespace Neatoo.UnitTest
+namespace Neatoo.UnitTest;
+
+
+public static class UnitTestServices
 {
+    private static IServiceProvider Container;
+    private static IServiceProvider LocalPortalContainer;
+    private static object lockContainer = new object();
 
-    public static class UnitTestServices
+    public static IServiceScope GetLifetimeScope(bool localPortal = false)
     {
 
-
-        private static IServiceProvider Container;
-        private static IServiceProvider LocalPortalContainer;
-        private static object lockContainer = new object();
-
-        public static IServiceScope GetLifetimeScope(bool localPortal = false)
+        lock (lockContainer)
         {
-
-            lock (lockContainer)
+            if (Container == null)
             {
-                if (Container == null)
+
+                IServiceProvider CreateContainer(NeatooHost? portal)
                 {
+                    var services = new ServiceCollection();
 
-                    IServiceProvider CreateContainer(PortalServer? portal)
-                    {
-                        var services = new ServiceCollection();
+                    services.AddNeatooServices(NeatooHost.Local, Assembly.GetExecutingAssembly());
 
-                        services.AddNeatooServices(PortalServer.Local);
+                    // Unit Test Library
+                    //services.AddScoped<BaseTests.Authorization.IAuthorizationGrantedRule, BaseTests.Authorization.AuthorizationGrantedRule>();
+                    //services.AddScoped<BaseTests.Authorization.IAuthorizationGrantedAsyncRule, BaseTests.Authorization.AuthorizationGrantedAsyncRule>();
+                    //services.AddScoped<BaseTests.Authorization.IAuthorizationGrantedDependencyRule, BaseTests.Authorization.AuthorizationGrantedDependencyRule>();
 
-                        if (portal == null)
-                        {
-                            services.AddScoped(typeof(IReadPortal<>), typeof(MockReadPortal<>));
-                            services.AddScoped(typeof(IReadPortalChild<>), typeof(MockReadPortalChild<>));
-                            services.AddScoped(typeof(IReadWritePortal<>), typeof(MockReadWritePortal<>));
-                            services.AddScoped(typeof(IReadWritePortalChild<>), typeof(MockReadWritePortalChild<>));
+                    services.AddTransient<Func<IDisposableDependency>>(cc => () => cc.GetRequiredService<IDisposableDependency>());
 
-                        }
+                    services.AddTransient<Objects.IDisposableDependency, Objects.DisposableDependency>();
+                    services.AddScoped<Objects.DisposableDependencyList>();
 
-                        services.AutoRegisterAssemblyTypes(Assembly.GetExecutingAssembly());
+                    services.AddSingleton<IReadOnlyList<PersonObjects.PersonDto>>(cc => PersonObjects.PersonDto.Data());
 
-                        // Unit Test Library
-                        services.AddScoped<BaseTests.Authorization.IAuthorizationGrantedRule, BaseTests.Authorization.AuthorizationGrantedRule>();
-                        services.AddScoped<BaseTests.Authorization.IAuthorizationGrantedAsyncRule, BaseTests.Authorization.AuthorizationGrantedAsyncRule>();
-                        services.AddScoped<BaseTests.Authorization.IAuthorizationGrantedDependencyRule, BaseTests.Authorization.AuthorizationGrantedDependencyRule>();
-
-                        services.AddTransient<Func<IDisposableDependency>>(cc => () => cc.GetRequiredService<IDisposableDependency>());
-
-                        services.AddTransient<Objects.IDisposableDependency, Objects.DisposableDependency>();
-                        services.AddScoped<Objects.DisposableDependencyList>();
-
-                        services.AddTransient<MethodObject.Execute>(cc =>
-                        {
-                            var dd = cc.GetRequiredService<Func<Objects.IDisposableDependency>>();
-                            return i => MethodObject.ExecuteServer(i, dd());
-                        });
-
-                        services.AddSingleton<IReadOnlyList<PersonObjects.PersonDto>>(cc => PersonObjects.PersonDto.Data());
-
-
-                        return services.BuildServiceProvider();
-                    }
-
-                    Container = CreateContainer(null);
-                    LocalPortalContainer = CreateContainer(PortalServer.Local);
-
+                    return services.BuildServiceProvider();
                 }
 
-                if (!localPortal)
-                {
-                    return Container.CreateScope();
-                }
-                else
-                {
-                    return LocalPortalContainer.CreateScope();
-                }
+                Container = CreateContainer(null);
+                LocalPortalContainer = CreateContainer(NeatooHost.Local);
+
+            }
+
+            if (!localPortal)
+            {
+                return Container.CreateScope();
+            }
+            else
+            {
+                return LocalPortalContainer.CreateScope();
             }
         }
-
     }
+}
 
-    public static class  ServiceScopeProviderExtension
+public static class  ServiceScopeProviderExtension
+{
+    public static T GetRequiredService<T>(this IServiceScope service)
     {
-        public static T GetRequiredService<T>(this IServiceScope service)
-        {
-            return service.ServiceProvider.GetRequiredService<T>();
-        }
+        return service.ServiceProvider.GetRequiredService<T>();
     }
 }

@@ -1,56 +1,47 @@
-﻿using HorseBarn.lib.Horse;
-using HorseBarn.WPF.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using HorseBarn.WPF.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Markup;
 
-namespace HorseBarn.WPF.Converters
+namespace HorseBarn.WPF.Converters;
+
+public class InterfaceDataTemplateSelector : DataTemplateSelector
 {
-    public class InterfaceDataTemplateSelector : DataTemplateSelector
+
+    private DataTemplate[] _dataTemplates;
+
+    public DataTemplate[] DataTemplates
     {
+        get { return _dataTemplates; }
+        set { _dataTemplates = value; }
+    }
 
-        private DataTemplate[] _dataTemplates;
 
-        public DataTemplate[] DataTemplates
+    public DataTemplate NullTemplate { get; set; }
+
+    public override DataTemplate SelectTemplate(object item, DependencyObject container)
+    {
+        if (item == null) return base.SelectTemplate(item,container);
+
+        Type? t = item?.GetType();
+
+        if(item is HorseViewModel cvm)
         {
-            get { return _dataTemplates; }
-            set { _dataTemplates = value; }
+            t = cvm.Horse?.GetType();
         }
 
+        if (t == null) return NullTemplate;
 
-        public DataTemplate NullTemplate { get; set; }
-
-        public override DataTemplate SelectTemplate(object item, DependencyObject container)
-        {
-            if (item == null) return base.SelectTemplate(item,container);
-
-            Type? t = item?.GetType();
-
-            if(item is HorseViewModel cvm)
+        foreach (var dt in DataTemplates)
             {
-                t = cvm.Horse?.GetType();
-            }
-
-            if (t == null) return NullTemplate;
-
-            foreach (var dt in DataTemplates)
+                if (((Type)dt.DataType).IsAssignableFrom(t))
                 {
-                    if (((Type)dt.DataType).IsAssignableFrom(t))
-                    {
-                        return dt;
-                    }
+                    return dt;
                 }
-            
+            }
+        
 
-            return base.SelectTemplate(item, container);
-
-        }
+        return base.SelectTemplate(item, container);
 
     }
+
 }

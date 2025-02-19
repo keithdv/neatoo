@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace HorseBarn.lib.Horse;
 
-namespace HorseBarn.lib.Horse
+public enum Breed
 {
-    public enum Breed
-    {
-        Thoroughbred, Mustang, QuarterHorse,
-        Clydesdale, Shire
-    }
+    Thoroughbred, Mustang, QuarterHorse,
+    Clydesdale, Shire
 }

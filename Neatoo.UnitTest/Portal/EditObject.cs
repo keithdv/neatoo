@@ -1,290 +1,174 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Portal;
-using Neatoo.UnitTest.EditBaseTests;
 using Neatoo.UnitTest.Objects;
 using System;
 
-namespace Neatoo.UnitTest.ObjectPortal
+namespace Neatoo.UnitTest.ObjectPortal;
+
+public class EditObject : EditBase<EditObject>, IEditObject
 {
-    public class EditObject : EditBase<EditObject>, IEditObject
+
+    public EditObject(IEditBaseServices<EditObject> baseServices) : base(baseServices)
     {
 
-        public EditObject(IEditBaseServices<EditObject> baseServices) : base(baseServices)
-        {
+    }
 
-        }
+    public Guid? ID { get => Getter<Guid?>(); set => Setter(value); }
+    public Guid GuidCriteria { get => Getter<Guid>(); set => Setter(value); }
+    public int IntCriteria { get => Getter<int>(); set => Setter(value); }
+    public object[] MultipleCriteria { get => Getter<object[]>(); set => Setter(value); }
 
-        private IRegisteredProperty IDProperty => GetRegisteredProperty(nameof(ID));
-        public Guid? ID { get => Getter<Guid?>(); set => Setter(value); }
-        public Guid GuidCriteria { get => Getter<Guid>(); set => Setter(value); }
-        public int IntCriteria { get => Getter<int>(); set => Setter(value); }
+    public bool CreateCalled { get => Getter<bool>(); set => Setter(value); }
 
-        public bool CreateCalled { get; set; } = false;
+    void IEditObject.MarkAsChild()
+    {
+        this.MarkAsChild();
+    }
 
-        void IEditObject.MarkAsChild()
-        {
-            this.MarkAsChild();
-        }
+    void IEditObject.MarkDeleted()
+    {
+        this.MarkDeleted();
+    }
 
-        void IEditObject.MarkDeleted()
-        {
-            this.MarkDeleted();
-        }
+    void IEditObject.MarkNew()
+    {
+        this.MarkNew();
+    }
 
-        void IEditObject.MarkNew()
-        {
-            this.MarkNew();
-        }
+    void IEditObject.MarkOld()
+    {
+        this.MarkOld();
+    }
 
-        void IEditObject.MarkOld()
-        {
-            this.MarkOld();
-        }
+    void IEditObject.MarkUnmodified()
+    {
+        this.MarkUnmodified();
+    }
 
-        void IEditObject.MarkUnmodified()
-        {
-            this.MarkUnmodified();
-        }
+    [Create]
+    public void Create()
+    {
+        ID = Guid.NewGuid();
+        CreateCalled = true;
+    }
 
-        [Create]
-        private void Create()
-        {
-            ID = Guid.NewGuid();
-            CreateCalled = true;
-        }
-
-        [Create]
-        private void Create(int criteria)
-        {
-            IntCriteria = criteria;
-            CreateCalled = true;
-        }
-
-        [Create]
-        private void Create(Guid criteria, IDisposableDependency dependency)
-        {
-            Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
-            CreateCalled = true;
-        }
-
-        public bool CreateChildCalled { get; set; } = false;
-
-        [CreateChild]
-        private void CreateChild()
-        {
-            ID = Guid.NewGuid();
-            CreateChildCalled = true;
-        }
-
-        [CreateChild]
-        private void CreateChild(int criteria)
-        {
-            IntCriteria = criteria;
-            CreateChildCalled = true;
-        }
-        
-        [CreateChild]
-        private void CreateChild(Guid criteria, IDisposableDependency dependency)
-        {
-            Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
-            CreateChildCalled = true;
-        }
-
-        public bool FetchCalled { get; set; } = false;
-
-        [Fetch]
-        private void Fetch()
-        {
-            ID = Guid.NewGuid();
-            FetchCalled = true;
-        }
-
-        [Fetch]
-        private void Fetch(int criteria)
-        {
-            IntCriteria = criteria;
-            FetchCalled = true;
-        }
-
-        [Fetch]
-        private void Fetch(Guid criteria, IDisposableDependency dependency)
-        {
-            Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
-            FetchCalled = true;
-        }
-
-        public bool FetchChildCalled { get; set; } = false;
-
-        [FetchChild]
-        private void FetchChild()
-        {
-            ID = Guid.NewGuid();
-            FetchChildCalled = true;
-        }
-
-        [FetchChild]
-        private void FetchChild(int criteria)
-        {
-            IntCriteria = criteria;
-            FetchChildCalled = true;
-        }
-
-        [FetchChild]
-        private void FetchChild(Guid criteria, IDisposableDependency dependency)
-        {
-            Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
-            FetchChildCalled = true;
-        }
-
-        public bool InsertCalled { get; set; } = false;
-
-        [Insert]
-        private void Insert()
-        {
-            ID = Guid.NewGuid();
-            InsertCalled = true;
-        }
+    [Create]
+    public void Create(int criteria)
+    {
+        IntCriteria = criteria;
+        CreateCalled = true;
+    }
 
 
-        [Insert]
-        private void Insert(int criteria)
-        {
-            InsertCalled = true;
-            IntCriteria = criteria;
-        }
+    [Create]
+    public void Create(Guid criteria, [Service] IDisposableDependency dependency)
+    {
+        Assert.IsNotNull(dependency);
+        GuidCriteria = criteria;
+        CreateCalled = true;
+    }
 
+    public bool FetchCalled { get; set; } = false;
 
-        [Insert]
-        private void Insert(Guid criteria, IDisposableDependency dependency)
-        {
-            Assert.IsNotNull(dependency);
-            InsertCalled = true;
-            GuidCriteria = criteria;
-        }
+    [Fetch]
+    public void Fetch()
+    {
+        ID = Guid.NewGuid();
+        FetchCalled = true;
+    }
 
-        public bool InsertChildCalled { get; set; } = false;
+    [Fetch]
+    public void Fetch(int criteria)
+    {
+        IntCriteria = criteria;
+        FetchCalled = true;
+    }
 
-        [InsertChild]
-        private void InsertChild()
-        {
-            ID = Guid.NewGuid();
-            InsertChildCalled = true;
-        }
+    [Fetch]
+    public void Fetch(Guid criteria, [Service] IDisposableDependency dependency)
+    {
+        Assert.IsNotNull(dependency);
+        GuidCriteria = criteria;
+        FetchCalled = true;
+    }
 
-        [InsertChild]
-        private void InsertChild(int criteria)
-        {
-            IntCriteria = criteria;
-            InsertChildCalled = true;
-        }
+    public bool InsertCalled { get => Getter<bool>(); set => Setter(value); }
 
-        [InsertChild]
-        private void InsertChild(Guid criteria, IDisposableDependency dependency)
-        {
-            Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
-            InsertChildCalled = true;
-        }
+    [Insert]
+    public Task Insert()
+    {
+        ID = Guid.NewGuid();
+        InsertCalled = true;
+        return Task.CompletedTask;
+    }
 
-        public bool UpdateCalled { get; set; } = false;
+    [Insert]
+    public Task Insert(int criteria)
+    {
+        InsertCalled = true;
+        IntCriteria = criteria;
+        return Task.CompletedTask;
+    }
 
-        [Update]
-        private void Update()
-        {
-            ID = Guid.NewGuid();
-            UpdateCalled = true;
-        }
+    [Insert]
+    public Task Insert(Guid criteria, [Service] IDisposableDependency dependency)
+    {
+        Assert.IsNotNull(dependency);
+        InsertCalled = true;
+        GuidCriteria = criteria;
+        return Task.CompletedTask;
+    }
 
+    public bool UpdateCalled { get => Getter<bool>(); set => Setter(value); }
 
-        [Update]
-        private void Update(int criteria)
-        {
-            IntCriteria = criteria;
-            UpdateCalled = true;
-        }
+    [Update]
+    public Task Update()
+    {
+        ID = Guid.NewGuid();
+        UpdateCalled = true;
+        return Task.CompletedTask;
+    }
 
+    [Update]
+    public Task Update(int criteria)
+    {
+        IntCriteria = criteria;
+        UpdateCalled = true;
+        return Task.CompletedTask;
+    }
 
-        [Update]
-        private void Update(Guid criteria, IDisposableDependency dependency)
-        {
-            Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
-            UpdateCalled = true;
-        }
+    [Update]
+    public Task Update(Guid criteria, [Service] IDisposableDependency dependency)
+    {
+        Assert.IsNotNull(dependency);
+        GuidCriteria = criteria;
+        UpdateCalled = true;
+        return Task.CompletedTask;
+    }
 
-        public bool UpdateChildCalled { get; set; } = false;
+    public bool DeleteCalled { get => Getter<bool>(); set => Setter(value); }
 
-        [UpdateChild]
-        private void UpdateChild()
-        {
-            ID = Guid.NewGuid();
-            UpdateChildCalled = true;
-        }
+    [Delete]
+    public Task Delete()
+    {
+        DeleteCalled = true;
+        return Task.CompletedTask;
+    }
 
-        [UpdateChild]
-        private void UpdateChild(int criteria)
-        {
-            IntCriteria = criteria;
-            UpdateChildCalled = true;
-        }
+    [Delete]
+    public Task Delete(int criteria)
+    {
+        IntCriteria = criteria;
+        DeleteCalled = true;
+        return Task.CompletedTask;
+    }
 
-
-        [UpdateChild]
-        private void UpdateChild(Guid criteria, IDisposableDependency dependency)
-        {
-            Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
-            UpdateChildCalled = true;
-        }
-
-        public bool DeleteCalled { get; set; } = false;
-
-        [Delete]
-        private void Delete_()
-        {
-            DeleteCalled = true;
-        }
-
-        [Delete]
-        private void Delete(int criteria)
-        {
-            IntCriteria = criteria;
-            DeleteCalled = true;
-        }
-
-        [Delete]
-        private void Delete(Guid criteria, IDisposableDependency dependency)
-        {
-            Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
-            DeleteCalled = true;
-        }
-
-        public bool DeleteChildCalled { get; set; } = false;
-
-        [DeleteChild]
-        private void DeleteChild()
-        {
-            DeleteChildCalled = true;
-        }
-
-        [DeleteChild]
-        private void DeleteChild(int criteria)
-        {
-            IntCriteria = criteria;
-            DeleteChildCalled = true;
-        }
-
-        [DeleteChild]
-        private void DeleteChild(Guid criteria, IDisposableDependency dependency)
-        {
-            Assert.IsNotNull(dependency);
-            GuidCriteria = criteria;
-            DeleteChildCalled = true;
-        }
+    [Delete]
+    public Task Delete(Guid criteria, [Service] IDisposableDependency dependency)
+    {
+        Assert.IsNotNull(dependency);
+        GuidCriteria = criteria;
+        DeleteCalled = true;
+        return Task.CompletedTask;
     }
 }

@@ -1,61 +1,48 @@
-﻿using Neatoo.AuthorizationRules;
-using Neatoo.Core;
-using Neatoo.Portal;
+﻿using Neatoo.Core;
+using Neatoo.Portal.Internal;
 using Neatoo.Rules;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Neatoo
+namespace Neatoo;
+
+/// <summary>
+/// Wrap the NeatooBase services into an interface so that 
+/// the inheriting classes don't need to list all services
+/// and services can be added
+/// REGISTERED IN DI CONTAINER
+/// </summary>
+public interface IEditBaseServices<T> : IValidateBaseServices<T>
+    where T : EditBase<T>
 {
-    /// <summary>
-    /// Wrap the NeatooBase services into an interface so that 
-    /// the inheriting classes don't need to list all services
-    /// and services can be added
-    /// REGISTERED IN DI CONTAINER
-    /// </summary>
-    public interface IEditBaseServices<T> : IValidateBaseServices<T>
-        where T : EditBase<T>
-    {
 
-        IEditPropertyManager EditPropertyManager { get; }
-        IReadWritePortal<T> ReadWritePortal { get; }
+    IEditPropertyManager EditPropertyManager { get; }
+    Save<T> Save { get; }
+}
+
+public class EditBaseServices<T> : ValidateBaseServices<T>, IEditBaseServices<T>
+    where T : EditBase<T>
+{
+    public Save<T> Save { get; }
+
+    public IEditPropertyManager EditPropertyManager { get; }
+
+    public new IValidatePropertyManager<IValidateProperty> ValidatePropertyManager => EditPropertyManager;
+
+    public new IPropertyManager<IProperty> PropertyManager => EditPropertyManager;
+
+    public EditBaseServices(Save<T> save) : base() {
+
+        PropertyInfoList = new PropertyInfoList<T>((System.Reflection.PropertyInfo pi) => new PropertyInfoWrapper(pi));
+
+        EditPropertyManager = new EditPropertyManager(PropertyInfoList, new DefaultFactory());
+        Save = save;  
     }
 
-    public class EditBaseServices<T> : IEditBaseServices<T>
-        where T : EditBase<T>
+    public EditBaseServices(CreateEditPropertyManager propertyManager, IPropertyInfoList<T> propertyInfoList, RuleManagerFactory<T> ruleManager, Save<T> save)
     {
-        private readonly RuleManagerFactory<T> ruleManager;
-
-        public IReadWritePortal<T> ReadWritePortal { get; }
-
-        public IEditPropertyManager EditPropertyManager { get; }
-
-        public IValidatePropertyManager<IValidateProperty> ValidatePropertyManager => EditPropertyManager;
-
-        public IPropertyManager<IProperty> PropertyManager => EditPropertyManager;
-
-        public IRegisteredPropertyManager<T> RegisteredPropertyManager { get; }
-
-        public EditBaseServices(IReadWritePortal<T> readWritePortal) : base() {
-
-            RegisteredPropertyManager = new RegisteredPropertyManager<T>((System.Reflection.PropertyInfo pi) => new RegisteredProperty(pi));
-
-            EditPropertyManager = new EditPropertyManager(RegisteredPropertyManager, new DefaultFactory());
-            ReadWritePortal = readWritePortal;  
-        }
-
-        public EditBaseServices(CreateEditPropertyManager propertyManager, IRegisteredPropertyManager<T> registeredPropertyManager, RuleManagerFactory<T> ruleManager, IReadWritePortal<T> readWritePortal)
-        {
-            RegisteredPropertyManager = registeredPropertyManager;
-            this.ruleManager = ruleManager;
-            EditPropertyManager = propertyManager(registeredPropertyManager);
-            ReadWritePortal = readWritePortal;
-        }
-
-        public IRuleManager<T> CreateRuleManager(T target)
-        {
-            return ruleManager.CreateRuleManager(target, this.RegisteredPropertyManager);
-        }
+        PropertyInfoList = propertyInfoList;
+        this.ruleManagerFactory = ruleManager;
+        EditPropertyManager = propertyManager(propertyInfoList);
+        Save = save;
     }
+
 }

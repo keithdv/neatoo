@@ -1,15 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace Neatoo.Portal
+namespace Neatoo.Portal;
+
+public interface IRemoteMethodPortal<T>
 {
-    public interface IRemoteMethodPortal<D> where D : Delegate
-    {
+    Task<T> Execute();
+}
 
-        Task<T> Execute<T>(params object[] p);
-
-    }
-
+public interface IRemoteMethodPortal<P, T> 
+{
+    Task<T> Execute(P parameters);
 }

@@ -1,48 +1,54 @@
 ﻿using Neatoo.Core;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Linq.Expressions;
 
-namespace Neatoo.Rules.Rules
+namespace Neatoo.Rules.Rules;
+
+public interface IRequiredRule<T> : IRule<T>
+    where T : IValidateBase
 {
-    public interface IRequiredRule : IRule
-    {
 
+}
+
+internal class RequiredRule<T> : RuleBase<T>, IRequiredRule<T>
+    where T : IValidateBase
+{
+    public RequiredRule(IPropertyInfo propertyInfo) : base() {
+
+
+
+        var parameter = Expression.Parameter(typeof(T));
+        var property = Expression.Property(parameter, propertyInfo.Name);
+        var lambda = Expression.Lambda<Func<T, object?>>(Expression.Convert(property, typeof(object)), parameter);
+        var tr = new TriggerProperty<T, object>(lambda);
+
+        TriggerProperties.Add(tr);
     }
 
-    public delegate IRequiredRule CreateRequiredRule(IRegisteredProperty name);
-
-    internal class RequiredRule : RuleBase<IValidateBase>, IRequiredRule
+    public override PropertyErrors Execute(T target)
     {
-        public RequiredRule(string propertyName) : base(propertyName) { }
-        public RequiredRule(IRegisteredProperty registeredProperty) : base(registeredProperty) { }
+        var value = TriggerProperties[0].GetValue(target);
 
-        public override PropertyErrors Execute(IValidateBase target)
+        bool isError = false;
+
+        if (value is string s)
         {
-            var value = ReadProperty(TriggerProperties[0]);
-
-            bool isError = false;
-
-            if (value is string s)
-            {
-                isError = string.IsNullOrWhiteSpace(s);
-            }
-            else if (value?.GetType().IsValueType ?? false)
-            {
-                isError = value == Activator.CreateInstance(value.GetType());
-            }
-            else
-            {
-                isError = value == null;
-            }
-
-            if (isError)
-            {
-                return TriggerProperties.Single().PropertyError($"{TriggerProperties[0].PropertyName} is required.");
-            }
-            return PropertyErrors.None;
+            isError = string.IsNullOrWhiteSpace(s);
+        }
+        else if (value?.GetType().IsValueType ?? false)
+        {
+            isError = value == Activator.CreateInstance(value.GetType());
+        }
+        else
+        {
+            isError = value == null;
         }
 
+        if (isError)
+        {
+            return new PropertyError(TriggerProperties.Single().PropertyName, $"{TriggerProperties[0].PropertyName} is required.");
+        }
+        return PropertyErrors.None;
     }
 }

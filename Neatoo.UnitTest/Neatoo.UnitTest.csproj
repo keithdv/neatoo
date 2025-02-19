@@ -1,11 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
-
     <IsPackable>false</IsPackable>
-
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Neatoo\Neatoo.csproj" />
+    <ProjectReference Include="..\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.csproj" OutputItemType="Analyzer"  ReferenceOutputAssembly="false"/>
   </ItemGroup>
 
 </Project>

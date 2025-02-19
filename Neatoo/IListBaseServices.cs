@@ -1,36 +1,23 @@
-﻿using Neatoo.AuthorizationRules;
-using Neatoo.Core;
-using Neatoo.Portal;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Neatoo.Portal.Internal;
 
-namespace Neatoo
+namespace Neatoo;
+
+/// <summary>
+/// Wrap the NeatooBase services into an interface so that 
+/// the inheriting classes don't need to list all services
+/// and services can be added
+/// </summary>
+public interface IListBaseServices<T, I>
+    where T : ListBase<T, I>
+    where I : IBase
 {
-    /// <summary>
-    /// Wrap the NeatooBase services into an interface so that 
-    /// the inheriting classes don't need to list all services
-    /// and services can be added
-    /// </summary>
-    public interface IListBaseServices<T, I>
-        where T : ListBase<T, I>
-        where I : IBase
-    {
-        IReadPortalChild<I> ReadPortal { get; }
-    }
+}
 
-    public class ListBaseServices<T, I> : IListBaseServices<T, I>
-        where T : ListBase<T, I>
-        where I : IBase 
-    {
+public class ListBaseServices<T, I> : IListBaseServices<T, I>
+    where T : ListBase<T, I>
+    where I : IBase 
+{
 
-        public ListBaseServices()        {        }
+    public ListBaseServices()        {        }
 
-        public ListBaseServices(IReadPortalChild<I> readPortal)
-        {
-            ReadPortal = readPortal;
-        }
-
-        public IReadPortalChild<I> ReadPortal { get; }
-    }
 }

@@ -1,13 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\HorseBarn.Dal.Ef\HorseBarn.Dal.Ef.csproj" />
+	<ProjectReference Include="..\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.csproj" OutputItemType="Analyzer"/>
     <ProjectReference Include="..\Neatoo\Neatoo.csproj" />
   </ItemGroup>
 

@@ -1,37 +1,30 @@
 ﻿using Neatoo.Rules;
-using Neatoo.UnitTest.EditBaseTests;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neatoo.UnitTest.PersonObjects
+namespace Neatoo.UnitTest.PersonObjects;
+
+internal interface IRecursiveAsyncRule : IRule<IPersonBase> { }
+
+internal class RecursiveAsyncRule : AsyncRuleBase<IPersonBase>, IRecursiveAsyncRule
 {
-    internal interface IRecursiveAsyncRule : IRule<IPersonBase> { }
-
-    internal class RecursiveAsyncRule : AsyncRuleBase<IPersonBase>, IRecursiveAsyncRule
+    public RecursiveAsyncRule() : base()
     {
-        public RecursiveAsyncRule() : base()
+        AddTriggerProperties(_ => _.ShortName);
+    }
+    public override async Task<PropertyErrors> Execute(IPersonBase target, CancellationToken token)
+    {
+        await Task.Delay(10, token);
+
+        if (target.ShortName == "Recursive")
         {
-            AddTriggerProperties(nameof(IPersonBase.ShortName));
+            target.ShortName = "Recursive change";
         }
-        public override async Task<PropertyErrors> Execute(IPersonBase target, CancellationToken token)
+        else if (target.ShortName == "Recursive Error")
         {
-
-            await Task.Delay(10, token);
-
-            if (target.ShortName == "Recursive")
-            {
-                target.ShortName = "Recursive change";
-            }
-            else if (target.ShortName == "Recursive Error")
-            {
-                target.FirstName = "Error"; // trigger the ShortNameRule error
-            }
-
-            return None;
+            target.FirstName = "Error"; // trigger the ShortNameRule error
         }
+
+        return None;
     }
 }

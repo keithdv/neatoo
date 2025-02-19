@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace Neatoo.AuthorizationRules;
 
-namespace Neatoo.AuthorizationRules
+public enum AuthorizeOperation
 {
-    public enum AuthorizeOperation
-    {
-        Create, Fetch, Update, Delete
-    }
+    Create, Fetch, Update, Delete, Execute
 }

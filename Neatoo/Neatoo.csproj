@@ -1,14 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Version>0.1.24-Beta</Version>
     <Authors>Keith Voels</Authors>
     <Description>Behavioral OO modeling and collaboration business framework.</Description>
     <Copyright>2019</Copyright>
-    <PackageTags>CSLA</PackageTags>
+    <PackageTags>ObjectOriented CSLA DomainModel BusinessLogic</PackageTags>
     <PackageProjectUrl>neatoo.net</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/keithdv/Neatoo/blob/master/LICENSE</PackageLicenseUrl>
     <LangVersion>latest</LangVersion>
@@ -19,6 +18,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="bin\**" />
+    <EmbeddedResource Remove="bin\**" />
+    <None Remove="bin\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
@@ -26,12 +31,18 @@
 	<ItemGroup>
 		<InternalsVisibleTo Include="Neatoo.Autofac" />
 		<InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
-		<InternalsVisibleTo Include="Neatoo.Newtonsoft.Json" />
-		<InternalsVisibleTo Include="Neatoo.Netwonsoft.Json.Test" />
 		<InternalsVisibleTo Include="Neatoo.UnitTest" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <Folder Include="Attributes\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.csproj" OutputItemType="Analyzer"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="$(OutputPath)\$(AssemblyName).CodeAnalysis.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 	</ItemGroup>
   </Project>

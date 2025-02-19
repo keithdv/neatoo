@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace Neatoo;
 
-namespace Neatoo
+public interface INeatooObject
 {
-    public interface INeatooObject
-    {
-    }
-
 }

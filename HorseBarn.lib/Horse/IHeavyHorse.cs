@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace HorseBarn.lib.Horse;
 
-namespace HorseBarn.lib.Horse
+public interface IHeavyHorse : IHorse
 {
-    public interface IHeavyHorse : IHorse
-    {
-    }
 }

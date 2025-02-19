@@ -1,13 +1,11 @@
 ﻿using Neatoo.Core;
+using Neatoo.Internal;
 using Neatoo.Portal;
+using Neatoo.Portal.Internal;
 using Neatoo.Rules;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neatoo
 {
@@ -25,14 +23,12 @@ namespace Neatoo
 
         internal string ObjectInvalid { get; }
 
-        internal new IValidateProperty GetProperty(string propertyName);
-        internal new IValidateProperty GetProperty(IRegisteredProperty registeredProperty);
+        new IValidateProperty GetProperty(string propertyName);
 
-        new internal IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
-        new internal IValidateProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
+        new IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
     }
 
-    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IPortalTarget
+    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IDataMapperTarget
         where T : ValidateBase<T>
     {
         protected new IValidatePropertyManager<IValidateProperty> PropertyManager => (IValidatePropertyManager<IValidateProperty>)base.PropertyManager;
@@ -54,9 +50,9 @@ namespace Neatoo
 
         protected (bool IsValid, bool IsSelfValid, bool IsBusy, bool IsSelfBusy) MetaState { get; private set; }
 
-        protected override void RaiseMetaPropertiesChanged(bool raiseBusy = false)
+        protected override void CheckIfMetaPropertiesChanged(bool raiseBusy = false)
         {
-            base.RaiseMetaPropertiesChanged();
+            base.CheckIfMetaPropertiesChanged();
 
             if (MetaState.IsValid != IsValid)
             {
@@ -83,22 +79,16 @@ namespace Neatoo
             MetaState = (IsValid, IsSelfValid, IsBusy, IsSelfBusy);
         }
 
-        protected override async Task PropertyManagerNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
+        protected override async Task ChildNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
         {
-            await base.PropertyManagerNeatooPropertyChanged(breadCrumbs);
+            await base.ChildNeatooPropertyChanged(breadCrumbs);
 
             if (!IsPaused)
             {
-                RaisePropertyChanged(breadCrumbs.PropertyName);
                 await CheckRules(breadCrumbs.FullPropertyName);
             }
 
-            RaiseMetaPropertiesChanged();
-        }
-
-        protected virtual Task AddAsyncMethod(Func<Task, Task> method, bool runOnException = false)
-        {
-            return AsyncTaskSequencer.AddTask(method, runOnException);
+            CheckIfMetaPropertiesChanged();
         }
 
         public IReadOnlyList<string> BrokenRuleMessages => PropertyManager.ErrorMessages;
@@ -112,23 +102,17 @@ namespace Neatoo
         {
             ObjectInvalid = message;
             this[nameof(ObjectInvalid)].SetErrorsForRule(0, new ReadOnlyCollection<string>(new List<string> { message }));
-            RaiseMetaPropertiesChanged();
+            CheckIfMetaPropertiesChanged();
         }
 
         public string ObjectInvalid { get => Getter<string>(); protected set => Setter(value); }
 
-        new protected IValidateProperty GetProperty(string propertyName)
+        new public IValidateProperty GetProperty(string propertyName)
         {
             return PropertyManager[propertyName];
         }
 
-        new protected IValidateProperty GetProperty(IRegisteredProperty registeredProperty)
-        {
-            return PropertyManager[registeredProperty];
-        }
-
-        new protected IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
-        new protected IValidateProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
+        new public IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
 
         public bool IsPaused { get; protected set; }
 
@@ -148,14 +132,19 @@ namespace Neatoo
             }
         }
 
-        IDisposable IPortalTarget.PauseAllActions()
+        IDisposable IDataMapperTarget.PauseAllActions()
         {
             return PauseAllActions();
         }
 
-        void IPortalTarget.ResumeAllActions()
+        void IDataMapperTarget.ResumeAllActions()
         {
             ResumeAllActions();
+        }
+
+        public virtual Task PostPortalConstruct()
+        {
+            return Task.CompletedTask;
         }
 
         public Task CheckRules(string propertyName)
@@ -164,7 +153,7 @@ namespace Neatoo
             {
                 var task = RuleManager.CheckRulesForProperty(propertyName);
 
-                RaiseMetaPropertiesChanged();
+                CheckIfMetaPropertiesChanged();
 
                 return task;
             }
@@ -176,7 +165,7 @@ namespace Neatoo
         {
             this[nameof(ObjectInvalid)].ClearAllErrors();
 
-            await AddAsyncMethod((t) => RuleManager.CheckAllRules(token));
+            await RuleManager.CheckAllRules(token);
             await AsyncTaskSequencer.AllDone;
         }
 
@@ -191,7 +180,10 @@ namespace Neatoo
             //this.AddAsyncMethod((t) => PropertyManager.RunAllRules(token));
             // TODO - This isn't raising the 'IsValid' property changed event
             //await base.WaitForTasks();
-            Debug.Assert(!IsBusy, "Should not be busy after running all rules");
+            if (this.Parent == null)
+            {
+                Debug.Assert(!IsBusy, "Should not be busy after running all rules");
+            }
         }
 
         public virtual void ClearSelfErrors()
@@ -206,26 +198,9 @@ namespace Neatoo
             PropertyManager.ClearAllErrors();
         }
 
-        [Create]
-        protected async Task Create()
-        {
-            await RunSelfRules();
-        }
-
-        [CreateChild]
-        protected async Task CreateChild()
-        {
-            await RunSelfRules();
-        }
-
         IValidateProperty IValidateBase.GetProperty(string propertyName)
         {
             return GetProperty(propertyName);
-        }
-
-        IValidateProperty IValidateBase.GetProperty(IRegisteredProperty registeredProperty)
-        {
-            return GetProperty(registeredProperty);
         }
     }
 }

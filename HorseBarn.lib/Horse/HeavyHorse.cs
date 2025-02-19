@@ -1,31 +1,23 @@
 ﻿using Neatoo;
 using Neatoo.Portal;
-using Neatoo.Rules.Rules;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace HorseBarn.lib.Horse
+namespace HorseBarn.lib.Horse;
+
+internal class HeavyHorse : Horse<HeavyHorse>, IHeavyHorse
 {
-    internal class HeavyHorse : Horse<HeavyHorse>, IHeavyHorse
+    public HeavyHorse(IEditBaseServices<HeavyHorse> services) : base(services)
     {
-        public HeavyHorse(IEditBaseServices<HeavyHorse> services) : base(services)
+    }
+
+    [Create]
+    public void Create(IHorseCriteria horseCriteria)
+    {
+
+        if (!IHorse.IsHeavyHorse(horseCriteria.Breed))
         {
+            throw new Exception($"Incorrect Breed: {horseCriteria.Breed.ToString()}");
         }
 
-        [Create]
-        [CreateChild]
-        public void createChild(IHorseCriteria horseCriteria)
-        {
-
-            if (!IHorse.IsHeavyHorse(horseCriteria.Breed))
-            {
-                throw new Exception($"Incorrect Breed: {horseCriteria.Breed.ToString()}");
-            }
-
-            Create(horseCriteria);
-        }
+        base.Create(horseCriteria);
     }
 }

@@ -20,8 +20,7 @@
 
                     <DataTemplate DataType="{x:Type horse:IHorse}">
                         <StackPanel Background="{Binding Path=Horse.IsValid, Converter={StaticResource IsValidToRedConverter}}"
-                              cal:Message.Attach="[Event MouseMove] = [Action HandleMouseMove($dataContext, $source, $eventArgs)]"
-                              >
+                              cal:Message.Attach="[Event MouseMove] = [Action HandleMouseMove($dataContext, $source, $eventArgs)]">
                             <Label Grid.Row="0" Content="{Binding Path=Horse.Name}" Style="{StaticResource Label.AccentHeader30}"/>
                             <DockPanel>
                                 <Label Content="Breed:"></Label>

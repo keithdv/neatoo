@@ -1,25 +1,20 @@
 ﻿using HorseBarn.lib.Horse;
 using Neatoo;
-using Neatoo.Rules.Rules;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Neatoo.Portal;
 
-namespace HorseBarn.lib.Cart
+namespace HorseBarn.lib.Cart;
+
+public interface IWagon : ICart
 {
-    public interface IWagon : ICart
-    {
 
+}
+
+[Factory]
+internal class Wagon : Cart<Wagon, IHeavyHorse>, IWagon
+{
+    public Wagon(IEditBaseServices<Wagon> services, ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services, cartNumberOfHorsesRule)
+    {
     }
 
-    internal class Wagon : Cart<Wagon, IHeavyHorse>, IWagon
-    {
-        public Wagon(IEditBaseServices<Wagon> services, ICartNumberOfHorsesRule cartNumberOfHorsesRule) : base(services, cartNumberOfHorsesRule)
-        {
-        }
-
-        protected override CartType CartType => CartType.Wagon;
-    }
+    protected override CartType CartType => CartType.Wagon;
 }

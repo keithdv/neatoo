@@ -1,123 +1,124 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using Neatoo.Portal;
+using Neatoo.Portal.Internal;
 using Neatoo.UnitTest.PersonObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Neatoo.UnitTest.EditBaseTests
+namespace Neatoo.UnitTest.EditBaseTests;
+
+
+[TestClass]
+public class EditListBaseTests
 {
 
-    [TestClass]
-    public class EditListBaseTests
+    private IServiceScope scope;
+    private IEditPersonList list;
+    private IEditPerson child;
+
+    [TestInitialize]
+    public void TestInitialize()
     {
+        scope = UnitTestServices.GetLifetimeScope();
+        var parentDto = scope.GetRequiredService<IReadOnlyList<PersonDto>>().Where(p => !p.FatherId.HasValue && !p.MotherId.HasValue).First();
 
-        private IServiceScope scope;
-        private IEditPersonList list;
-        private IEditPerson child;
+        list = scope.GetRequiredService<IEditPersonList>();
 
-        [TestInitialize]
-        public void TestInitialize()
+        child = scope.GetRequiredService<IEditPerson>();
+
+        child.MarkUnmodified();
+        child.MarkOld();
+        child.MarkAsChild();
+
+        using (((IDataMapperTarget)list).PauseAllActions())
         {
-            scope = UnitTestServices.GetLifetimeScope();
-            var parentDto = scope.GetRequiredService<IReadOnlyList<PersonDto>>().Where(p => !p.FatherId.HasValue && !p.MotherId.HasValue).First();
-
-            list = scope.GetRequiredService<IEditPersonList>();
-
-            child = scope.GetRequiredService<IEditPerson>();
             list.Add(child);
-            child.MarkUnmodified();
-            child.MarkOld();
-            child.MarkAsChild();
-
-            Assert.IsFalse(list.IsBusy);
-
         }
 
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            Assert.IsFalse(list.IsBusy);
-        }
-
-        [TestMethod]
-        public void EditListBaseTest()
-        {
-            Assert.IsFalse(list.IsModified);
-            Assert.IsFalse(list.IsSelfModified);
-        }
-
-        [TestMethod]
-        public void EditListBaseTest_ModifyChild_IsModified()
-        {
-
-            child.FirstName = Guid.NewGuid().ToString();
-            Assert.IsTrue(list.IsModified);
-            Assert.IsTrue(child.IsModified);
-
-        }
-
-        [TestMethod]
-        public void EditListBaseTest_ModifyChild_IsSelfModified()
-        {
-
-            child.FirstName = Guid.NewGuid().ToString();
-
-            Assert.IsFalse(list.IsSelfModified);
-            Assert.IsTrue(child.IsSelfModified);
-
-        }
-
-        [TestMethod]
-        public void EditListBaseTest_ModifyChild_IsSavable()
-        {
-
-            child.FirstName = Guid.NewGuid().ToString();
-
-            Assert.IsFalse(list.IsSavable);
-            Assert.IsFalse(child.IsSavable);
-        }
-
-        [TestMethod]
-        public void EditListBaseTest_Remove()
-        {
-            list.Remove(list.First());
-            Assert.AreEqual(0, list.Count);
-            Assert.AreEqual(1, list.DeletedCount);
-        }
-        [TestMethod]
-        public void EditListBaseTest_Remove_IsModified()
-        {
-            Assert.IsTrue(list.Remove(list.First()));
-            Assert.IsTrue(list.IsModified);
-            // Self modified means it's own properties
-            // List items are considered children
-            Assert.IsFalse(list.IsSelfModified);
-        }
-
-        [TestMethod]
-        public void EditListBaseTest_RemoveAt()
-        {
-            list.RemoveAt(0);
-            Assert.AreEqual(0, list.Count);
-            Assert.AreEqual(1, list.DeletedCount);
-        }
-
-        [TestMethod]
-        public void EditListBaseTest_RemoveAt_IsModified()
-        {
-            list.Remove(list.First());
-            Assert.IsTrue(list.IsModified);
-            // Self modified means it's own properties
-            // List items are considered children
-            Assert.IsFalse(list.IsSelfModified);
-        }
-
+        Assert.IsFalse(list.IsBusy);
 
     }
+
+    [TestCleanup]
+    public void TestCleanup()
+    {
+        Assert.IsFalse(list.IsBusy);
+    }
+
+    [TestMethod]
+    public void EditListBaseTest()
+    {
+        Assert.IsFalse(list.IsModified);
+        Assert.IsFalse(list.IsSelfModified);
+    }
+
+    [TestMethod]
+    public void EditListBaseTest_ModifyChild_IsModified()
+    {
+
+        child.FirstName = Guid.NewGuid().ToString();
+        Assert.IsTrue(list.IsModified);
+        Assert.IsTrue(child.IsModified);
+
+    }
+
+    [TestMethod]
+    public void EditListBaseTest_ModifyChild_IsSelfModified()
+    {
+
+        child.FirstName = Guid.NewGuid().ToString();
+
+        Assert.IsFalse(list.IsSelfModified);
+        Assert.IsTrue(child.IsSelfModified);
+
+    }
+
+    [TestMethod]
+    public void EditListBaseTest_ModifyChild_IsSavable()
+    {
+
+        child.FirstName = Guid.NewGuid().ToString();
+
+        Assert.IsFalse(list.IsSavable);
+        Assert.IsFalse(child.IsSavable);
+    }
+
+    [TestMethod]
+    public void EditListBaseTest_Remove()
+    {
+        list.Remove(list.First());
+        Assert.AreEqual(0, list.Count);
+        Assert.AreEqual(1, list.DeletedCount);
+    }
+    [TestMethod]
+    public void EditListBaseTest_Remove_IsModified()
+    {
+        Assert.IsTrue(list.Remove(list.First()));
+        Assert.IsTrue(list.IsModified);
+        // Self modified means it's own properties
+        // List items are considered children
+        Assert.IsFalse(list.IsSelfModified);
+    }
+
+    [TestMethod]
+    public void EditListBaseTest_RemoveAt()
+    {
+        list.RemoveAt(0);
+        Assert.AreEqual(0, list.Count);
+        Assert.AreEqual(1, list.DeletedCount);
+    }
+
+    [TestMethod]
+    public void EditListBaseTest_RemoveAt_IsModified()
+    {
+        list.Remove(list.First());
+        Assert.IsTrue(list.IsModified);
+        // Self modified means it's own properties
+        // List items are considered children
+        Assert.IsFalse(list.IsSelfModified);
+    }
+
+
 }
 

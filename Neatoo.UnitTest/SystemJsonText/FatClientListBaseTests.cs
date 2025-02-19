@@ -1,94 +1,84 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Neatoo.Portal;
+using Neatoo.UnitTest.BaseTests.Objects;
+using Neatoo.Portal.Internal;
 
-namespace Neatoo.UnitTest.SystemTextJson.BaseTests
+namespace Neatoo.UnitTest.SystemTextJson.BaseTests;
+
+
+[TestClass]
+public class FatClientListBaseTests
 {
+    IServiceScope scope;
+    IBaseObjectList target;
+    NeatooJsonSerializer resolver;
+    IBaseObject child;
 
-    [TestClass]
-    public class FatClientListBaseTests
+    [TestInitialize]
+    public void TestInitailize()
     {
-        IServiceScope scope;
-        IBaseObjectList target;
-        NeatooJsonSerializer resolver;
-        IBaseObject child;
+        scope = UnitTestServices.GetLifetimeScope();
+        target = scope.GetRequiredService<IBaseObjectList>();
+        resolver = scope.GetRequiredService<NeatooJsonSerializer>();
 
-        [TestInitialize]
-        public void TestInitailize()
-        {
-            scope = UnitTestServices.GetLifetimeScope();
-            target = scope.GetRequiredService<IBaseObjectList>();
-            resolver = scope.GetRequiredService<NeatooJsonSerializer>();
+        child = scope.GetRequiredService<IBaseObject>();
+        child.Id = Guid.NewGuid();
+        child.StringProperty = Guid.NewGuid().ToString();
+        target.Add(child);
+    }
 
-            child = scope.GetRequiredService<IBaseObject>();
-            child.ID = Guid.NewGuid();
-            child.Name = Guid.NewGuid().ToString();
-            target.Add(child);
-        }
+    private string Serialize(object target)
+    {
+        return resolver.Serialize(target);
+    }
 
-        private string Serialize(object target)
-        {
-            return resolver.Serialize(target);
-        }
+    private IBaseObjectList Deserialize(string json)
+    {
+        return resolver.Deserialize<IBaseObjectList>(json);
+    }
 
-        private IBaseObjectList Deserialize(string json)
-        {
-            return resolver.Deserialize<IBaseObjectList>(json);
-        }
+    [TestMethod]
+    public void FatClientListBaseTests_Serialize()
+    {
+        var result = Serialize(target);
 
-        [TestMethod]
-        public void FatClientListBaseTests_Serialize()
-        {
+        Assert.IsTrue(result.Contains(child.Id.ToString()));
+        Assert.IsTrue(result.Contains(child.StringProperty));
+    }
 
-            var result = Serialize(target);
+    [TestMethod]
+    public void FatClientListBaseTests_Deserialize()
+    {
+        var json = Serialize(target);
 
-            Assert.IsTrue(result.Contains(child.ID.ToString()));
-            Assert.IsTrue(result.Contains(child.Name));
-        }
+        var newTarget = Deserialize(json);
+    }
 
-        [TestMethod]
-        public void FatClientListBaseTests_Deserialize()
-        {
+    [TestMethod]
+    public void FatClientListBaseTests_Deserialize_Child()
+    {
+        var json = Serialize(target);
 
-            var json = Serialize(target);
+        // ITaskRespository and ILogger constructor parameters are injected by Autofac 
+        var newTarget = Deserialize(json);
 
-            var newTarget = Deserialize(json);
+        Assert.IsNotNull(newTarget.SingleOrDefault());
+        Assert.AreEqual(child.Id, newTarget.Single().Id);
+        Assert.AreEqual(child.StringProperty, newTarget.Single().StringProperty);
+    }
 
-        }
+    [TestMethod]
+    public void FatClientListBaseTests_Deserialize_Modify()
+    {
+        var json = Serialize(target);
 
-        [TestMethod]
-        public void FatClientListBaseTests_Deserialize_Child()
-        {
+        // ITaskRespository and ILogger constructor parameters are injected by Autofac 
+        var newTarget = Deserialize(json);
 
-            var json = Serialize(target);
-
-            // ITaskRespository and ILogger constructor parameters are injected by Autofac 
-            var newTarget = Deserialize(json);
-
-
-            Assert.IsNotNull(newTarget.SingleOrDefault());
-            Assert.AreEqual(child.ID, newTarget.Single().ID);
-            Assert.AreEqual(child.Name, newTarget.Single().Name);
-
-        }
-
-        [TestMethod]
-        public void FatClientListBaseTests_Deserialize_Modify()
-        {
-
-            var json = Serialize(target);
-
-            // ITaskRespository and ILogger constructor parameters are injected by Autofac 
-            var newTarget = Deserialize(json);
-
-            var newId = Guid.NewGuid();
-        }
-
+        var newId = Guid.NewGuid();
     }
 }
 

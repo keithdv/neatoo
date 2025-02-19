@@ -1,34 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Neatoo.Core;
+using System;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 
-namespace Neatoo.Rules.Rules
+namespace Neatoo.Rules.Rules;
+
+
+public interface IAttributeToRule
+{
+    IRule<T> GetRule<T>(IPropertyInfo r, Type attribute) where T : IValidateBase;
+}
+
+public class AttributeToRule : IAttributeToRule
 {
 
-    public interface IAttributeToRule
-    {
-        IRule GetRule(IRegisteredProperty r, Type attribute);
-    }
-
-    public class AttributeToRule : IAttributeToRule
+    public AttributeToRule()
     {
 
-        public AttributeToRule(CreateRequiredRule required)
-        {
-            Required = required;
-        }
-
-        public IRule GetRule(IRegisteredProperty r, Type attribute)
-        {
-            if (attribute == typeof(RequiredAttribute))
-            {
-                return Required(r);
-            }
-            return null;
-        }
-
-
-        public CreateRequiredRule Required { get; }
     }
+
+    public IRule<T> GetRule<T>(IPropertyInfo r, Type attribute) where T : IValidateBase
+    {
+        if (attribute == typeof(RequiredAttribute))
+        {
+            return new RequiredRule<T>(r);
+        }
+        return null;
+    }
+
 }

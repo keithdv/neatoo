@@ -1,35 +1,42 @@
 ﻿using Neatoo;
-using Neatoo.Rules;
-using System;
-using System.Collections.Generic;
+using Neatoo.Portal;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace HorseBarn.lib.Horse
+namespace HorseBarn.lib.Horse;
+
+public interface IHorseCriteria : IValidateBase
 {
-    public interface IHorseCriteria : IValidateBase
+    DateOnly? BirthDay { get; set; }
+    Breed Breed { get; set; }
+    string Name { get; set; }
+}
+
+[Factory]
+internal class HorseCriteria : ValidateBase<HorseCriteria>, IHorseCriteria
+{
+    public HorseCriteria(IValidateBaseServices<HorseCriteria> services) : base(services)
     {
-        DateOnly? BirthDay { get; set; }
-        Breed Breed { get; set; }
-        string Name { get; set; }
     }
 
-    internal class HorseCriteria : ValidateBase<HorseCriteria>, IHorseCriteria
+    [Required]
+    public string Name { get => Getter<string>(); set => Setter(value); }
+
+    [Required]
+    public Breed Breed { get => Getter<Breed>(); set => Setter(value); }
+
+    [Required]
+    public DateOnly? BirthDay { get => Getter<DateOnly?>(); set => Setter(value); }
+
+    public override void OnDeserialized()
     {
-        public HorseCriteria(IValidateBaseServices<HorseCriteria> services) : base(services)
-        {
-        }
+        base.OnDeserialized();
+        ClearAllErrors();
+    }
 
-        [Required]
-        public string Name { get => Getter<string>(); set => Setter(value); }
-
-        [Required]
-        public Breed Breed { get => Getter<Breed>(); set => Setter(value); }
-
-        [Required]
-        public DateOnly? BirthDay { get => Getter<DateOnly?>(); set => Setter(value); }
+    [Create]
+    public void Create()
+    {
 
     }
+
 }

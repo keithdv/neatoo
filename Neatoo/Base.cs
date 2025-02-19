@@ -1,10 +1,9 @@
 ﻿using Neatoo.Core;
-using Neatoo.Portal;
+using Neatoo.Internal;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
@@ -12,29 +11,23 @@ namespace Neatoo;
 
 public interface IBase : INeatooObject, INotifyPropertyChanged, INotifyNeatooPropertyChanged, IBaseMetaProperties
 {
-    IBase Parent { get; }
-
+    IBase? Parent { get; }
+    internal void AddChildTask(Task task);
     internal IProperty GetProperty(string propertyName);
-    internal IProperty GetProperty(IRegisteredProperty registeredProperty);
-
     internal IProperty this[string propertyName] { get => GetProperty(propertyName); }
-    internal IProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
-
     internal IPropertyManager<IProperty> PropertyManager { get; }
 }
 
-public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent, IJsonOnDeserialized
+public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeserialized
     where T : Base<T>
 {
     // Fields
-    protected AsyncTaskSequencer AsyncTaskSequencer { get; private set; } = new AsyncTaskSequencer();
-
+    protected AsyncTasks AsyncTaskSequencer { get; private set; } = new AsyncTasks();
     // Properties
     protected IPropertyManager<IProperty> PropertyManager { get; set; }
     IPropertyManager<IProperty> IBase.PropertyManager => PropertyManager;
-    public IBase Parent { get; protected set; }
+    public IBase? Parent { get; protected set; }
     protected IProperty this[string propertyName] { get => GetProperty(propertyName); }
-    protected IProperty this[IRegisteredProperty registeredProperty] { get => GetProperty(registeredProperty); }
     public bool IsSelfBusy => !AsyncTaskSequencer.AllDone.IsCompleted || PropertyManager.IsSelfBusy;
     public bool IsBusy => IsSelfBusy || PropertyManager.IsBusy;
 
@@ -45,27 +38,29 @@ public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent,
 
         if (PropertyManager is IPropertyManager<IProperty>)
         {
-            PropertyManager.NeatooPropertyChanged += _PropertyManagerNeatooPropertyChange;
+            PropertyManager.NeatooPropertyChanged += _PropertyManager_NeatooPropertyChanged;
+            PropertyManager.PropertyChanged += _PropertyManager_PropertyChanged;
         }
 
-        AsyncTaskSequencer.OnFullSequenceComplete = async () =>
+        AsyncTaskSequencer.OnFullSequenceComplete = () =>
         {
-            RaiseMetaPropertiesChanged(true);
+            CheckIfMetaPropertiesChanged(true);
+            return Task.CompletedTask;
         };
     }
 
     // Methods
-    protected virtual void SetParent(IBase parent)
+    protected virtual void SetParent(IBase? parent)
     {
         Parent = parent;
     }
 
-    void ISetParent.SetParent(IBase parent)
+    void ISetParent.SetParent(IBase? parent)
     {
         SetParent(parent);
     }
 
-    protected virtual void RaiseMetaPropertiesChanged(bool raiseBusy = true)
+    protected virtual void CheckIfMetaPropertiesChanged(bool raiseBusy = true)
     {
 
     }
@@ -75,45 +70,72 @@ public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent,
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    protected virtual Task RaiseNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
+    protected virtual Task RaiseNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
     {
         Debug.Assert(PropertyManager.GetProperties.Any(p => p.Name == breadCrumbs.PropertyName), "Property not found");
 
         // This is for databinding only - not other Neatoo objects
-        return NeatooPropertyChanged?.Invoke(new PropertyNameBreadCrumbs(breadCrumbs.PropertyName, this, breadCrumbs.PreviousPropertyName)) ?? Task.CompletedTask;
+        return NeatooPropertyChanged?.Invoke(new PropertyChangedBreadCrumbs(breadCrumbs.PropertyName, this, breadCrumbs.InnerBreadCrumb)) ?? Task.CompletedTask;
     }
 
-    protected virtual Task PropertyManagerNeatooPropertyChanged(PropertyNameBreadCrumbs breadCrumbs)
+    protected virtual Task ChildNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
     {
-        if (breadCrumbs.Source is IProperty property)
+        return RaiseNeatooPropertyChanged(breadCrumbs);
+    }
+
+    private Task _PropertyManager_NeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
+    {
+
+        if (breadCrumbs.Source is IProperty property) // This can be clearer
         {
             if (this[property.Name].Value is ISetParent child)
             {
                 child.SetParent(this);
             }
+
+            // This isn't meant to go to parent Neatoo objects, thru the tree, just immediate outside listeners
+            RaisePropertyChanged(breadCrumbs.FullPropertyName);
         }
 
-        return RaiseNeatooPropertyChanged(breadCrumbs);
+        return ChildNeatooPropertyChanged(breadCrumbs);
+    }
+    private void _PropertyManager_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        CheckIfMetaPropertiesChanged();
     }
 
-    private Task _PropertyManagerNeatooPropertyChange(PropertyNameBreadCrumbs breadCrumbs)
+    protected virtual P? Getter<P>([System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
     {
-        return PropertyManagerNeatooPropertyChanged(breadCrumbs);
+        return (P?) PropertyManager[propertyName]?.Value;
+    }
+    
+    protected virtual void Setter<P>(P? value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
+    {
+        var task = PropertyManager[propertyName].SetPrivateValue(value);
+
+        if (Parent != null)
+        {
+            Parent.AddChildTask(task);
+        } 
+
+        AsyncTaskSequencer.AddTask(task);
+
     }
 
-    protected virtual P Getter<P>([System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
+    public virtual void AddChildTask(Task task)
     {
-        return (P)PropertyManager[propertyName].Value;
-    }
+        // This has the effect of only running one task per object graph
+        // BUT if I don't do this I have to loop in WaitForTask on IsBusy...
+        // Not sure which is better
+        //AsyncTaskSequencer.AddTask((t) => task);
+        //Parent?.AddChildTask(task);
 
-    protected virtual void Setter<P>(P value, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = "")
-    {
-        AsyncTaskSequencer.AddTask((t) => PropertyManager[propertyName].SetValue(value));
-    }
+        if (Parent != null)
+        {
+            Parent.AddChildTask(task);
+        } 
 
-    protected IRegisteredProperty GetRegisteredProperty(string propertyName)
-    {
-        return PropertyManager.RegisteredPropertyManager.GetRegisteredProperty(propertyName);
+        AsyncTaskSequencer.AddTask(task);
     }
 
     public IProperty GetProperty(string propertyName)
@@ -121,33 +143,11 @@ public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent,
         return PropertyManager[propertyName];
     }
 
-    public IProperty GetProperty(IRegisteredProperty registeredProperty)
-    {
-        return PropertyManager[registeredProperty];
-    }
-
-    IDisposable IPortalTarget.PauseAllActions()
-    {
-        return null;
-    }
-
-    void IPortalTarget.ResumeAllActions()
-    {
-    }
-
-    Task IPortalTarget.PostPortalConstruct()
-    {
-        return this.PostPortalConstruct();
-    }
-
-    protected virtual Task PostPortalConstruct()
-    {
-        return Task.CompletedTask;
-    }
-
     public virtual void OnDeserialized()
     {
-        PropertyManager.NeatooPropertyChanged += _PropertyManagerNeatooPropertyChange;
+        PropertyManager.NeatooPropertyChanged += _PropertyManager_NeatooPropertyChanged;
+        PropertyManager.PropertyChanged += _PropertyManager_PropertyChanged;
+
 
         foreach (var property in PropertyManager.GetProperties)
         {
@@ -161,26 +161,30 @@ public abstract class Base<T> : INeatooObject, IBase, IPortalTarget, ISetParent,
     public virtual async Task WaitForTasks()
     {
         // I don't like this...
-        while (IsBusy)
+        //while (IsBusy)
+        //{
+        //    await PropertyManager.WaitForTasks();
+        //    await AsyncTaskSequencer.AllDone;
+        //}
+
+        //await PropertyManager.WaitForTasks();
+        await AsyncTaskSequencer.AllDone;
+
+        if (Parent == null)
         {
-            await Task.Yield();
-            // Enumrator changed errors
-            // Will need to use events or something to signify when busy
-            //while(PropertyManager.IsBusy)
-            //{
-            //    await PropertyManager.WaitForTasks();
-            //}
-            //await AsyncTaskSequencer.AllDone;
+            if (IsBusy)
+            {
+
+                var busyProperty = PropertyManager.GetProperties.FirstOrDefault(p => p.IsBusy);
+
+            }
+
+            // Raise Errors
+            Debug.Assert(!IsBusy, "Should not be busy after running all rules");
         }
-
-        Debug.Assert(!IsBusy, "Should not be busy after running all rules");
-
-        // Raise Errors
-        await Task.WhenAll(AsyncTaskSequencer.AllDone, PropertyManager.WaitForTasks());
-
     }
 
     // Events
-    public event PropertyChangedEventHandler PropertyChanged;
-    public event NeatooPropertyChanged NeatooPropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public event NeatooPropertyChanged? NeatooPropertyChanged;
 }

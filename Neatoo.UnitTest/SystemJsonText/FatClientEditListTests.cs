@@ -1,162 +1,159 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using Neatoo.Portal;
+using Neatoo.Portal.Internal;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
-namespace Neatoo.UnitTest.SystemTextJson.EditTests
+namespace Neatoo.UnitTest.SystemTextJson.EditTests;
+
+
+[TestClass]
+public class FatClientEditListTests
 {
+    IServiceScope scope;
+    IEditObjectList target;
+    NeatooJsonSerializer resolver;
 
-    [TestClass]
-    public class FatClientEditListTests
+    [TestInitialize]
+    public void TestInitailize()
     {
-        IServiceScope scope;
-        IEditObjectList target;
-        NeatooJsonSerializer resolver;
+        scope = UnitTestServices.GetLifetimeScope();
+        target = scope.GetRequiredService<IEditObjectList>();
+        resolver = scope.GetRequiredService<NeatooJsonSerializer>();
+    }
 
-        [TestInitialize]
-        public void TestInitailize()
-        {
-            scope = UnitTestServices.GetLifetimeScope();
-            target = scope.GetRequiredService<IEditObjectList>();
-            resolver = scope.GetRequiredService<NeatooJsonSerializer>();
-        }
+    private string Serialize(object target)
+    {
+        return resolver.Serialize(target);
+    }
 
-        private string Serialize(object target)
-        {
-            return resolver.Serialize(target);
-        }
+    private T Deserialize<T>(string json)
+    {
+        return resolver.Deserialize<T>(json);
+    }
 
-        private T Deserialize<T>(string json)
-        {
-            return resolver.Deserialize<T>(json);
-        }
+    [TestMethod]
+    public void FatClientEditList_Serialize()
+    {
 
-        [TestMethod]
-        public void FatClientEditList_Serialize()
-        {
+        var result = Serialize(target);
+    }
 
-            var result = Serialize(target);
-        }
+    [TestMethod]
+    public void FatClientEditList_Deserialize()
+    {
 
-        [TestMethod]
-        public void FatClientEditList_Deserialize()
-        {
+        var json = Serialize(target);
 
-            var json = Serialize(target);
+        var newTarget = Deserialize<IEditObjectList>(json);
+    }
 
-            var newTarget = Deserialize<IEditObjectList>(json);
-        }
+    [TestMethod]
+    public void FatClientEditList_Deserialize_Child()
+    {
+        var child = scope.GetRequiredService<IEditObject>();
+        target.Add(child);
 
-        [TestMethod]
-        public void FatClientEditList_Deserialize_Child()
-        {
-            var child = scope.GetRequiredService<IEditObject>();
-            target.Add(child);
+        child.ID = Guid.NewGuid();
+        child.Name = Guid.NewGuid().ToString();
 
-            child.ID = Guid.NewGuid();
-            child.Name = Guid.NewGuid().ToString();
+        var json = Serialize(target);
 
-            var json = Serialize(target);
+        var newTarget = Deserialize<IEditObjectList>(json);
 
-            var newTarget = Deserialize<IEditObjectList>(json);
+        Assert.IsNotNull(newTarget.Single());
+        Assert.AreEqual(child.ID, newTarget.Single().ID);
+        Assert.AreEqual(child.Name, newTarget.Single().Name);
 
-            Assert.IsNotNull(newTarget.Single());
-            Assert.AreEqual(child.ID, newTarget.Single().ID);
-            Assert.AreEqual(child.Name, newTarget.Single().Name);
+    }
 
-        }
+    [TestMethod]
+    public void FatClientEditList_Deserialize_Child_ParentRef()
+    {
+        var parent = scope.GetRequiredService<IEditObject>();
+        parent.ChildList = target;
 
-        [TestMethod]
-        public void FatClientEditList_Deserialize_Child_ParentRef()
-        {
-            var parent = scope.GetRequiredService<IEditObject>();
-            parent.ChildList = target;
+        var child = scope.GetRequiredService<IEditObject>();
+        target.Add(child);
 
-            var child = scope.GetRequiredService<IEditObject>();
-            target.Add(child);
+        Assert.AreSame(child.Parent, parent);
 
-            Assert.AreSame(child.Parent, parent);
+        var json = Serialize(parent);
 
-            var json = Serialize(parent);
+        // ITaskRespository and ILogger constructor parameters are injected by Autofac 
+        var newParent = Deserialize<IEditObject>(json);
 
-            // ITaskRespository and ILogger constructor parameters are injected by Autofac 
-            var newParent = Deserialize<IEditObject>(json);
+        Assert.IsNotNull(newParent);
+        var newChild = newParent.ChildList.Single();
 
-            Assert.IsNotNull(newParent);
-            var newChild = newParent.ChildList.Single();
+        Assert.AreSame(child.Parent, parent);
 
-            Assert.AreSame(child.Parent, parent);
+        Assert.AreEqual(child.ID, newChild.ID);
+        Assert.AreEqual(child.Name, newChild.Name);
+    }
 
-            Assert.AreEqual(child.ID, newChild.ID);
-            Assert.AreEqual(child.Name, newChild.Name);
-        }
+    [TestMethod]
+    public void FatClientEditList_IsModified()
+    {
+        var child = scope.GetRequiredService<IEditObject>();
+        target.Add(child);
 
-        [TestMethod]
-        public void FatClientEditList_IsModified()
-        {
-            var child = scope.GetRequiredService<IEditObject>();
-            target.Add(child);
+        child.ID = Guid.NewGuid();
+        child.Name = Guid.NewGuid().ToString();
 
-            child.ID = Guid.NewGuid();
-            child.Name = Guid.NewGuid().ToString();
-
-            Assert.IsTrue(target.IsModified);
-            Assert.IsFalse(target.IsSelfModified);
+        Assert.IsTrue(target.IsModified);
+        Assert.IsFalse(target.IsSelfModified);
 
 
-            var json = Serialize(target);
-            var newTarget = Deserialize<IEditObjectList>(json);
+        var json = Serialize(target);
+        var newTarget = Deserialize<IEditObjectList>(json);
 
-            Assert.IsTrue(newTarget.IsModified);
-            Assert.IsFalse(newTarget.IsSelfModified);
+        Assert.IsTrue(newTarget.IsModified);
+        Assert.IsFalse(newTarget.IsSelfModified);
 
-        }
+    }
 
-        [TestMethod]
-        public void FatClientEditList_IsModified_False()
-        {
-            var child = scope.GetRequiredService<IEditObject>();
-            target.Add(child);
+    [TestMethod]
+    public void FatClientEditList_IsModified_False()
+    {
+        var child = scope.GetRequiredService<IEditObject>();
+        target.Add(child);
 
-            child.ID = Guid.NewGuid();
-            child.Name = Guid.NewGuid().ToString();
+        child.ID = Guid.NewGuid();
+        child.Name = Guid.NewGuid().ToString();
 
-            child.MarkUnmodified();
+        child.MarkUnmodified();
 
-            Assert.IsFalse(target.IsModified);
-            Assert.IsFalse(target.IsSelfModified);
+        Assert.IsFalse(target.IsModified);
+        Assert.IsFalse(target.IsSelfModified);
 
-            var json = Serialize(target);
+        var json = Serialize(target);
 
-            var newTarget = Deserialize<IEditObjectList>(json);
+        var newTarget = Deserialize<IEditObjectList>(json);
 
-            Assert.IsFalse(newTarget.IsModified);
-            Assert.IsFalse(newTarget.IsSelfModified);
-        }
+        Assert.IsFalse(newTarget.IsModified);
+        Assert.IsFalse(newTarget.IsSelfModified);
+    }
 
-        [TestMethod]
-        public void FatClientEditList_IsNew_False()
-        {
-            var child = scope.GetRequiredService<IEditObject>();
-            target.Add(child);
+    [TestMethod]
+    public void FatClientEditList_IsNew_False()
+    {
+        var child = scope.GetRequiredService<IEditObject>();
+        target.Add(child);
 
-            child.ID = Guid.NewGuid();
-            child.Name = Guid.NewGuid().ToString();
-            child.MarkOld();
+        child.ID = Guid.NewGuid();
+        child.Name = Guid.NewGuid().ToString();
+        child.MarkOld();
 
-            Assert.IsFalse(target.IsNew);
+        Assert.IsFalse(target.IsNew);
 
-            var json = Serialize(target);
+        var json = Serialize(target);
 
-            var newTarget = Deserialize<IEditObjectList>(json);
+        var newTarget = Deserialize<IEditObjectList>(json);
 
-            Assert.IsFalse(newTarget.IsNew);
+        Assert.IsFalse(newTarget.IsNew);
 
-        }
     }
 }
 

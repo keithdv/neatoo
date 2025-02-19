@@ -1,52 +1,38 @@
 ﻿using HorseBarn.Dal.Ef;
 using Microsoft.Extensions.DependencyInjection;
 using Neatoo;
-using Neatoo.Portal.Core;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace HorseBarn.lib.integration.tests
+namespace HorseBarn.lib.integration.tests;
+
+internal class UnitTestContainer
 {
-    internal class UnitTestContainer
+
+    private static IServiceProvider? Container;
+
+    public static IServiceScope GetLifetimeScope()
     {
 
-        private static IServiceProvider? Container;
-
-        public static IServiceScope GetLifetimeScope()
+        if (Container == null)
         {
 
-            if (Container == null)
+            IServiceProvider CreateContainer(Neatoo.NeatooHost portal)
             {
+                var builder = new ServiceCollection();
 
-                IServiceProvider CreateContainer(Neatoo.PortalServer portal)
-                {
-                    var builder = new ServiceCollection();
+                builder.AddNeatooServices(portal, Assembly.GetExecutingAssembly(), Assembly.GetAssembly(typeof(IHorseBarn)));
 
-                    builder.AddNeatooServices(portal);
+                builder.AddScopedSelf<IHorseBarnContext, HorseBarnContext>();
 
-                    builder.AutoRegisterAssemblyTypes(Assembly.GetExecutingAssembly());
-
-                    builder.AutoRegisterAssemblyTypes(Assembly.GetAssembly(typeof(IHorseBarn)));
-
-
-                    builder.AddScopedSelf<IHorseBarnContext, HorseBarnContext>();
-
-                    return builder.BuildServiceProvider();
-                }
-
-                // 2-Tier tests
-                Container = CreateContainer(PortalServer.Local);
-
+                return builder.BuildServiceProvider();
             }
 
-            return Container.CreateScope();
+            // 2-Tier tests
+            Container = CreateContainer(NeatooHost.Local);
 
         }
+
+        return Container.CreateScope();
 
     }
 
