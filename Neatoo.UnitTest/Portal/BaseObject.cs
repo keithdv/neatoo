@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ObjectPortal;
 
+[Factory]
 public class BaseObject : Base<BaseObject>, IBaseObject
 {
     public BaseObject(IBaseServices<BaseObject> baseServices) : base(baseServices)

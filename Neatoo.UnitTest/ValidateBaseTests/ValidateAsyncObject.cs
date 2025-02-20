@@ -17,6 +17,7 @@ public interface IValidateAsyncObject : IPersonBase
     List<IValidateProperty> Properties => PropertyManager.GetProperties.Cast<IValidateProperty>().ToList();
 }
 
+[Factory]
 internal class ValidateAsyncObject : PersonValidateBase<ValidateAsyncObject>, IValidateAsyncObject
 {
     public IShortNameAsyncRule<ValidateAsyncObject> ShortNameRule { get; }
@@ -69,7 +70,7 @@ public interface IValidateAsyncObjectList : IValidateListBase<IValidateAsyncObje
 public class ValidateAsyncObjectList : ValidateListBase<ValidateAsyncObjectList, IValidateAsyncObject>, IValidateAsyncObjectList
 {
 
-    public ValidateAsyncObjectList(IValidateListBaseServices<ValidateAsyncObjectList, IValidateAsyncObject> services) : base(services)
+    public ValidateAsyncObjectList() : base()
     {
 
     }

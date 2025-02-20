@@ -6,19 +6,12 @@ using System.Threading.Tasks;
 
 namespace Neatoo.Portal.Internal
 {
-    public delegate Task<T> Save<T>(T target) where T : IEditBase;
-
-    public class DoSave<T> where T : IEditBase
+    public interface IFactoryBase<in T>
     {
-        public Task<T> Save(T target)
-        {
-            throw new Exception("Save not implemented");
-        }
     }
 
-    public class FactoryBase
+    public abstract class FactoryBase<T> : IFactoryBase<T>
     {
-
         protected async Task DoMapperMethodCall(object target, DataMapperMethod operation, Func<Task> mapperMethodCall)
         {
             ArgumentNullException.ThrowIfNull(target, nameof(target));
@@ -68,5 +61,7 @@ namespace Neatoo.Portal.Internal
                 }
             }
         }
+
+
     }
 }

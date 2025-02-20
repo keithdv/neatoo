@@ -5,6 +5,7 @@ using System;
 
 namespace Neatoo.UnitTest.ObjectPortal;
 
+[Factory]
 public class EditObject : EditBase<EditObject>, IEditObject
 {
 

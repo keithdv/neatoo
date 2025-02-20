@@ -14,11 +14,11 @@ using Neatoo;
 
 namespace Neatoo;
 
-[Factory]
 internal class BaseHasAttributes : SharedObject<BaseHasAttributes> {
 
 }
 
+[Factory]
 internal class SharedObject<T> {
     [Create]
     public void Create(long sharedParameter){
@@ -27,6 +27,14 @@ internal class SharedObject<T> {
 
 }
 
+
+[Factory]
+internal class EditObject : EditBase<EditObject> {
+
+}
+
+
+[Factory]
 internal class BaseObject : SharedObject<BaseObject> {
 
 
@@ -65,6 +73,8 @@ internal class BaseObject : SharedObject<BaseObject> {
 
     }
 
+#if CLIENT
+
     [Fetch]
     public Task Fetch(Guid parameter, [Service] IDependency dependency){
 
@@ -101,7 +111,6 @@ internal class BaseObject : SharedObject<BaseObject> {
     public void Insert(string parameter){
 
     }
-
     [Update]
     public Task Update(string parameter, [Service] IDependency dependency){
     }
@@ -114,10 +123,83 @@ internal class BaseObject : SharedObject<BaseObject> {
     public Task UpdateList(Guid makeUnique){
         // Lists only have an update, don't force to have a corresponding insert and delete
     }
+#endif
 }
 ";
 
         // Pass the source code to our helper and snapshot test the output
         return TestHelper.Verify(source);
     }
+
+    [Fact]
+    public Task AbstractEditBase()
+    {
+        // The source code to test
+        var source = @"
+using Neatoo;
+
+namespace NeatooLibrary.Specific {
+
+    [Factory]
+    internal class EditObject : EditBaseA<EditObject> {
+
+    }
+
+    internal abstract class EditBaseA<T> : EditBaseB<T> {
+
+    }
+
+}";
+
+var source2 = @"
+
+namespace NeatooLibrary {
+
+internal abstract class EditBaseB<T> : EditBase<T> {
+
+}
+
+
+";
+
+        // Pass the source code to our helper and snapshot test the output
+        return TestHelper.Verify(source, source2);
+    }
+
+    [Fact]
+    public Task Remote()
+    {
+        // The source code to test
+        var source = @"
+using Neatoo;
+
+namespace Neatoo;
+
+[Factory]
+internal class BaseObject : SharedObject<BaseObject> {
+
+
+    [Create]
+    public void Create(int parameter){
+
+    }
+
+    [Create]
+    public Task Create(string parameter){
+
+    }
+
+    [Remote]
+    [Create]
+    public Task Create(string parameter){
+
+    }
+
+}
+";
+
+        // Pass the source code to our helper and snapshot test the output
+        return TestHelper.Verify(source);
+    }
+
 }

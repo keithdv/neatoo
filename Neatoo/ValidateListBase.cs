@@ -25,7 +25,7 @@ public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase
     where T : ValidateListBase<T, I>
     where I : IValidateBase
 {
-    public ValidateListBase(IValidateListBaseServices<T, I> services) : base(services)
+    public ValidateListBase() : base()
     {
         ResetMetaState();
     }

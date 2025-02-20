@@ -87,7 +87,7 @@ public class FatClientValidateTests
         var newTarget = Deserialize(json);
 
         Assert.AreEqual(2, newTarget.RuleRunCount); // Ensure that RuleManager was deserialized, not run
-        Assert.AreEqual(1, newTarget.Rules.Count());
+        Assert.AreEqual(2, newTarget.Rules.Count());
         Assert.IsFalse(newTarget.IsValid);
 
         Assert.IsFalse(newTarget[nameof(IValidateObject.Name)].IsValid);

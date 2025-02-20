@@ -13,7 +13,7 @@ namespace HorseBarn.lib.integration.tests;
 public sealed class HorseBarnTests
 {
     private IServiceScope scope;
-    private HorseBarnFactory portal;
+    private IHorseBarnFactory portal;
     private HorseBarnContext horseBarnContext;
     private HorseCriteriaFactory horseCriteriaFactory;
     private IDbContextTransaction transaction;
@@ -23,7 +23,7 @@ public sealed class HorseBarnTests
     {
 
         scope = UnitTestContainer.GetLifetimeScope();
-        portal = scope.ServiceProvider.GetRequiredService<HorseBarnFactory>();
+        portal = scope.ServiceProvider.GetRequiredService<IHorseBarnFactory>();
         horseBarnContext = scope.ServiceProvider.GetRequiredService<HorseBarnContext>();
         horseCriteriaFactory = scope.ServiceProvider.GetRequiredService<HorseCriteriaFactory>();
 
@@ -53,7 +53,7 @@ public sealed class HorseBarnTests
 
         async Task AddCartToHorseBarn()
         {
-            var criteria = await horseCriteriaFactory.Create();
+            var criteria = await horseCriteriaFactory.Fetch();
 
             criteria.Name = "Heavy Horse A";
             criteria.Breed = Breed.Clydesdale;
@@ -105,7 +105,7 @@ public sealed class HorseBarnTests
 
         await AddCartToHorseBarn();
 
-        horseBarn = (IHorseBarn)await portal.Save(horseBarn);
+        horseBarn = (IHorseBarn)await horseBarn.Save();
 
         var horseBarnContext = scope.ServiceProvider.GetRequiredService<IHorseBarnContext>();
 
@@ -132,7 +132,7 @@ public sealed class HorseBarnTests
         var horseNames = horseBarn.Horses.Select(h => h.Name).ToList();
 
         // Mix of Inserts and Updates
-        horseBarn = (IHorseBarn) await portal.Save(horseBarn);
+        horseBarn = (IHorseBarn) await horseBarn.Save();
 
         Assert.IsFalse(horseBarn.IsModified); // TODO
         CollectionAssert.AreEquivalent(horseNames, horseBarnContext.Horses.Select(h => h.Name).ToList());

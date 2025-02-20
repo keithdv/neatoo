@@ -20,6 +20,7 @@ public interface IValidateObject : IValidateBase
     //new IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
 }
 
+[Factory]
 public class ValidateObject : ValidateBase<ValidateObject>, IValidateObject
 {
     public ValidateObject(IValidateBaseServices<ValidateObject> services) : base(services)
@@ -58,7 +59,7 @@ public interface IValidateObjectList : IValidateListBase<IValidateObject>
 
 public class ValidateObjectList : ValidateListBase<ValidateObjectList, IValidateObject>, IValidateObjectList
 {
-    public ValidateObjectList(IValidateListBaseServices<ValidateObjectList, IValidateObject> services) : base(services)
+    public ValidateObjectList() : base()
     {
     }
 

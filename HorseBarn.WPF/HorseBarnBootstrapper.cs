@@ -5,6 +5,8 @@ using HorseBarn.WPF.ViewModels;
 using System.Reflection;
 using System.Net.Http;
 using Neatoo;
+using HorseBarn.lib.Horse;
+using Neatoo.Portal;
 
 namespace HorseBarn.WPF;
 
@@ -107,8 +109,6 @@ public class HorseBarnBootstrapper : BootstrapperBase
         services.AddTransient<CartViewModel>();
         services.AddTransient<HorseViewModel>();
 
-        services.AddTransient<HorseBarnFactory>();
-
         services.AddTransient<CartViewModel.Factory>(services =>
         {
             return (horseBarn, cart) => new CartViewModel(horseBarn, cart, services.GetRequiredService<HorseViewModel.Factory>());
@@ -117,6 +117,16 @@ public class HorseBarnBootstrapper : BootstrapperBase
         services.AddTransient<HorseViewModel.Factory>(services =>
         {
             return (horse) => new HorseViewModel(horse);
+        });
+
+        services.AddTransient<IsHorseNameUnique>(cc =>
+        {
+            return async (name) => (bool) (await cc.GetRequiredService<DoRemoteRequest>()(typeof(IsHorseNameUnique), [name]));
+        });
+
+        services.AddTransient<CreateHorseViewModel.Factory>(cc =>
+        {
+            return (horseNames) => new CreateHorseViewModel(cc.GetRequiredService<IHorseCriteriaFactory>(), cc.GetRequiredService<IEventAggregator>(), horseNames);
         });
 
         services.AddNeatooServices(NeatooHost.Remote, Assembly.GetAssembly(typeof(IHorseBarn)));

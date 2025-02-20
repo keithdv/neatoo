@@ -2,6 +2,7 @@ using HorseBarn.lib;
 using System.Reflection;
 using HorseBarn.Dal.Ef;
 using Neatoo;
+using HorseBarn.lib.Horse;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,13 @@ builder.Services.AddNeatooServices(NeatooHost.Local, Assembly.GetExecutingAssemb
 
 
 builder.Services.AddScoped<IHorseBarnContext, HorseBarnContext>();
+
+builder.Services.AddTransient<IsHorseNameUniqueServer>();
+
+builder.Services.AddTransient<IsHorseNameUnique>(cc =>
+{
+    return (name) => cc.GetRequiredService<IsHorseNameUniqueServer>().IsHorseNameUnique(name);
+});
 
 var app = builder.Build();
 

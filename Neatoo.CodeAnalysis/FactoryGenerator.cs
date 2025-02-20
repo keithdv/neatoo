@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Neatoo.CodeAnalysis
 {
@@ -24,18 +25,22 @@ namespace Neatoo.CodeAnalysis
 
         private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
         {
+            if(node is IfDirectiveTriviaSyntax ifDirectiveTriviaSyntax)
+            {
+                return false;
+            }
+
             // We are looking for methods with attributes
             return node is ClassDeclarationSyntax classDeclarationSyntax &&
                     !(classDeclarationSyntax.TypeParameterList?.Parameters.Any() ?? false || classDeclarationSyntax.Modifiers.Any(SyntaxKind.AbstractKeyword)) &&
-                   (classDeclarationSyntax.Members.OfType<MethodDeclarationSyntax>().Any(m => m.AttributeLists.Any())
-                   || classDeclarationSyntax.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Factory"));
+                      classDeclarationSyntax.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Factory");
         }
 
         private static (ClassDeclarationSyntax classDeclaration, SemanticModel semanticModel)? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
         {
             var classDeclaration = (ClassDeclarationSyntax)context.Node;
 
-            if(classDeclaration.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Factory"))
+            if (classDeclaration.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Factory"))
             {
                 return (classDeclaration, context.SemanticModel);
             }
@@ -64,7 +69,7 @@ namespace Neatoo.CodeAnalysis
         private static void Execute(SourceProductionContext context, ClassDeclarationSyntax classDeclarationSyntax, SemanticModel semanticModel)
         {
             var usingDirectives = new List<string>();
-
+            var messages = new List<string>();
             var methodNames = new List<string>();
 
             var delegates = new StringBuilder();
@@ -76,9 +81,11 @@ namespace Neatoo.CodeAnalysis
             var localMethods = new StringBuilder();
             var remoteMethods = new StringBuilder();
             var saveMethods = new StringBuilder();
+            var interfaceMethods = new StringBuilder();
+
             Dictionary<string, (string parameterIdentifiersText, string parameterDeclarationText, string saveMethodName, string saveUniqueMethodName,
                                     string? insertMethodName, string? updateMethodName, string? deleteMethodName)> saveMethodSets = new();
-
+            var isEdit = false;
 
 
             // Generate the source code for the found method
@@ -96,6 +103,7 @@ namespace Neatoo.CodeAnalysis
 
             while (classDeclarationSyntax != null)
             {
+
                 var compilationUnitSyntax = classDeclarationSyntax.SyntaxTree.GetCompilationUnitRoot();
                 foreach (var using_ in compilationUnitSyntax.Usings)
                 {
@@ -103,6 +111,13 @@ namespace Neatoo.CodeAnalysis
                     {
                         usingDirectives.Add(using_.ToString());
                     }
+                }
+
+                messages.Add(classDeclarationSyntax.BaseList?.ToString());
+
+                if (classDeclarationSyntax.BaseList?.Types.Any(t => t.Type.ToString() == "EditBase<T>" || t.Type.ToString() == $"EditBase<{classDeclarationSyntax.Identifier.Text.TrimEnd()}>") ?? false)
+                {
+                    isEdit = true;
                 }
 
                 foreach (var methodDeclaration in classDeclarationSyntax.Members.OfType<MethodDeclarationSyntax>())
@@ -132,12 +147,19 @@ namespace Neatoo.CodeAnalysis
                             var serviceAssignmentsText = new StringBuilder();
                             var parameterIdentifiersNoServices = new List<string>();
                             var parameterDeclarationsNoServices = new List<string>();
+                            var doRemoteCall = false;
+
+                            if(methodDeclaration.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Remote"))
+                            {
+                                doRemoteCall = true;
+                            }
 
                             foreach (var parameter in parameters)
                             {
                                 if (parameter.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Service"))
                                 {
                                     serviceAssignmentsText.AppendLine($"\t\t\tvar {parameter.Identifier} = ServiceProvider.GetService<{parameter.Type}>();");
+                                    doRemoteCall = true;
                                 }
                                 else
                                 {
@@ -152,21 +174,36 @@ namespace Neatoo.CodeAnalysis
                             var delegateName = $"{uniqueMethodName}Delegate";
 
                             // Consumer Delegates
-                            propertyDeclarations.AppendLine($"protected {delegateName} {uniqueMethodName}Property {{ get; }}");
-                            delegateAssignmentLocal.AppendLine($"{uniqueMethodName}Property = Local{uniqueMethodName};");
 
                             // Local method implementations
                             if (!isSaveMethod)
                             {
-                                delegates.AppendLine($"protected internal delegate Task<I{className}> {delegateName}({parameterDeclarationsNoServicesText});");
+                                interfaceMethods.AppendLine($"Task<I{className}> {methodName}({parameterDeclarationsNoServicesText});");
 
-                                publicMethods.AppendLine($"public Task<I{className}> {methodName}({parameterDeclarationsNoServicesText})");
-                                publicMethods.AppendLine("{");
-                                publicMethods.AppendLine($"return {uniqueMethodName}Property({parameterIdentifiersNoServicesText});");
-                                publicMethods.AppendLine("}");
 
-                                localMethods.AppendLine($"[Local<{delegateName}>]");
-                                localMethods.AppendLine($"protected async Task<I{className}> Local{uniqueMethodName}({parameterDeclarationsNoServicesText})");
+                                if (doRemoteCall)
+                                {
+                                    propertyDeclarations.AppendLine($"protected {delegateName} {uniqueMethodName}Property {{ get; }}");
+                                    delegateAssignmentLocal.AppendLine($"{uniqueMethodName}Property = Local{uniqueMethodName};");
+
+                                    delegates.AppendLine($"protected internal delegate Task<I{className}> {delegateName}({parameterDeclarationsNoServicesText});");
+                                    localMethods.AppendLine($"[Local<{delegateName}>]");
+
+                                    publicMethods.AppendLine($"public Task<I{className}> {methodName}({parameterDeclarationsNoServicesText})");
+                                    publicMethods.AppendLine("{");
+                                    publicMethods.AppendLine($"return {uniqueMethodName}Property({parameterIdentifiersNoServicesText});");
+                                    publicMethods.AppendLine("}");
+
+                                    localMethods.AppendLine($"protected async Task<I{className}> Local{uniqueMethodName}({parameterDeclarationsNoServicesText})");
+                                }
+                                else
+                                {
+                                    // Assume we can just call local if there are no services
+                                    // Don't need the delegate if there aren't any services
+                                    localMethods.AppendLine($"public async Task<I{className}> {methodName}({parameterDeclarationsNoServicesText})"); // Now a publicMethod...
+                                }
+
+
                                 localMethods.AppendLine("{");
                                 localMethods.AppendLine($"var target = ServiceProvider.GetRequiredService<{className}>();");
                                 localMethods.AppendLine($"{serviceAssignmentsText.ToString()}");
@@ -188,8 +225,6 @@ namespace Neatoo.CodeAnalysis
                             }
                             else
                             {
-                                delegates.AppendLine($"protected internal delegate Task {delegateName}(I{className} target, {parameterDeclarationsNoServicesText});");
-
                                 localMethods.AppendLine($"protected async Task Local{uniqueMethodName}(I{className} itarget, {parameterDeclarationsNoServicesText})");
                                 localMethods.AppendLine("{");
                                 localMethods.AppendLine($"var target = ({className})itarget ?? throw new Exception(\"{className} must implement I{className}\");");
@@ -209,7 +244,7 @@ namespace Neatoo.CodeAnalysis
                                 localMethods.AppendLine("");
                             }
 
-                            if (!isSaveMethod)
+                            if (!isSaveMethod && doRemoteCall)
                             {
                                 delegateAssignmentRemote.AppendLine($"{uniqueMethodName}Property = Remote{uniqueMethodName};");
 
@@ -220,6 +255,7 @@ namespace Neatoo.CodeAnalysis
                                 remoteMethods.AppendLine("}");
                                 remoteMethods.AppendLine("");
                             }
+
 
                             if (isSaveMethod)
                             {
@@ -257,17 +293,30 @@ namespace Neatoo.CodeAnalysis
                 }
 
 
-                classDeclarationSyntax = GetBaseClassDeclarationSyntax(semanticModel, classDeclarationSyntax);
+                classDeclarationSyntax = GetBaseClassDeclarationSyntax(semanticModel, classDeclarationSyntax, messages);
             }
 
             foreach (var saveMethodSet in saveMethodSets.Select(s => s.Value))
             {
+                var isDefault = string.IsNullOrWhiteSpace(saveMethodSet.parameterIdentifiersText);
+
                 delegates.AppendLine($"protected internal delegate Task<I{className}?> {saveMethodSet.saveUniqueMethodName}Delegate(I{className} target, {saveMethodSet.parameterDeclarationText});");
                 propertyDeclarations.AppendLine($"protected {saveMethodSet.saveUniqueMethodName}Delegate {saveMethodSet.saveUniqueMethodName}Property {{ get; set; }}");
                 delegateAssignmentLocal.AppendLine($"{saveMethodSet.saveUniqueMethodName}Property = Local{saveMethodSet.saveUniqueMethodName};");
                 delegateAssignmentRemote.AppendLine($"{saveMethodSet.saveUniqueMethodName}Property = Remote{saveMethodSet.saveUniqueMethodName};");
 
-                publicMethods.AppendLine($"public Task<I{className}> {saveMethodSet.saveMethodName}(I{className} target, {saveMethodSet.parameterDeclarationText})");
+
+                interfaceMethods.AppendLine($"Task<I{className}?> {saveMethodSet.saveMethodName}(I{className} target, {saveMethodSet.parameterDeclarationText});");
+
+                if (isDefault)
+                {
+                    publicMethods.AppendLine($"public override async Task<IEditBase?> Save({className} target)");
+                    publicMethods.AppendLine("{");
+                    publicMethods.AppendLine($"return await {saveMethodSet.saveUniqueMethodName}Property(target);");
+                    publicMethods.AppendLine("}");
+                }
+
+                publicMethods.AppendLine($"public Task<I{className}?> {saveMethodSet.saveMethodName}(I{className} target, {saveMethodSet.parameterDeclarationText})");
                 publicMethods.AppendLine("{");
                 publicMethods.AppendLine($"return {saveMethodSet.saveUniqueMethodName}Property(target, {saveMethodSet.parameterIdentifiersText});");
                 publicMethods.AppendLine("}");
@@ -293,7 +342,7 @@ protected async Task<I{className}?> Local{saveMethodSet.saveUniqueMethodName}(I{
         }}
         else
         {{
-            {(saveMethodSet.updateMethodName!= null ? $"await Local{saveMethodSet.updateMethodName}(target, {saveMethodSet.parameterIdentifiersText});" : $"throw new NotImplementedException(\"{className}Factory.Update()\");")}
+            {(saveMethodSet.updateMethodName != null ? $"await Local{saveMethodSet.updateMethodName}(target, {saveMethodSet.parameterIdentifiersText});" : $"throw new NotImplementedException(\"{className}Factory.Update()\");")}
         }}
         return target;
 ");
@@ -304,15 +353,38 @@ protected async Task<I{className}?> Local{saveMethodSet.saveUniqueMethodName}(I{
                 saveMethods.AppendLine($@"return (I{className}?) await DoRemoteRequest(typeof({saveMethodSet.saveUniqueMethodName}Delegate), [target, {saveMethodSet.parameterIdentifiersText}]);");
                 saveMethods.AppendLine("}");
             }
+
+            //if(saveMethodSets.Any() && !saveMethodSets.Any(saveMethodSet => string.IsNullOrWhiteSpace(saveMethodSet.Value.parameterIdentifiersText)))
+            //{
+            //    publicMethods.AppendLine($"Task<IEditBase?> ISave({className} target)");
+            //    publicMethods.AppendLine("{");
+            //    publicMethods.AppendLine($"throw new NotImplementedException(\"No default parameterless save available\");");
+            //    publicMethods.AppendLine("}");
+            //}
+
+            
+
+
+            var editText = isEdit ? "Edit" : "";
+
             var source = $@"
 using Microsoft.Extensions.DependencyInjection;
 using Neatoo.Portal.Internal;
 {string.Join("\n", usingDirectives)}
-
+/*
+Debugging Messages:
+{string.Join("\n", messages)}
+*/
 namespace {namespaceName}
 {{
 
-    public class {className}Factory : FactoryBase
+    public interface I{className}Factory
+    {{
+{interfaceMethods.ToString()}
+    }}
+    
+    [Factory<I{className}>]
+    internal class {className}Factory : Factory{editText}Base<{className}>, I{className}Factory
     {{
     
         private readonly IServiceProvider ServiceProvider;  
@@ -347,11 +419,14 @@ namespace {namespaceName}
             context.AddSource($"{namespaceName}.{className}Factory.g.cs", source);
         }
 
-        private static ClassDeclarationSyntax? GetBaseClassDeclarationSyntax(SemanticModel semanticModel, ClassDeclarationSyntax classDeclaration)
+        private static ClassDeclarationSyntax? GetBaseClassDeclarationSyntax(SemanticModel semanticModel, ClassDeclarationSyntax classDeclaration, List<string> messages)
         {
             try
             {
-                var classSymbol = semanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
+
+                var correctSemanticModel = semanticModel.Compilation.GetSemanticModel(classDeclaration.SyntaxTree);
+
+                var classSymbol = correctSemanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
 
                 if (classSymbol?.BaseType == null)
                 {
@@ -367,9 +442,13 @@ namespace {namespaceName}
                 }
 
                 var baseTypeSyntaxNode = baseTypeSyntaxReference.GetSyntax() as ClassDeclarationSyntax;
+
+
                 return baseTypeSyntaxNode;
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
+                messages.Add(ex.Message);
                 return null;
             }
         }

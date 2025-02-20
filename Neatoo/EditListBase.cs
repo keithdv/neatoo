@@ -25,7 +25,7 @@ public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject
     where I : IEditBase
 {
 
-    public EditListBase(IEditListBaseServices<T, I> services) : base(services)
+    public EditListBase() : base()
     {
 
     }

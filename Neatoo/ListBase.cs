@@ -38,7 +38,7 @@ public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, I
     where I : IBase
 {
 
-    public ListBase(IListBaseServices<T, I> services)
+    public ListBase()
     {
     }
 

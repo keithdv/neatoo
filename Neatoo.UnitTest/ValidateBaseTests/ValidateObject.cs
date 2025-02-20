@@ -14,6 +14,7 @@ public interface IValidateObject : IPersonBase
     void TestMarkInvalid(string message);
 }
 
+[Factory]
 internal class ValidateObject : PersonValidateBase<ValidateObject>, IValidateObject
 {
     public IShortNameRule<ValidateObject> ShortNameRule { get; }
@@ -64,8 +65,7 @@ public interface IValidateObjectList : IValidateListBase<IValidateObject>
 public class ValidateObjectList : ValidateListBase<ValidateObjectList, IValidateObject>, IValidateObjectList
 {
 
-    public ValidateObjectList(IValidateListBaseServices<ValidateObjectList, IValidateObject> services
-        ) : base(services)
+    public ValidateObjectList() : base()
     {
     }
 

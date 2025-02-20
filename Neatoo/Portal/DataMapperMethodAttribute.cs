@@ -2,11 +2,26 @@
 
 namespace Neatoo.Portal;
 
-
-[System.AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+[System.AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
 public class FactoryAttribute : Attribute
 {
     public FactoryAttribute()
+    {
+    }
+}
+
+[System.AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+public class FactoryAttribute<T> : Attribute
+{
+    public FactoryAttribute()
+    {
+    }
+}
+
+[System.AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
+public class RemoteAttribute : Attribute
+{
+    public RemoteAttribute()
     {
     }
 }
@@ -61,6 +76,14 @@ public sealed class UpdateAttribute : DataMapperMethodAttribute
 public sealed class DeleteAttribute : DataMapperMethodAttribute
 {
     public DeleteAttribute() : base(DataMapperMethod.Delete)
+    {
+    }
+}
+
+public sealed class  ExecuteAttribute<D> : DataMapperMethodAttribute
+    where D : Delegate
+{
+    public ExecuteAttribute() : base(DataMapperMethod.Execute)
     {
     }
 }

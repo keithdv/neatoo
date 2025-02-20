@@ -36,7 +36,7 @@ public static class AddNeatooServicesExtension
     public static void AddNeatooServices(this IServiceCollection services, NeatooHost portalServer, params Assembly[] assemblies)
     {
 
-        services.AddSingleton<NeatooConfiguration>(new NeatooConfiguration() {  NeatooHost = portalServer });
+        services.AddSingleton<NeatooConfiguration>(new NeatooConfiguration() { NeatooHost = portalServer });
 
         services.AddTransient<GetImplementationType>(s =>
         {
@@ -71,21 +71,21 @@ public static class AddNeatooServicesExtension
             {
                 var delegateType = INeatooJsonSerializer.FindType(portalRequest.DelegateAssemblyType) ?? throw new Exception($"Type {portalRequest.DelegateAssemblyType} not found");
 
-                    Delegate method = (Delegate)s.GetRequiredService(delegateType);
+                Delegate method = (Delegate)s.GetRequiredService(delegateType);
 
-                    var request = seralizer.DeserializeRemoteRequest(portalRequest);
+                var request = seralizer.DeserializeRemoteRequest(portalRequest);
 
-                    object? result = method.DynamicInvoke(request.parameters);
+                object? result = method.DynamicInvoke(request.parameters);
 
-                    if(result is Task task)
-                    {
-                        await task;
-                        result = task.GetType().GetProperty("Result").GetValue(task);
-                    }
+                if (result is Task task)
+                {
+                    await task;
+                    result = task.GetType().GetProperty("Result").GetValue(task);
+                }
 
-                    var portalResponse = new RemoteResponseDto(seralizer.Serialize(result), result.GetType().FullName);
+                var portalResponse = new RemoteResponseDto(seralizer.Serialize(result), result.GetType().FullName);
 
-                    return portalResponse;
+                return portalResponse;
             };
         });
 
@@ -169,13 +169,8 @@ public static class AddNeatooServicesExtension
 
         // Simple wrapper - Always InstancePerDependency
         services.AddTransient(typeof(IBaseServices<>), typeof(BaseServices<>));
-        services.AddTransient(typeof(IListBaseServices<,>), typeof(ListBaseServices<,>));
         services.AddTransient(typeof(IValidateBaseServices<>), typeof(ValidateBaseServices<>));
-        services.AddTransient(typeof(IValidateListBaseServices<,>), typeof(ValidateListBaseServices<,>));
         services.AddTransient(typeof(IEditBaseServices<>), typeof(EditBaseServices<>));
-        services.AddTransient(typeof(IEditListBaseServices<,>), typeof(EditListBaseServices<,>));
-
-        services.AddTransient(typeof(DoSave<>));
 
         services.AddTransient<SendRemoteRequestToServer>(cc =>
         {
@@ -197,7 +192,7 @@ public static class AddNeatooServicesExtension
             };
         });
 
-        
+
         foreach (var assembly in assemblies)
         {
             services.AutoRegisterAssemblyTypes(assembly, portalServer);
@@ -216,6 +211,9 @@ public static class AddNeatooServicesExtension
 
         var types = assembly.GetTypes().Where(t => t.IsClass && !t.IsAbstract).ToList();
         var interfaces = assembly.GetTypes().Where(t => t.IsInterface).ToDictionary(x => x.FullName);
+        var factories = types.Where(t => t.GetCustomAttribute(typeof(FactoryAttribute<>)) != null)
+                            .Select(t => new { Type = t.GetCustomAttribute(typeof(FactoryAttribute<>))!.GetType().GetGenericArguments().Single(), FactoryType = t })
+                            .ToDictionary(x => x.Type);
 
         var remoteMethodCallMethodInfo = typeof(RemoteMethod).GetMethod(nameof(RemoteMethod.DoRemoteRequest))!;
 
@@ -230,19 +228,6 @@ public static class AddNeatooServicesExtension
                 services.AddTransient(i, t);
                 services.AddTransient(t);
 
-                if(typeof(IEditBase).IsAssignableFrom(i))
-                {
-                    services.AddTransient(typeof(Save<>).MakeGenericType(i), cc =>
-                    {
-                        var saveClass = cc.GetRequiredService(typeof(DoSave<>).MakeGenericType(t));
-                        return Delegate.CreateDelegate(typeof(Save<>).MakeGenericType(i), saveClass, "Save");
-                    });
-                    services.AddTransient(typeof(Save<>).MakeGenericType(t), cc =>
-                    {
-                        var saveClass = cc.GetRequiredService(typeof(DoSave<>).MakeGenericType(t));
-                        return Delegate.CreateDelegate(typeof(Save<>).MakeGenericType(t), saveClass, "Save");
-                    });
-                }
 
                 // I forget why this didn't work...
 
@@ -254,48 +239,59 @@ public static class AddNeatooServicesExtension
                 //{
                 //    reg.SingleInstance();
                 //}
-            }
-        }
 
-        if (portalServer == NeatooHost.Local)
-        {
-            var delegateTypes = assembly.GetTypes()
-                .Where(t => t.BaseType == typeof(MulticastDelegate))
-                .ToList();
-
-            var localMethods = assembly.GetTypes()
-                    .Where(t => t.IsClass && !t.IsAbstract && !t.IsGenericType)
-                    .SelectMany(t => t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-                    .Where(m => m.GetCustomAttributes(typeof(LocalAttribute<>)).Any())
-                    .ToList();
-
-            foreach (var localMethod in localMethods)
-            {
-                var delegateType = localMethod.GetCustomAttribute(typeof(LocalAttribute<>))!.GetType().GetGenericArguments()[0];
-
-                services.AddScoped(delegateType, cc =>
+                if (factories.TryGetValue(i, out var factoryType))
                 {
-                    var factory = cc.GetRequiredService(localMethod.DeclaringType);
-                    return Delegate.CreateDelegate(delegateType, factory, localMethod.Name);
-                });
+                    services.AddScoped(factoryType.FactoryType);
 
-                services.AddScoped(localMethod.DeclaringType);
+                    services.AddScoped(typeof(IFactoryBase<>).MakeGenericType(t), cc =>
+                    {
+                        var factory = cc.GetRequiredService(factoryType.FactoryType);
+                        return factory;
+                    });
+
+                    services.AddScoped(typeof(IFactoryBase<>).MakeGenericType(i), cc =>
+                    {
+                        var factory = cc.GetRequiredService(factoryType.FactoryType);
+                        return factory;
+                    });
+
+                    if (typeof(IEditBase).IsAssignableFrom(factoryType.Type))
+                    {
+                        services.AddScoped(typeof(IFactoryEditBase<>).MakeGenericType(t), cc =>
+                        {
+                            var factory = cc.GetRequiredService(factoryType.FactoryType);
+                            return factory;
+                        });
+                        services.AddScoped(typeof(IFactoryEditBase<>).MakeGenericType(i), cc =>
+                        {
+                            var factory = cc.GetRequiredService(factoryType.FactoryType);
+                            return factory;
+                        });
+                    }
+
+                    if (portalServer == NeatooHost.Local)
+                    {
+                        var localMethods = factoryType.FactoryType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                                .Where(m => m.GetCustomAttributes(typeof(LocalAttribute<>)).Any())
+                                .ToList();
+
+                        foreach (var localMethod in localMethods)
+                        {
+                            var delegateType = localMethod.GetCustomAttribute(typeof(LocalAttribute<>))!.GetType().GetGenericArguments()[0];
+
+                            services.AddScoped(delegateType, cc =>
+                            {
+                                var factory = cc.GetRequiredService(localMethod.DeclaringType);
+                                return Delegate.CreateDelegate(delegateType, factory, localMethod.Name);
+                            });
+                        }
+                    }
+                }
             }
         }
 
-        if (portalServer == NeatooHost.Remote)
-        {
-            var factoryTypes = assembly.GetTypes()
-                .Where(t => t.BaseType == typeof(MulticastDelegate) && t.DeclaringType != null)
-                .Select(t => t.DeclaringType!)
-                .Distinct()
-                .ToList();
 
-            foreach (var factoryType in factoryTypes)
-            {
-                services.AddScoped(factoryType);
-            }
-        }
     }
 
     public static IServiceCollection AddTransientSelf<I, T>(this IServiceCollection services) where T : class, I where I : class

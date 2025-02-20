@@ -10,15 +10,19 @@ namespace Neatoo.CodeAnalysis.Test;
 
 public static class TestHelper
 {
-    public static Task Verify(string source)
+    public static Task Verify(string source, string? source2 = null)
     {
         // Parse the provided string into a C# syntax tree
-        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
+        var syntaxTrees = new List<SyntaxTree>() { CSharpSyntaxTree.ParseText(source) };
+        if (source2 != null)
+        {
+            syntaxTrees.Add(CSharpSyntaxTree.ParseText(source2));
+        }
 
-        // Create a Roslyn compilation for the syntax tree.
-        CSharpCompilation compilation = CSharpCompilation.Create(
+            // Create a Roslyn compilation for the syntax tree.
+            CSharpCompilation compilation = CSharpCompilation.Create(
             assemblyName: "Tests",
-            syntaxTrees: new[] { syntaxTree });
+            syntaxTrees: syntaxTrees.ToArray());
 
 
         // Create an instance of our EnumGenerator incremental source generator

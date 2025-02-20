@@ -8,7 +8,6 @@ namespace HorseBarn.Server.Controllers;
 [Route("[controller]")]
 public class PortalController : ControllerBase
 {
-
     private readonly ILogger<PortalController> _logger;
     private readonly ServerHandlePortalRequest handlePortalRequestDelegate;
 
@@ -19,7 +18,7 @@ public class PortalController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<RemoteResponse> Post(RemoteRequest portalRequest)
+    public async Task<RemoteResponseDto> Post(RemoteRequestDto portalRequest)
     {
         return await handlePortalRequestDelegate(portalRequest);
     }

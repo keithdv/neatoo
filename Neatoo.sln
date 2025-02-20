@@ -41,6 +41,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neatoo.CodeAnalysis", "Neat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neatoo.CodeAnalysis.Test", "Neatoo.CodeAnalysis.Test\Neatoo.CodeAnalysis.Test.csproj", "{6100A6A1-D24C-4DD8-982A-FF3AFFFFC74E}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "HorseBarn.Shared", "HorseBarn.Shared\HorseBarn.Shared.shproj", "{FBD72F31-7672-4E0D-B3CC-F6E7C93E7A73}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -123,8 +125,14 @@ Global
 		{79F3E1AB-BCCA-4CC7-A75A-38FB8E0CEDBE} = {7558B8BE-EDFA-43F9-B120-533073E4F01C}
 		{195209DE-B0E8-440B-B055-B55AA8C80C95} = {7558B8BE-EDFA-43F9-B120-533073E4F01C}
 		{4A5F952A-C4E1-49F9-96C6-CA38265E0A08} = {7558B8BE-EDFA-43F9-B120-533073E4F01C}
+		{FBD72F31-7672-4E0D-B3CC-F6E7C93E7A73} = {7558B8BE-EDFA-43F9-B120-533073E4F01C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {22595137-BA59-4B40-97E2-4BFF42A960E8}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		HorseBarn.Shared\HorseBarn.Shared.projitems*{b86a4b5c-0f54-4966-b802-348f9a30ff50}*SharedItemsImports = 5
+		HorseBarn.Shared\HorseBarn.Shared.projitems*{e8a864bc-fa86-48b0-a4c2-c968c684c431}*SharedItemsImports = 5
+		HorseBarn.Shared\HorseBarn.Shared.projitems*{fbd72f31-7672-4e0d-b3cc-f6e7c93e7a73}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal

@@ -11,20 +11,27 @@ using System.Linq.Expressions;
 using System.Net.Sockets;
 using System.Reflection.Metadata;
 using Moq.EntityFrameworkCore;
+using Neatoo.Portal;
+using Neatoo.Portal.Internal;
 
 namespace HorseBarn.lib.UnitTests
 {
-
-    internal class HorseSubject : Horse<HorseSubject>
+    internal interface IHorseSubject : IHorse
     {
-        public HorseSubject(INeatooPortal<HorseSubject> readWritePortal) : base(new EditBaseServices<HorseSubject>(readWritePortal))
+    }
+
+
+    [Factory]
+    internal class HorseSubject : Horse<HorseSubject>, IHorseSubject
+    {
+        public HorseSubject(IFactoryEditBase<HorseSubject> readWritePortal) : base(new EditBaseServices<HorseSubject>(readWritePortal))
         {
         }
     }
 
     public class HorseTests
     {
-        Mock<INeatooPortal<HorseSubject>> _mockPortal = new Mock<INeatooPortal<HorseSubject>>();
+        Mock<IFactoryEditBase<HorseSubject>> _mockPortal = new Mock<IFactoryEditBase<HorseSubject>>();
 
         private readonly Mock<IRuleManager<HorseSubject>> _mockRuleManager;
         private readonly HorseSubject _horse;

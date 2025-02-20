@@ -11,20 +11,20 @@ namespace HorseBarn.WPF.ViewModels;
 public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
 {
     private readonly IWindowManager windowManager;
-    private readonly HorseBarnFactory horseBarnFactory;
+    private readonly IHorseBarnFactory horseBarnFactory;
     private readonly IEventAggregator eventAggregator;
-    private readonly CreateHorseViewModel createHorseViewModel;
+    private readonly CreateHorseViewModel.Factory createHorseViewModel;
     private readonly CartViewModel.Factory createCartViewModel;
     private readonly HorseViewModel.Factory horseViewModelFactory;
-    private readonly HorseCriteriaFactory horseCriteriaPortal;
+    private readonly IHorseCriteriaFactory horseCriteriaPortal;
 
     public HorseBarnViewModel(IWindowManager windowManager,
-        HorseBarnFactory horseBarnFactory,
+        IHorseBarnFactory horseBarnFactory,
         IEventAggregator eventAggregator,
-        CreateHorseViewModel createHorseViewModel,
+        CreateHorseViewModel.Factory createHorseViewModel,
         CartViewModel.Factory createCartViewModel,
         HorseViewModel.Factory horseViewModelFactory,
-        HorseCriteriaFactory horseCriteriaPortal)
+        IHorseCriteriaFactory horseCriteriaPortal)
     {
         this.windowManager = windowManager;
         this.horseBarnFactory = horseBarnFactory;
@@ -51,28 +51,28 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
         {
             HorseBarn = await horseBarnFactory.Create();
 
-            var horseCriteria = await horseCriteriaPortal.Create();
+            var horseCriteria = await horseCriteriaPortal.Fetch();
             horseCriteria.Name = "Secretariat";
             horseCriteria.Breed = Breed.Clydesdale;
             horseCriteria.BirthDay = new DateOnly(2010, 1, 1);
 
             await HorseBarn.AddNewHorse(horseCriteria);
 
-            horseCriteria = await horseCriteriaPortal.Create();
+            horseCriteria = await horseCriteriaPortal.Fetch();
             horseCriteria.Name = "Seattle Slew";
             horseCriteria.Breed = Breed.Clydesdale;
             horseCriteria.BirthDay = new DateOnly(2000, 1, 1);
 
             await HorseBarn.AddNewHorse(horseCriteria);
 
-            horseCriteria = await horseCriteriaPortal.Create();
+            horseCriteria = await horseCriteriaPortal.Fetch();
             horseCriteria.Name = "Speedy";
             horseCriteria.Breed = Breed.Thoroughbred;
             horseCriteria.BirthDay = new DateOnly(2010, 1, 1);
 
             await HorseBarn.AddNewHorse(horseCriteria);
 
-            horseCriteria = await horseCriteriaPortal.Create();
+            horseCriteria = await horseCriteriaPortal.Fetch();
             horseCriteria.Name = "Flash";
             horseCriteria.Breed = Breed.Mustang;
             horseCriteria.BirthDay = new DateOnly(2015, 1, 1);
@@ -122,7 +122,7 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
 
     public Task AddHorse()
     {
-        return windowManager.ShowDialogAsync(createHorseViewModel);
+        return windowManager.ShowDialogAsync(createHorseViewModel(HorseBarn.Horses.Select(h => h.Name).ToList()));
     }
 
     public async Task HandleAsync(IHorseCriteria message, CancellationToken cancellationToken)

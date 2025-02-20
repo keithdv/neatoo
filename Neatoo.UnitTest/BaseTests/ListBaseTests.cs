@@ -17,7 +17,7 @@ public class ListBaseTests
     [TestInitialize]
     public void TestInitialize()
     {
-        list = new BaseObjectList(new ListBaseServices<BaseObjectList, IBaseObject>());
+        list = new BaseObjectList();
     }
 
 }

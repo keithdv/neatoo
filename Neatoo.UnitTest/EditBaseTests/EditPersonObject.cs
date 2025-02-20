@@ -1,4 +1,5 @@
-﻿using Neatoo.UnitTest.PersonObjects;
+﻿using Neatoo.Portal;
+using Neatoo.UnitTest.PersonObjects;
 using System.Collections.Generic;
 
 namespace Neatoo.UnitTest.EditBaseTests;
@@ -23,6 +24,7 @@ public interface IEditPerson : IPersonEdit
 
 }
 
+[Factory]
 public class EditPerson : PersonEditBase<EditPerson>, IEditPerson
 {
     public EditPerson(IEditBaseServices<EditPerson> services,
