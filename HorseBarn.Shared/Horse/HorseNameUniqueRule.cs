@@ -23,7 +23,7 @@ namespace HorseBarn.lib.Horse
 
         public IsHorseNameUnique IsHorseNameUnique { get; }
 
-        public override async Task<PropertyErrors> Execute(IHorseCriteria t, CancellationToken token)
+        public override async Task<PropertyErrors> Execute(IHorseCriteria t, CancellationToken? token = null)
         {
             if (!string.IsNullOrWhiteSpace(t.Name))
             {

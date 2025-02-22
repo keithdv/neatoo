@@ -10,6 +10,14 @@ public class FactoryAttribute : Attribute
     }
 }
 
+[System.AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
+public class SuppressFactoryAttribute : Attribute
+{
+    public SuppressFactoryAttribute()
+    {
+    }
+}
+
 [System.AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
 public class FactoryAttribute<T> : Attribute
 {

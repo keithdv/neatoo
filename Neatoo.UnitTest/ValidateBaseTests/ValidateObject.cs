@@ -14,15 +14,14 @@ public interface IValidateObject : IPersonBase
     void TestMarkInvalid(string message);
 }
 
-[Factory]
 internal class ValidateObject : PersonValidateBase<ValidateObject>, IValidateObject
 {
-    public IShortNameRule<ValidateObject> ShortNameRule { get; }
-    public IFullNameRule<ValidateObject> FullNameRule { get; }
+    public IShortNameRule ShortNameRule { get; }
+    public IFullNameRule FullNameRule { get; }
 
     public ValidateObject(IValidateBaseServices<ValidateObject> services,
-        IShortNameRule<ValidateObject> shortNameRule,
-        IFullNameRule<ValidateObject> fullNameRule,
+        IShortNameRule shortNameRule,
+        IFullNameRule fullNameRule,
         IRecursiveRule recursiveRule,
         IRuleThrowsException ruleThrowsException
         ) : base(services)

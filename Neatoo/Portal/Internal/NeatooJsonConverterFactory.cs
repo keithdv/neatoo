@@ -14,10 +14,12 @@ namespace Neatoo.Portal.Internal;
 public class NeatooJsonConverterFactory : JsonConverterFactory
 {
     private IServiceProvider scope;
+    private readonly ILocalAssemblies localAssemblies;
 
-    public NeatooJsonConverterFactory(IServiceProvider scope)
+    public NeatooJsonConverterFactory(IServiceProvider scope, ILocalAssemblies localAssemblies)
     {
         this.scope = scope;
+        this.localAssemblies = localAssemblies;
     }
 
     public override bool CanConvert(Type typeToConvert)
@@ -30,7 +32,11 @@ public class NeatooJsonConverterFactory : JsonConverterFactory
         else if (typeToConvert.IsAssignableTo(typeof(IListBase)))
         {
             return true;
+        } else if (typeToConvert.IsInterface && !typeToConvert.IsGenericType && localAssemblies.HasType(typeToConvert))
+        {
+            return true;
         }
+
         return false;
     }
 
@@ -43,8 +49,11 @@ public class NeatooJsonConverterFactory : JsonConverterFactory
         else if (typeToConvert.IsAssignableTo(typeof(IListBase)))
         {
             return (JsonConverter)scope.GetRequiredService(typeof(NeatooListBaseJsonTypeConverter<>).MakeGenericType(typeToConvert));
+        }else if (typeToConvert.IsInterface)
+        {
+            return (JsonConverter)scope.GetRequiredService(typeof(NeatooInterfaceJsonTypeConverter<>).MakeGenericType(typeToConvert));
         }
-
+        
         return null;
     }
 }

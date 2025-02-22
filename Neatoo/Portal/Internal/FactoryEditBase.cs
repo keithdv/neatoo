@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace Neatoo.Portal.Internal
 {
-    public interface IFactoryEditBase<in T> : IFactoryBase<T>
+    public interface IFactoryEditBase<in T>
     {
         Task<IEditBase?> Save(T target);
     }
 
-    public abstract class FactoryEditBase<T> : FactoryBase<T>, IFactoryEditBase<T>
+    public abstract class FactoryEditBase<T> : FactoryBase, IFactoryEditBase<T>
         where T : IEditBase
     {
 

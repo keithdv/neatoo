@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Neatoo.Portal.Internal;
-using Neatoo.Core;
+using Neatoo;
 using Neatoo.Portal;
+using Neatoo.Core;
 using Neatoo.UnitTest.PersonObjects;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,15 +19,14 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     public interface IValidateAsyncObjectFactory
     {
         Task<IValidateAsyncObject> Fetch(PersonDto person);
+        delegate Task<IValidateAsyncObject> FetchDelegate(PersonDto person);
     }
 
-    [Factory<IValidateAsyncObject>]
-    internal class ValidateAsyncObjectFactory : FactoryBase<ValidateAsyncObject>, IValidateAsyncObjectFactory
+    internal class ValidateAsyncObjectFactory : FactoryBase, IValidateAsyncObjectFactory
     {
         private readonly IServiceProvider ServiceProvider;
-        private readonly DoRemoteRequest DoRemoteRequest;
-        protected internal delegate Task<IValidateAsyncObject> FetchDelegate(PersonDto person);
-        protected FetchDelegate FetchProperty { get; }
+        private readonly IDoRemoteRequest DoRemoteRequest;
+        public IValidateAsyncObjectFactory.FetchDelegate FetchProperty { get; }
 
         public ValidateAsyncObjectFactory(IServiceProvider serviceProvider)
         {
@@ -34,31 +34,42 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             FetchProperty = LocalFetch;
         }
 
-        public ValidateAsyncObjectFactory(IServiceProvider serviceProvider, DoRemoteRequest remoteMethodDelegate)
+        public ValidateAsyncObjectFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
             FetchProperty = RemoteFetch;
         }
 
-        public Task<IValidateAsyncObject> Fetch(PersonDto person)
+        public virtual Task<IValidateAsyncObject> Fetch(PersonDto person)
         {
             return FetchProperty(person);
         }
 
-        [Local<FetchDelegate>]
-        protected async Task<IValidateAsyncObject> LocalFetch(PersonDto person)
+        public Task<IValidateAsyncObject> LocalFetch(PersonDto person)
         {
             var target = ServiceProvider.GetRequiredService<ValidateAsyncObject>();
             var portal = ServiceProvider.GetService<ValidateAsyncObjectFactory>();
             var personTable = ServiceProvider.GetService<IReadOnlyList<PersonDto>>();
-            await DoMapperMethodCall(target, DataMapperMethod.Fetch, () => target.Fetch(person, portal, personTable));
-            return target;
+            return DoMapperMethodCallAsync<IValidateAsyncObject>(target, DataMapperMethod.Fetch, () => target.Fetch(person, portal, personTable));
         }
 
-        protected async Task<IValidateAsyncObject?> RemoteFetch(PersonDto person)
+        public virtual async Task<IValidateAsyncObject?> RemoteFetch(PersonDto person)
         {
-            return (IValidateAsyncObject? )await DoRemoteRequest(typeof(FetchDelegate), [person]);
+            return await DoRemoteRequest.ForDelegate<ValidateAsyncObject?>(typeof(IValidateAsyncObjectFactory.FetchDelegate), [person]);
+        }
+
+        public static void FactoryServiceRegistrar(IServiceCollection services)
+        {
+            services.AddTransient<ValidateAsyncObject>();
+            services.AddTransient<IValidateAsyncObject, ValidateAsyncObject>();
+            services.AddScoped<ValidateAsyncObjectFactory>();
+            services.AddScoped<IValidateAsyncObjectFactory, ValidateAsyncObjectFactory>();
+            services.AddScoped<IValidateAsyncObjectFactory.FetchDelegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<ValidateAsyncObjectFactory>();
+                return (PersonDto person) => factory.LocalFetch(person);
+            });
         }
     }
 }

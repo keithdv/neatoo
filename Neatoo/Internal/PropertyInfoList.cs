@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
@@ -28,10 +29,10 @@ public class PropertyInfoList<T> : IPropertyInfoList<T>
 {
 
     protected CreatePropertyInfoWrapper CreatePropertyInfo { get; }
-    protected IDictionary<string, IPropertyInfo> PropertyInfos { get; } = new Dictionary<string, IPropertyInfo>();
-    private bool isRegistered = false;
+    protected static IDictionary<string, IPropertyInfo> PropertyInfos { get; } = new Dictionary<string, IPropertyInfo>();
+    private static bool isRegistered = false;
 
-    protected object lockRegisteredProperties = new object();
+    protected static object lockRegisteredProperties = new object();
 
     public PropertyInfoList(CreatePropertyInfoWrapper createPropertyInfoWrapper)
     {
@@ -54,6 +55,7 @@ public class PropertyInfoList<T> : IPropertyInfoList<T>
             }
 
             isRegistered = true;
+
 
             var type = typeof(T);
 

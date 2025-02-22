@@ -14,10 +14,12 @@ public class NeatooBaseJsonTypeConverter<T> : JsonConverter<T>
         where T : IBase
 {
     private readonly IServiceProvider scope;
+    private readonly ILocalAssemblies localAssemblies;
 
-    public NeatooBaseJsonTypeConverter(IServiceProvider scope)
+    public NeatooBaseJsonTypeConverter(IServiceProvider scope, ILocalAssemblies localAssemblies)
     {
         this.scope = scope;
+        this.localAssemblies = localAssemblies;
     }
 
     public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -75,7 +77,7 @@ public class NeatooBaseJsonTypeConverter<T> : JsonConverter<T>
             else if (propertyName == "$type")
             {
                 var typeString = reader.GetString();
-                var type = INeatooJsonSerializer.FindType(typeString);
+                var type = localAssemblies.FindType(typeString);
                 result = (T)scope.GetRequiredService(type);
 
                 if (result is IJsonOnDeserializing jsonOnDeserializing)

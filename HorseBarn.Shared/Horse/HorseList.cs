@@ -39,39 +39,39 @@ internal class HorseList : EditListBase<HorseList, IHorse>, IHorseList
 #if !CLIENT
 
     [Fetch]
-    public async Task Fetch(ICollection<Dal.Ef.Horse> horses,
-                                    [Service] LightHorseFactory lightHorsePortal,
-                                    [Service] HeavyHorseFactory heavyHorsePortal)
+    public void Fetch(ICollection<Dal.Ef.Horse> horses,
+                                    [Service] ILightHorseFactory lightHorsePortal,
+                                    [Service] IHeavyHorseFactory heavyHorsePortal)
     {
         foreach (var horse in horses)
         {
             if (IHorse.IsLightHorse((Breed)horse.Breed))
             {
-                var h = await lightHorsePortal.Fetch(horse);
+                var h = lightHorsePortal.Fetch(horse);
                 Add(h);
             }
             else
             {
-                var h = await heavyHorsePortal.Fetch(horse);
+                var h = heavyHorsePortal.Fetch(horse);
                 Add(h);
             }
         }
     }
 
     [Update]
-    public async Task Update(Dal.Ef.Cart cart,
-                                    [Service] LightHorseFactory lightHorsePortal,
-                                    [Service] HeavyHorseFactory heavyHorsePortal)
+    public void Update(Dal.Ef.Cart cart,
+                                    [Service] ILightHorseFactory lightHorsePortal,
+                                    [Service] IHeavyHorseFactory heavyHorsePortal)
     {
         foreach (var horse in this.Union(DeletedList))
         {
             if (horse is ILightHorse h)
             {
-                await lightHorsePortal.Save(h, cart);
+                lightHorsePortal.Save(h, cart);
             }
             else if (horse is IHeavyHorse hh)
             {
-                await heavyHorsePortal.Save(hh, cart);
+                heavyHorsePortal.Save(hh, cart);
             }
         }
 
@@ -79,26 +79,26 @@ internal class HorseList : EditListBase<HorseList, IHorse>, IHorseList
     }
 
     [Update]
-    public async Task Update(Dal.Ef.Pasture pasture,
-                                    [Service] LightHorseFactory lightHorsePortal,
-                                    [Service] HeavyHorseFactory heavyHorsePortal)
+    public void Update(Dal.Ef.Pasture pasture,
+                                    [Service] ILightHorseFactory lightHorsePortal,
+                                    [Service] IHeavyHorseFactory heavyHorsePortal)
     {
-        async Task SaveHorse(IHorse horse)
+        void SaveHorse(IHorse horse)
         {
             if (horse is ILightHorse h)
             {
-                await lightHorsePortal.Save(h, pasture);
+                lightHorsePortal.Save(h, pasture);
             }
             else if (horse is IHeavyHorse hh)
             {
-                await heavyHorsePortal.Save(hh, pasture);
+                heavyHorsePortal.Save(hh, pasture);
             }
         }
         foreach (var horse in DeletedList) // TODO: Room for improvement here
         {
             if (horse.IsDeleted)
             {
-                await SaveHorse(horse);
+                SaveHorse(horse);
             }
         }
 
@@ -106,7 +106,7 @@ internal class HorseList : EditListBase<HorseList, IHorse>, IHorseList
 
         foreach (var horse in this)
         {
-            await SaveHorse(horse);
+            SaveHorse(horse);
         }
     }
 

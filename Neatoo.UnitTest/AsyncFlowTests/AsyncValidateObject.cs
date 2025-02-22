@@ -1,4 +1,5 @@
 ﻿using Neatoo.Core;
+using Neatoo.Portal;
 using Neatoo.Rules;
 using System;
 using System.Threading;
@@ -13,7 +14,7 @@ internal class AsyncDelayRule : AsyncRuleBase<AsyncValidateObject>
         AddTriggerProperties(_ => _.AsyncDelayRuleValue);
     }
     public int RunCount { get; private set; } = 0;
-    public override async Task<PropertyErrors> Execute(AsyncValidateObject target, CancellationToken token)
+    public override async Task<PropertyErrors> Execute(AsyncValidateObject target, CancellationToken? token)
     {
         RunCount++;
         await Task.Delay(target.AsyncDelayRuleValue!.Value);
@@ -29,7 +30,7 @@ internal class AsyncDelayUpdateChildRule : AsyncRuleBase<AsyncValidateObject>
     }
     public int RunCount { get; private set; } = 0;
 
-    public override async Task<PropertyErrors> Execute(AsyncValidateObject target, CancellationToken token)
+    public override async Task<PropertyErrors> Execute(AsyncValidateObject target, CancellationToken? token)
     {
         RunCount++;
         await Task.Delay(2);
@@ -83,7 +84,7 @@ internal class AsyncRuleCanWait : AsyncRuleBase<AsyncValidateObject>
         AddTriggerProperties(_ => _.AsyncRulesCanWait);
     }
     public int RunCount { get; private set; } = 0;
-    public override async Task<PropertyErrors> Execute(AsyncValidateObject target, CancellationToken token)
+    public override async Task<PropertyErrors> Execute(AsyncValidateObject target, CancellationToken? token)
     {
         RunCount++;
         await Task.Delay(2);
@@ -102,7 +103,7 @@ internal class AsyncRuleCanWaitNested : AsyncRuleBase<AsyncValidateObject>
         AddTriggerProperties(_ => _.AsyncRulesCanWait);
     }
     public int RunCount { get; private set; } = 0;
-    public override async Task<PropertyErrors> Execute(AsyncValidateObject target, CancellationToken token)
+    public override async Task<PropertyErrors> Execute(AsyncValidateObject target, CancellationToken? token)
     {
         RunCount++;
         await Task.Delay(2);

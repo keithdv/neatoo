@@ -39,35 +39,33 @@ internal class Pasture : CustomEditBase<Pasture>, IPasture
 #if !CLIENT
 
     [Create]
-    public async Task Create([Service] HorseListFactory horseListPortal)
+    public void Create([Service] IHorseListFactory horseListPortal)
     {
-        HorseList = await horseListPortal.Create(); 
-        await RunAllRules();
+        HorseList = horseListPortal.Create(); 
     }
 
     [Fetch]
-    public async Task Fetch(Dal.Ef.Pasture pasture,[Service] HorseListFactory horseListPortal)
+    public void Fetch(Dal.Ef.Pasture pasture, [Service] IHorseListFactory horseListPortal)
     {
         this.Id = pasture.Id;
-
-        this.HorseList = await horseListPortal.Fetch(pasture.Horses);
+        this.HorseList = horseListPortal.Fetch(pasture.Horses);
     }
 
     [Insert]
-    public async Task Insert(Dal.Ef.HorseBarn horseBarn,[Service] HorseListFactory horseListPortal)
+    public void Insert(Dal.Ef.HorseBarn horseBarn, [Service] IHorseListFactory horseListPortal)
     {
         var pasture = new Dal.Ef.Pasture();
         pasture.PropertyChanged += HandleIdPropertyChanged;
         horseBarn.Pasture = pasture;
-        await horseListPortal.Save(HorseList, pasture);
+        horseListPortal.Save(HorseList, pasture);
     }
 
     [Update]
-    public async Task Update(Dal.Ef.HorseBarn horseBarn, [Service] HorseListFactory horseListPortal)
+    public void Update(Dal.Ef.HorseBarn horseBarn, [Service] IHorseListFactory horseListPortal)
     {
         var pasture = horseBarn.Pasture;
         Debug.Assert(pasture.Id == this.Id, "Unexpected Id");
-        await horseListPortal.Save(HorseList, pasture);
+        horseListPortal.Save(HorseList, pasture);
     }
 
 #endif

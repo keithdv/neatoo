@@ -3,41 +3,36 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace Neatoo.Rules;
-public interface ITriggerProperty<in T>
+
+public interface ITriggerProperty
 {
     string PropertyName { get; }
 
+
+    bool IsMatch(string propertyName);
+}
+
+public interface ITriggerProperty<T> : ITriggerProperty
+{
     object? GetValue(T target);
-
-    bool IsMatch(T target, string propertyName);
 }
 
-public interface ITriggerProperty<in T, P> : ITriggerProperty<T>
+public class TriggerProperty<T> : ITriggerProperty<T>
 {
-    P? Get(T target);
-}
-
-public class TriggerProperty<T, P> : ITriggerProperty<T>
-{
-    private readonly Expression<Func<T, P?>> expression;
+    private readonly Expression<Func<T, object?>> expression;
     private readonly string expressionPropertyName;
-    public TriggerProperty(Expression<Func<T, P?>> expression)
+    public TriggerProperty(Expression<Func<T, object?>> expression)
     {
         this.expression = expression;
         expressionPropertyName = RecurseMembers(expression.Body, new List<string>());
     }
 
-    public bool IsMatch(T t, string propertyName)
+    public bool IsMatch(string propertyName)
     {
         return string.Equals(expressionPropertyName, propertyName);
     }
 
     public object? GetValue(T target)
-    {
-        return Get(target);
-    }
-
-    public P? Get(T target)
     {
         return expression.Compile()(target);
     }
@@ -61,8 +56,8 @@ public class TriggerProperty<T, P> : ITriggerProperty<T>
         return string.Join('.', properties);
     }
 
-    public static TriggerProperty<T1, P1> FromExpression<T1, P1>(Expression<Func<T1, P1?>> expression)
+    public static TriggerProperty<T1> FromExpression<T1>(Expression<Func<T1, object?>> expression)
     {
-        return new TriggerProperty<T1, P1>(expression);
+        return new TriggerProperty<T1>(expression);
     }
 }

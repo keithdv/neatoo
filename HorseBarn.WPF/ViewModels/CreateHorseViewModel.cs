@@ -28,12 +28,12 @@ public class CreateHorseViewModel : Caliburn.Micro.Screen
 
     public List<Breed> Breeds => Enum.GetValues<Breed>().ToList();
 
-    protected override async Task OnActivateAsync(CancellationToken cancellationToken)
+    protected override Task OnActivateAsync(CancellationToken cancellationToken)
     {
-        HorseCriteria = await HorseCriteriaPortal.Fetch(HorseNames);
+        HorseCriteria = HorseCriteriaPortal.Fetch(HorseNames);
         HorseCriteria.Breed = Breed.Thoroughbred;
         NotifyOfPropertyChange(nameof(HorseCriteria));
-        await base.OnActivateAsync(cancellationToken);
+        return base.OnActivateAsync(cancellationToken);
     }
 
     public async Task create()

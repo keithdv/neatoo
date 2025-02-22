@@ -23,8 +23,8 @@ public interface IValidateMetaProperties : IBaseMetaProperties
     bool IsSelfValid { get; }
 
 
-    Task RunAllRules(CancellationToken token = new CancellationToken());
-    Task RunSelfRules(CancellationToken token = new CancellationToken());
+    Task RunAllRules(CancellationToken? token = null);
+    Task RunSelfRules(CancellationToken? token = null);
 
     void ClearAllErrors();
     void ClearSelfErrors();

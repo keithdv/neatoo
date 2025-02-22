@@ -16,7 +16,7 @@ public interface IValidatePropertyManager<out P> : IPropertyManager<P>
     // Valid without looking at Children that are IValidateBase
     bool IsSelfValid { get; }
     bool IsValid { get; }
-    Task RunAllRules(CancellationToken token);
+    Task RunAllRules(CancellationToken? token = null);
 
     IReadOnlyList<string> ErrorMessages { get; }
     void ClearAllErrors();
@@ -45,7 +45,7 @@ public class ValidatePropertyManager<P> : PropertyManager<P>, IValidatePropertyM
     public IReadOnlyList<string> ErrorMessages => PropertyBag.SelectMany(_ => _.Value.ErrorMessages).ToList().AsReadOnly();
 
 
-    public async Task RunAllRules(CancellationToken token)
+    public async Task RunAllRules(CancellationToken? token = null)
     {
         foreach (var p in PropertyBag.Values)
         {

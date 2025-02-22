@@ -13,7 +13,7 @@ public interface ICartList : IEditListBase<ICart>
 
 {
 
-    internal Task RemoveHorse(IHorse horse);
+    internal void RemoveHorse(IHorse horse);
 }
 
 [Factory]
@@ -24,11 +24,11 @@ internal class CartList : EditListBase<CartList, ICart>, ICartList
 
     }
 
-    public async Task RemoveHorse(IHorse horse)
+    public void RemoveHorse(IHorse horse)
     {
         foreach(var c in this)
         {
-            await c.RemoveHorse(horse);
+            c.RemoveHorse(horse);
         }
     }
 
@@ -40,33 +40,33 @@ internal class CartList : EditListBase<CartList, ICart>, ICartList
 #if !CLIENT
 
     [Fetch]
-    public async Task Fetch(ICollection<Dal.Ef.Cart> carts, [Service] RacingChariotFactory racingChariotPortal,[Service] WagonFactory wagonPortal)
+    public void Fetch(ICollection<Dal.Ef.Cart> carts, [Service] RacingChariotFactory racingChariotPortal,[Service] WagonFactory wagonPortal)
     {
         foreach (var cart in carts)
         {
             if (cart.CartType == (int)CartType.RacingChariot)
             {
-                Add(await racingChariotPortal.Fetch(cart));
+                Add(racingChariotPortal.Fetch(cart));
             }
             else if(cart.CartType == (int)CartType.Wagon)
             {
-                Add(await wagonPortal.Fetch(cart));
+                Add(wagonPortal.Fetch(cart));
             }
         }
     }
 
     [Update]
-    public async Task Update(Dal.Ef.HorseBarn horseBarn, [Service] RacingChariotFactory racingChariotPortal, [Service] WagonFactory wagonPortal)
+    public void Update(Dal.Ef.HorseBarn horseBarn, [Service] RacingChariotFactory racingChariotPortal, [Service] WagonFactory wagonPortal)
     {
-        async Task SaveCart(ICart cart)
+        void SaveCart(ICart cart)
         {
             if (cart is RacingChariot racingChariot)
             {
-                await racingChariotPortal.Save(racingChariot, horseBarn);
+                racingChariotPortal.Save(racingChariot, horseBarn);
             }
             else if (cart is Wagon wagon)
             {
-                await wagonPortal.Save(wagon, horseBarn);
+                wagonPortal.Save(wagon, horseBarn);
             }
         }
 
@@ -74,7 +74,7 @@ internal class CartList : EditListBase<CartList, ICart>, ICartList
         {
             if (cart.IsDeleted)
             {
-                await SaveCart(cart);
+                SaveCart(cart);
             }
         }
 
@@ -82,7 +82,7 @@ internal class CartList : EditListBase<CartList, ICart>, ICartList
 
         foreach (var cart in this)
         {
-            await SaveCart(cart);
+            SaveCart(cart);
         }
     }
 #endif

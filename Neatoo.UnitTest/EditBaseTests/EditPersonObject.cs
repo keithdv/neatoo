@@ -24,12 +24,11 @@ public interface IEditPerson : IPersonEdit
 
 }
 
-[Factory]
 public class EditPerson : PersonEditBase<EditPerson>, IEditPerson
 {
     public EditPerson(IEditBaseServices<EditPerson> services,
-        IShortNameRule<EditPerson> shortNameRule,
-        IFullNameRule<EditPerson> fullNameRule) : base(services)
+        IShortNameRule shortNameRule,
+        IFullNameRule fullNameRule) : base(services)
     {
         RuleManager.AddRules(shortNameRule, fullNameRule);
         InitiallyDefined = new List<int>() { 1, 2, 3 };

@@ -16,11 +16,11 @@ public interface IHorseBarn : IEditBase
     IPasture Pasture { get; }
     IReadOnlyListBase<ICart> Carts { get; }
     IEnumerable<IHorse> Horses { get; }
-    Task<IHorse> AddNewHorse(IHorseCriteria horseCriteria);
+    IHorse AddNewHorse(IHorseCriteria horseCriteria);
     Task<IRacingChariot> AddRacingChariot();
     Task<IWagon> AddWagon();
-    Task MoveHorseToCart(IHorse horse, ICart cart);
-    Task MoveHorseToPasture(IHorse horse);
+    void MoveHorseToCart(IHorse horse, ICart cart);
+    void MoveHorseToPasture(IHorse horse);
 }
 
 [Factory]
@@ -63,17 +63,17 @@ internal class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
         return newCart;
     }
 
-    public async Task<IHorse> AddNewHorse(IHorseCriteria horseCriteria)
+    public IHorse AddNewHorse(IHorseCriteria horseCriteria)
     {
         IHorse horse;
 
         if (IHorse.IsLightHorse(horseCriteria.Breed))
         {
-            horse = await lightHorsePortal.Create(horseCriteria);
+            horse = lightHorsePortal.Create(horseCriteria);
         }
         else if (IHorse.IsHeavyHorse(horseCriteria.Breed))
         {
-            horse = await heavyHorsePortal.Create(horseCriteria);
+            horse = heavyHorsePortal.Create(horseCriteria);
         }
         else
         {
@@ -84,17 +84,16 @@ internal class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
         return horse;
     }
 
-    public async Task MoveHorseToCart(IHorse horse, ICart cart)
+    public void MoveHorseToCart(IHorse horse, ICart cart)
     {
         Pasture.RemoveHorse(horse);
-        await Carts.RemoveHorse(horse);
-
-        await cart.AddHorse(horse);
+        Carts.RemoveHorse(horse);
+        cart.AddHorse(horse);
     }
 
-    public async Task MoveHorseToPasture(IHorse horse)
+    public void MoveHorseToPasture(IHorse horse)
     {
-        await Carts.RemoveHorse(horse);
+        Carts.RemoveHorse(horse);
 
         if (!Pasture.HorseList.Contains(horse))
         {
@@ -106,10 +105,10 @@ internal class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
 #if !CLIENT
 
     [Create]
-    public async Task Create([Service] IPastureFactory pasturePortal,[Service] ICartListFactory cartListPortal)
+    public void Create([Service] IPastureFactory pasturePortal, [Service] ICartListFactory cartListPortal)
     {
-        this.Pasture = await pasturePortal.Create();
-        this.Carts = await cartListPortal.Create();
+        this.Pasture = pasturePortal.Create();
+        this.Carts = cartListPortal.Create();
     }
 
     [Fetch]
@@ -122,8 +121,8 @@ internal class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
         if (horseBarn != null)
         {
             this.Id = horseBarn.Id;
-            this.Pasture = await pasturePortal.Fetch(horseBarn.Pasture);
-            this.Carts = await cartPortal.Fetch(horseBarn.Carts);
+            this.Pasture = pasturePortal.Fetch(horseBarn.Pasture);
+            this.Carts = cartPortal.Fetch(horseBarn.Carts);
         }
     }
 
@@ -136,8 +135,8 @@ internal class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
 
         horseBarn.PropertyChanged += HandleIdPropertyChanged;
 
-        await pasturePortal.Save(this.Pasture, horseBarn);
-        await cartPortal.Save(this.Carts, horseBarn);
+        pasturePortal.Save(this.Pasture, horseBarn);
+        cartPortal.Save(this.Carts, horseBarn);
 
         horseBarnContext.HorseBarns.Add(horseBarn);
 
@@ -152,12 +151,12 @@ internal class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
         var horseBarn = await horseBarnContext.HorseBarns.FirstAsync(hb => hb.Id == this.Id);
         if (this.Pasture.IsModified)
         {
-            await pasturePortal.Save(this.Pasture, horseBarn);
+            pasturePortal.Save(this.Pasture, horseBarn);
         }
 
         if (this.Carts.IsModified)
         {
-            await cartPortal.Save(this.Carts, horseBarn);
+            cartPortal.Save(this.Carts, horseBarn);
         }
 
         await horseBarnContext.SaveChangesAsync();

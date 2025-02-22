@@ -14,7 +14,7 @@ public interface IValidateProperty : IProperty, INotifyPropertyChanged
 {
     bool IsSelfValid { get; }
     bool IsValid { get; }
-    Task RunAllRules(CancellationToken token);
+    Task RunAllRules(CancellationToken? token = null);
     IReadOnlyList<string> ErrorMessages { get; }
     internal void SetErrorsForRule(uint ruleIndex, IReadOnlyList<string> errorMessages);
     internal void ClearErrorsForRule(uint ruleIndex);
@@ -46,7 +46,7 @@ public class ValidateProperty<T> : Property<T>, IValidateProperty<T>
     public bool IsSelfValid => ValueIsValidateBase != null ? true : !RuleErrorMessages.Any();
     public bool IsValid => ValueIsValidateBase != null ? ValueIsValidateBase.IsValid : !RuleErrorMessages.Any();
 
-    public Task RunAllRules(CancellationToken token) { return ValueIsValidateBase?.RunAllRules(token) ?? Task.CompletedTask; }
+    public Task RunAllRules(CancellationToken? token = null) { return ValueIsValidateBase?.RunAllRules(token) ?? Task.CompletedTask; }
 
     [JsonIgnore]
     public IReadOnlyList<string> ErrorMessages => RuleErrorMessages.SelectMany(r => r.Value).ToList().AsReadOnly();

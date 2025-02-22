@@ -17,34 +17,43 @@ namespace HorseBarn.lib.Horse
 {
     public interface IHeavyHorseFactory
     {
-        Task<IHeavyHorse> Create(IHorseCriteria horseCriteria);
+        IHeavyHorse Create(IHorseCriteria horseCriteria);
+        delegate IHeavyHorse CreateDelegate(IHorseCriteria horseCriteria);
     }
 
-    [Factory<IHeavyHorse>]
     internal class HeavyHorseFactory : FactoryEditBase<HeavyHorse>, IHeavyHorseFactory
     {
         private readonly IServiceProvider ServiceProvider;
-        private readonly DoRemoteRequest DoRemoteRequest;
+        private readonly IDoRemoteRequest DoRemoteRequest;
         public HeavyHorseFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
         }
 
-        public HeavyHorseFactory(IServiceProvider serviceProvider, DoRemoteRequest remoteMethodDelegate)
+        public HeavyHorseFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public async Task<IHeavyHorse> Create(IHorseCriteria horseCriteria)
+        public IHeavyHorse Create(IHorseCriteria horseCriteria)
         {
             var target = ServiceProvider.GetRequiredService<HeavyHorse>();
-            await DoMapperMethodCall(target, DataMapperMethod.Create, () =>
+            return DoMapperMethodCall<IHeavyHorse>(target, DataMapperMethod.Create, () => target.Create(horseCriteria));
+        }
+
+        public static void FactoryServiceRegistrar(IServiceCollection services)
+        {
+            services.AddTransient<HeavyHorse>();
+            services.AddTransient<IHeavyHorse, HeavyHorse>();
+            services.AddScoped<HeavyHorseFactory>();
+            services.AddScoped<IHeavyHorseFactory, HeavyHorseFactory>();
+            services.AddScoped<IHeavyHorseFactory.CreateDelegate>(cc =>
             {
-                target.Create(horseCriteria);
-                return Task.CompletedTask;
+                var factory = cc.GetRequiredService<HeavyHorseFactory>();
+                return (IHorseCriteria horseCriteria) => factory.Create(horseCriteria);
             });
-            return target;
+            services.AddScoped<IFactoryEditBase<HeavyHorse>, HeavyHorseFactory>();
         }
     }
 }

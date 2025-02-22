@@ -3,6 +3,7 @@ using Neatoo.Portal.Internal;
 using Neatoo;
 using Neatoo.Portal;
 using Neatoo.Rules;
+using Neatoo.Rules.Rules;
 using System.ComponentModel.DataAnnotations;
 
 /*
@@ -13,46 +14,55 @@ namespace HorseBarn.lib.Horse
 {
     public interface IHorseCriteriaFactory
     {
-        Task<IHorseCriteria> Fetch();
-        Task<IHorseCriteria> Fetch(IEnumerable<string> horseNames);
+        IHorseCriteria Fetch();
+        IHorseCriteria Fetch(IEnumerable<string> horseNames);
+        delegate IHorseCriteria FetchDelegate();
+        delegate IHorseCriteria Fetch1Delegate(IEnumerable<string> horseNames);
     }
 
-    [Factory<IHorseCriteria>]
-    internal class HorseCriteriaFactory : FactoryBase<HorseCriteria>, IHorseCriteriaFactory
+    internal class HorseCriteriaFactory : FactoryBase, IHorseCriteriaFactory
     {
         private readonly IServiceProvider ServiceProvider;
-        private readonly DoRemoteRequest DoRemoteRequest;
+        private readonly IDoRemoteRequest DoRemoteRequest;
         public HorseCriteriaFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
         }
 
-        public HorseCriteriaFactory(IServiceProvider serviceProvider, DoRemoteRequest remoteMethodDelegate)
+        public HorseCriteriaFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public async Task<IHorseCriteria> Fetch()
+        public IHorseCriteria Fetch()
         {
             var target = ServiceProvider.GetRequiredService<HorseCriteria>();
-            await DoMapperMethodCall(target, DataMapperMethod.Fetch, () =>
-            {
-                target.Fetch();
-                return Task.CompletedTask;
-            });
-            return target;
+            return DoMapperMethodCall<IHorseCriteria>(target, DataMapperMethod.Fetch, () => target.Fetch());
         }
 
-        public async Task<IHorseCriteria> Fetch(IEnumerable<string> horseNames)
+        public IHorseCriteria Fetch(IEnumerable<string> horseNames)
         {
             var target = ServiceProvider.GetRequiredService<HorseCriteria>();
-            await DoMapperMethodCall(target, DataMapperMethod.Fetch, () =>
+            return DoMapperMethodCall<IHorseCriteria>(target, DataMapperMethod.Fetch, () => target.Fetch(horseNames));
+        }
+
+        public static void FactoryServiceRegistrar(IServiceCollection services)
+        {
+            services.AddTransient<HorseCriteria>();
+            services.AddTransient<IHorseCriteria, HorseCriteria>();
+            services.AddScoped<HorseCriteriaFactory>();
+            services.AddScoped<IHorseCriteriaFactory, HorseCriteriaFactory>();
+            services.AddScoped<IHorseCriteriaFactory.FetchDelegate>(cc =>
             {
-                target.Fetch(horseNames);
-                return Task.CompletedTask;
+                var factory = cc.GetRequiredService<HorseCriteriaFactory>();
+                return () => factory.Fetch();
             });
-            return target;
+            services.AddScoped<IHorseCriteriaFactory.Fetch1Delegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<HorseCriteriaFactory>();
+                return (IEnumerable<string> horseNames) => factory.Fetch(horseNames);
+            });
         }
     }
 }

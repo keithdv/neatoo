@@ -5,10 +5,9 @@ using System;
 
 namespace Neatoo.UnitTest.PersonObjects;
 
-public interface IShortNameDependencyRule<T> : IRule<T> where T : IPersonBase { }
+public interface IShortNameDependencyRule : IRule<IPersonBase> { }
 
-public class ShortNameDependencyRule<T> : RuleBase<T>, IShortNameDependencyRule<T>
-    where T : IPersonBase
+public class ShortNameDependencyRule : RuleBase<IPersonBase>, IShortNameDependencyRule
 {
 
     public ShortNameDependencyRule(IDisposableDependency dd) : base()
@@ -20,7 +19,7 @@ public class ShortNameDependencyRule<T> : RuleBase<T>, IShortNameDependencyRule<
 
     private IDisposableDependency DisposableDependency { get; }
 
-    public override PropertyErrors Execute(T target)
+    public override PropertyErrors Execute(IPersonBase target)
     {
 
         // System.Diagnostics.Debug.WriteLine($"Run Rule {target.FirstName} {target.LastName}");

@@ -16,93 +16,56 @@ namespace Neatoo.UnitTest.Portal
     [TestClass]
     public class BaseFactoryTests
     {
-        public class ServerServiceProvider
-        {
-            public IServiceProvider serverProvider { get; set; }
-        }
-
-        private object lockContainer = new object();
-        IServiceProvider serverContainer = null!;
-        IServiceProvider clientContainer = null!;
-
-        IServiceScope serverScope = null!;
-        IServiceScope clientScope = null!;
+        private IServiceScope serverScope;
+        private IServiceScope clientScope;
 
         [TestInitialize]
-        public void TestInitialize()
+        public void TestIntialize()
         {
-            lock (lockContainer)
-            {
-                if (serverContainer == null)
-                {
-                    var serverCollection = new ServiceCollection();
-                    var clientCollection = new ServiceCollection();
-
-                    serverCollection.AddNeatooServices(NeatooHost.Local, Assembly.GetExecutingAssembly());
-                    serverCollection.AddTransient<Objects.IDisposableDependency, Objects.DisposableDependency>();
-                    serverCollection.AddScoped<Objects.DisposableDependencyList>();
-
-                    clientCollection.AddNeatooServices(NeatooHost.Remote, Assembly.GetExecutingAssembly());
-                    clientCollection.AddScoped<ServerServiceProvider>();
-
-                    clientCollection.AddScoped<SendRemoteRequestToServer>(cc =>
-                    {
-                        var serverServiceProvider = cc.GetRequiredService<ServerServiceProvider>().serverProvider;
-                        return (RemoteRequestDto remoteRequest) =>
-                        {
-                            return serverServiceProvider.GetRequiredService<ServerHandlePortalRequest>()(remoteRequest);
-                        };
-                    });
-
-                    serverContainer = serverCollection.BuildServiceProvider();
-                    clientContainer = clientCollection.BuildServiceProvider();
-                }
-            }
-
-            serverScope = serverContainer.CreateScope();
-            clientScope = clientContainer.CreateScope();
-
-            clientScope.GetRequiredService<ServerServiceProvider>().serverProvider = serverScope.ServiceProvider;
+            var scopes = FactoryContainers.Scopes();
+            serverScope = scopes.server;
+            clientScope = scopes.client;
         }
+
 
         [TestMethod]
         public async Task BaseFactoryTests_IBaseObjectCreateBaseObject()
         {
-            var factory = clientScope.GetRequiredService<BaseObjectFactory>();
+            var factory = clientScope.GetRequiredService<IBaseObjectFactory>();
 
-            var result = await factory.Create();
+            var result = await factory.CreateAsync();
 
             Assert.IsTrue(result.CreateCalled);
         }
 
         [TestMethod]
-        public async Task BaseFactoryTests_IBaseObjectCreateBaseObjectInt()
+        public void BaseFactoryTests_IBaseObjectCreateBaseObjectInt()
         {
-            var factory = clientScope.GetRequiredService<BaseObjectFactory>();
+            var factory = clientScope.GetRequiredService<IBaseObjectFactory>();
 
             var criteria = 10;
 
-            var result = await factory.Create(criteria);
+            var result = factory.Create(criteria);
 
             Assert.AreEqual(criteria, result.IntCriteria);
         }
 
         [TestMethod]
-        public async Task BaseFactoryTests_BaseObjectCreateDependency()
+        public void BaseFactoryTests_BaseObjectCreateDependency()
         {
-            var factory = clientScope.GetRequiredService<BaseObjectFactory>();
+            var factory = clientScope.GetRequiredService<IBaseObjectFactory>();
 
-            var result = await factory.Create(2, 10d);
+            var result = factory.Create(2, 10d);
 
             Assert.IsNotNull(result.MultipleCriteria);
         }
 
         [TestMethod]
-        public async Task BaseFactoryTests_IBaseObjectFetchBaseObject()
+        public void BaseFactoryTests_IBaseObjectFetchBaseObject()
         {
-            var factory = clientScope.GetRequiredService<BaseObjectFactory>();
+            var factory = clientScope.GetRequiredService<IBaseObjectFactory>();
 
-            var result = await factory.Fetch();
+            var result = factory.Fetch();
 
             Assert.IsNotNull(result.FetchCalled);
         }
@@ -110,7 +73,7 @@ namespace Neatoo.UnitTest.Portal
         [TestMethod]
         public async Task BaseFactoryTests_IBaseObjectFetchBaseObjectGuid()
         {
-            var factory = clientScope.GetRequiredService<BaseObjectFactory>();
+            var factory = clientScope.GetRequiredService<IBaseObjectFactory>();
 
             var guidCriteria = Guid.NewGuid();
 

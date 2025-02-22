@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Neatoo.Portal.Internal;
-using HorseBarn.lib.Horse;
 using Neatoo;
 using Neatoo.Portal;
+using HorseBarn.lib.Horse;
 using System.Diagnostics;
 using HorseBarn.Dal.Ef;
 using Microsoft.EntityFrameworkCore;
@@ -17,99 +17,66 @@ namespace HorseBarn.lib
 {
     public interface IPastureFactory
     {
-        Task<IPasture> Create();
-        Task<IPasture> Fetch(Dal.Ef.Pasture pasture);
-        Task<IPasture?> Save(IPasture target, Dal.Ef.HorseBarn horseBarn);
+        IPasture Create();
+        IPasture Fetch(Dal.Ef.Pasture pasture);
+        IPasture? Save(IPasture target, Dal.Ef.HorseBarn horseBarn);
+        delegate IPasture CreateDelegate();
+        delegate IPasture FetchDelegate(Dal.Ef.Pasture pasture);
+        delegate IPasture? SaveDelegate(IPasture target, Dal.Ef.HorseBarn horseBarn);
     }
 
-    [Factory<IPasture>]
     internal class PastureFactory : FactoryEditBase<Pasture>, IPastureFactory
     {
         private readonly IServiceProvider ServiceProvider;
-        private readonly DoRemoteRequest DoRemoteRequest;
-        protected internal delegate Task<IPasture> CreateDelegate();
-        protected internal delegate Task<IPasture> FetchDelegate(Dal.Ef.Pasture pasture);
-        protected internal delegate Task<IPasture?> SaveDelegate(IPasture target, Dal.Ef.HorseBarn horseBarn);
-        protected CreateDelegate CreateProperty { get; }
-        protected FetchDelegate FetchProperty { get; }
-        protected SaveDelegate SaveProperty { get; set; }
+        private readonly IDoRemoteRequest DoRemoteRequest;
+        public IPastureFactory.SaveDelegate SaveProperty { get; set; }
 
         public PastureFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
-            CreateProperty = LocalCreate;
-            FetchProperty = LocalFetch;
             SaveProperty = LocalSave;
         }
 
-        public PastureFactory(IServiceProvider serviceProvider, DoRemoteRequest remoteMethodDelegate)
+        public PastureFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
-            CreateProperty = RemoteCreate;
-            FetchProperty = RemoteFetch;
-            SaveProperty = RemoteSave;
         }
 
-        public Task<IPasture> Create()
-        {
-            return CreateProperty();
-        }
-
-        public Task<IPasture> Fetch(Dal.Ef.Pasture pasture)
-        {
-            return FetchProperty(pasture);
-        }
-
-        public Task<IPasture?> Save(IPasture target, Dal.Ef.HorseBarn horseBarn)
+        public IPasture? Save(IPasture target, Dal.Ef.HorseBarn horseBarn)
         {
             return SaveProperty(target, horseBarn);
         }
 
-        [Local<CreateDelegate>]
-        protected async Task<IPasture> LocalCreate()
+        public IPasture Create()
         {
             var target = ServiceProvider.GetRequiredService<Pasture>();
-            var horseListPortal = ServiceProvider.GetService<HorseListFactory>();
-            await DoMapperMethodCall(target, DataMapperMethod.Create, () => target.Create(horseListPortal));
-            return target;
+            var horseListPortal = ServiceProvider.GetService<IHorseListFactory>();
+            return DoMapperMethodCall<IPasture>(target, DataMapperMethod.Create, () => target.Create(horseListPortal));
         }
 
-        [Local<FetchDelegate>]
-        protected async Task<IPasture> LocalFetch(Dal.Ef.Pasture pasture)
+        public IPasture Fetch(Dal.Ef.Pasture pasture)
         {
             var target = ServiceProvider.GetRequiredService<Pasture>();
-            var horseListPortal = ServiceProvider.GetService<HorseListFactory>();
-            await DoMapperMethodCall(target, DataMapperMethod.Fetch, () => target.Fetch(pasture, horseListPortal));
-            return target;
+            var horseListPortal = ServiceProvider.GetService<IHorseListFactory>();
+            return DoMapperMethodCall<IPasture>(target, DataMapperMethod.Fetch, () => target.Fetch(pasture, horseListPortal));
         }
 
-        protected async Task LocalInsert(IPasture itarget, Dal.Ef.HorseBarn horseBarn)
+        public virtual IPasture? LocalInsert(IPasture itarget, Dal.Ef.HorseBarn horseBarn)
         {
             var target = (Pasture)itarget ?? throw new Exception("Pasture must implement IPasture");
-            var horseListPortal = ServiceProvider.GetService<HorseListFactory>();
-            await DoMapperMethodCall(target, DataMapperMethod.Insert, () => target.Insert(horseBarn, horseListPortal));
+            var horseListPortal = ServiceProvider.GetService<IHorseListFactory>();
+            return DoMapperMethodCall<IPasture>(target, DataMapperMethod.Insert, () => target.Insert(horseBarn, horseListPortal));
         }
 
-        protected async Task LocalUpdate(IPasture itarget, Dal.Ef.HorseBarn horseBarn)
+        public virtual IPasture? LocalUpdate(IPasture itarget, Dal.Ef.HorseBarn horseBarn)
         {
             var target = (Pasture)itarget ?? throw new Exception("Pasture must implement IPasture");
-            var horseListPortal = ServiceProvider.GetService<HorseListFactory>();
-            await DoMapperMethodCall(target, DataMapperMethod.Update, () => target.Update(horseBarn, horseListPortal));
+            var horseListPortal = ServiceProvider.GetService<IHorseListFactory>();
+            return DoMapperMethodCall<IPasture>(target, DataMapperMethod.Update, () => target.Update(horseBarn, horseListPortal));
         }
 
-        protected async Task<IPasture?> RemoteCreate()
-        {
-            return (IPasture? )await DoRemoteRequest(typeof(CreateDelegate), []);
-        }
-
-        protected async Task<IPasture?> RemoteFetch(Dal.Ef.Pasture pasture)
-        {
-            return (IPasture? )await DoRemoteRequest(typeof(FetchDelegate), [pasture]);
-        }
-
-        [Local<SaveDelegate>]
-        protected async Task<IPasture?> LocalSave(IPasture target, Dal.Ef.HorseBarn horseBarn)
+        public virtual IPasture? LocalSave(IPasture target, Dal.Ef.HorseBarn horseBarn)
         {
             if (target.IsDeleted)
             {
@@ -122,19 +89,31 @@ namespace HorseBarn.lib
             }
             else if (target.IsNew)
             {
-                await LocalInsert(target, horseBarn);
+                return LocalInsert(target, horseBarn);
             }
             else
             {
-                await LocalUpdate(target, horseBarn);
+                return LocalUpdate(target, horseBarn);
             }
-
-            return target;
         }
 
-        protected async Task<IPasture?> RemoteSave(IPasture target, Dal.Ef.HorseBarn horseBarn)
+        public static void FactoryServiceRegistrar(IServiceCollection services)
         {
-            return (IPasture? )await DoRemoteRequest(typeof(SaveDelegate), [target, horseBarn]);
+            services.AddTransient<Pasture>();
+            services.AddTransient<IPasture, Pasture>();
+            services.AddScoped<PastureFactory>();
+            services.AddScoped<IPastureFactory, PastureFactory>();
+            services.AddScoped<IPastureFactory.CreateDelegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<PastureFactory>();
+                return () => factory.Create();
+            });
+            services.AddScoped<IPastureFactory.FetchDelegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<PastureFactory>();
+                return (Dal.Ef.Pasture pasture) => factory.Fetch(pasture);
+            });
+            services.AddScoped<IFactoryEditBase<Pasture>, PastureFactory>();
         }
     }
 }

@@ -28,6 +28,7 @@ namespace Neatoo
         new IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
     }
 
+    [Factory]
     public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IDataMapperTarget
         where T : ValidateBase<T>
     {
@@ -41,7 +42,8 @@ namespace Neatoo
 
             this.RuleManager = services.CreateRuleManager((T)(IValidateBase)this);
 
-            this.RuleManager.AddValidation(static (t) => {
+            this.RuleManager.AddValidation(static (t) =>
+            {
                 if (!string.IsNullOrEmpty(t.ObjectInvalid))
                 {
                     return t.ObjectInvalid;
@@ -156,19 +158,14 @@ namespace Neatoo
 
         public virtual Task CheckRules(string propertyName)
         {
-            if (propertyName == nameof(ObjectInvalid) || this[nameof(ObjectInvalid)].IsSelfValid)
-            {
-                var task = RuleManager.CheckRulesForProperty(propertyName);
+            var task = RuleManager.CheckRulesForProperty(propertyName);
 
-                CheckIfMetaPropertiesChanged();
+            CheckIfMetaPropertiesChanged();
 
-                return task;
-            }
-
-            return Task.CompletedTask;
+            return task;
         }
 
-        public virtual async Task RunSelfRules(CancellationToken token = new CancellationToken())
+        public virtual async Task RunSelfRules(CancellationToken? token = null)
         {
             this[nameof(ObjectInvalid)].ClearAllErrors();
 
@@ -176,7 +173,7 @@ namespace Neatoo
             await AsyncTaskSequencer.AllDone;
         }
 
-        public virtual async Task RunAllRules(CancellationToken token = new CancellationToken())
+        public virtual async Task RunAllRules(CancellationToken? token = null)
         {
             ClearAllErrors();
 

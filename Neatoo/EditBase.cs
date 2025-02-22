@@ -1,5 +1,6 @@
 ﻿using Neatoo.Core;
 using Neatoo.Internal;
+using Neatoo.Portal;
 using Neatoo.Portal.Internal;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Neatoo;
 
-
+[Factory]
 public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, IDataMapperEditTarget, IEditMetaProperties, IJsonOnDeserializing, IJsonOnDeserialized
     where T : EditBase<T>
 {

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Neatoo.Portal.Internal;
+using Neatoo;
 using Neatoo.Portal;
 using Neatoo.UnitTest.PersonObjects;
 using System.Collections.Generic;
@@ -14,34 +15,43 @@ namespace Neatoo.UnitTest.EditBaseTests
 {
     public interface IEditPersonFactory
     {
-        Task<IEditPerson> FillFromDto(PersonDto dto);
+        IEditPerson FillFromDto(PersonDto dto);
+        delegate IEditPerson FillFromDtoDelegate(PersonDto dto);
     }
 
-    [Factory<IEditPerson>]
     internal class EditPersonFactory : FactoryEditBase<EditPerson>, IEditPersonFactory
     {
         private readonly IServiceProvider ServiceProvider;
-        private readonly DoRemoteRequest DoRemoteRequest;
+        private readonly IDoRemoteRequest DoRemoteRequest;
         public EditPersonFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
         }
 
-        public EditPersonFactory(IServiceProvider serviceProvider, DoRemoteRequest remoteMethodDelegate)
+        public EditPersonFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public async Task<IEditPerson> FillFromDto(PersonDto dto)
+        public IEditPerson FillFromDto(PersonDto dto)
         {
             var target = ServiceProvider.GetRequiredService<EditPerson>();
-            await DoMapperMethodCall(target, DataMapperMethod.Fetch, () =>
+            return DoMapperMethodCall<IEditPerson>(target, DataMapperMethod.Fetch, () => target.FillFromDto(dto));
+        }
+
+        public static void FactoryServiceRegistrar(IServiceCollection services)
+        {
+            services.AddTransient<EditPerson>();
+            services.AddTransient<IEditPerson, EditPerson>();
+            services.AddScoped<EditPersonFactory>();
+            services.AddScoped<IEditPersonFactory, EditPersonFactory>();
+            services.AddScoped<IEditPersonFactory.FillFromDtoDelegate>(cc =>
             {
-                target.FillFromDto(dto);
-                return Task.CompletedTask;
+                var factory = cc.GetRequiredService<EditPersonFactory>();
+                return (PersonDto dto) => factory.FillFromDto(dto);
             });
-            return target;
+            services.AddScoped<IFactoryEditBase<EditPerson>, EditPersonFactory>();
         }
     }
 }

@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Neatoo.Portal.Internal;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neatoo;
 using Neatoo.Portal;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.UnitTest.Objects;
 using System;
 using System.Collections;
@@ -16,163 +17,163 @@ namespace Neatoo.UnitTest.ObjectPortal
 {
     public interface IBaseObjectFactory
     {
-        Task<IBaseObject> Create();
-        Task<IBaseObject> Create(int criteria);
-        Task<IBaseObject> Create(int i, string s);
-        Task<IBaseObject> Create(int i, double d);
+        Task<IBaseObject> CreateAsync();
+        IBaseObject Create(int criteria);
+        IBaseObject Create(int i, string s);
+        IBaseObject Create(int i, double d);
         Task<IBaseObject> Create(Guid criteria);
-        Task<IBaseObject> Fetch();
-        Task<IBaseObject> Fetch(int criteria);
+        IBaseObject Fetch();
+        IBaseObject Fetch(int criteria);
         Task<IBaseObject> Fetch(Guid criteria);
+        delegate Task<IBaseObject> CreateAsyncDelegate();
+        delegate IBaseObject CreateDelegate(int criteria);
+        delegate IBaseObject Create1Delegate(int i, string s);
+        delegate IBaseObject Create2Delegate(int i, double d);
+        delegate Task<IBaseObject> Create3Delegate(Guid criteria);
+        delegate IBaseObject FetchDelegate();
+        delegate IBaseObject Fetch1Delegate(int criteria);
+        delegate Task<IBaseObject> Fetch2Delegate(Guid criteria);
     }
 
-    [Factory<IBaseObject>]
-    internal class BaseObjectFactory : FactoryBase<BaseObject>, IBaseObjectFactory
+    internal class BaseObjectFactory : FactoryBase, IBaseObjectFactory
     {
         private readonly IServiceProvider ServiceProvider;
-        private readonly DoRemoteRequest DoRemoteRequest;
-        protected internal delegate Task<IBaseObject> Create3Delegate(int i, double d);
-        protected internal delegate Task<IBaseObject> Create4Delegate(Guid criteria);
-        protected internal delegate Task<IBaseObject> Fetch2Delegate(Guid criteria);
-        protected Create3Delegate Create3Property { get; }
-        protected Create4Delegate Create4Property { get; }
-        protected Fetch2Delegate Fetch2Property { get; }
+        private readonly IDoRemoteRequest DoRemoteRequest;
+        public IBaseObjectFactory.Create3Delegate Create3Property { get; }
+        public IBaseObjectFactory.Fetch2Delegate Fetch2Property { get; }
 
         public BaseObjectFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             Create3Property = LocalCreate3;
-            Create4Property = LocalCreate4;
             Fetch2Property = LocalFetch2;
         }
 
-        public BaseObjectFactory(IServiceProvider serviceProvider, DoRemoteRequest remoteMethodDelegate)
+        public BaseObjectFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
             Create3Property = RemoteCreate3;
-            Create4Property = RemoteCreate4;
             Fetch2Property = RemoteFetch2;
         }
 
-        public Task<IBaseObject> Create(int i, double d)
+        public virtual Task<IBaseObject> Create(Guid criteria)
         {
-            return Create3Property(i, d);
+            return Create3Property(criteria);
         }
 
-        public Task<IBaseObject> Create(Guid criteria)
-        {
-            return Create4Property(criteria);
-        }
-
-        public Task<IBaseObject> Fetch(Guid criteria)
+        public virtual Task<IBaseObject> Fetch(Guid criteria)
         {
             return Fetch2Property(criteria);
         }
 
-        public async Task<IBaseObject> Create()
+        public Task<IBaseObject> CreateAsync()
         {
             var target = ServiceProvider.GetRequiredService<BaseObject>();
-            await DoMapperMethodCall(target, DataMapperMethod.Create, () => target.Create());
-            return target;
+            return DoMapperMethodCallAsync<IBaseObject>(target, DataMapperMethod.Create, () => target.CreateAsync());
         }
 
-        public async Task<IBaseObject> Create(int criteria)
+        public IBaseObject Create(int criteria)
         {
             var target = ServiceProvider.GetRequiredService<BaseObject>();
-            await DoMapperMethodCall(target, DataMapperMethod.Create, () =>
-            {
-                target.Create(criteria);
-                return Task.CompletedTask;
-            });
-            return target;
+            return DoMapperMethodCall<IBaseObject>(target, DataMapperMethod.Create, () => target.Create(criteria));
         }
 
-        public async Task<IBaseObject> Create(int i, string s)
+        public IBaseObject Create(int i, string s)
         {
             var target = ServiceProvider.GetRequiredService<BaseObject>();
-            await DoMapperMethodCall(target, DataMapperMethod.Create, () =>
-            {
-                target.Create(i, s);
-                return Task.CompletedTask;
-            });
-            return target;
+            return DoMapperMethodCall<IBaseObject>(target, DataMapperMethod.Create, () => target.Create(i, s));
         }
 
-        [Local<Create3Delegate>]
-        protected async Task<IBaseObject> LocalCreate3(int i, double d)
+        public IBaseObject Create(int i, double d)
         {
             var target = ServiceProvider.GetRequiredService<BaseObject>();
             var dep = ServiceProvider.GetService<IDisposableDependency>();
-            await DoMapperMethodCall(target, DataMapperMethod.Create, () =>
-            {
-                target.Create(i, d, dep);
-                return Task.CompletedTask;
-            });
-            return target;
+            return DoMapperMethodCall<IBaseObject>(target, DataMapperMethod.Create, () => target.Create(i, d, dep));
         }
 
-        [Local<Create4Delegate>]
-        protected async Task<IBaseObject> LocalCreate4(Guid criteria)
+        public Task<IBaseObject> LocalCreate3(Guid criteria)
         {
             var target = ServiceProvider.GetRequiredService<BaseObject>();
             var dependency = ServiceProvider.GetService<IDisposableDependency>();
-            await DoMapperMethodCall(target, DataMapperMethod.Create, () =>
-            {
-                target.Create(criteria, dependency);
-                return Task.CompletedTask;
-            });
-            return target;
+            return DoMapperMethodCallAsync<IBaseObject>(target, DataMapperMethod.Create, () => target.Create(criteria, dependency));
         }
 
-        public async Task<IBaseObject> Fetch()
+        public IBaseObject Fetch()
         {
             var target = ServiceProvider.GetRequiredService<BaseObject>();
-            await DoMapperMethodCall(target, DataMapperMethod.Fetch, () =>
-            {
-                target.Fetch();
-                return Task.CompletedTask;
-            });
-            return target;
+            return DoMapperMethodCall<IBaseObject>(target, DataMapperMethod.Fetch, () => target.Fetch());
         }
 
-        public async Task<IBaseObject> Fetch(int criteria)
+        public IBaseObject Fetch(int criteria)
         {
             var target = ServiceProvider.GetRequiredService<BaseObject>();
-            await DoMapperMethodCall(target, DataMapperMethod.Fetch, () =>
-            {
-                target.Fetch(criteria);
-                return Task.CompletedTask;
-            });
-            return target;
+            return DoMapperMethodCall<IBaseObject>(target, DataMapperMethod.Fetch, () => target.Fetch(criteria));
         }
 
-        [Local<Fetch2Delegate>]
-        protected async Task<IBaseObject> LocalFetch2(Guid criteria)
+        public Task<IBaseObject> LocalFetch2(Guid criteria)
         {
             var target = ServiceProvider.GetRequiredService<BaseObject>();
             var dependency = ServiceProvider.GetService<IDisposableDependency>();
-            await DoMapperMethodCall(target, DataMapperMethod.Fetch, () =>
+            return DoMapperMethodCallAsync<IBaseObject>(target, DataMapperMethod.Fetch, () => target.Fetch(criteria, dependency));
+        }
+
+        public virtual async Task<IBaseObject?> RemoteCreate3(Guid criteria)
+        {
+            return await DoRemoteRequest.ForDelegate<BaseObject?>(typeof(IBaseObjectFactory.Create3Delegate), [criteria]);
+        }
+
+        public virtual async Task<IBaseObject?> RemoteFetch2(Guid criteria)
+        {
+            return await DoRemoteRequest.ForDelegate<BaseObject?>(typeof(IBaseObjectFactory.Fetch2Delegate), [criteria]);
+        }
+
+        public static void FactoryServiceRegistrar(IServiceCollection services)
+        {
+            services.AddTransient<BaseObject>();
+            services.AddTransient<IBaseObject, BaseObject>();
+            services.AddScoped<BaseObjectFactory>();
+            services.AddScoped<IBaseObjectFactory, BaseObjectFactory>();
+            services.AddScoped<IBaseObjectFactory.CreateAsyncDelegate>(cc =>
             {
-                target.Fetch(criteria, dependency);
-                return Task.CompletedTask;
+                var factory = cc.GetRequiredService<BaseObjectFactory>();
+                return () => factory.CreateAsync();
             });
-            return target;
-        }
-
-        protected async Task<IBaseObject?> RemoteCreate3(int i, double d)
-        {
-            return (IBaseObject? )await DoRemoteRequest(typeof(Create3Delegate), [i, d]);
-        }
-
-        protected async Task<IBaseObject?> RemoteCreate4(Guid criteria)
-        {
-            return (IBaseObject? )await DoRemoteRequest(typeof(Create4Delegate), [criteria]);
-        }
-
-        protected async Task<IBaseObject?> RemoteFetch2(Guid criteria)
-        {
-            return (IBaseObject? )await DoRemoteRequest(typeof(Fetch2Delegate), [criteria]);
+            services.AddScoped<IBaseObjectFactory.CreateDelegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<BaseObjectFactory>();
+                return (int criteria) => factory.Create(criteria);
+            });
+            services.AddScoped<IBaseObjectFactory.Create1Delegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<BaseObjectFactory>();
+                return (int i, string s) => factory.Create(i, s);
+            });
+            services.AddScoped<IBaseObjectFactory.Create2Delegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<BaseObjectFactory>();
+                return (int i, double d) => factory.Create(i, d);
+            });
+            services.AddScoped<IBaseObjectFactory.Create3Delegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<BaseObjectFactory>();
+                return (Guid criteria) => factory.LocalCreate3(criteria);
+            });
+            services.AddScoped<IBaseObjectFactory.FetchDelegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<BaseObjectFactory>();
+                return () => factory.Fetch();
+            });
+            services.AddScoped<IBaseObjectFactory.Fetch1Delegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<BaseObjectFactory>();
+                return (int criteria) => factory.Fetch(criteria);
+            });
+            services.AddScoped<IBaseObjectFactory.Fetch2Delegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<BaseObjectFactory>();
+                return (Guid criteria) => factory.LocalFetch2(criteria);
+            });
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neatoo.Portal;
+using Neatoo.Rules.Rules;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -8,9 +10,15 @@ using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ValidateBaseTests.Attributes;
 
+[SuppressFactory]
 public class RequiredObject : ValidateBase<RequiredObject>
 {
-    public RequiredObject() : base(new ValidateBaseServices<RequiredObject>()) { }
+    public RequiredObject() : base(new ValidateBaseServices<RequiredObject>()) 
+    {
+        var allRequiredRulesExecuted = new AllRequiredRulesExecuted(RuleManager.Rules.OfType<IRequiredRule>());
+        RuleManager.AddRule(allRequiredRulesExecuted);
+        allRequiredRulesExecuted.RunRule(this, CancellationToken.None).Wait();
+    }
 
     [Required]
     public string StringValue { get => Getter<string>(); set => Setter(value); }
@@ -32,9 +40,15 @@ public class RequiredAttributeTests
     private RequiredObject requiredObject;
 
     [TestInitialize]
-    public void TestInitialize()
+    public async Task TestInitialize()
     {
         requiredObject = new RequiredObject();
+    }
+
+    [TestMethod]
+    public async Task RequiredAttribute_InitiallyInValid()
+    {
+        Assert.IsFalse(requiredObject.IsValid);
     }
 
     [TestMethod]
@@ -54,6 +68,7 @@ public class RequiredAttributeTests
         requiredObject.NullableValue = 1;
         requiredObject.ObjectValue = new List<int> { 1, 2, 3 };
 
+        Assert.IsFalse(requiredObject.IsBusy);
         Assert.IsTrue(requiredObject.IsValid);
     }
 }

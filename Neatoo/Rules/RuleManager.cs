@@ -14,16 +14,16 @@ namespace Neatoo.Rules;
 public interface IRuleManager
 {
     IEnumerable<IRule> Rules { get; }
-
     Task CheckRulesForProperty(string propertyName);
-    Task CheckAllRules(CancellationToken token = new CancellationToken());
+    Task CheckAllRules(CancellationToken? token = null);
+    void AddRule<T>(IRule<T> rule) where T : IValidateBase;
+    void AddRules<T>(params IRule<T>[] rules) where T : IValidateBase;
 }
 
+
 public interface IRuleManager<T> : IRuleManager
-    where T : IValidateBase
+    where T : class, IValidateBase
 {
-    void AddRule(IRule<T> rule);
-    void AddRules(params IRule<T>[] rules);
     ActionFluentRule<T> AddAction(Action<T> func, Expression<Func<T, object?>> triggerProperty);
     ValidationFluentRule<T> AddValidation(Func<T, string> func, Expression<Func<T, object?>> triggerProperty);
     ActionAsyncFluentRule<T> AddActionAsync(Func<T, Task> func, Expression<Func<T, object?>> triggerProperty);
@@ -31,7 +31,7 @@ public interface IRuleManager<T> : IRuleManager
 }
 
 public class RuleManagerFactory<T>
-    where T : IValidateBase
+    where T : class, IValidateBase
 {
     public RuleManagerFactory(IAttributeToRule attributeToRule)
     {
@@ -47,7 +47,7 @@ public class RuleManagerFactory<T>
 }
 
 public class RuleManager<T> : IRuleManager<T>
-    where T : IValidateBase
+    where T : class, IValidateBase
 {
     protected T Target { get; }
 
@@ -59,7 +59,7 @@ public class RuleManager<T> : IRuleManager<T>
 
     IEnumerable<IRule> IRuleManager.Rules => Rules.Values;
 
-    private IDictionary<uint, IRule<T>> Rules { get; } = new ConcurrentDictionary<uint, IRule<T>>();
+    private IDictionary<uint, IRule> Rules { get; } = new ConcurrentDictionary<uint, IRule>();
 
     protected virtual void AddAttributeRules(IAttributeToRule attributeToRule, IPropertyInfoList propertyInfoList)
     {
@@ -70,19 +70,28 @@ public class RuleManager<T> : IRuleManager<T>
             foreach (var a in r.PropertyInfo.GetCustomAttributes(true))
             {
                 var rule = attributeToRule.GetRule<T>(r, a.GetType());
-                if (rule != null) { AddRule(rule); }
+                if (rule != null) {
+                    Rules.Add(rule.UniqueIndex, rule);
+                }
             }
         }
     }
 
-    public void AddRules(params IRule<T>[] rules)
+    public void AddRules<T1>(params IRule<T1>[] rules) where T1: IValidateBase
     {
-        foreach (var r in rules) { AddRule(r); }
+            foreach (var r in rules) { AddRule(r); }
     }
 
-    public void AddRule(IRule<T> rule)
+    public void AddRule<T1>(IRule<T1> rule) where T1 : IValidateBase
     {
-        Rules.Add(rule.UniqueIndex, rule ?? throw new ArgumentNullException(nameof(rule)));
+        if (typeof(T1).IsAssignableFrom(typeof(T)))
+        {
+            Rules.Add(rule.UniqueIndex, rule);
+        }
+        else
+        {
+            throw new InvalidTargetTypeException($"{typeof(T1).FullName} is not assignable from {typeof(T).FullName}");
+        }
     }
 
     public ActionAsyncFluentRule<T> AddActionAsync(Func<T, Task> func, Expression<Func<T, object?>> triggerProperty)
@@ -115,13 +124,13 @@ public class RuleManager<T> : IRuleManager<T>
 
     public async Task CheckRulesForProperty(string propertyName)
     {
-        foreach (var rule in Rules.Values.Where(r => r.TriggerProperties.Any(t => t.IsMatch(Target, propertyName))).ToList())
+        foreach (var rule in Rules.Values.Where(r => r.TriggerProperties.Any(t => t.IsMatch(propertyName))).ToList())
         {
             await RunRule(rule, CancellationToken.None);
         }
     }
 
-    public async Task CheckAllRules(CancellationToken token = new CancellationToken())
+    public async Task CheckAllRules(CancellationToken? token = null)
     {
         foreach (var ruleIndex in Rules.ToList())
         {
@@ -129,9 +138,9 @@ public class RuleManager<T> : IRuleManager<T>
         }
     }
 
-    private async Task RunRule(IRule r, CancellationToken token)
+    private async Task RunRule(IRule r, CancellationToken? token = null)
     {
-        if (r is IRule<T> rule)
+        if (r is IRule rule)
         {
             await rule.RunRule(Target, token);
         }
@@ -140,7 +149,7 @@ public class RuleManager<T> : IRuleManager<T>
             throw new InvalidRuleTypeException($"{r.GetType().FullName} cannot be executed for {typeof(T).FullName}");
         }
 
-        if (token.IsCancellationRequested)
+        if (token?.IsCancellationRequested ?? false)
         {
             return;
         }

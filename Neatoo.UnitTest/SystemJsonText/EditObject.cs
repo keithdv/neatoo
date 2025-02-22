@@ -22,7 +22,6 @@ public interface IEditObject : IEditBase
 }
 
 
-[Factory]
 public class EditObject : EditBase<EditObject>, IEditObject
 {
     public EditObject(IEditBaseServices<EditObject> services) : base(services)
@@ -81,7 +80,6 @@ public interface IEditObjectList : IEditListBase<IEditObject>
 
 }
 
-[Factory]
 public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditObjectList
 {
     public EditObjectList() : base()

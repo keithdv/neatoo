@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Neatoo.Portal.Internal;
-using HorseBarn.lib.Horse;
 using Neatoo;
 using Neatoo.Portal;
+using HorseBarn.lib.Horse;
+using Neatoo.Rules.Rules;
+using Neatoo.Rules;
 using System.Collections.Specialized;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
@@ -19,15 +21,14 @@ namespace HorseBarn.lib.Cart
     public interface IWagonFactory
     {
         Task<IWagon> Create();
+        delegate Task<IWagon> CreateDelegate();
     }
 
-    [Factory<IWagon>]
     internal class WagonFactory : FactoryEditBase<Wagon>, IWagonFactory
     {
         private readonly IServiceProvider ServiceProvider;
-        private readonly DoRemoteRequest DoRemoteRequest;
-        protected internal delegate Task<IWagon> CreateDelegate();
-        protected CreateDelegate CreateProperty { get; }
+        private readonly IDoRemoteRequest DoRemoteRequest;
+        public IWagonFactory.CreateDelegate CreateProperty { get; }
 
         public WagonFactory(IServiceProvider serviceProvider)
         {
@@ -35,30 +36,43 @@ namespace HorseBarn.lib.Cart
             CreateProperty = LocalCreate;
         }
 
-        public WagonFactory(IServiceProvider serviceProvider, DoRemoteRequest remoteMethodDelegate)
+        public WagonFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
             CreateProperty = RemoteCreate;
         }
 
-        public Task<IWagon> Create()
+        public virtual Task<IWagon> Create()
         {
             return CreateProperty();
         }
 
-        [Local<CreateDelegate>]
-        protected async Task<IWagon> LocalCreate()
+        public Task<IWagon> LocalCreate()
         {
             var target = ServiceProvider.GetRequiredService<Wagon>();
-            var horsePortal = ServiceProvider.GetService<HorseListFactory>();
-            await DoMapperMethodCall(target, DataMapperMethod.Create, () => target.Create(horsePortal));
-            return target;
+            var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
+            var allRequiredRulesExecutedFactory = ServiceProvider.GetService<IAllRequiredRulesExecuted.Factory>();
+            return DoMapperMethodCallAsync<IWagon>(target, DataMapperMethod.Create, () => target.Create(horsePortal, allRequiredRulesExecutedFactory));
         }
 
-        protected async Task<IWagon?> RemoteCreate()
+        public virtual async Task<IWagon?> RemoteCreate()
         {
-            return (IWagon? )await DoRemoteRequest(typeof(CreateDelegate), []);
+            return await DoRemoteRequest.ForDelegate<Wagon?>(typeof(IWagonFactory.CreateDelegate), []);
+        }
+
+        public static void FactoryServiceRegistrar(IServiceCollection services)
+        {
+            services.AddTransient<Wagon>();
+            services.AddTransient<IWagon, Wagon>();
+            services.AddScoped<WagonFactory>();
+            services.AddScoped<IWagonFactory, WagonFactory>();
+            services.AddScoped<IWagonFactory.CreateDelegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<WagonFactory>();
+                return () => factory.LocalCreate();
+            });
+            services.AddScoped<IFactoryEditBase<Wagon>, WagonFactory>();
         }
     }
 }

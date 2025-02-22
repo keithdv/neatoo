@@ -1,6 +1,7 @@
 ﻿using HorseBarn.lib.Horse;
 using Neatoo;
 using Neatoo.Portal;
+using Neatoo.Rules.Rules;
 
 namespace HorseBarn.lib.Cart;
 

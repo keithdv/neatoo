@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Neatoo.Portal.Internal;
-using HorseBarn.lib.Horse;
 using Neatoo;
 using Neatoo.Portal;
+using HorseBarn.lib.Horse;
+using Neatoo.Rules.Rules;
+using Neatoo.Rules;
 using System.Collections.Specialized;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
@@ -19,15 +21,14 @@ namespace HorseBarn.lib.Cart
     public interface IRacingChariotFactory
     {
         Task<IRacingChariot> Create();
+        delegate Task<IRacingChariot> CreateDelegate();
     }
 
-    [Factory<IRacingChariot>]
     internal class RacingChariotFactory : FactoryEditBase<RacingChariot>, IRacingChariotFactory
     {
         private readonly IServiceProvider ServiceProvider;
-        private readonly DoRemoteRequest DoRemoteRequest;
-        protected internal delegate Task<IRacingChariot> CreateDelegate();
-        protected CreateDelegate CreateProperty { get; }
+        private readonly IDoRemoteRequest DoRemoteRequest;
+        public IRacingChariotFactory.CreateDelegate CreateProperty { get; }
 
         public RacingChariotFactory(IServiceProvider serviceProvider)
         {
@@ -35,30 +36,43 @@ namespace HorseBarn.lib.Cart
             CreateProperty = LocalCreate;
         }
 
-        public RacingChariotFactory(IServiceProvider serviceProvider, DoRemoteRequest remoteMethodDelegate)
+        public RacingChariotFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
             CreateProperty = RemoteCreate;
         }
 
-        public Task<IRacingChariot> Create()
+        public virtual Task<IRacingChariot> Create()
         {
             return CreateProperty();
         }
 
-        [Local<CreateDelegate>]
-        protected async Task<IRacingChariot> LocalCreate()
+        public Task<IRacingChariot> LocalCreate()
         {
             var target = ServiceProvider.GetRequiredService<RacingChariot>();
-            var horsePortal = ServiceProvider.GetService<HorseListFactory>();
-            await DoMapperMethodCall(target, DataMapperMethod.Create, () => target.Create(horsePortal));
-            return target;
+            var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
+            var allRequiredRulesExecutedFactory = ServiceProvider.GetService<IAllRequiredRulesExecuted.Factory>();
+            return DoMapperMethodCallAsync<IRacingChariot>(target, DataMapperMethod.Create, () => target.Create(horsePortal, allRequiredRulesExecutedFactory));
         }
 
-        protected async Task<IRacingChariot?> RemoteCreate()
+        public virtual async Task<IRacingChariot?> RemoteCreate()
         {
-            return (IRacingChariot? )await DoRemoteRequest(typeof(CreateDelegate), []);
+            return await DoRemoteRequest.ForDelegate<RacingChariot?>(typeof(IRacingChariotFactory.CreateDelegate), []);
+        }
+
+        public static void FactoryServiceRegistrar(IServiceCollection services)
+        {
+            services.AddTransient<RacingChariot>();
+            services.AddTransient<IRacingChariot, RacingChariot>();
+            services.AddScoped<RacingChariotFactory>();
+            services.AddScoped<IRacingChariotFactory, RacingChariotFactory>();
+            services.AddScoped<IRacingChariotFactory.CreateDelegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<RacingChariotFactory>();
+                return () => factory.LocalCreate();
+            });
+            services.AddScoped<IFactoryEditBase<RacingChariot>, RacingChariotFactory>();
         }
     }
 }

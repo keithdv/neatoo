@@ -17,34 +17,43 @@ namespace HorseBarn.lib.Horse
 {
     public interface ILightHorseFactory
     {
-        Task<ILightHorse> Create(IHorseCriteria criteria);
+        ILightHorse Create(IHorseCriteria criteria);
+        delegate ILightHorse CreateDelegate(IHorseCriteria criteria);
     }
 
-    [Factory<ILightHorse>]
     internal class LightHorseFactory : FactoryEditBase<LightHorse>, ILightHorseFactory
     {
         private readonly IServiceProvider ServiceProvider;
-        private readonly DoRemoteRequest DoRemoteRequest;
+        private readonly IDoRemoteRequest DoRemoteRequest;
         public LightHorseFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
         }
 
-        public LightHorseFactory(IServiceProvider serviceProvider, DoRemoteRequest remoteMethodDelegate)
+        public LightHorseFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public async Task<ILightHorse> Create(IHorseCriteria criteria)
+        public ILightHorse Create(IHorseCriteria criteria)
         {
             var target = ServiceProvider.GetRequiredService<LightHorse>();
-            await DoMapperMethodCall(target, DataMapperMethod.Create, () =>
+            return DoMapperMethodCall<ILightHorse>(target, DataMapperMethod.Create, () => target.Create(criteria));
+        }
+
+        public static void FactoryServiceRegistrar(IServiceCollection services)
+        {
+            services.AddTransient<LightHorse>();
+            services.AddTransient<ILightHorse, LightHorse>();
+            services.AddScoped<LightHorseFactory>();
+            services.AddScoped<ILightHorseFactory, LightHorseFactory>();
+            services.AddScoped<ILightHorseFactory.CreateDelegate>(cc =>
             {
-                target.Create(criteria);
-                return Task.CompletedTask;
+                var factory = cc.GetRequiredService<LightHorseFactory>();
+                return (IHorseCriteria criteria) => factory.Create(criteria);
             });
-            return target;
+            services.AddScoped<IFactoryEditBase<LightHorse>, LightHorseFactory>();
         }
     }
 }

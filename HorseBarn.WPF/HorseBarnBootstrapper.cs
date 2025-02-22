@@ -121,7 +121,7 @@ public class HorseBarnBootstrapper : BootstrapperBase
 
         services.AddTransient<IsHorseNameUnique>(cc =>
         {
-            return async (name) => (bool) (await cc.GetRequiredService<DoRemoteRequest>()(typeof(IsHorseNameUnique), [name]));
+            return async (name) => (await cc.GetRequiredService<IDoRemoteRequest>().ForDelegate<bool>(typeof(IsHorseNameUnique), [name]));
         });
 
         services.AddTransient<CreateHorseViewModel.Factory>(cc =>

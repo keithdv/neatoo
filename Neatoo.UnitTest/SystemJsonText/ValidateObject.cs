@@ -20,7 +20,6 @@ public interface IValidateObject : IValidateBase
     //new IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
 }
 
-[Factory]
 public class ValidateObject : ValidateBase<ValidateObject>, IValidateObject
 {
     public ValidateObject(IValidateBaseServices<ValidateObject> services) : base(services)

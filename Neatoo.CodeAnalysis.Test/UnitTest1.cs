@@ -137,17 +137,27 @@ internal class BaseObject : SharedObject<BaseObject> {
         // The source code to test
         var source = @"
 using Neatoo;
+using NeatooLibrary;
 
 namespace NeatooLibrary.Specific {
 
-    [Factory]
+
     internal class EditObject : EditBaseA<EditObject> {
 
     }
 
+    [Factory]
     internal abstract class EditBaseA<T> : EditBaseB<T> {
 
     }
+
+[System.AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
+public class FactoryAttribute : Attribute
+{
+    public FactoryAttribute()
+    {
+    }
+}
 
 }";
 
@@ -160,6 +170,8 @@ internal abstract class EditBaseB<T> : EditBase<T> {
 }
 
 
+
+}
 ";
 
         // Pass the source code to our helper and snapshot test the output
@@ -200,6 +212,40 @@ internal class BaseObject : SharedObject<BaseObject> {
 
         // Pass the source code to our helper and snapshot test the output
         return TestHelper.Verify(source);
+    }
+
+
+    [Fact]
+    public void NoBaseClass()
+    {
+        // The source code to test
+        var source = @"
+    public interface INoBaseClass
+    {
+        string Name { get; set; }
+        string Description { get; set; }
+        string Type { get; set; }
+    }
+
+    [Factory]
+    public class NoBaseClass : INoBaseClass
+    {
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string Type { get; set; }
+
+
+        [Create]
+        public void NoBaseClass_Create()
+        {
+            Name = ""Name"";
+            Description = ""Description"";
+            Type = ""Type"";
+        }
+
+    }";
+        // Pass the source code to our helper and snapshot test the output
+        TestHelper.Verify(source);
     }
 
 }

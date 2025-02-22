@@ -15,17 +15,23 @@ public interface IRule
     /// Must be unique for every rule across all types
     /// </summary>
     uint UniqueIndex { get; }
+
+    /// <summary>
+    /// Rule has been executed at least once
+    /// </summary>
+    bool Executed { get; }
+    IReadOnlyList<ITriggerProperty> TriggerProperties { get; }
+    internal Task<PropertyErrors> RunRule(IValidateBase target, CancellationToken? token = null);
 }
 
 /// <summary>
 /// Contravariant - Allows RuleManager to call even when generic types are different
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public interface IRule<in T> : IRule
+public interface IRule<T> : IRule
+    where T : IValidateBase
 {
-    Task<PropertyErrors> RunRule(T target, CancellationToken token);
-
-    IReadOnlyList<ITriggerProperty<T>> TriggerProperties { get; }
+    Task<PropertyErrors> RunRule(T target, CancellationToken? token = null);
 }
 
 // TODO - Doesn't work for serialization
@@ -43,7 +49,7 @@ internal static class RuleIndexer
 }
 
 public abstract class AsyncRuleBase<T> : IRule<T>
-    where T : IValidateBase
+    where T : class, IValidateBase
 {
     protected AsyncRuleBase()
     {
@@ -55,7 +61,7 @@ public abstract class AsyncRuleBase<T> : IRule<T>
 
     public AsyncRuleBase(IEnumerable<Expression<Func<T, object?>>> triggerOnPropertyNames) : this()
     {
-        TriggerProperties.AddRange(triggerOnPropertyNames.Select(propertyName => new TriggerProperty<T, object?>(propertyName)));
+        TriggerProperties.AddRange(triggerOnPropertyNames.Select(propertyName => new TriggerProperty<T>(propertyName)));
     }
 
     /// <summary>
@@ -65,47 +71,71 @@ public abstract class AsyncRuleBase<T> : IRule<T>
 
     protected PropertyErrors None = PropertyErrors.None;
 
-    IReadOnlyList<ITriggerProperty<T>> IRule<T>.TriggerProperties => TriggerProperties.AsReadOnly();
-    protected List<ITriggerProperty<T>> TriggerProperties { get; } = new List<ITriggerProperty<T>>();
+    public bool Executed { get; protected set; }
+
+    IReadOnlyList<ITriggerProperty> IRule.TriggerProperties => TriggerProperties.AsReadOnly();
+    protected List<ITriggerProperty> TriggerProperties { get; } = new List<ITriggerProperty>();
 
     protected virtual void AddTriggerProperties(params Expression<Func<T, object?>>[] triggerOnExpression)
     {
-        TriggerProperties.AddRange(triggerOnExpression.Select(expression => new TriggerProperty<T, object?>(expression)));
+        TriggerProperties.AddRange(triggerOnExpression.Select(expression => new TriggerProperty<T>(expression)));
     }
 
-    protected virtual void AddTriggerProperties(params ITriggerProperty<T>[] triggerProperties)
+    protected virtual void AddTriggerProperties(params ITriggerProperty[] triggerProperties)
     {
         TriggerProperties.AddRange(triggerProperties);
     }
 
-    public abstract Task<PropertyErrors> Execute(T t, CancellationToken token);
+    public abstract Task<PropertyErrors> Execute(T t, CancellationToken? token = null);
 
-    public async Task<PropertyErrors> RunRule(T target, CancellationToken token)
+    protected PropertyErrors? PreviousErrors { get; set; }
+
+    public virtual Task<PropertyErrors> RunRule(IValidateBase target, CancellationToken? token = null)
     {
-        // I want to allow registering rules as static
+        var typedTarget = target as T;
+        
+        if (typedTarget == null)
+        {
+            throw new Exception($"{target.GetType().Name} is not of type {typeof(T).Name}");
+        }
+
+        return RunRule(typedTarget, token);
+    }
+
+    public virtual async Task<PropertyErrors> RunRule(T target, CancellationToken? token = null)
+    {
         try
         {
+            Executed = true;
+
             var propertyErrors = await Execute(target, token);
 
             var setAtLeastOneProperty = true;
 
-            foreach (var property in TriggerProperties)
+            foreach (var propertyError in propertyErrors)
             {
-                if (target.PropertyManager.HasProperty(property.PropertyName)) // TODO - Improve - Only allow expressions and child property callouts
+                if (target.PropertyManager.HasProperty(propertyError.Key))
                 {
                     setAtLeastOneProperty = true;
-                    if (propertyErrors.TryGetValue(property.PropertyName, out var errors))
-                    {
-                        target[property.PropertyName].SetErrorsForRule(UniqueIndex, errors);
-                    }
-                    else
-                    {
-                        target[property.PropertyName].ClearErrorsForRule(UniqueIndex);
-                    }
+                    target[propertyError.Key].SetErrorsForRule(UniqueIndex, propertyError.Value);
                 }
             }
 
+            if (PreviousErrors != null)
+            {
+                PreviousErrors.Select(t => t.Key).Except(propertyErrors.Select(p => p.Key)).ToList().ForEach(p =>
+                {
+                    if (target.PropertyManager.HasProperty(p))
+                    {
+                        var propertyValue = target[p];
+                        propertyValue.ClearErrorsForRule(UniqueIndex);
+                    }
+                });
+            }
+
             Debug.Assert(setAtLeastOneProperty, "You must have at least one trigger property that is a valid property on the target");
+
+            PreviousErrors = propertyErrors;
 
             return propertyErrors;
         }
@@ -132,28 +162,27 @@ public abstract class AsyncRuleBase<T> : IRule<T>
     /// <param name="target"></param>
     /// <param name="triggerProperty"></param>
     /// <param name="value"></param>
-    protected void LoadProperty(T target, ITriggerProperty<T> triggerProperty, object? value)
+    protected void LoadProperty(T target, ITriggerProperty triggerProperty, object? value)
     {
         target[triggerProperty.PropertyName].LoadValue(value);
     }
 
-    protected void LoadProperty<P>(T target, ITriggerProperty<T, P> triggerProperty, P? value)
+    protected void LoadProperty<P>(T target, ITriggerProperty triggerProperty, P value)
     {
         target[triggerProperty.PropertyName].LoadValue(value);
     }
 
-    protected void LoadProperty<P>(T target, Expression<Func<T, P?>> expression, P? value)
+    protected void LoadProperty<P>(T target, Expression<Func<T, object?>> expression, P value)
     {
-        var triggerProperty = new TriggerProperty<T, P>(expression);
+        var triggerProperty = new TriggerProperty<T>(expression);
 
         target[triggerProperty.PropertyName].LoadValue(value);
     }
-
 }
 
 
 public abstract class RuleBase<T> : AsyncRuleBase<T>
-    where T : IValidateBase
+    where T : class, IValidateBase
 {
     protected RuleBase() { }
 
@@ -163,15 +192,14 @@ public abstract class RuleBase<T> : AsyncRuleBase<T>
 
     public abstract PropertyErrors Execute(T target);
 
-    public sealed override Task<PropertyErrors> Execute(T target, CancellationToken token)
+    public sealed override Task<PropertyErrors> Execute(T target, CancellationToken? token = null)
     {
         return Task.FromResult(Execute(target));
     }
-
 }
 
 public class ActionFluentRule<T> : RuleBase<T>
-where T : IValidateBase
+where T : class, IValidateBase
 {
     private Action<T> ExecuteFunc { get; }
     public ActionFluentRule(Action<T> execute, Expression<Func<T, object?>> triggerProperty) : base([triggerProperty])
@@ -187,7 +215,7 @@ where T : IValidateBase
 }
 
 public class ActionAsyncFluentRule<T> : AsyncRuleBase<T>
-where T : IValidateBase
+where T : class, IValidateBase
 {
     private Func<T, Task> ExecuteFunc { get; }
     public ActionAsyncFluentRule(Func<T, Task> execute, Expression<Func<T, object?>> triggerProperty) : base([triggerProperty])
@@ -195,7 +223,7 @@ where T : IValidateBase
         this.ExecuteFunc = execute;
     }
 
-    override public async Task<PropertyErrors> Execute(T target, CancellationToken token)
+    override public async Task<PropertyErrors> Execute(T target, CancellationToken? token = null)
     {
         await ExecuteFunc(target);
         return PropertyErrors.None;
@@ -203,7 +231,7 @@ where T : IValidateBase
 }
 
 public class ValidationFluentRule<T> : RuleBase<T>
-    where T : IValidateBase
+    where T : class, IValidateBase
 {
     private Func<T, string> ExecuteFunc { get; }
     public ValidationFluentRule(Func<T, string> execute, Expression<Func<T, object?>> triggerProperty) : base([triggerProperty])
@@ -227,7 +255,7 @@ public class ValidationFluentRule<T> : RuleBase<T>
 }
 
 public class AsyncFluentRule<T> : AsyncRuleBase<T>
-where T : IValidateBase
+where T : class, IValidateBase
 {
     private Func<T, Task<string>> ExecuteFunc { get; }
 
@@ -236,7 +264,7 @@ where T : IValidateBase
         this.ExecuteFunc = execute;
     }
 
-    public override async Task<PropertyErrors> Execute(T target, CancellationToken token)
+    public override async Task<PropertyErrors> Execute(T target, CancellationToken? token = null)
     {
         var result = await ExecuteFunc(target);
 

@@ -1,6 +1,8 @@
 ﻿using HorseBarn.lib.Horse;
 using Neatoo;
 using Neatoo.Portal;
+using Neatoo.Rules;
+using Neatoo.Rules.Rules;
 using System.Collections.Specialized;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
@@ -44,15 +46,12 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
     IEnumerable<IHorse> ICart.Horses => HorseList.Cast<IHorse>();
 
 
-    public async Task RemoveHorse(IHorse horse)
+    public void RemoveHorse(IHorse horse)
     {
         HorseList.RemoveHorse(horse);
-        //await CheckRules(nameof(HorseList));
-        //await WaitForTasks();
-        await Task.CompletedTask;
     }
 
-    public async Task AddHorse(IHorse horse)
+    public void AddHorse(IHorse horse)
     {
         if (horse is H h)
         {
@@ -62,8 +61,6 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
         {
             throw new ArgumentException($"Horse {horse.GetType().FullName} is not of type {typeof(H).FullName}");
         }
-
-        await Task.CompletedTask;
     }
 
     public bool CanAddHorse(IHorse horse)
@@ -78,26 +75,36 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
     protected virtual CartType CartType => throw new NotImplementedException();
 
     [Create]
-    public async Task Create([Service] HorseListFactory horsePortal)
+    public async Task Create([Service] IHorseListFactory horsePortal,
+                [Service] IAllRequiredRulesExecuted.Factory allRequiredRulesExecutedFactory)
     {
-        this.HorseList = await horsePortal.Create();
+        this.HorseList = horsePortal.Create();
         this.NumberOfHorses = 1;
-        await this.RunSelfRules();
+
+
+        var allRequiredRulesExecuted = allRequiredRulesExecutedFactory(RuleManager.Rules.OfType<IRequiredRule>());
+        RuleManager.AddRule(allRequiredRulesExecuted);
+
+        // This is needed for IAllRequiredRulesExecuted rule to do it's thing
+        // TODO : Should ValidateBase pause? What should "paused" be?
+        // There's tradeoffse to everything!
+        await CheckRules(nameof(NumberOfHorses));
+        await allRequiredRulesExecuted.RunRule(this);
     }
 
 #if !CLIENT
 
     [Fetch]
-    internal async Task Fetch(Dal.Ef.Cart cart, [Service] IHorseListFactory horsePortal)
+    public void Fetch(Dal.Ef.Cart cart, [Service] IHorseListFactory horsePortal)
     {
         this.Id = cart.Id;
         this.Name = cart.Name;
         this.NumberOfHorses = cart.NumberOfHorses;
-        this.HorseList = await horsePortal.Fetch(cart.Horses);
+        this.HorseList = horsePortal.Fetch(cart.Horses);
     }
 
     [Insert]
-    internal async Task Insert(Dal.Ef.HorseBarn horseBarn, [Service] IHorseListFactory horsePortal)
+    internal void Insert(Dal.Ef.HorseBarn horseBarn, [Service] IHorseListFactory horsePortal)
     {
         Dal.Ef.Cart cart = new Dal.Ef.Cart();
 
@@ -109,11 +116,11 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
 
         horseBarn.Carts.Add(cart);
 
-        await horsePortal.Save(this.HorseList, cart);
+        horsePortal.Save(this.HorseList, cart);
     }
 
     [Update]
-    internal async Task Update(Dal.Ef.HorseBarn horseBarn, [Service] IHorseListFactory horsePortal)
+    internal void Update(Dal.Ef.HorseBarn horseBarn, [Service] IHorseListFactory horsePortal)
     {
         var cart = horseBarn.Carts.First(c => c.Id == this.Id);
 
@@ -121,7 +128,7 @@ internal class Cart<C, H> : CustomEditBase<C>, ICart
 
         cart.Name = this.Name;
         cart.NumberOfHorses = this.NumberOfHorses;
-        await horsePortal.Save(this.HorseList, cart);
+        horsePortal.Save(this.HorseList, cart);
     }
 
 #endif

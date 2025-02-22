@@ -18,62 +18,23 @@ namespace Neatoo.UnitTest.Portal
 [TestClass]
     public class EditBaseFactoryTests
     {
-        public class ServerServiceProvider
-        {
-            public IServiceProvider serverProvider { get; set; }
-        }
-
-        private object lockContainer = new object();
-        IServiceProvider serverContainer = null!;
-        IServiceProvider clientContainer = null!;
-
-        IServiceScope serverScope = null!;
-        IServiceScope clientScope = null!;
+        private IServiceScope serverScope;
+        private IServiceScope clientScope;
 
         [TestInitialize]
-        public void TestInitialize()
+        public void TestIntialize()
         {
-            lock (lockContainer)
-            {
-                if (serverContainer == null)
-                {
-                    var serverCollection = new ServiceCollection();
-                    var clientCollection = new ServiceCollection();
-
-                    serverCollection.AddNeatooServices(NeatooHost.Local, Assembly.GetExecutingAssembly());
-                    serverCollection.AddTransient<Objects.IDisposableDependency, Objects.DisposableDependency>();
-                    serverCollection.AddScoped<Objects.DisposableDependencyList>();
-
-                    clientCollection.AddNeatooServices(NeatooHost.Remote, Assembly.GetExecutingAssembly());
-                    clientCollection.AddScoped<ServerServiceProvider>();
-                    clientCollection.AddScoped<ServerServiceProvider>();
-
-                    clientCollection.AddScoped<SendRemoteRequestToServer>(cc =>
-                    {
-                        var serverServiceProvider = cc.GetRequiredService<ServerServiceProvider>().serverProvider;
-                        return (RemoteRequestDto remoteRequest) =>
-                        {
-                            return serverServiceProvider.GetRequiredService<ServerHandlePortalRequest>()(remoteRequest);
-                        };
-                    });
-
-                    serverContainer = serverCollection.BuildServiceProvider();
-                    clientContainer = clientCollection.BuildServiceProvider();
-                }
-            }
-
-            serverScope = serverContainer.CreateScope();
-            clientScope = clientContainer.CreateScope();
-
-            clientScope.GetRequiredService<ServerServiceProvider>().serverProvider = serverScope.ServiceProvider;
+            var scopes = FactoryContainers.Scopes();
+            serverScope = scopes.server;
+            clientScope = scopes.client;
         }
 
         [TestMethod]
-        public async Task EditBaseFactoryTests_IEditObjectCreateEditBaseObject()
+        public void EditBaseFactoryTests_IEditObjectCreateEditBaseObject()
         {
             var factory = clientScope.GetRequiredService<EditObjectFactory>();
 
-            var result = await factory.Create();
+            var result = factory.Create();
 
             Assert.IsTrue(result.CreateCalled);
             Assert.IsTrue(result.IsNew);
@@ -87,7 +48,7 @@ namespace Neatoo.UnitTest.Portal
 
             var criteria = 10;
 
-            var result = await factory.Create(criteria);
+            var result = await factory.CreateAsync(criteria);
 
             Assert.AreEqual(criteria, result.IntCriteria);
             Assert.IsTrue(result.IsNew);
@@ -95,23 +56,35 @@ namespace Neatoo.UnitTest.Portal
         }
 
         [TestMethod]
-        public async Task EditBaseFactoryTests_EditBaseObjectCreateDependency()
+        public void EditBaseFactoryTests_EditBaseObjectCreateDependency()
         {
             var factory = clientScope.GetRequiredService<EditObjectFactory>();
             var guidCriteria = Guid.NewGuid();
-            var result = await factory.Create(guidCriteria);
+            var result = factory.Create(guidCriteria);
 
-            Assert.IsNotNull(result.GuidCriteria);
+            Assert.AreEqual(guidCriteria, result.GuidCriteria);
             Assert.IsTrue(result.IsNew);
             Assert.IsTrue(result.IsModified);
         }
 
         [TestMethod]
-        public async Task EditBaseFactoryTests_IEditObjectFetchEditBaseObject()
+        public async Task EditBaseFactoryTests_EditBaseObjectCreateRemote()
+        {
+            var factory = clientScope.GetRequiredService<EditObjectFactory>();
+            var guidCriteria = Guid.NewGuid();
+            var result = await factory.CreateRemote(guidCriteria);
+
+            Assert.AreEqual(guidCriteria, result.GuidCriteria);
+            Assert.IsTrue(result.IsNew);
+            Assert.IsTrue(result.IsModified);
+        }
+
+        [TestMethod]
+        public void EditBaseFactoryTests_IEditObjectFetchEditBaseObject()
         {
             var factory = clientScope.GetRequiredService<EditObjectFactory>();
 
-            var result = await factory.Fetch();
+            var result = factory.Fetch();
 
             Assert.IsNotNull(result.FetchCalled);
             Assert.IsFalse(result.IsNew);
@@ -119,13 +92,13 @@ namespace Neatoo.UnitTest.Portal
         }
 
         [TestMethod]
-        public async Task EditBaseFactoryTests_IEditObjectFetchEditBaseObjectGuid()
+        public void EditBaseFactoryTests_IEditObjectFetchEditBaseObjectGuid()
         {
             var factory = clientScope.GetRequiredService<EditObjectFactory>();
 
             var guidCriteria = Guid.NewGuid();
 
-            var result = await factory.Fetch(guidCriteria);
+            var result = factory.Fetch(guidCriteria);
 
             Assert.AreEqual(guidCriteria, result.GuidCriteria);
             Assert.IsFalse(result.IsNew);
@@ -133,17 +106,71 @@ namespace Neatoo.UnitTest.Portal
         }
 
         [TestMethod]
-        public async Task EditBaseFactoryTests_Save()
+        public async Task EditBaseFactoryTests_FetchRemote()
         {
             var factory = clientScope.GetRequiredService<EditObjectFactory>();
 
-            var result = await factory.Create();
+            var guidCriteria = Guid.NewGuid();
 
-            result = await factory.Save(result);
+            var result = await factory.FetchRemote(guidCriteria);
+
+            Assert.AreEqual(guidCriteria, result.GuidCriteria);
+            Assert.IsFalse(result.IsNew);
+            Assert.IsFalse(result.IsModified);
+        }
+
+        [TestMethod]
+        public void EditBaseFactoryTests_Save()
+        {
+            var factory = clientScope.GetRequiredService<EditObjectFactory>();
+
+            var result = factory.Create();
+
+            result = factory.Save(result);
 
             Assert.IsTrue(result.InsertCalled);
             Assert.IsFalse(result.IsNew);
             Assert.IsFalse(result.IsModified);
+        }
+
+        [TestMethod]
+        public void EditBaseFactoryTests_FetchFail()
+        {
+            var factory = clientScope.GetRequiredService<EditObjectFactory>();
+
+            var result = factory.FetchFail();
+
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public async Task EditBaseFactoryTests_FetchFailAsync()
+        {
+            var factory = clientScope.GetRequiredService<EditObjectFactory>();
+
+            var result = await factory.FetchFailAsync();
+
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public async Task EditBaseFactoryTests_FetchFailDependency()
+        {
+            var factory = clientScope.GetRequiredService<EditObjectFactory>();
+
+            var result = await factory.FetchFailDependency();
+
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public async Task EditBaseFactoryTests_FetchFailAsyncDependency()
+        {
+            var factory = clientScope.GetRequiredService<EditObjectFactory>();
+
+            var result = await factory.FetchFailAsyncDependency();
+
+            Assert.IsNull(result);
         }
     }
 }

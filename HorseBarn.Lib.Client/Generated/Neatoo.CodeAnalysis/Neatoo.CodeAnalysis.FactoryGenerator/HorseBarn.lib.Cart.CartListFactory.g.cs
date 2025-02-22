@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Neatoo.Portal.Internal;
-using HorseBarn.lib.Horse;
 using Neatoo;
 using Neatoo.Portal;
+using HorseBarn.lib.Horse;
 
 /*
 Debugging Messages:
@@ -12,34 +12,42 @@ namespace HorseBarn.lib.Cart
 {
     public interface ICartListFactory
     {
-        Task<ICartList> Create();
+        ICartList Create();
+        delegate ICartList CreateDelegate();
     }
 
-    [Factory<ICartList>]
-    internal class CartListFactory : FactoryBase<CartList>, ICartListFactory
+    internal class CartListFactory : FactoryBase, ICartListFactory
     {
         private readonly IServiceProvider ServiceProvider;
-        private readonly DoRemoteRequest DoRemoteRequest;
+        private readonly IDoRemoteRequest DoRemoteRequest;
         public CartListFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
         }
 
-        public CartListFactory(IServiceProvider serviceProvider, DoRemoteRequest remoteMethodDelegate)
+        public CartListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public async Task<ICartList> Create()
+        public ICartList Create()
         {
             var target = ServiceProvider.GetRequiredService<CartList>();
-            await DoMapperMethodCall(target, DataMapperMethod.Create, () =>
+            return DoMapperMethodCall<ICartList>(target, DataMapperMethod.Create, () => target.Create());
+        }
+
+        public static void FactoryServiceRegistrar(IServiceCollection services)
+        {
+            services.AddTransient<CartList>();
+            services.AddTransient<ICartList, CartList>();
+            services.AddScoped<CartListFactory>();
+            services.AddScoped<ICartListFactory, CartListFactory>();
+            services.AddScoped<ICartListFactory.CreateDelegate>(cc =>
             {
-                target.Create();
-                return Task.CompletedTask;
+                var factory = cc.GetRequiredService<CartListFactory>();
+                return () => factory.Create();
             });
-            return target;
         }
     }
 }

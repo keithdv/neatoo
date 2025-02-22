@@ -1,6 +1,7 @@
 ﻿using Neatoo;
 using Neatoo.Portal;
 using Neatoo.Rules;
+using Neatoo.Rules.Rules;
 using System.ComponentModel.DataAnnotations;
 
 namespace HorseBarn.lib.Horse;
@@ -15,7 +16,9 @@ public interface IHorseCriteria : IValidateBase
 [Factory]
 internal class HorseCriteria : ValidateBase<HorseCriteria>, IHorseCriteria
 {
-    public HorseCriteria(IValidateBaseServices<HorseCriteria> services, IHorseNameUniqueRule horseNameUniqueRule) : base(services)
+    public HorseCriteria(IValidateBaseServices<HorseCriteria> services,
+                        IHorseNameUniqueRule horseNameUniqueRule,
+                        IAllRequiredRulesExecuted.Factory allRequiredRulesExecutedFactory) : base(services)
     {
         RuleManager.AddRule(horseNameUniqueRule);
         RuleManager.AddValidation(static (t) =>
@@ -26,6 +29,9 @@ internal class HorseCriteria : ValidateBase<HorseCriteria>, IHorseCriteria
             }
             return string.Empty;
         }, t => t.Name);
+        var allRequiredRulesExecuted = allRequiredRulesExecutedFactory(RuleManager.Rules.OfType<IRequiredRule>());
+        RuleManager.AddRule(allRequiredRulesExecuted);
+        allRequiredRulesExecuted.RunRule(this).Wait();
     }
 
     [Required]

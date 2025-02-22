@@ -6,13 +6,53 @@ using System.Threading.Tasks;
 
 namespace Neatoo.Portal.Internal
 {
-    public interface IFactoryBase<in T>
-    {
-    }
 
-    public abstract class FactoryBase<T> : IFactoryBase<T>
+    public abstract class FactoryBase
     {
-        protected async Task DoMapperMethodCall(object target, DataMapperMethod operation, Func<Task> mapperMethodCall)
+        protected virtual T DoMapperMethodCall<T>(T target, DataMapperMethod operation, Action mapperMethodCall)
+        {
+            return DoMapperMethodCallBoolAsync<T>(target, operation, () =>
+            {
+                mapperMethodCall();
+                return Task.FromResult(true);
+            }).Result!;  // Safe because I know there is no async fork
+        }
+
+        protected virtual T? DoMapperMethodCallBool<T>(T target, DataMapperMethod operation, Func<bool> mapperMethodCall)
+        {
+            return DoMapperMethodCallBoolAsync<T>(target, operation, () =>
+            {
+                return Task.FromResult(mapperMethodCall());
+            }).Result; // Safe because I know there is no async fork
+        }
+
+        protected virtual Task<T> DoMapperMethodCallAsync<T>(T target, DataMapperMethod operation, Action mapperMethodCall)
+        {
+            return DoMapperMethodCallBoolAsync<T>(target, operation, () =>
+            {
+                mapperMethodCall();
+                return Task.FromResult(true);
+            })!;
+        }
+
+        protected virtual Task<T> DoMapperMethodCallAsync<T>(T target, DataMapperMethod operation, Func<Task> mapperMethodCall)
+        {
+            return DoMapperMethodCallBoolAsync(target, operation, async () =>
+            {
+                await mapperMethodCall();
+                return true;
+            })!;
+        }
+
+        protected virtual Task<T?> DoMapperMethodCallBoolAsync<T>(T target, DataMapperMethod operation, Func<bool> mapperMethodCall)
+        {
+            return DoMapperMethodCallBoolAsync<T>(target, operation, () =>
+            {
+                return Task.FromResult(mapperMethodCall());
+            });
+        }
+
+        protected virtual async Task<T?> DoMapperMethodCallBoolAsync<T>(T target, DataMapperMethod operation, Func<Task<bool>> mapperMethodCall)
         {
             ArgumentNullException.ThrowIfNull(target, nameof(target));
             ArgumentNullException.ThrowIfNull(mapperMethodCall, nameof(mapperMethodCall));
@@ -27,12 +67,20 @@ namespace Neatoo.Portal.Internal
                 stopAllActions = portalTarget.PauseAllActions();
             }
 
+            var succeeded = true;
             using (stopAllActions)
             {
-                await mapperMethodCall();
+                succeeded = await mapperMethodCall();
+            }
+
+            if (!succeeded)
+            {
+                return default;
             }
 
             PostOperation(target, operation);
+
+            return target;
         }
 
         protected virtual void PostOperation(object target, DataMapperMethod operation)

@@ -12,7 +12,7 @@ public interface ICart : IEditBase, INotifyCollectionChanged
     int NumberOfHorses { get; set; }
     IEnumerable<IHorse> Horses { get; }
     bool CanAddHorse(IHorse horse);
-    internal Task RemoveHorse(IHorse horse);
-    internal Task AddHorse(IHorse horse);
+    internal void RemoveHorse(IHorse horse);
+    internal void AddHorse(IHorse horse);
     internal IHorseList HorseList { get; }
 }

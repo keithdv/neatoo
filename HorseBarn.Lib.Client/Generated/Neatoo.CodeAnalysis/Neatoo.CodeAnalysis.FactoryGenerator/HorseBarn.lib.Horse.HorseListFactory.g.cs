@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Neatoo.Portal.Internal;
-using HorseBarn.lib.Cart;
 using Neatoo;
 using Neatoo.Portal;
+using HorseBarn.lib.Cart;
 using System.Collections.Specialized;
 
 /*
@@ -13,34 +13,42 @@ namespace HorseBarn.lib.Horse
 {
     public interface IHorseListFactory
     {
-        Task<IHorseList> Create();
+        IHorseList Create();
+        delegate IHorseList CreateDelegate();
     }
 
-    [Factory<IHorseList>]
-    internal class HorseListFactory : FactoryBase<HorseList>, IHorseListFactory
+    internal class HorseListFactory : FactoryBase, IHorseListFactory
     {
         private readonly IServiceProvider ServiceProvider;
-        private readonly DoRemoteRequest DoRemoteRequest;
+        private readonly IDoRemoteRequest DoRemoteRequest;
         public HorseListFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
         }
 
-        public HorseListFactory(IServiceProvider serviceProvider, DoRemoteRequest remoteMethodDelegate)
+        public HorseListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public async Task<IHorseList> Create()
+        public IHorseList Create()
         {
             var target = ServiceProvider.GetRequiredService<HorseList>();
-            await DoMapperMethodCall(target, DataMapperMethod.Create, () =>
+            return DoMapperMethodCall<IHorseList>(target, DataMapperMethod.Create, () => target.Create());
+        }
+
+        public static void FactoryServiceRegistrar(IServiceCollection services)
+        {
+            services.AddTransient<HorseList>();
+            services.AddTransient<IHorseList, HorseList>();
+            services.AddScoped<HorseListFactory>();
+            services.AddScoped<IHorseListFactory, HorseListFactory>();
+            services.AddScoped<IHorseListFactory.CreateDelegate>(cc =>
             {
-                target.Create();
-                return Task.CompletedTask;
+                var factory = cc.GetRequiredService<HorseListFactory>();
+                return () => factory.Create();
             });
-            return target;
         }
     }
 }

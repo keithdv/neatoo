@@ -1,13 +1,15 @@
 ﻿using Neatoo.Core;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Neatoo.Rules.Rules;
 
 
 public interface IAttributeToRule
 {
-    IRule<T> GetRule<T>(IPropertyInfo r, Type attribute) where T : IValidateBase;
+    IRule GetRule<T>(IPropertyInfo r, Type attribute) where T : class, IValidateBase;
 }
 
 public class AttributeToRule : IAttributeToRule
@@ -18,11 +20,16 @@ public class AttributeToRule : IAttributeToRule
 
     }
 
-    public IRule<T> GetRule<T>(IPropertyInfo r, Type attribute) where T : IValidateBase
+    public IRule GetRule<T>(IPropertyInfo r, Type attribute) where T : class, IValidateBase
     {
         if (attribute == typeof(RequiredAttribute))
         {
-            return new RequiredRule<T>(r);
+            var parameter = Expression.Parameter(typeof(T));
+            var property = Expression.Property(parameter, r.Name);
+            var lambda = Expression.Lambda<Func<T, object?>>(Expression.Convert(property, typeof(object)), parameter);
+            var tr = new TriggerProperty<T>(lambda);
+
+            return new RequiredRule<T>(tr);
         }
         return null;
     }

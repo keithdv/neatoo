@@ -17,15 +17,14 @@ public interface IValidateAsyncObject : IPersonBase
     List<IValidateProperty> Properties => PropertyManager.GetProperties.Cast<IValidateProperty>().ToList();
 }
 
-[Factory]
 internal class ValidateAsyncObject : PersonValidateBase<ValidateAsyncObject>, IValidateAsyncObject
 {
-    public IShortNameAsyncRule<ValidateAsyncObject> ShortNameRule { get; }
-    public IFullNameAsyncRule<ValidateAsyncObject> FullNameRule { get; }
+    public IShortNameAsyncRule ShortNameRule { get; }
+    public IFullNameAsyncRule FullNameRule { get; }
 
     public ValidateAsyncObject(IValidateBaseServices<ValidateAsyncObject> services,
-        IShortNameAsyncRule<ValidateAsyncObject> shortNameRule,
-        IFullNameAsyncRule<ValidateAsyncObject> fullNameRule,
+        IShortNameAsyncRule shortNameRule,
+        IFullNameAsyncRule fullNameRule,
         IAsyncRuleThrowsException asyncRuleThrowsException,
         IRecursiveAsyncRule recursiveAsyncRule
         ) : base(services)

@@ -20,6 +20,7 @@ public interface IEditListBase<I> : IEditListBase, IValidateListBase<I>, IEditMe
     new void RemoveAt(int index);
 }
 
+[Factory]
 public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject, IEditListBase<I>, IEditListBase
     where T : EditListBase<T, I>
     where I : IEditBase

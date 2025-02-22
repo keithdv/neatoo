@@ -28,6 +28,15 @@ class NeatooReferenceResolver : ReferenceResolver, IDisposable
         }
     }
 
+    public bool AlreadyExists(object reference)
+    {
+        if (_objectToReferenceIdMap.ContainsKey(reference))
+        {
+            return true;
+        }
+        return false;
+    }
+
     public override string GetReference(object value, out bool alreadyExists)
     {
         var type = value.GetType();
