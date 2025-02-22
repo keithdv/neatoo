@@ -36,9 +36,9 @@ namespace Neatoo.UnitTest.EditBaseTests
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<EditPersonList>();
+            services.AddTransient<IEditPersonList, EditPersonList>();
             services.AddScoped<EditPersonListFactory>();
             services.AddScoped<IEditPersonListFactory, EditPersonListFactory>();
-            services.AddScoped<IEditPersonList, EditPersonList>();
         }
     }
 }

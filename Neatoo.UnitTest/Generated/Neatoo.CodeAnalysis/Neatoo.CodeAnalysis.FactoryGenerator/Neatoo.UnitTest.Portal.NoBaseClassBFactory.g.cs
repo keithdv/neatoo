@@ -4,7 +4,6 @@ using Neatoo;
 using Neatoo.Portal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neatoo.AuthorizationRules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -69,9 +68,9 @@ namespace Neatoo.UnitTest.Portal
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<NoBaseClassB>();
+            services.AddTransient<INoBaseClassB, NoBaseClassB>();
             services.AddScoped<NoBaseClassBFactory>();
             services.AddScoped<INoBaseClassBFactory, NoBaseClassBFactory>();
-            services.AddScoped<INoBaseClassB, NoBaseClassB>();
             services.AddScoped<INoBaseClassBFactory.CreateDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<NoBaseClassBFactory>();

@@ -32,9 +32,9 @@ namespace Neatoo.UnitTest.BaseTests.Objects
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<BaseObjectList>();
+            services.AddTransient<IBaseObjectList, BaseObjectList>();
             services.AddScoped<BaseObjectListFactory>();
             services.AddScoped<IBaseObjectListFactory, BaseObjectListFactory>();
-            services.AddScoped<IBaseObjectList, BaseObjectList>();
         }
     }
 }

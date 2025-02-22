@@ -353,9 +353,9 @@ namespace Neatoo.UnitTest.ObjectPortal
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<EditObject>();
+            services.AddTransient<IEditObject, EditObject>();
             services.AddScoped<EditObjectFactory>();
             services.AddScoped<IEditObjectFactory, EditObjectFactory>();
-            services.AddScoped<IEditObject, EditObject>();
             services.AddScoped<IEditObjectFactory.CreateDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<EditObjectFactory>();

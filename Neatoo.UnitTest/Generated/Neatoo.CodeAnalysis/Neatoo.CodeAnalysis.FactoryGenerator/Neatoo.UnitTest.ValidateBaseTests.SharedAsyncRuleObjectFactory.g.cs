@@ -40,9 +40,9 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<SharedAsyncRuleObject>();
+            services.AddTransient<ISharedAsyncRuleObject, SharedAsyncRuleObject>();
             services.AddScoped<SharedAsyncRuleObjectFactory>();
             services.AddScoped<ISharedAsyncRuleObjectFactory, SharedAsyncRuleObjectFactory>();
-            services.AddScoped<ISharedAsyncRuleObject, SharedAsyncRuleObject>();
         }
     }
 }

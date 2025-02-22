@@ -33,9 +33,9 @@ namespace Neatoo.UnitTest.Example.SimpleValidate
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<SimpleValidateObject>();
+            services.AddTransient<ISimpleValidateObject, SimpleValidateObject>();
             services.AddScoped<SimpleValidateObjectFactory>();
             services.AddScoped<ISimpleValidateObjectFactory, SimpleValidateObjectFactory>();
-            services.AddScoped<ISimpleValidateObject, SimpleValidateObject>();
         }
     }
 }

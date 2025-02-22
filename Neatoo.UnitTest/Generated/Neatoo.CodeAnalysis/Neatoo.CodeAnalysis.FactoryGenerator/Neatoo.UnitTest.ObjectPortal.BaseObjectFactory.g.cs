@@ -131,9 +131,9 @@ namespace Neatoo.UnitTest.ObjectPortal
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<BaseObject>();
+            services.AddTransient<IBaseObject, BaseObject>();
             services.AddScoped<BaseObjectFactory>();
             services.AddScoped<IBaseObjectFactory, BaseObjectFactory>();
-            services.AddScoped<IBaseObject, BaseObject>();
             services.AddScoped<IBaseObjectFactory.CreateAsyncDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<BaseObjectFactory>();

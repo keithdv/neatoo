@@ -43,9 +43,9 @@ namespace Neatoo.UnitTest.EditBaseTests
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<EditPerson>();
+            services.AddTransient<IEditPerson, EditPerson>();
             services.AddScoped<EditPersonFactory>();
             services.AddScoped<IEditPersonFactory, EditPersonFactory>();
-            services.AddScoped<IEditPerson, EditPerson>();
             services.AddScoped<IEditPersonFactory.FillFromDtoDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<EditPersonFactory>();

@@ -35,11 +35,11 @@ public class RemoteAttribute : Attribute
 }
 
 [System.AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-public class DataMapperOperation : Attribute
+public class DataMapperMethodAttribute : Attribute
 {
     public DataMapperMethod Operation { get; }
 
-    public DataMapperOperation(DataMapperMethod operation)
+    public DataMapperMethodAttribute(DataMapperMethod operation)
     {
         this.Operation = operation;
     }
@@ -53,42 +53,42 @@ public sealed class ServiceAttribute : Attribute
     }
 }
 
-public sealed class CreateAttribute : DataMapperOperation
+public sealed class CreateAttribute : DataMapperMethodAttribute
 {
     public CreateAttribute() : base(DataMapperMethod.Create)
     {
     }
 }
 
-public sealed class FetchAttribute : DataMapperOperation
+public sealed class FetchAttribute : DataMapperMethodAttribute
 {
     public FetchAttribute() : base(DataMapperMethod.Fetch)
     {
     }
 }
 
-public sealed class InsertAttribute : DataMapperOperation
+public sealed class InsertAttribute : DataMapperMethodAttribute
 {
     public InsertAttribute() : base(DataMapperMethod.Insert)
     {
     }
 }
 
-public sealed class UpdateAttribute : DataMapperOperation
+public sealed class UpdateAttribute : DataMapperMethodAttribute
 {
     public UpdateAttribute() : base(DataMapperMethod.Update)
     {
     }
 }
 
-public sealed class DeleteAttribute : DataMapperOperation
+public sealed class DeleteAttribute : DataMapperMethodAttribute
 {
     public DeleteAttribute() : base(DataMapperMethod.Delete)
     {
     }
 }
 
-public sealed class  ExecuteAttribute<D> : DataMapperOperation
+public sealed class  ExecuteAttribute<D> : DataMapperMethodAttribute
     where D : Delegate
 {
     public ExecuteAttribute() : base(DataMapperMethod.Execute)
