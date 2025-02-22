@@ -12,9 +12,9 @@ internal class RecursiveAsyncRule : AsyncRuleBase<IPersonBase>, IRecursiveAsyncR
     {
         AddTriggerProperties(_ => _.ShortName);
     }
-    public override async Task<PropertyErrors> Execute(IPersonBase target, CancellationToken token)
+    public override async Task<PropertyErrors> Execute(IPersonBase target, CancellationToken? token)
     {
-        await Task.Delay(10, token);
+        await Task.Delay(10);
 
         if (target.ShortName == "Recursive")
         {

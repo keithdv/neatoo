@@ -8,6 +8,15 @@ using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ObjectPortal;
 
+public interface IBaseObject : IBase
+{
+    int IntCriteria { get; }
+    Guid GuidCriteria { get; }
+    object[] MultipleCriteria { get; }
+    bool CreateCalled { get; set; }
+    bool FetchCalled { get; set; }
+}
+
 public class BaseObject : Base<BaseObject>, IBaseObject
 {
     public BaseObject(IBaseServices<BaseObject> baseServices) : base(baseServices)
@@ -21,7 +30,7 @@ public class BaseObject : Base<BaseObject>, IBaseObject
     public bool CreateCalled { get => Getter<bool>(); set => Setter(value); }
 
     [Create]
-    public async Task Create()
+    public async Task CreateAsync()
     {
         CreateCalled = true;
         await Task.CompletedTask;
@@ -47,10 +56,11 @@ public class BaseObject : Base<BaseObject>, IBaseObject
     }
 
     [Create]
-    public void Create(Guid criteria, [Service] IDisposableDependency dependency)
+    public Task Create(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
+        return Task.CompletedTask;
     }
 
     public bool FetchCalled { get; set; } = false;
@@ -68,9 +78,10 @@ public class BaseObject : Base<BaseObject>, IBaseObject
     }
     
     [Fetch]
-    public void Fetch(Guid criteria, [Service] IDisposableDependency dependency)
+    public Task Fetch(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
+        return Task.CompletedTask;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
@@ -14,7 +15,7 @@ public interface IProperty : INotifyPropertyChanged, INotifyNeatooPropertyChange
     string? StringValue { get; set; }
     Task SetStringValue(string? value);
     Task SetValue<P>(P? newValue);
-    internal Task SetPrivateValue<P>(P? newValue);
+    internal Task SetPrivateValue<P>(P? newValue, bool quietly = false);
     Task Task { get; }
     bool IsBusy { get; }
     bool IsSelfBusy { get; }
@@ -128,7 +129,7 @@ public class Property<T> : IProperty<T>, IProperty, INotifyPropertyChanged, IJso
         return SetPrivateValue(newValue);
     }
 
-    public virtual Task SetPrivateValue<P>(P? newValue)
+    public virtual Task SetPrivateValue<P>(P? newValue, bool quietly = false)
     {
         if (newValue == null && _value == null) { return Task.CompletedTask; }
 
@@ -136,11 +137,11 @@ public class Property<T> : IProperty<T>, IProperty, INotifyPropertyChanged, IJso
 
         if (newValue == null)
         {
-            HandleNullValue();
+            HandleNullValue(quietly);
         }
         else if (newValue is T value)
         {
-            HandleNonNullValue(value);
+            HandleNonNullValue(value, quietly);
         }
         else
         {
@@ -157,28 +158,11 @@ public class Property<T> : IProperty<T>, IProperty, INotifyPropertyChanged, IJso
 
     public virtual void LoadValue(object? value)
     {
-        if (AreSame(_value, value))
-        {
-            return;
-        }
-
-        if (value == null)
-        {
-            _value = default;
-        }
-        else if (value is T x)
-        {
-            _value = x;
-        }
-        else
-        {
-            throw new PropertyValidateChildDataWrongTypeException();
-        }
-
-        OnPropertyChanged(nameof(Value));
+        SetPrivateValue((T?)value, true);
+        _value = (T?)value;
     }
 
-    protected virtual void HandleNullValue()
+    protected virtual void HandleNullValue(bool quietly = false)
     {
         if (_value is INotifyNeatooPropertyChanged neatooPropertyChanged)
         {
@@ -186,52 +170,62 @@ public class Property<T> : IProperty<T>, IProperty, INotifyPropertyChanged, IJso
         }
 
         _value = default;
-        OnPropertyChanged(nameof(Value));
 
-        Task = OnValueNeatooPropertyChanged(new PropertyChangedBreadCrumbs(this.Name, this));
+        if (!quietly)
+        {
+            OnPropertyChanged(nameof(Value));
+            Task = OnValueNeatooPropertyChanged(new PropertyChangedBreadCrumbs(this.Name, this));
+        }
     }
 
-    protected virtual void HandleNonNullValue(T value)
+    protected virtual void HandleNonNullValue(T value, bool quietly = false)
     {
         var isDiff = !AreSame(_value, value);
 
         if (isDiff)
         {
-            if (_value is INotifyNeatooPropertyChanged neatooPropertyChanged)
+            if (_value != null)
             {
-                neatooPropertyChanged.NeatooPropertyChanged -= PassThruValueNeatooPropertyChanged;
-            }
-
-            if (value is INotifyNeatooPropertyChanged valueNeatooPropertyChanged)
-            {
-                valueNeatooPropertyChanged.NeatooPropertyChanged += PassThruValueNeatooPropertyChanged;
-            }
-
-            if (_value is IBase _valueBase)
-            {
-                if (_valueBase.IsBusy)
+                if (_value is INotifyNeatooPropertyChanged neatooPropertyChanged)
                 {
-                    throw new Exception("Cannot remove a child that is busy");
+                    neatooPropertyChanged.NeatooPropertyChanged -= PassThruValueNeatooPropertyChanged;
+                }
+
+                if (_value is IBase _valueBase)
+                {
+                    if (_valueBase.IsBusy)
+                    {
+                        throw new Exception("Cannot remove a child that is busy");
+                    }
+                }
+
+                if (_value is ISetParent _valueSetParent)
+                {
+                    _valueSetParent.SetParent(null);
                 }
             }
 
-            if (value is IBase valueBase)
+            if (value != null)
             {
-                if (valueBase.IsBusy)
+                if (value is INotifyNeatooPropertyChanged valueNeatooPropertyChanged)
                 {
-                    throw new Exception("Cannot add a child that is busy");
+                    valueNeatooPropertyChanged.NeatooPropertyChanged += PassThruValueNeatooPropertyChanged;
                 }
-            }
 
-            if (_value is ISetParent _valueSetParent)
-            {
-                _valueSetParent.SetParent(null);
+
+                if (value is IBase valueBase)
+                {
+                    if (valueBase.IsBusy)
+                    {
+                        throw new Exception("Cannot add a child that is busy");
+                    }
+                }
             }
         }
 
         _value = value;
 
-        if (isDiff)
+        if (isDiff && !quietly)
         {
             OnPropertyChanged(nameof(Value));
 
@@ -249,7 +243,7 @@ public class Property<T> : IProperty<T>, IProperty, INotifyPropertyChanged, IJso
         return NeatooPropertyChanged?.Invoke(new PropertyChangedBreadCrumbs(this.Name, breadCrumbs.Source, breadCrumbs)) ?? Task.CompletedTask;
     }
 
-    protected virtual Task OnValueNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
+    protected virtual async Task OnValueNeatooPropertyChanged(PropertyChangedBreadCrumbs breadCrumbs)
     {
         // ValidateBase sticks Task into AsyncTaskSequencer for us
         // so that it will be awaited by WaitForTasks()
@@ -259,22 +253,24 @@ public class Property<T> : IProperty<T>, IProperty, INotifyPropertyChanged, IJso
         {
             IsSelfBusy = true;
 
-            OnPropertyChanged(nameof(IsBusy));
-            OnPropertyChanged(nameof(IsSelfBusy));
-
-            task = task.ContinueWith(_ =>
+            try
             {
+                OnPropertyChanged(nameof(IsBusy));
+                OnPropertyChanged(nameof(IsSelfBusy));
+
+                await task;
+
                 IsSelfBusy = false;
                 OnPropertyChanged(nameof(IsBusy));
                 OnPropertyChanged(nameof(IsSelfBusy));
-                if (_.Exception != null)
-                {
-                    throw _.Exception;
-                }
-            });
+            }
+            finally
+            {
+                IsSelfBusy = false;
+            }
         }
 
-        return task;
+        await task;
     }
 
     public Property(IPropertyInfo propertyInfo)

@@ -9,10 +9,12 @@ public class NeatooListBaseJsonTypeConverter<T> : JsonConverter<T>
         where T : IListBase
 {
     private readonly IServiceProvider scope;
+    private readonly ILocalAssemblies localAssemblies;
 
-    public NeatooListBaseJsonTypeConverter(IServiceProvider scope)
+    public NeatooListBaseJsonTypeConverter(IServiceProvider scope, ILocalAssemblies localAssemblies)
     {
         this.scope = scope;
+        this.localAssemblies = localAssemblies;
     }
 
     public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -62,7 +64,7 @@ public class NeatooListBaseJsonTypeConverter<T> : JsonConverter<T>
             else if (propertyName == "$type")
             {
                 var typeString = reader.GetString();
-                var type = INeatooJsonSerializer.FindType(typeString);
+                var type = localAssemblies.FindType(typeString);
                 list = (T)scope.GetRequiredService(type);
 
                 if (list is IJsonOnDeserializing jsonOnDeserializing)
@@ -91,7 +93,7 @@ public class NeatooListBaseJsonTypeConverter<T> : JsonConverter<T>
                         if (propertyName == "$type")
                         {
                             var typeString = reader.GetString();
-                            type = INeatooJsonSerializer.FindType(typeString);
+                            type = localAssemblies.FindType(typeString);
                         }
                         else if (propertyName == "$value")
                         {

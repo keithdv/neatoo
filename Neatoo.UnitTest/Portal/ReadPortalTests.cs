@@ -29,7 +29,7 @@ public class ReadPortalTests
     [TestMethod]
     public async Task ReadPortal_Create()
     {
-        domainObject = await portal.Create();
+        domainObject = await portal.CreateAsync();
         Assert.IsTrue(domainObject.CreateCalled);
     }
 
@@ -42,32 +42,32 @@ public class ReadPortalTests
     }
 
     [TestMethod]
-    public async Task ReadPortal_CreateIntCriteriaCalled()
+    public void ReadPortal_CreateIntCriteriaCalled()
     {
         int crit = DateTime.Now.Millisecond;
-        domainObject = await portal.Create(crit);
+        domainObject = portal.Create(crit);
         Assert.AreEqual(crit, domainObject.IntCriteria);
     }
 
     [TestMethod]
-    public async Task ReadPortal_CreateMultipleCriteriaCalled()
+    public void ReadPortal_CreateMultipleCriteriaCalled()
     {
-        domainObject = await portal.Create(10, "String");
+        domainObject = portal.Create(10, "String");
         CollectionAssert.AreEquivalent(new object[] { 10, "String" }, domainObject.MultipleCriteria);
     }
 
     [TestMethod]
-    public async Task ReadPortal_Fetch()
+    public void ReadPortal_Fetch()
     {
-        domainObject = await portal.Fetch();
+        domainObject = portal.Fetch();
         Assert.IsTrue(domainObject.FetchCalled);
     }
 
     [TestMethod]
-    public async Task ReadPortal_FetchIntCriteriaCalled()
+    public void ReadPortal_FetchIntCriteriaCalled()
     {
         int crit = DateTime.Now.Millisecond;
-        domainObject = await portal.Fetch(crit);
+        domainObject = portal.Fetch(crit);
         Assert.AreEqual(crit, domainObject.IntCriteria);
     }
 

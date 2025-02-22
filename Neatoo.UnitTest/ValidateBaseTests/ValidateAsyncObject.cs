@@ -19,12 +19,12 @@ public interface IValidateAsyncObject : IPersonBase
 
 internal class ValidateAsyncObject : PersonValidateBase<ValidateAsyncObject>, IValidateAsyncObject
 {
-    public IShortNameAsyncRule<ValidateAsyncObject> ShortNameRule { get; }
-    public IFullNameAsyncRule<ValidateAsyncObject> FullNameRule { get; }
+    public IShortNameAsyncRule ShortNameRule { get; }
+    public IFullNameAsyncRule FullNameRule { get; }
 
     public ValidateAsyncObject(IValidateBaseServices<ValidateAsyncObject> services,
-        IShortNameAsyncRule<ValidateAsyncObject> shortNameRule,
-        IFullNameAsyncRule<ValidateAsyncObject> fullNameRule,
+        IShortNameAsyncRule shortNameRule,
+        IFullNameAsyncRule fullNameRule,
         IAsyncRuleThrowsException asyncRuleThrowsException,
         IRecursiveAsyncRule recursiveAsyncRule
         ) : base(services)
@@ -69,7 +69,7 @@ public interface IValidateAsyncObjectList : IValidateListBase<IValidateAsyncObje
 public class ValidateAsyncObjectList : ValidateListBase<ValidateAsyncObjectList, IValidateAsyncObject>, IValidateAsyncObjectList
 {
 
-    public ValidateAsyncObjectList(IValidateListBaseServices<ValidateAsyncObjectList, IValidateAsyncObject> services) : base(services)
+    public ValidateAsyncObjectList() : base()
     {
 
     }

@@ -21,13 +21,14 @@ namespace Neatoo
         /// </summary>
         bool IsPaused { get; }
 
-        internal string ObjectInvalid { get; }
+        internal string? ObjectInvalid { get; }
 
         new IValidateProperty GetProperty(string propertyName);
 
         new IValidateProperty this[string propertyName] { get => GetProperty(propertyName); }
     }
 
+    [Factory]
     public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IDataMapperTarget
         where T : ValidateBase<T>
     {
@@ -37,9 +38,18 @@ namespace Neatoo
 
         public ValidateBase(IValidateBaseServices<T> services) : base(services)
         {
+            ArgumentNullException.ThrowIfNull(services, nameof(services));
+
             this.RuleManager = services.CreateRuleManager((T)(IValidateBase)this);
 
-
+            this.RuleManager.AddValidation(static (t) =>
+            {
+                if (!string.IsNullOrEmpty(t.ObjectInvalid))
+                {
+                    return t.ObjectInvalid;
+                }
+                return string.Empty;
+            }, (t) => t.ObjectInvalid);
 
             ResetMetaState();
         }
@@ -101,11 +111,10 @@ namespace Neatoo
         protected virtual void MarkInvalid(string message)
         {
             ObjectInvalid = message;
-            this[nameof(ObjectInvalid)].SetErrorsForRule(0, new ReadOnlyCollection<string>(new List<string> { message }));
             CheckIfMetaPropertiesChanged();
         }
 
-        public string ObjectInvalid { get => Getter<string>(); protected set => Setter(value); }
+        public string? ObjectInvalid { get => Getter<string>(); protected set => Setter(value); }
 
         new public IValidateProperty GetProperty(string propertyName)
         {
@@ -147,21 +156,16 @@ namespace Neatoo
             return Task.CompletedTask;
         }
 
-        public Task CheckRules(string propertyName)
+        public virtual Task CheckRules(string propertyName)
         {
-            if (this[nameof(ObjectInvalid)].IsSelfValid)
-            {
-                var task = RuleManager.CheckRulesForProperty(propertyName);
+            var task = RuleManager.CheckRulesForProperty(propertyName);
 
-                CheckIfMetaPropertiesChanged();
+            CheckIfMetaPropertiesChanged();
 
-                return task;
-            }
-
-            return Task.CompletedTask;
+            return task;
         }
 
-        public async Task RunSelfRules(CancellationToken token = new CancellationToken())
+        public virtual async Task RunSelfRules(CancellationToken? token = null)
         {
             this[nameof(ObjectInvalid)].ClearAllErrors();
 
@@ -169,7 +173,7 @@ namespace Neatoo
             await AsyncTaskSequencer.AllDone;
         }
 
-        public async Task RunAllRules(CancellationToken token = new CancellationToken())
+        public virtual async Task RunAllRules(CancellationToken? token = null)
         {
             ClearAllErrors();
 

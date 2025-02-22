@@ -1,5 +1,6 @@
 ﻿using Neatoo.Core;
 using Neatoo.Internal;
+using Neatoo.Portal;
 using Neatoo.Portal.Internal;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Neatoo;
 
-
+[Factory]
 public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, IDataMapperEditTarget, IEditMetaProperties, IJsonOnDeserializing, IJsonOnDeserialized
     where T : EditBase<T>
 {
@@ -16,10 +17,10 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
 
     public EditBase(IEditBaseServices<T> services) : base(services)
     {
-        this.Save_ = services.Save;
+        this.Factory = services.Factory;
     }
 
-    protected Save<T> Save_ { get; set; }
+    public IFactoryEditBase<T> Factory { get; protected set; }
     public bool IsMarkedModified { get; protected set; } = false;
     public bool IsModified => PropertyManager.IsModified || IsDeleted || IsNew || IsSelfModified;
     public bool IsSelfModified { get => PropertyManager.IsSelfModified || IsDeleted || IsMarkedModified; protected set => IsMarkedModified = value; }
@@ -202,7 +203,7 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
             }
         }
 
-        return await Save_((T)(IEditBase)this);
+        return await Factory.Save((T)(IEditBase)this);
     }
 
     new protected IEditProperty GetProperty(string propertyName)

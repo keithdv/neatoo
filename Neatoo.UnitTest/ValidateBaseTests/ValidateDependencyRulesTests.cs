@@ -13,8 +13,8 @@ public class ValidateDependencyRules : PersonValidateBase<ValidateDependencyRule
 {
 
     public ValidateDependencyRules(IValidateBaseServices<ValidateDependencyRules> services,
-            IShortNameDependencyRule<ValidateDependencyRules> shortNameRule,
-            IFullNameDependencyRule<ValidateDependencyRules> fullNameRule) : base(services)
+            IShortNameDependencyRule shortNameRule,
+            IFullNameDependencyRule fullNameRule) : base(services)
     {
         RuleManager.AddRule(shortNameRule);
         RuleManager.AddRule(fullNameRule);

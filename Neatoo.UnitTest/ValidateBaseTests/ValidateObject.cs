@@ -16,12 +16,12 @@ public interface IValidateObject : IPersonBase
 
 internal class ValidateObject : PersonValidateBase<ValidateObject>, IValidateObject
 {
-    public IShortNameRule<ValidateObject> ShortNameRule { get; }
-    public IFullNameRule<ValidateObject> FullNameRule { get; }
+    public IShortNameRule ShortNameRule { get; }
+    public IFullNameRule FullNameRule { get; }
 
     public ValidateObject(IValidateBaseServices<ValidateObject> services,
-        IShortNameRule<ValidateObject> shortNameRule,
-        IFullNameRule<ValidateObject> fullNameRule,
+        IShortNameRule shortNameRule,
+        IFullNameRule fullNameRule,
         IRecursiveRule recursiveRule,
         IRuleThrowsException ruleThrowsException
         ) : base(services)
@@ -64,8 +64,7 @@ public interface IValidateObjectList : IValidateListBase<IValidateObject>
 public class ValidateObjectList : ValidateListBase<ValidateObjectList, IValidateObject>, IValidateObjectList
 {
 
-    public ValidateObjectList(IValidateListBaseServices<ValidateObjectList, IValidateObject> services
-        ) : base(services)
+    public ValidateObjectList() : base()
     {
     }
 

@@ -10,14 +10,18 @@ using System.Threading.Tasks;
 namespace Neatoo.UnitTest.ValidateBaseTests;
 
 
-public interface ISharedShortNameRule : IValidateBase
+public interface ISharedShortNameRuleTarget : IValidateBase
 {
     string ShortName { get; set; }
     string FirstName { get; set; }
     string LastName { get; set; }
 }
 
-public class SharedShortNameRule<T> : Rules.AsyncRuleBase<T> where T : ISharedShortNameRule
+public interface ISharedShortNameRule<T> : IRule<T> where T : class, ISharedShortNameRuleTarget
+{
+}
+
+public class SharedShortNameRule<T> : Rules.AsyncRuleBase<T>, ISharedShortNameRule<T> where T : class, ISharedShortNameRuleTarget
 {
 
     public SharedShortNameRule() : base()
@@ -25,7 +29,7 @@ public class SharedShortNameRule<T> : Rules.AsyncRuleBase<T> where T : ISharedSh
         base.AddTriggerProperties(_=> _.ShortName, _=>_.FirstName, _=>_.LastName);
     }
 
-    public override async Task<PropertyErrors> Execute(T target, CancellationToken token)
+    public override async Task<PropertyErrors> Execute(T target, CancellationToken? token)
     {
         await Task.Delay(10);
 
@@ -41,14 +45,13 @@ public class SharedShortNameRule<T> : Rules.AsyncRuleBase<T> where T : ISharedSh
 
 public interface ISharedAsyncRuleObject : IPersonBase { }
 
-public class SharedAsyncRuleObject : PersonValidateBase<SharedAsyncRuleObject>, ISharedAsyncRuleObject, ISharedShortNameRule
+public class SharedAsyncRuleObject : PersonValidateBase<SharedAsyncRuleObject>, ISharedAsyncRuleObject, ISharedShortNameRuleTarget
 {
-
-    public SharedAsyncRuleObject(IValidateBaseServices<SharedAsyncRuleObject> services) : base(services)
+    public SharedAsyncRuleObject(IValidateBaseServices<SharedAsyncRuleObject> services,
+                    ISharedShortNameRule<SharedAsyncRuleObject> sharedRule) : base(services)
     {
-        RuleManager.AddRule(new SharedShortNameRule<SharedAsyncRuleObject>());
+        RuleManager.AddRule(sharedRule);
     }
-
 }
 
 [TestClass]

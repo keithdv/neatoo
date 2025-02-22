@@ -28,19 +28,19 @@ public class ReadWritePortalTests
     }
 
     [TestMethod]
-    public async Task ReadWritePortal_Create()
+    public void ReadWritePortal_Create()
     {
-        editObject = await portal.Create();
+        editObject = portal.Create();
         Assert.IsTrue(editObject.CreateCalled);
         Assert.IsTrue(editObject.IsNew);
         Assert.IsFalse(editObject.IsChild);
     }
 
     [TestMethod]
-    public async Task ReadWritePortal_CreateGuidCriteriaCalled()
+    public void ReadWritePortal_CreateGuidCriteriaCalled()
     {
         var crit = Guid.NewGuid();
-        editObject = await portal.Create(crit);
+        editObject = portal.Create(crit);
         Assert.AreEqual(crit, editObject.GuidCriteria);
         Assert.IsTrue(editObject.CreateCalled);
     }
@@ -49,16 +49,16 @@ public class ReadWritePortalTests
     public async Task ReadWritePortal_CreateIntCriteriaCalled()
     {
         int crit = DateTime.Now.Millisecond;
-        editObject = await portal.Create(crit);
+        editObject = await portal.CreateAsync(crit);
         Assert.AreEqual(crit, editObject.IntCriteria);
         Assert.IsTrue(editObject.CreateCalled);
     }
 
 
     [TestMethod]
-    public async Task ReadWritePortal_Fetch()
+    public void ReadWritePortal_Fetch()
     {
-        editObject = await portal.Fetch();
+        editObject = portal.Fetch();
         Assert.IsTrue(editObject.ID.HasValue);
         Assert.IsTrue(editObject.FetchCalled);
         Assert.IsFalse(editObject.IsNew);
@@ -70,10 +70,10 @@ public class ReadWritePortalTests
     }
 
     [TestMethod]
-    public async Task ReadWritePortal_FetchGuidCriteriaCalled()
+    public void ReadWritePortal_FetchGuidCriteriaCalled()
     {
         var crit = Guid.NewGuid();
-        editObject = await portal.Fetch(crit);
+        editObject = portal.Fetch(crit);
         Assert.AreEqual(crit, editObject.GuidCriteria);
         Assert.IsTrue(editObject.FetchCalled);
     }
@@ -90,12 +90,12 @@ public class ReadWritePortalTests
 
 
     [TestMethod]
-    public async Task ReadWritePortal_Update()
+    public void ReadWritePortal_Update()
     {
-        editObject = await portal.Fetch();
+        editObject = portal.Fetch();
         var id = Guid.NewGuid();
         editObject.ID = Guid.NewGuid();
-        await portal.Save(editObject);
+        portal.Save(editObject);
         Assert.AreNotEqual(id, editObject.ID);
         Assert.IsTrue(editObject.UpdateCalled);
         Assert.IsFalse(editObject.IsNew);
@@ -106,11 +106,11 @@ public class ReadWritePortalTests
 
 
     [TestMethod]
-    public async Task ReadWritePortal_Insert()
+    public void ReadWritePortal_Insert()
     {
-        editObject = await portal.Create();
+        editObject = portal.Create();
         editObject.ID = Guid.Empty;
-        await portal.Save(editObject);
+        portal.Save(editObject);
         Assert.AreNotEqual(Guid.Empty, editObject.ID);
         Assert.IsTrue(editObject.InsertCalled);
         Assert.IsFalse(editObject.IsNew);
@@ -120,11 +120,11 @@ public class ReadWritePortalTests
 
 
     [TestMethod]
-    public async Task ReadWritePortal_Delete()
+    public void ReadWritePortal_Delete()
     {
-        editObject = await portal.Fetch();
+        editObject = portal.Fetch();
         editObject.Delete();
-        await portal.Save(editObject);
+        portal.Save(editObject);
         Assert.IsTrue(editObject.DeleteCalled);
     }
 

@@ -7,31 +7,24 @@ namespace Neatoo.Portal.Internal;
 
 public interface INeatooJsonSerializer
 {
-    string Serialize(object target);
+    string? Serialize(object? target);
     T? Deserialize<T>(string json);
     object? Deserialize(string json, Type type);
     RemoteRequestDto ToRemoteRequest(Type delegateType, params object[]? parameters);
     RemoteRequestDto ToRemoteRequest(Type delegateType, object saveTarget, params object[]? parameters);
-    (object? saveTarget, object[]? parameters) DeserializeRemoteRequest(RemoteRequestDto remoteRequest);
-    object DeserializeRemoteResponse(RemoteResponseDto remoteResponse);
-
-    public static Type? FindType(string fullName)
-    {
-        var types = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType(fullName));
-        var type = types.FirstOrDefault(t => t != null);
-
-        return type;
-    }
+    RemoteRequest DeserializeRemoteRequest(RemoteRequestDto remoteRequest);
+    T? DeserializeRemoteResponse<T>(RemoteResponseDto remoteResponse);
 }
 
 public class NeatooJsonSerializer : INeatooJsonSerializer
 {
     private readonly GetImplementationType getImplementationType;
+    private readonly ILocalAssemblies localAssemblies;
 
     JsonSerializerOptions Options { get; }
 
     private NeatooReferenceHandler MyReferenceHandler { get; } = new NeatooReferenceHandler();
-    public NeatooJsonSerializer(NeatooJsonConverterFactory neatooJsonConverterFactory, GetImplementationType getImplementationType)
+    public NeatooJsonSerializer(NeatooJsonConverterFactory neatooJsonConverterFactory, GetImplementationType getImplementationType, ILocalAssemblies localAssemblies)
     {
         Options = new JsonSerializerOptions
         {
@@ -41,12 +34,16 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
             IncludeFields = true
         };
         this.getImplementationType = getImplementationType;
+        this.localAssemblies = localAssemblies;
     }
 
 
-    public string Serialize(object target)
+    public string? Serialize(object? target)
     {
-        ArgumentNullException.ThrowIfNull(target, nameof(target));
+        if(target == null)
+        {
+            return null;
+        }
 
         using var rr = new NeatooReferenceResolver();
         MyReferenceHandler.asyncLocal.Value = rr;
@@ -54,16 +51,26 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         return JsonSerializer.Serialize(target, Options);
     }
 
-    public T? Deserialize<T>(string json)
+    public T? Deserialize<T>(string? json)
     {
+        if (string.IsNullOrEmpty(json))
+        {
+            return default;
+        }
+
         using var rr = new NeatooReferenceResolver();
         MyReferenceHandler.asyncLocal.Value = rr;
 
         return JsonSerializer.Deserialize<T>(json, Options);
     }
 
-    public object? Deserialize(string json, Type type)
+    public object? Deserialize(string? json, Type type)
     {
+        if (string.IsNullOrEmpty(json))
+        {
+            return null;
+        }
+
         using var rr = new NeatooReferenceResolver();
         MyReferenceHandler.asyncLocal.Value = rr;
 
@@ -91,10 +98,16 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         ArgumentNullException.ThrowIfNull(delegateType, nameof(delegateType));
         ArgumentNullException.ThrowIfNull(saveTarget, nameof(saveTarget));
 
+
         List<ObjectTypeJson>? parameterJson = null;
 
         if (parameters != null)
         {
+            if (parameters.Any(p => p == null))
+            {
+                throw new ArgumentNullException(nameof(parameters));
+            }
+
             parameterJson = parameters.Select(c => ToObjectTypeJson(c)).ToList();
         }
         return new RemoteRequestDto
@@ -109,10 +122,10 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
     {
         ArgumentNullException.ThrowIfNull(target, nameof(target));
         ArgumentNullException.ThrowIfNull(target.GetType().FullName, nameof(Type.FullName));
-        return new ObjectTypeJson(Serialize(target), target.GetType().FullName!);
+        return new ObjectTypeJson(Serialize(target)!, target.GetType().FullName!);
     }
 
-    public (object? saveTarget, object[]? parameters) DeserializeRemoteRequest(RemoteRequestDto remoteRequest)
+    public RemoteRequest DeserializeRemoteRequest(RemoteRequestDto remoteRequest)
     {
         ArgumentNullException.ThrowIfNull(remoteRequest, nameof(remoteRequest));
 
@@ -128,17 +141,29 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
             parameters = remoteRequest.Parameters.Select(c => FromObjectTypeJson(c)).ToArray();
         }
 
-        return (target, parameters);
+        var result = new RemoteRequest()
+        {
+            DelegateType = localAssemblies.FindType(remoteRequest.DelegateAssemblyType),
+            Parameters = parameters,
+            SaveTarget = target
+        };
+
+        return result;
     }
 
-    public object DeserializeRemoteResponse(RemoteResponseDto portalResponse)
+    public T? DeserializeRemoteResponse<T>(RemoteResponseDto portalResponse)
     {
-        return Deserialize(portalResponse.ObjectJson, INeatooJsonSerializer.FindType(portalResponse.AssemblyType));
+        if (portalResponse?.ObjectJson == null)
+        {
+            return default;
+        }
+
+        return Deserialize<T>(portalResponse.ObjectJson);
     }
 
     public object FromObjectTypeJson(ObjectTypeJson objectTypeJson)
     {
-        return Deserialize(objectTypeJson.Json, INeatooJsonSerializer.FindType(objectTypeJson.AssemblyType));
+        return Deserialize(objectTypeJson.Json, localAssemblies.FindType(objectTypeJson.AssemblyType));
     }
 
 }

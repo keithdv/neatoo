@@ -7,9 +7,6 @@
 		<LangVersion>latest</LangVersion>
 		<NoWarn>CA1861,CA2007</NoWarn>
 		<!-- https://learn.microsoft.com/en-us/nuget/concepts/auditing-packages -->
-		<NuGetAudit>true</NuGetAudit>
-		<NuGetAuditMode>all</NuGetAuditMode>
-		<NuGetAuditLevel>critical</NuGetAuditLevel>
 		<Nullable>enable</Nullable>
 		<TargetFramework>net9.0</TargetFramework>
 		<Version>2025.1.0-beta</Version>

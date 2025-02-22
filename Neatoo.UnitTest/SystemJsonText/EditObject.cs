@@ -21,6 +21,7 @@ public interface IEditObject : IEditBase
     void MarkDeleted();
 }
 
+
 public class EditObject : EditBase<EditObject>, IEditObject
 {
     public EditObject(IEditBaseServices<EditObject> services) : base(services)
@@ -81,7 +82,7 @@ public interface IEditObjectList : IEditListBase<IEditObject>
 
 public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditObjectList
 {
-    public EditObjectList(IEditListBaseServices<EditObjectList, IEditObject> services) : base(services)
+    public EditObjectList() : base()
     {
 
     }

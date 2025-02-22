@@ -72,12 +72,12 @@ public class CartViewModel : PropertyChangedBase
         Cart.NumberOfHorses--;
     }
 
-    public async void HandleDragDrop(object source, DragEventArgs e)
+    public void HandleDragDrop(object source, DragEventArgs e)
     {
         var horseViewModel = e.Data.GetData(typeof(HorseViewModel)) as HorseViewModel;
         if (horseViewModel != null && horseViewModel.Horse != null && Cart.CanAddHorse(horseViewModel.Horse))
         {
-            await horseBarn.MoveHorseToCart(horseViewModel.Horse, Cart);
+            horseBarn.MoveHorseToCart(horseViewModel.Horse, Cart);
         }
     }
 

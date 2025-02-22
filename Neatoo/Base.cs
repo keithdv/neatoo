@@ -1,5 +1,6 @@
 ﻿using Neatoo.Core;
 using Neatoo.Internal;
+using Neatoo.Portal;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -18,6 +19,7 @@ public interface IBase : INeatooObject, INotifyPropertyChanged, INotifyNeatooPro
     internal IPropertyManager<IProperty> PropertyManager { get; }
 }
 
+[Factory]
 public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeserialized
     where T : Base<T>
 {
@@ -113,13 +115,20 @@ public abstract class Base<T> : INeatooObject, IBase, ISetParent, IJsonOnDeseria
     {
         var task = PropertyManager[propertyName].SetPrivateValue(value);
 
-        if (Parent != null)
+        if (!task.IsCompleted)
         {
-            Parent.AddChildTask(task);
-        } 
+            if (Parent != null)
+            {
+                Parent.AddChildTask(task);
+            }
 
-        AsyncTaskSequencer.AddTask(task);
+            AsyncTaskSequencer.AddTask(task);
+        }
 
+        if(task.Exception != null)
+        {
+            throw task.Exception;
+        }
     }
 
     public virtual void AddChildTask(Task task)

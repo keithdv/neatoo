@@ -7,43 +7,24 @@
 	  <RootNamespace>HorseBarn.lib</RootNamespace>
 	  <DefineConstants>CLIENT</DefineConstants>
 	  <AssemblyName>HorseBarn.lib</AssemblyName>
+	  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+	  <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="..\HorseBarn.lib\Cart\Cart.cs" Link="Cart\Cart.cs" />
-    <Compile Include="..\HorseBarn.lib\Cart\CartList.cs" Link="Cart\CartList.cs" />
-    <Compile Include="..\HorseBarn.lib\Cart\CartNumberOfHorsesRule.cs" Link="Cart\CartNumberOfHorsesRule.cs" />
-    <Compile Include="..\HorseBarn.lib\Cart\CartType.cs" Link="Cart\CartType.cs" />
-    <Compile Include="..\HorseBarn.lib\Cart\ICart.cs" Link="Cart\ICart.cs" />
-    <Compile Include="..\HorseBarn.lib\Cart\RacingChariot.cs" Link="Cart\RacingChariot.cs" />
-    <Compile Include="..\HorseBarn.lib\Cart\Wagon.cs" Link="Cart\Wagon.cs" />
-    <Compile Include="..\HorseBarn.lib\CustomEditBase.cs" Link="CustomEditBase.cs" />
-    <Compile Include="..\HorseBarn.lib\HorseBarn.cs" Link="HorseBarn.cs" />
-    <Compile Include="..\HorseBarn.lib\Horse\Breed.cs" Link="Horse\Breed.cs" />
-    <Compile Include="..\HorseBarn.lib\Horse\HeavyHorse.cs" Link="Horse\HeavyHorse.cs" />
-    <Compile Include="..\HorseBarn.lib\Horse\Horse.cs" Link="Horse\Horse.cs" />
-    <Compile Include="..\HorseBarn.lib\Horse\HorseCriteria.cs" Link="Horse\HorseCriteria.cs" />
-    <Compile Include="..\HorseBarn.lib\Horse\HorseList.cs" Link="Horse\HorseList.cs" />
-    <Compile Include="..\HorseBarn.lib\Horse\HorseNameUniqueRule.cs" Link="Horse\HorseNameUniqueRule.cs" />
-    <Compile Include="..\HorseBarn.lib\Horse\IHeavyHorse.cs" Link="Horse\IHeavyHorse.cs" />
-    <Compile Include="..\HorseBarn.lib\Horse\IHorse.cs" Link="Horse\IHorse.cs" />
-    <Compile Include="..\HorseBarn.lib\Horse\IHorseList.cs" Link="Horse\IHorseList.cs" />
-    <Compile Include="..\HorseBarn.lib\Horse\ILightHorse.cs" Link="Horse\ILightHorse.cs" />
-    <Compile Include="..\HorseBarn.lib\Horse\IsHorseNameUnique.cs" Link="Horse\IsHorseNameUnique.cs" />
-    <Compile Include="..\HorseBarn.lib\Horse\LightHorse.cs" Link="Horse\LightHorse.cs" />
-    <Compile Include="..\HorseBarn.lib\IHorseBarn.cs" Link="IHorseBarn.cs" />
-    <Compile Include="..\HorseBarn.lib\IPasture.cs" Link="IPasture.cs" />
-    <Compile Include="..\HorseBarn.lib\Pasture.cs" Link="Pasture.cs" />
-  </ItemGroup>
-
+	<ItemGroup>
+		<None Include="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
+		<Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
+	</ItemGroup>
+	
   <ItemGroup>
     <ProjectReference Include="..\Neatoo\Neatoo.csproj" />
-    <ProjectReference Include="..\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.csproj" OutputItemType="Analyzer"/>
+    <ProjectReference Include="..\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.csproj" OutputItemType="Analyzer" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Folder Include="Generated\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.FactoryGenerator\" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Cart\" />
-    <Folder Include="Horse\" />
-  </ItemGroup>
+  <Import Project="..\HorseBarn.Shared\HorseBarn.Shared.projitems" Label="Shared" />
 
 </Project>

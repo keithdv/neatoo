@@ -233,16 +233,6 @@ public class ValidateBaseTests
     }
 
     [TestMethod]
-    public void ValidateBase_MarkInvalid_Dont_Run_Rules()
-    {
-        var rrc = validate.RuleRunCount;
-        string message;
-        validate.TestMarkInvalid(message = Guid.NewGuid().ToString());
-        validate.FirstName = Guid.NewGuid().ToString();
-        Assert.AreEqual(rrc, validate.RuleRunCount);
-    }
-
-    [TestMethod]
     public void ValidateBase_RecursiveRule()
     {
         validate.ShortName = "Recursive";

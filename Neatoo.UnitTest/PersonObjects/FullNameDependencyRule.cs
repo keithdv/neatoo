@@ -5,10 +5,9 @@ using System;
 
 namespace Neatoo.UnitTest.PersonObjects;
 
-public interface IFullNameDependencyRule<T> : IRule<T> where T : IPersonBase { }
+public interface IFullNameDependencyRule : IRule<IPersonBase> { }
 
-public class FullNameDependencyRule<T> : RuleBase<T>, IFullNameDependencyRule<T>
-    where T : IPersonBase
+public class FullNameDependencyRule : RuleBase<IPersonBase>, IFullNameDependencyRule
 {
 
     public FullNameDependencyRule(IDisposableDependency dd) : base()
@@ -21,7 +20,7 @@ public class FullNameDependencyRule<T> : RuleBase<T>, IFullNameDependencyRule<T>
 
     private IDisposableDependency DisposableDependency { get; }
 
-    public override PropertyErrors Execute(T target)
+    public override PropertyErrors Execute(IPersonBase target)
     {
 
         var dd = DisposableDependency ?? throw new ArgumentNullException(nameof(DisposableDependency));

@@ -9,3 +9,10 @@ public class RemoteRequestDto
     public IReadOnlyCollection<ObjectTypeJson>? Parameters { get; set; }
     public ObjectTypeJson? SaveTarget { get; set; }
 }
+
+public class RemoteRequest
+{
+    public Type? DelegateType { get; set; } = null!;
+    public object[]? Parameters { get; set; }
+    public object? SaveTarget { get; set; }
+}

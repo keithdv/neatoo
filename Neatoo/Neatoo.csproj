@@ -15,6 +15,9 @@
     <RepositoryUrl>https://github.com/keithdv/Neatoo</RepositoryUrl>
     <AssemblyVersion>0.1.24.0</AssemblyVersion>
     <FileVersion>0.1.24.0</FileVersion>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+	<NuGetAuditLevel>critical</NuGetAuditLevel>
   </PropertyGroup>
 
   <ItemGroup>

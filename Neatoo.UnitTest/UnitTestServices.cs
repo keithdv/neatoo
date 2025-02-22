@@ -5,6 +5,7 @@ using Neatoo.UnitTest.Portal;
 using System.Reflection;
 using Neatoo.UnitTest.Objects;
 using Neatoo.Portal;
+using Neatoo.UnitTest.ValidateBaseTests;
 
 namespace Neatoo.UnitTest;
 
@@ -34,6 +35,7 @@ public static class UnitTestServices
                     //services.AddScoped<BaseTests.Authorization.IAuthorizationGrantedAsyncRule, BaseTests.Authorization.AuthorizationGrantedAsyncRule>();
                     //services.AddScoped<BaseTests.Authorization.IAuthorizationGrantedDependencyRule, BaseTests.Authorization.AuthorizationGrantedDependencyRule>();
 
+                    services.AddTransient(typeof(ISharedShortNameRule<>), typeof(SharedShortNameRule<>));
                     services.AddTransient<Func<IDisposableDependency>>(cc => () => cc.GetRequiredService<IDisposableDependency>());
 
                     services.AddTransient<Objects.IDisposableDependency, Objects.DisposableDependency>();

@@ -11,20 +11,20 @@ namespace HorseBarn.WPF.ViewModels;
 public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
 {
     private readonly IWindowManager windowManager;
-    private readonly HorseBarnFactory horseBarnFactory;
+    private readonly IHorseBarnFactory horseBarnFactory;
     private readonly IEventAggregator eventAggregator;
-    private readonly CreateHorseViewModel createHorseViewModel;
+    private readonly CreateHorseViewModel.Factory createHorseViewModel;
     private readonly CartViewModel.Factory createCartViewModel;
     private readonly HorseViewModel.Factory horseViewModelFactory;
-    private readonly HorseCriteriaFactory horseCriteriaPortal;
+    private readonly IHorseCriteriaFactory horseCriteriaPortal;
 
     public HorseBarnViewModel(IWindowManager windowManager,
-        HorseBarnFactory horseBarnFactory,
+        IHorseBarnFactory horseBarnFactory,
         IEventAggregator eventAggregator,
-        CreateHorseViewModel createHorseViewModel,
+        CreateHorseViewModel.Factory createHorseViewModel,
         CartViewModel.Factory createCartViewModel,
         HorseViewModel.Factory horseViewModelFactory,
-        HorseCriteriaFactory horseCriteriaPortal)
+        IHorseCriteriaFactory horseCriteriaPortal)
     {
         this.windowManager = windowManager;
         this.horseBarnFactory = horseBarnFactory;
@@ -51,33 +51,33 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
         {
             HorseBarn = await horseBarnFactory.Create();
 
-            var horseCriteria = await horseCriteriaPortal.Create();
+            var horseCriteria = horseCriteriaPortal.Fetch();
             horseCriteria.Name = "Secretariat";
             horseCriteria.Breed = Breed.Clydesdale;
             horseCriteria.BirthDay = new DateOnly(2010, 1, 1);
 
-            await HorseBarn.AddNewHorse(horseCriteria);
+            HorseBarn.AddNewHorse(horseCriteria);
 
-            horseCriteria = await horseCriteriaPortal.Create();
+            horseCriteria = horseCriteriaPortal.Fetch();
             horseCriteria.Name = "Seattle Slew";
             horseCriteria.Breed = Breed.Clydesdale;
             horseCriteria.BirthDay = new DateOnly(2000, 1, 1);
 
-            await HorseBarn.AddNewHorse(horseCriteria);
+            HorseBarn.AddNewHorse(horseCriteria);
 
-            horseCriteria = await horseCriteriaPortal.Create();
+            horseCriteria = horseCriteriaPortal.Fetch();
             horseCriteria.Name = "Speedy";
             horseCriteria.Breed = Breed.Thoroughbred;
             horseCriteria.BirthDay = new DateOnly(2010, 1, 1);
 
-            await HorseBarn.AddNewHorse(horseCriteria);
+            HorseBarn.AddNewHorse(horseCriteria);
 
-            horseCriteria = await horseCriteriaPortal.Create();
+            horseCriteria = horseCriteriaPortal.Fetch();
             horseCriteria.Name = "Flash";
             horseCriteria.Breed = Breed.Mustang;
             horseCriteria.BirthDay = new DateOnly(2015, 1, 1);
 
-            await HorseBarn.AddNewHorse(horseCriteria);
+            HorseBarn.AddNewHorse(horseCriteria);
 
 
             ICart cart = await HorseBarn.AddRacingChariot();
@@ -90,7 +90,7 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
 
             await HorseBarn.RunAllRules();
 
-            HorseBarn = (IHorseBarn) await horseBarnFactory.Save(HorseBarn);
+            HorseBarn = (IHorseBarn) await HorseBarn.Save();
         }
 
         LoadHorseBarn();
@@ -122,12 +122,13 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
 
     public Task AddHorse()
     {
-        return windowManager.ShowDialogAsync(createHorseViewModel);
+        return windowManager.ShowDialogAsync(createHorseViewModel(HorseBarn.Horses.Select(h => h.Name).ToList()));
     }
 
-    public async Task HandleAsync(IHorseCriteria message, CancellationToken cancellationToken)
+    public Task HandleAsync(IHorseCriteria message, CancellationToken cancellationToken)
     {
-        await HorseBarn.AddNewHorse(message);
+        HorseBarn.AddNewHorse(message);
+        return Task.CompletedTask;
     }
 
     public IObservableCollection<CartViewModel> Carts { get; set; } = new BindableCollection<CartViewModel>();
@@ -142,12 +143,12 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
         Carts.Add(createCartViewModel(HorseBarn, await HorseBarn.AddWagon()));
     }
 
-    public async void HandleDragDrop(object source, DragEventArgs e)
+    public void HandleDragDrop(object source, DragEventArgs e)
     {
         var horseViewModel = e.Data.GetData(typeof(HorseViewModel)) as HorseViewModel;
         if (horseViewModel != null && horseViewModel.Horse != null)
         {
-            await HorseBarn.MoveHorseToPasture(horseViewModel.Horse);
+            HorseBarn.MoveHorseToPasture(horseViewModel.Horse);
         }
     }
 

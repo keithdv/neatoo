@@ -5,30 +5,21 @@ using System.Linq.Expressions;
 
 namespace Neatoo.Rules.Rules;
 
-public interface IRequiredRule<T> : IRule<T>
-    where T : IValidateBase
+public interface IRequiredRule : IRule
 {
 
 }
 
-internal class RequiredRule<T> : RuleBase<T>, IRequiredRule<T>
-    where T : IValidateBase
+internal class RequiredRule<T> : RuleBase<T>, IRequiredRule
+    where T : class, IValidateBase
 {
-    public RequiredRule(IPropertyInfo propertyInfo) : base() {
-
-
-
-        var parameter = Expression.Parameter(typeof(T));
-        var property = Expression.Property(parameter, propertyInfo.Name);
-        var lambda = Expression.Lambda<Func<T, object?>>(Expression.Convert(property, typeof(object)), parameter);
-        var tr = new TriggerProperty<T, object>(lambda);
-
-        TriggerProperties.Add(tr);
+    public RequiredRule(ITriggerProperty triggerProperty) : base() {
+        TriggerProperties.Add(triggerProperty);
     }
 
     public override PropertyErrors Execute(T target)
     {
-        var value = TriggerProperties[0].GetValue(target);
+        var value = ((ITriggerProperty<T>) TriggerProperties[0]).GetValue(target);
 
         bool isError = false;
 

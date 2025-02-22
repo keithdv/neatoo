@@ -25,7 +25,7 @@ public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase
     where T : ValidateListBase<T, I>
     where I : IValidateBase
 {
-    public ValidateListBase(IValidateListBaseServices<T, I> services) : base(services)
+    public ValidateListBase() : base()
     {
         ResetMetaState();
     }
@@ -72,7 +72,7 @@ public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase
         return base.HandleNeatooPropertyChanged(breadCrumbs);
     }
 
-    public async Task RunAllRules(CancellationToken token = default)
+    public async Task RunAllRules(CancellationToken? token = default)
     {
         foreach (var item in this)
         {
@@ -80,7 +80,7 @@ public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase
         }
     }
 
-    public Task RunSelfRules(CancellationToken token = default)
+    public Task RunSelfRules(CancellationToken? token = default)
     {
         return Task.CompletedTask;
     }

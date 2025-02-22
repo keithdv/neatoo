@@ -5,10 +5,9 @@ using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.PersonObjects;
 
-public interface IShortNameAsyncRule<T> : IRule<T> where T : IPersonBase { int RunCount { get; } }
+public interface IShortNameAsyncRule : IRule<IPersonBase> { int RunCount { get; } }
 
-public class ShortNameAsyncRule<T> : AsyncRuleBase<T>, IShortNameAsyncRule<T>
-    where T : IPersonBase
+public class ShortNameAsyncRule : AsyncRuleBase<IPersonBase>, IShortNameAsyncRule
 {
 
     private Guid UniqueId = Guid.NewGuid();
@@ -21,13 +20,13 @@ public class ShortNameAsyncRule<T> : AsyncRuleBase<T>, IShortNameAsyncRule<T>
 
     public int RunCount { get; private set; }
 
-    public override async Task<PropertyErrors> Execute(T target, CancellationToken token)
+    public override async Task<PropertyErrors> Execute(IPersonBase target, CancellationToken? token)
     {
         Console.WriteLine($"ShortNameAsyncRule: {UniqueId.ToString()} BEGIN");
 
         RunCount++;
 
-        await Task.Delay(10, token);
+        await Task.Delay(10);
 
 
         // System.Diagnostics.Debug.WriteLine($"ShortNameAsyncRule {target.FirstName} {target.LastName}");

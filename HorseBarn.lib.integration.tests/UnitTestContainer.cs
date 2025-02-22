@@ -1,4 +1,6 @@
 ﻿using HorseBarn.Dal.Ef;
+using HorseBarn.lib.Horse;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 using Neatoo;
 using System.Reflection;
@@ -23,6 +25,18 @@ internal class UnitTestContainer
                 builder.AddNeatooServices(portal, Assembly.GetExecutingAssembly(), Assembly.GetAssembly(typeof(IHorseBarn)));
 
                 builder.AddScopedSelf<IHorseBarnContext, HorseBarnContext>();
+
+                // TODO: Autoregister
+                builder.AddTransient<IsHorseNameUniqueServer>();
+
+                builder.AddTransient<IsHorseNameUnique>(cc =>
+                {
+                    return async (name) =>
+                    {
+                        await Task.Delay(5);
+                        return true;
+                    };
+                });
 
                 return builder.BuildServiceProvider();
             }

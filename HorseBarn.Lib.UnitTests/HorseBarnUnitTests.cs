@@ -2,40 +2,41 @@
 using HorseBarn.lib.Horse;
 using Moq;
 using Neatoo;
+using Neatoo.Portal.Internal;
 using Xunit;
 
 namespace HorseBarn.lib.UnitTests
 {
     public sealed class HorseBarnTests : IDisposable
     {
-        private Mock<INeatooPortal<ILightHorse>> mockLightHorsePortal;
-        private Mock<INeatooPortal<IHeavyHorse>> mockHeavyHorsePortal;
-        private Mock<INeatooPortal<IRacingChariot>> mockRacingChariotPortal;
-        private Mock<INeatooPortal<IWagon>> mockWagonPortal;
-        private Mock<INeatooPortal<IPasture>> mockPasturePortal;
-        private Mock<INeatooPortal<ICartList>> mockCartListPortal;
-        private Mock<INeatooPortal<HorseBarn>> mockHorseBarnPortal;
+        private Mock<ILightHorseFactory> mockLightHorsePortal;
+        private Mock<IHeavyHorseFactory> mockHeavyHorsePortal;
+        private Mock<IRacingChariotFactory> mockRacingChariotPortal;
+        private Mock<IWagonFactory> mockWagonPortal;
+        private Mock<IPastureFactory> mockPasturePortal;
+        private Mock<ICartListFactory> mockCartListPortal;
+        private Mock<IFactoryEditBase<HorseBarn>> mockHorseBarnPortal;
         private HorseBarn horseBarn;
         private Mock<IPasture> mockPasture;
         private Mock<ICartList> mockCartList;
 
         public HorseBarnTests()
         {
-            mockLightHorsePortal = new Mock<INeatooPortal<ILightHorse>>(MockBehavior.Strict);
-            mockHeavyHorsePortal = new Mock<INeatooPortal<IHeavyHorse>>(MockBehavior.Strict);
-            mockRacingChariotPortal = new Mock<INeatooPortal<IRacingChariot>>(MockBehavior.Strict);
-            mockWagonPortal = new Mock<INeatooPortal<IWagon>>(MockBehavior.Strict);
-            mockPasturePortal = new Mock<INeatooPortal<IPasture>>(MockBehavior.Strict);
-            mockCartListPortal = new Mock<INeatooPortal<ICartList>>(MockBehavior.Strict);
-            mockHorseBarnPortal = new Mock<INeatooPortal<HorseBarn>>(MockBehavior.Strict);
+            mockLightHorsePortal = new Mock<ILightHorseFactory>(MockBehavior.Strict);
+            mockHeavyHorsePortal = new Mock<IHeavyHorseFactory>(MockBehavior.Strict);
+            mockRacingChariotPortal = new Mock<IRacingChariotFactory>(MockBehavior.Strict);
+            mockWagonPortal = new Mock<IWagonFactory>(MockBehavior.Strict);
+            mockPasturePortal = new Mock<IPastureFactory>(MockBehavior.Strict);
+            mockCartListPortal = new Mock<ICartListFactory>(MockBehavior.Strict);
+            mockHorseBarnPortal = new Mock<IFactoryEditBase<HorseBarn>>(MockBehavior.Strict);
 
             horseBarn = new HorseBarn(new EditBaseServices<HorseBarn>(mockHorseBarnPortal.Object), mockLightHorsePortal.Object, mockHeavyHorsePortal.Object, mockRacingChariotPortal.Object, mockWagonPortal.Object);
 
             mockPasture = new Mock<IPasture>();
             mockCartList = new Mock<ICartList>();
 
-            mockPasturePortal.Setup(p => p.CreateChild()).ReturnsAsync(mockPasture.Object);
-            mockCartListPortal.Setup(c => c.CreateChild()).ReturnsAsync(mockCartList.Object);
+            mockPasturePortal.Setup(p => p.Create()).ReturnsAsync(mockPasture.Object);
+            mockCartListPortal.Setup(c => c.Create()).ReturnsAsync(mockCartList.Object);
 
             horseBarn.Create(mockPasturePortal.Object, mockCartListPortal.Object).Wait();
         }
@@ -52,12 +53,12 @@ namespace HorseBarn.lib.UnitTests
         {
             var mockRacingChariot = new Mock<IRacingChariot>();
 
-            mockRacingChariotPortal.Setup(p => p.CreateChild()).ReturnsAsync(mockRacingChariot.Object);
+            mockRacingChariotPortal.Setup(p => p.Create()).ReturnsAsync(mockRacingChariot.Object);
 
             var racingChariot = await horseBarn.AddRacingChariot();
 
             Assert.Equal(mockRacingChariot.Object, racingChariot);
-            mockCartListPortal.Verify(c => c.CreateChild(), Times.Once);
+            mockCartListPortal.Verify(c => c.Create(), Times.Once);
         }
 
         [Fact]
@@ -65,12 +66,12 @@ namespace HorseBarn.lib.UnitTests
         {
             var mockWagon = new Mock<IWagon>();
 
-            mockWagonPortal.Setup(p => p.CreateChild()).ReturnsAsync(mockWagon.Object);
+            mockWagonPortal.Setup(p => p.Create()).ReturnsAsync(mockWagon.Object);
 
             var wagon = await horseBarn.AddWagon();
 
             Assert.Equal(mockWagon.Object, wagon);
-            mockCartListPortal.Verify(c => c.CreateChild(), Times.Once);
+            mockCartListPortal.Verify(c => c.Create(), Times.Once);
         }
 
         [Fact]
@@ -80,7 +81,7 @@ namespace HorseBarn.lib.UnitTests
             var criteria = Mock.Of<IHorseCriteria>();
             criteria.Breed = Breed.Thoroughbred;
 
-            mockLightHorsePortal.Setup(p => p.CreateChild(criteria)).ReturnsAsync(mockLightHorse.Object);
+            mockLightHorsePortal.Setup(p => p.Create(criteria)).ReturnsAsync(mockLightHorse.Object);
             mockPasture.Setup(p => p.HorseList.Add(It.IsAny<IHorse>()));
 
             var lightHorse = await horseBarn.AddNewHorse(criteria);
@@ -96,7 +97,7 @@ namespace HorseBarn.lib.UnitTests
             var criteria = Mock.Of<IHorseCriteria>();
 
             criteria.Breed = Breed.Clydesdale;
-            mockHeavyHorsePortal.Setup(p => p.CreateChild(criteria)).ReturnsAsync(mockHeavyHorse.Object);
+            mockHeavyHorsePortal.Setup(p => p.Create(criteria)).ReturnsAsync(mockHeavyHorse.Object);
             mockPasture.Setup(p => p.HorseList.Add(It.IsAny<IHorse>()));
 
             var heavyHorse = await horseBarn.AddNewHorse(criteria);

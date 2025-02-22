@@ -15,13 +15,13 @@ public interface IEditBaseServices<T> : IValidateBaseServices<T>
 {
 
     IEditPropertyManager EditPropertyManager { get; }
-    Save<T> Save { get; }
+    IFactoryEditBase<T> Factory { get; }
 }
 
 public class EditBaseServices<T> : ValidateBaseServices<T>, IEditBaseServices<T>
     where T : EditBase<T>
 {
-    public Save<T> Save { get; }
+    public IFactoryEditBase<T> Factory { get; }
 
     public IEditPropertyManager EditPropertyManager { get; }
 
@@ -29,20 +29,20 @@ public class EditBaseServices<T> : ValidateBaseServices<T>, IEditBaseServices<T>
 
     public new IPropertyManager<IProperty> PropertyManager => EditPropertyManager;
 
-    public EditBaseServices(Save<T> save) : base() {
+    public EditBaseServices(IFactoryEditBase<T> factory) : base() {
 
         PropertyInfoList = new PropertyInfoList<T>((System.Reflection.PropertyInfo pi) => new PropertyInfoWrapper(pi));
 
         EditPropertyManager = new EditPropertyManager(PropertyInfoList, new DefaultFactory());
-        Save = save;  
+        Factory = factory;
     }
 
-    public EditBaseServices(CreateEditPropertyManager propertyManager, IPropertyInfoList<T> propertyInfoList, RuleManagerFactory<T> ruleManager, Save<T> save)
+    public EditBaseServices(CreateEditPropertyManager propertyManager, IPropertyInfoList<T> propertyInfoList, RuleManagerFactory<T> ruleManager, IFactoryEditBase<T> factory)
     {
         PropertyInfoList = propertyInfoList;
         this.ruleManagerFactory = ruleManager;
         EditPropertyManager = propertyManager(propertyInfoList);
-        Save = save;
+        Factory = factory;
     }
 
 }

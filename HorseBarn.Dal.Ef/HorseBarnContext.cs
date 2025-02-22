@@ -74,10 +74,10 @@ public class Horse : IdPropertyChangedBase
 
     [Required]
     [MaxLength(100)]
-    public string? Name { get; set; }
+    public string Name { get; set; }
 
     [Required]
-    public DateOnly? BirthDate { get; set; }
+    public DateOnly BirthDate { get; set; }
 
     [Required]
     public int Breed { get; set; }

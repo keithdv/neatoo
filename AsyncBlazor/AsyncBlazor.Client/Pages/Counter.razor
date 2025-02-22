@@ -17,7 +17,7 @@
 private AsyncValidate asyncValidate = new AsyncValidate();
 
 [Inject]
-public INeatooPortal<IHorseBarn> ReadPortal { get; set; } = default!;
+public IHorseBarnFactory ReadPortal { get; set; } = default!;
 
 public IHorseBarn HorseBarn { get; set; } = default!;
 

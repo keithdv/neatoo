@@ -2,10 +2,9 @@
 
 namespace Neatoo.UnitTest.PersonObjects;
 
-public interface IShortNameRule<T> : IRule<T> where T : IPersonBase { int RunCount { get; } }
+public interface IShortNameRule : IRule<IPersonBase> { int RunCount { get; } }
 
-public class ShortNameRule<T> : RuleBase<T>, IShortNameRule<T>
-    where T : IPersonBase
+public class ShortNameRule : RuleBase<IPersonBase>, IShortNameRule
 {
     public int RunCount { get; private set; } = 0;
 
@@ -15,7 +14,7 @@ public class ShortNameRule<T> : RuleBase<T>, IShortNameRule<T>
         AddTriggerProperties(_ => _.LastName);
     }
 
-    public override PropertyErrors Execute(T target)
+    public override PropertyErrors Execute(IPersonBase target)
     {
         RunCount++;
         // System.Diagnostics.Debug.WriteLine($"Run Rule {target.FirstName} {target.LastName}");

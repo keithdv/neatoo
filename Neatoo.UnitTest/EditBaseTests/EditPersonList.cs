@@ -16,10 +16,9 @@ public interface IEditPersonList : IEditListBase<IEditPerson>
 
 public class EditPersonList : EditListBase<EditPersonList, IEditPerson>, IEditPersonList
 {
-    public EditPersonList(IEditListBaseServices<EditPersonList, IEditPerson> services) : base(services)
+    public EditPersonList() : base()
     {
     }
 
     public int DeletedCount => DeletedList.Count;
-
 }

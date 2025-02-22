@@ -9,7 +9,7 @@ namespace Neatoo.UnitTest.ObjectPortal;
 public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditObjectList
 {
 
-    public EditObjectList(IEditListBaseServices<EditObjectList, IEditObject> baseServices) : base(baseServices)
+    public EditObjectList() : base()
     {
     }
 

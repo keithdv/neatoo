@@ -53,8 +53,9 @@ public class EditObject : EditBase<EditObject>, IEditObject
     }
 
     [Create]
-    public void Create(int criteria)
+    public async Task CreateAsync(int criteria)
     {
+        await Task.Delay(2);
         IntCriteria = criteria;
         CreateCalled = true;
     }
@@ -62,6 +63,15 @@ public class EditObject : EditBase<EditObject>, IEditObject
 
     [Create]
     public void Create(Guid criteria, [Service] IDisposableDependency dependency)
+    {
+        Assert.IsNotNull(dependency);
+        GuidCriteria = criteria;
+        CreateCalled = true;
+    }
+
+    [Remote]
+    [Create]
+    public void CreateRemote(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
@@ -78,8 +88,9 @@ public class EditObject : EditBase<EditObject>, IEditObject
     }
 
     [Fetch]
-    public void Fetch(int criteria)
+    public async Task Fetch(int criteria)
     {
+        await Task.Delay(2);
         IntCriteria = criteria;
         FetchCalled = true;
     }
@@ -92,83 +103,118 @@ public class EditObject : EditBase<EditObject>, IEditObject
         FetchCalled = true;
     }
 
+    [Fetch]
+    [Remote]
+    public void FetchRemote(Guid criteria, [Service] IDisposableDependency dependency)
+    {
+        Assert.IsNotNull(dependency);
+        GuidCriteria = criteria;
+        FetchCalled = true;
+    }
+
+
+    [Fetch]
+    public bool FetchFail()
+    {
+        // returns null to the client
+        return false;
+    }
+
+    [Fetch]
+    public async Task<bool> FetchFailAsync()
+    {
+        await Task.Delay(2);
+        // returns null to the client
+        return false;
+    }
+
+    [Fetch]
+    public bool FetchFailDependency([Service] IDisposableDependency dependency)
+    {
+        // returns null to the client
+        return false;
+    }
+
+    [Fetch]
+    public async Task<bool> FetchFailAsyncDependency([Service] IDisposableDependency dependency)
+    {
+        await Task.Delay(2);
+        // returns null to the client
+        return false;
+    }
+
     public bool InsertCalled { get => Getter<bool>(); set => Setter(value); }
 
     [Insert]
-    public Task Insert()
+    public void Insert()
     {
         ID = Guid.NewGuid();
         InsertCalled = true;
-        return Task.CompletedTask;
     }
 
     [Insert]
-    public Task Insert(int criteria)
+    public async Task Insert(int criteria)
     {
+        await Task.Delay(2);
         InsertCalled = true;
         IntCriteria = criteria;
-        return Task.CompletedTask;
     }
 
     [Insert]
-    public Task Insert(Guid criteria, [Service] IDisposableDependency dependency)
+    public void Insert(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         InsertCalled = true;
         GuidCriteria = criteria;
-        return Task.CompletedTask;
     }
 
     public bool UpdateCalled { get => Getter<bool>(); set => Setter(value); }
 
     [Update]
-    public Task Update()
+    public void Update()
     {
         ID = Guid.NewGuid();
         UpdateCalled = true;
-        return Task.CompletedTask;
     }
 
     [Update]
-    public Task Update(int criteria)
+    public async Task Update(int criteria)
     {
+        await Task.Delay(2);
         IntCriteria = criteria;
         UpdateCalled = true;
-        return Task.CompletedTask;
     }
 
     [Update]
-    public Task Update(Guid criteria, [Service] IDisposableDependency dependency)
+    public async Task Update(Guid criteria, [Service] IDisposableDependency dependency)
     {
+        await Task.Delay(2);
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         UpdateCalled = true;
-        return Task.CompletedTask;
     }
 
     public bool DeleteCalled { get => Getter<bool>(); set => Setter(value); }
 
     [Delete]
-    public Task Delete()
+    public void Delete()
     {
         DeleteCalled = true;
-        return Task.CompletedTask;
     }
 
     [Delete]
-    public Task Delete(int criteria)
+    public async Task Delete(int criteria)
     {
+        await Task.Delay(2);
         IntCriteria = criteria;
         DeleteCalled = true;
-        return Task.CompletedTask;
     }
 
     [Delete]
-    public Task Delete(Guid criteria, [Service] IDisposableDependency dependency)
+    public void Delete(Guid criteria, [Service] IDisposableDependency dependency)
     {
         Assert.IsNotNull(dependency);
         GuidCriteria = criteria;
         DeleteCalled = true;
-        return Task.CompletedTask;
     }
 }

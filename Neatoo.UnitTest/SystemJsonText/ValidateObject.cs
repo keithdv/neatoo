@@ -58,7 +58,7 @@ public interface IValidateObjectList : IValidateListBase<IValidateObject>
 
 public class ValidateObjectList : ValidateListBase<ValidateObjectList, IValidateObject>, IValidateObjectList
 {
-    public ValidateObjectList(IValidateListBaseServices<ValidateObjectList, IValidateObject> services) : base(services)
+    public ValidateObjectList() : base()
     {
     }
 

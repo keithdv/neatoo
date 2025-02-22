@@ -1,5 +1,6 @@
 ﻿using Neatoo.Core;
 using Neatoo.Internal;
+using Neatoo.Portal;
 using Neatoo.Portal.Internal;
 using System;
 using System.Collections;
@@ -32,13 +33,13 @@ public interface IListBase<I> : IListBase, IReadOnlyListBase<I>, IEnumerable<I>,
     new int Count { get; }
 }
 
-
+[Factory]
 public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, ISetParent, IJsonOnDeserialized, IJsonOnDeserializing, IBaseMetaProperties, IDataMapperTarget
     where T : ListBase<T, I>
     where I : IBase
 {
 
-    public ListBase(IListBaseServices<T, I> services)
+    public ListBase()
     {
     }
 
