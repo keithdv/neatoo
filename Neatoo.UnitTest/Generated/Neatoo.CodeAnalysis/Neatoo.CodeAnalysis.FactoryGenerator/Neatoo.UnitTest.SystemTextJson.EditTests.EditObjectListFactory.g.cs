@@ -32,9 +32,9 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<EditObjectList>();
-            services.AddTransient<IEditObjectList, EditObjectList>();
             services.AddScoped<EditObjectListFactory>();
             services.AddScoped<IEditObjectListFactory, EditObjectListFactory>();
+            services.AddScoped<IEditObjectList, EditObjectList>();
         }
     }
 }

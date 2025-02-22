@@ -42,9 +42,9 @@ namespace Neatoo.UnitTest.SystemTextJson
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<ValidateObject>();
-            services.AddTransient<IValidateObject, ValidateObject>();
             services.AddScoped<ValidateObjectFactory>();
             services.AddScoped<IValidateObjectFactory, ValidateObjectFactory>();
+            services.AddScoped<IValidateObject, ValidateObject>();
             services.AddScoped<IValidateObjectFactory.CreateDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<ValidateObjectFactory>();

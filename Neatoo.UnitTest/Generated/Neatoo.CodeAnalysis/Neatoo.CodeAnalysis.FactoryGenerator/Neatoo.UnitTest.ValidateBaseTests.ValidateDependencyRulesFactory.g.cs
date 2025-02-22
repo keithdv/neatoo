@@ -38,9 +38,9 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<ValidateDependencyRules>();
-            services.AddTransient<IValidateDependencyRules, ValidateDependencyRules>();
             services.AddScoped<ValidateDependencyRulesFactory>();
             services.AddScoped<IValidateDependencyRulesFactory, ValidateDependencyRulesFactory>();
+            services.AddScoped<IValidateDependencyRules, ValidateDependencyRules>();
         }
     }
 }

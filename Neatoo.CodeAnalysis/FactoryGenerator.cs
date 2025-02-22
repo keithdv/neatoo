@@ -37,11 +37,6 @@ namespace Neatoo.CodeAnalysis
 
             var classNamedTypeSymbol = context.SemanticModel.GetDeclaredSymbol(classDeclaration);
 
-            if (!classNamedTypeSymbol.Interfaces.Any(i => i.Name == $"I{classNamedTypeSymbol.Name}"))
-            {
-                return null;
-            }
-
             if (classNamedTypeSymbol == null)
             {
                 return null;
@@ -78,9 +73,12 @@ namespace Neatoo.CodeAnalysis
 
         private static void Execute(SourceProductionContext context, ClassDeclarationSyntax classDeclarationSyntax, SemanticModel semanticModel)
         {
+            var classNamedSymbol =  semanticModel.GetDeclaredSymbol(classDeclarationSyntax) ?? throw new Exception($"Cannot get named symbol for {classDeclarationSyntax.ToString()}");
             var usingDirectives = new List<string>() { "using Neatoo;", "using Neatoo.Portal;" };
             var messages = new List<string>();
             var methodNames = new List<string>();
+            var returnType = "{className}";
+            var hasInterface = false;
 
             var delegates = new StringBuilder();
             var delegateAssignmentLocal = new StringBuilder();
@@ -98,6 +96,12 @@ namespace Neatoo.CodeAnalysis
                                     string? insertMethod, string? updateMethod, string? deleteMethod)> saveMethodSets = new();
             var isEdit = false;
 
+            if (classNamedSymbol.Interfaces.Any(i => i.Name == $"I{classNamedSymbol.Name}"))
+            {
+                returnType = $"I{classNamedSymbol.Name}";
+                serviceRegistrations.AppendLine($@"services.AddScoped<I{classNamedSymbol.Name}, {classNamedSymbol.Name}>();");
+                hasInterface = true;
+            }
 
             // Generate the source code for the found method
             var className = classDeclarationSyntax.Identifier.Text;
@@ -110,6 +114,11 @@ namespace Neatoo.CodeAnalysis
             else if (classDeclarationSyntax.Parent is FileScopedNamespaceDeclarationSyntax parentClassDeclarationSyntax)
             {
                 namespaceName = parentClassDeclarationSyntax.Name.ToString();
+            }
+
+            if(ClassOrBaseClassHasAttribute(semanticModel.GetDeclaredSymbol(classDeclarationSyntax), "Authorize"))
+            {
+                var hasAuthorization = true;
             }
 
             while (classDeclarationSyntax != null)
@@ -188,26 +197,26 @@ namespace Neatoo.CodeAnalysis
                             var parameterIdentifiersNoServicesText = string.Join(", ", parameterIdentifiersNoServices);
                             var parameterDeclarationsNoServicesText = string.Join(", ", parameterDeclarationsNoServices);
                             var delegateName = $"I{className}Factory.{uniqueMethodName}Delegate";
-                            var methodReturn = $"I{className}";
-                            var saveMethodReturn = $"I{className}?";
-                            var doMapperMethodName = $"DoMapperMethodCall<I{className}>";
+                            var methodReturn = $"{returnType}";
+                            var saveMethodReturn = $"{returnType}?";
+                            var doMapperMethodName = $"DoMapperMethodCall<{returnType}>";
 
                             if (methodDeclaration.ReturnType.ToString() == "Task<bool>" ||
                                 (doRemoteCall && methodDeclaration.ReturnType.ToString() == "bool"))
                             {
-                                methodReturn = $"Task<I{className}?>";
-                                doMapperMethodName = $"DoMapperMethodCallBoolAsync<I{className}?>";
+                                methodReturn = $"Task<{returnType}?>";
+                                doMapperMethodName = $"DoMapperMethodCallBoolAsync<{returnType}?>";
                             }
                             else if (methodDeclaration.ReturnType.ToString() == "bool")
                             {
-                                methodReturn = $"I{className}?";
-                                doMapperMethodName = $"DoMapperMethodCallBool<I{className}?>";
+                                methodReturn = $"{returnType}?";
+                                doMapperMethodName = $"DoMapperMethodCallBool<{returnType}?>";
                             }
                             else if (methodDeclaration.ReturnType.ToString() == "Task" || doRemoteCall)
                             {
-                                methodReturn = $"Task<I{className}>";
-                                saveMethodReturn = $"Task<I{className}?>";
-                                doMapperMethodName = $"DoMapperMethodCallAsync<I{className}>";
+                                methodReturn = $"Task<{returnType}>";
+                                saveMethodReturn = $"Task<{returnType}?>";
+                                doMapperMethodName = $"DoMapperMethodCallAsync<{returnType}>";
                             }
 
                             // Consumer Delegates
@@ -260,9 +269,9 @@ namespace Neatoo.CodeAnalysis
                             }
                             else
                             {
-                                localMethods.AppendLine($"public virtual {saveMethodReturn} Local{uniqueMethodName}(I{className} itarget, {parameterDeclarationsNoServicesText})");
+                                localMethods.AppendLine($"public virtual {saveMethodReturn} Local{uniqueMethodName}({returnType} itarget, {parameterDeclarationsNoServicesText})");
                                 localMethods.AppendLine("{");
-                                localMethods.AppendLine($"var target = ({className})itarget ?? throw new Exception(\"{className} must implement I{className}\");");
+                                localMethods.AppendLine($"var target = ({className})itarget ?? throw new Exception(\"{className} must implement {returnType}\");");
                                 localMethods.AppendLine($"{serviceAssignmentsText.ToString()}");
                                 localMethods.AppendLine($"return {doMapperMethodName}(target, DataMapperMethod.{attributeName}, () => target.{methodName}({parameterIdentifiersText}));");
 
@@ -275,7 +284,7 @@ namespace Neatoo.CodeAnalysis
                                 delegateAssignmentRemote.AppendLine($"{uniqueMethodName}Property = Remote{uniqueMethodName};");
 
                                 // Remote method implementations
-                                remoteMethods.AppendLine($"public virtual async Task<I{className}?> Remote{uniqueMethodName}({parameterDeclarationsNoServicesText})");
+                                remoteMethods.AppendLine($"public virtual async Task<{returnType}?> Remote{uniqueMethodName}({parameterDeclarationsNoServicesText})");
                                 remoteMethods.AppendLine("{");
                                 remoteMethods.AppendLine($" return await DoRemoteRequest.ForDelegate<{className}?>(typeof({delegateName}), [{parameterIdentifiersNoServicesText}]);");
                                 remoteMethods.AppendLine("}");
@@ -329,7 +338,7 @@ namespace Neatoo.CodeAnalysis
                 var isDefault = string.IsNullOrWhiteSpace(saveMethodSet.parameterIdentifiersText);
 
                 var delegateName = $"I{className}Factory.{saveMethodSet.saveUniqueMethodName}Delegate";
-                var saveMethodReturn = $"I{className}?";
+                var saveMethodReturn = $"{returnType}?";
                 var isAsync = false;
 
                 if ((saveMethodSet.deleteMethod?.Contains("await") ?? false)
@@ -337,15 +346,15 @@ namespace Neatoo.CodeAnalysis
                         || (saveMethodSet.updateMethod?.Contains("await") ?? false))
                 {
                     isAsync = true;
-                    saveMethodReturn = $"Task<I{className}?>";
+                    saveMethodReturn = $"Task<{returnType}?>";
                     delegateAssignmentRemote.AppendLine($"{saveMethodSet.saveUniqueMethodName}Property = Remote{saveMethodSet.saveUniqueMethodName};");
                 }
 
-                delegates.AppendLine($"delegate {saveMethodReturn}  {saveMethodSet.saveUniqueMethodName}Delegate(I{className} target, {saveMethodSet.parameterDeclarationText});");
+                delegates.AppendLine($"delegate {saveMethodReturn}  {saveMethodSet.saveUniqueMethodName}Delegate({returnType} target, {saveMethodSet.parameterDeclarationText});");
                 propertyDeclarations.AppendLine($"public {delegateName} {saveMethodSet.saveUniqueMethodName}Property {{ get; set; }}");
                 delegateAssignmentLocal.AppendLine($"{saveMethodSet.saveUniqueMethodName}Property = Local{saveMethodSet.saveUniqueMethodName};");
 
-                interfaceMethods.AppendLine($"{saveMethodReturn.Trim()} {saveMethodSet.saveMethodName}(I{className} target, {saveMethodSet.parameterDeclarationText});");
+                interfaceMethods.AppendLine($"{saveMethodReturn.Trim()} {saveMethodSet.saveMethodName}({returnType} target, {saveMethodSet.parameterDeclarationText});");
 
                 if (isDefault)
                 {
@@ -365,13 +374,13 @@ namespace Neatoo.CodeAnalysis
                     }
                 }
 
-                publicMethods.AppendLine($"public {saveMethodReturn} {saveMethodSet.saveMethodName}(I{className} target, {saveMethodSet.parameterDeclarationText})");
+                publicMethods.AppendLine($"public {saveMethodReturn} {saveMethodSet.saveMethodName}({returnType} target, {saveMethodSet.parameterDeclarationText})");
                 publicMethods.AppendLine("{");
                 publicMethods.AppendLine($"return {saveMethodSet.saveUniqueMethodName}Property(target, {saveMethodSet.parameterIdentifiersText});");
                 publicMethods.AppendLine("}");
 
                 saveMethods.AppendLine($@"
-public virtual {(isAsync ? "async" : "")} {saveMethodReturn} Local{saveMethodSet.saveUniqueMethodName}(I{className} target, {saveMethodSet.parameterDeclarationText})
+public virtual {(isAsync ? "async" : "")} {saveMethodReturn} Local{saveMethodSet.saveUniqueMethodName}({returnType} target, {saveMethodSet.parameterDeclarationText})
 {{");
 
                 saveMethods.AppendLine($@"
@@ -400,7 +409,7 @@ public virtual {(isAsync ? "async" : "")} {saveMethodReturn} Local{saveMethodSet
 
                 if (isAsync)
                 {
-                    saveMethods.AppendLine($@"public async Task<I{className}?> Remote{saveMethodSet.saveUniqueMethodName}(I{className} target, {saveMethodSet.parameterDeclarationText}){{");
+                    saveMethods.AppendLine($@"public async Task<{returnType}?> Remote{saveMethodSet.saveUniqueMethodName}({returnType} target, {saveMethodSet.parameterDeclarationText}){{");
                     saveMethods.AppendLine($@"return await DoRemoteRequest.ForDelegate<{className}?>(typeof({delegateName}), [target, {saveMethodSet.parameterIdentifiersText}]);");
                     saveMethods.AppendLine("}");
 
@@ -423,7 +432,6 @@ public virtual {(isAsync ? "async" : "")} {saveMethodReturn} Local{saveMethodSet
             {
                 serviceRegistrations.AppendLine($@"services.AddScoped<IFactoryEditBase<{className}>, {className}Factory>();");
             }
-
 
             var editText = isEdit ? "Edit" : "";
 
@@ -474,7 +482,6 @@ namespace {namespaceName}
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {{
             services.AddTransient<{className}>();
-            services.AddTransient<I{className}, {className}>();
             services.AddScoped<{className}Factory>();
             services.AddScoped<I{className}Factory, {className}Factory>();
 {serviceRegistrations.ToString()}

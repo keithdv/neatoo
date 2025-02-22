@@ -104,7 +104,6 @@ public static class AddNeatooServicesExtension
 
         services.AddSingleton<IAttributeToRule, AttributeToRule>();
 
-        services.AddScoped(typeof(IAuthorizationRuleManager<>), typeof(AuthorizationRuleManager<>));
         services.AddTransient(typeof(IRuleManager<>), typeof(RuleManager<>));
 
         services.AddTransient(typeof(RuleManagerFactory<>));

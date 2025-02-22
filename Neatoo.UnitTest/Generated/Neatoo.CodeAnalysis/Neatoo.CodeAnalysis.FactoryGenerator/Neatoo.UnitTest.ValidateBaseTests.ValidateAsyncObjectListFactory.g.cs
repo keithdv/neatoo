@@ -36,9 +36,9 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<ValidateAsyncObjectList>();
-            services.AddTransient<IValidateAsyncObjectList, ValidateAsyncObjectList>();
             services.AddScoped<ValidateAsyncObjectListFactory>();
             services.AddScoped<IValidateAsyncObjectListFactory, ValidateAsyncObjectListFactory>();
+            services.AddScoped<IValidateAsyncObjectList, ValidateAsyncObjectList>();
         }
     }
 }

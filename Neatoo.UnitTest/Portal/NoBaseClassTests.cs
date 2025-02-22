@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neatoo.AuthorizationRules;
 using Neatoo.Portal;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,13 @@ using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.Portal
 {
+
+    public interface  IAuthorizeNoBaseClassA
+    {
+        [Authorize(DataMapperMethodType.Read)]
+        IAuthorizationRuleResult Read();
+    }
+
     public interface INoBaseClass
     {
         string Name { get; set; }
@@ -20,6 +28,7 @@ namespace Neatoo.UnitTest.Portal
     }
 
     [Factory]
+    [Authorize<IAuthorizeNoBaseClassA>]
     public class NoBaseClassA : INoBaseClassA
     {
         public string Name { get; set; }
@@ -29,7 +38,6 @@ namespace Neatoo.UnitTest.Portal
         {
             Name = name;
         }
-
 
         [Remote]
         [Create]
