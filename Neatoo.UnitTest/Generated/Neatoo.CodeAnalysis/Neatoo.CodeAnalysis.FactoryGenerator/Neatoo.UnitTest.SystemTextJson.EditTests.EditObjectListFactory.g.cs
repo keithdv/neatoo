@@ -23,7 +23,7 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
             this.ServiceProvider = serviceProvider;
         }
 
-        public EditObjectListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public EditObjectListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
@@ -32,9 +32,9 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<EditObjectList>();
-            services.AddTransient<IEditObjectList, EditObjectList>();
             services.AddScoped<EditObjectListFactory>();
             services.AddScoped<IEditObjectListFactory, EditObjectListFactory>();
+            services.AddTransient<IEditObjectList, EditObjectList>();
         }
     }
 }

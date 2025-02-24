@@ -7,6 +7,7 @@ using System;
 /*
 Debugging Messages:
 : Base<BaseObject>, IBaseObject
+No DataMapperMethod attribute for LoadPropertyTest
 */
 namespace Neatoo.UnitTest.BaseTests.Objects
 {
@@ -23,7 +24,7 @@ namespace Neatoo.UnitTest.BaseTests.Objects
             this.ServiceProvider = serviceProvider;
         }
 
-        public BaseObjectFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public BaseObjectFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
@@ -32,9 +33,9 @@ namespace Neatoo.UnitTest.BaseTests.Objects
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<BaseObject>();
-            services.AddTransient<IBaseObject, BaseObject>();
             services.AddScoped<BaseObjectFactory>();
             services.AddScoped<IBaseObjectFactory, BaseObjectFactory>();
+            services.AddTransient<IBaseObject, BaseObject>();
         }
     }
 }

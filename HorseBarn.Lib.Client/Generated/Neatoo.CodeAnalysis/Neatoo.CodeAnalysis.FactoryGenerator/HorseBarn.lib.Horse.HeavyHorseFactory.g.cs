@@ -18,13 +18,13 @@ namespace HorseBarn.lib.Horse
     public interface IHeavyHorseFactory
     {
         IHeavyHorse Create(IHorseCriteria horseCriteria);
-        delegate IHeavyHorse CreateDelegate(IHorseCriteria horseCriteria);
     }
 
     internal class HeavyHorseFactory : FactoryEditBase<HeavyHorse>, IHeavyHorseFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        public delegate IHeavyHorse CreateDelegate(IHorseCriteria horseCriteria);
         public HeavyHorseFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -45,10 +45,10 @@ namespace HorseBarn.lib.Horse
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<HeavyHorse>();
-            services.AddTransient<IHeavyHorse, HeavyHorse>();
             services.AddScoped<HeavyHorseFactory>();
             services.AddScoped<IHeavyHorseFactory, HeavyHorseFactory>();
-            services.AddScoped<IHeavyHorseFactory.CreateDelegate>(cc =>
+            services.AddTransient<IHeavyHorse, HeavyHorse>();
+            services.AddScoped<CreateDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<HeavyHorseFactory>();
                 return (IHorseCriteria horseCriteria) => factory.Create(horseCriteria);

@@ -14,9 +14,12 @@ using Neatoo;
 
 namespace Neatoo;
 
+
+
 internal class BaseHasAttributes : SharedObject<BaseHasAttributes> {
 
 }
+
 
 [Factory]
 internal class SharedObject<T> {
@@ -39,7 +42,17 @@ internal class BaseObject : SharedObject<BaseObject> {
 
 
     [Create]
-    public void Create(int parameter){
+    public Task CreateAsync(){
+
+    }
+
+    [Create]
+    public void CreateVoid(int parameter){
+
+    }
+
+    [Create]
+    public void CreateVoid(string parameter){
 
     }
 
@@ -50,6 +63,18 @@ internal class BaseObject : SharedObject<BaseObject> {
 
     [Create]
     public Task Create(string parameter){
+
+    }
+
+    [Remote]
+    [Create]
+    public Task CreateRemote(string parameter){
+
+    }
+
+    [Remote]
+    [Create]
+    public void CreateRemote(int parameter){
 
     }
 
@@ -58,18 +83,43 @@ internal class BaseObject : SharedObject<BaseObject> {
 
     }
 
-    [Fetch]
-    public void Fetch(int parameter){
+    [Create]
+    public bool CreateBool(Guid parameter, [Service] IDependency dependency){
+
+    }
+
+    [Create]
+    public Task<bool> CreateBoolAsync(Guid parameter, [Service] IDependency dependency){
 
     }
 
     [Fetch]
-    public Task Fetch(string parameter){
+    public void FetchVoid(int parameter){
 
     }
 
     [Fetch]
-    public Task Fetch(string parameter1, int parameter2){
+    public void FetchVoid(string parameter){
+
+    }
+
+    [Fetch]
+    public Task FetchAsync(string parameter){
+
+    }
+
+    [Fetch]
+    public Task FetchAsync(string parameter1, int parameter2){
+
+    }
+
+    [Create]
+    public bool FetchBool(Guid parameter, [Service] IDependency dependency){
+
+    }
+
+    [Create]
+    public Task<bool> FetchBoolAsync(Guid parameter, [Service] IDependency dependency){
 
     }
 
@@ -94,16 +144,16 @@ internal class BaseObject : SharedObject<BaseObject> {
     }
 
     [Insert]
-    public Task Insert(int parameter, [Service] IDependency dependency){
+    public Task Insert(int parameter1, [Service] IDependency dependency){
 
     }
 
     [Update]
-    public Task Update(int parameter, [Service] IDependency dependency){
+    public Task Update(int parameter2, [Service] IDependency dependency){
     }
 
     [Delete]
-    public Task Delete(int parameter, [Service] IDependency dependency){
+    public Task Delete(int parameter3, [Service] IDependency dependency){
     }
 
 
@@ -146,7 +196,6 @@ namespace NeatooLibrary.Specific {
 
     }
 
-    [Factory]
     internal abstract class EditBaseA<T> : EditBaseB<T> {
 
     }
@@ -165,6 +214,8 @@ var source2 = @"
 
 namespace NeatooLibrary {
 
+
+[Factory]
 internal abstract class EditBaseB<T> : EditBase<T> {
 
 }
@@ -220,6 +271,9 @@ internal class BaseObject : SharedObject<BaseObject> {
     {
         // The source code to test
         var source = @"
+
+namespace Neatoo;
+
     public interface INoBaseClass
     {
         string Name { get; set; }
@@ -246,6 +300,98 @@ internal class BaseObject : SharedObject<BaseObject> {
     }";
         // Pass the source code to our helper and snapshot test the output
         TestHelper.Verify(source);
+    }
+
+
+
+    [Fact]
+    public Task Authorization()
+    {
+        // The source code to test
+        var source = @"
+using Neatoo;
+
+namespace Neatoo;
+
+[Factory]
+[Authorize<IAuthorizeBaseObject>]
+internal class BaseObject {
+
+
+    [Create]
+    public void Create(){
+
+    }
+
+    [Create]
+    public void Create(int parameter){
+        return 0;
+    }
+
+    [Create]
+    public bool CreateBool(int parameter){
+        return false;
+    }
+
+    [Create]
+    public Task<bool> CreateBoolAsync(int parameter, [Service] IInjectableService injectService){
+        return Task.FromResult<bool>(false);
+    }
+
+    [Create]
+    public void CreateAuthorizeAsync(int parameter){
+    }
+
+    [Insert]
+    public void Insert(){
+    }
+
+    [Insert]
+    public void InsertInt(int parameter){
+    }
+
+    [Insert]
+    public Task InsertStringAsync(string parameter){
+    }
+}
+";
+
+        var source2 = @"
+using Neatoo;
+
+namespace Neatoo;
+
+public interface IAuthorizeBaseObject {
+
+    [Authorize(DataMapperMethodType.Read | DataMapperMethodType.Write)]
+    IAuthorizationRuleResult Anything();
+
+    [Authorize(DataMapperMethodType.Read)]
+    IAuthorizationRuleResult Create();
+
+    [Remote]
+    [Authorize(DataMapperMethodType.Read)]
+    IAuthorizationRuleResult Create(int parameter);
+    
+    [Authorize(DataMapperMethodType.Read)]
+    Task<IAuthorizationRuleResult> CreateAuthorizeAsync(int parameter);
+
+    [Authorize(DataMapperMethodType.Write)]
+    IAuthorizationRuleResult WriteBaseObject(BaseObject target);
+
+    [Authorize(DataMapperMethodType.Write)]
+    IAuthorizationRuleResult WriteInt(int parameter);
+
+    [Remote]
+    [Authorize(DataMapperMethodType.Write)]
+    IAuthorizationRuleResult WriteString(string parameter);
+    
+}
+
+
+";
+        // Pass the source code to our helper and snapshot test the output
+        return TestHelper.Verify(source, source2);
     }
 
 }

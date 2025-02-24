@@ -9,6 +9,11 @@ using System;
 /*
 Debugging Messages:
 : PersonEditBase<EditPerson>, IEditPerson
+No DataMapperMethod attribute for MarkAsChild
+No DataMapperMethod attribute for MarkDeleted
+No DataMapperMethod attribute for MarkNew
+No DataMapperMethod attribute for MarkOld
+No DataMapperMethod attribute for MarkUnmodified
 : EditBase<T>, IPersonBase
 */
 namespace Neatoo.UnitTest.EditBaseTests
@@ -16,7 +21,7 @@ namespace Neatoo.UnitTest.EditBaseTests
     public interface IEditPersonFactory
     {
         IEditPerson FillFromDto(PersonDto dto);
-        delegate IEditPerson FillFromDtoDelegate(PersonDto dto);
+        IEditPerson? Save(IEditPerson target);
     }
 
     internal class EditPersonFactory : FactoryEditBase<EditPerson>, IEditPersonFactory
@@ -28,10 +33,16 @@ namespace Neatoo.UnitTest.EditBaseTests
             this.ServiceProvider = serviceProvider;
         }
 
-        public EditPersonFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public EditPersonFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
+        }
+
+        public virtual IEditPerson? LocalInsert(IEditPerson itarget)
+        {
+            var target = (EditPerson)itarget ?? throw new Exception("EditPerson must implement IEditPerson");
+            return DoMapperMethodCall<IEditPerson>(target, DataMapperMethod.Insert, () => target.Insert());
         }
 
         public IEditPerson FillFromDto(PersonDto dto)
@@ -40,17 +51,39 @@ namespace Neatoo.UnitTest.EditBaseTests
             return DoMapperMethodCall<IEditPerson>(target, DataMapperMethod.Fetch, () => target.FillFromDto(dto));
         }
 
+        public override async Task<IEditBase?> Save(EditPerson target)
+        {
+            return await Task.FromResult((IEditBase? )Save(target));
+        }
+
+        public virtual IEditPerson? Save(IEditPerson target)
+        {
+            if (target.IsDeleted)
+            {
+                if (target.IsNew)
+                {
+                    return null;
+                }
+
+                throw new NotImplementedException();
+            }
+            else if (target.IsNew)
+            {
+                return LocalInsert(target);
+                ;
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<EditPerson>();
-            services.AddTransient<IEditPerson, EditPerson>();
             services.AddScoped<EditPersonFactory>();
             services.AddScoped<IEditPersonFactory, EditPersonFactory>();
-            services.AddScoped<IEditPersonFactory.FillFromDtoDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<EditPersonFactory>();
-                return (PersonDto dto) => factory.FillFromDto(dto);
-            });
+            services.AddTransient<IEditPerson, EditPerson>();
             services.AddScoped<IFactoryEditBase<EditPerson>, EditPersonFactory>();
         }
     }

@@ -27,7 +27,7 @@ namespace Neatoo.UnitTest.EditBaseTests
             this.ServiceProvider = serviceProvider;
         }
 
-        public EditPersonListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public EditPersonListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
@@ -36,9 +36,9 @@ namespace Neatoo.UnitTest.EditBaseTests
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<EditPersonList>();
-            services.AddTransient<IEditPersonList, EditPersonList>();
             services.AddScoped<EditPersonListFactory>();
             services.AddScoped<IEditPersonListFactory, EditPersonListFactory>();
+            services.AddTransient<IEditPersonList, EditPersonList>();
         }
     }
 }

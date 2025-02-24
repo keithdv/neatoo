@@ -55,6 +55,7 @@ public class BaseObject : Base<BaseObject>, IBaseObject
         MultipleCriteria = new object[] { i, d };
     }
 
+    [Remote]
     [Create]
     public Task Create(Guid criteria, [Service] IDisposableDependency dependency)
     {
@@ -76,7 +77,8 @@ public class BaseObject : Base<BaseObject>, IBaseObject
     {
         IntCriteria = criteria;
     }
-    
+
+    [Remote]
     [Fetch]
     public Task Fetch(Guid criteria, [Service] IDisposableDependency dependency)
     {

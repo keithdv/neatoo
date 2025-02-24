@@ -9,6 +9,11 @@ using System;
 /*
 Debugging Messages:
 : EditBase<EditObject>, IEditObject
+No DataMapperMethod attribute for MarkAsChild
+No DataMapperMethod attribute for MarkDeleted
+No DataMapperMethod attribute for MarkNew
+No DataMapperMethod attribute for MarkOld
+No DataMapperMethod attribute for MarkUnmodified
 */
 namespace Neatoo.UnitTest.ObjectPortal
 {
@@ -26,38 +31,24 @@ namespace Neatoo.UnitTest.ObjectPortal
         Task<IEditObject?> FetchFailAsync();
         Task<IEditObject?> FetchFailDependency();
         Task<IEditObject?> FetchFailAsyncDependency();
-        IEditObject? Save(IEditObject target);
-        Task<IEditObject?> Save(IEditObject target, int criteria);
+        Task<IEditObject?> Save(IEditObject target);
+        Task<IEditObject?> Save(IEditObject target, int criteriaA);
         Task<IEditObject?> Save(IEditObject target, Guid criteria);
-        delegate IEditObject CreateDelegate();
-        delegate Task<IEditObject> CreateAsyncDelegate(int criteria);
-        delegate IEditObject Create1Delegate(Guid criteria);
-        delegate Task<IEditObject> CreateRemoteDelegate(Guid criteria);
-        delegate IEditObject FetchDelegate();
-        delegate Task<IEditObject> Fetch1Delegate(int criteria);
-        delegate IEditObject Fetch2Delegate(Guid criteria);
-        delegate Task<IEditObject> FetchRemoteDelegate(Guid criteria);
-        delegate IEditObject? FetchFailDelegate();
-        delegate Task<IEditObject?> FetchFailAsyncDelegate();
-        delegate Task<IEditObject?> FetchFailDependencyDelegate();
-        delegate Task<IEditObject?> FetchFailAsyncDependencyDelegate();
-        delegate IEditObject? SaveDelegate(IEditObject target);
-        delegate Task<IEditObject?> Save1Delegate(IEditObject target, int criteria);
-        delegate Task<IEditObject?> Save2Delegate(IEditObject target, Guid criteria);
     }
 
     internal class EditObjectFactory : FactoryEditBase<EditObject>, IEditObjectFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public IEditObjectFactory.CreateRemoteDelegate CreateRemoteProperty { get; }
-        public IEditObjectFactory.FetchRemoteDelegate FetchRemoteProperty { get; }
-        public IEditObjectFactory.FetchFailDependencyDelegate FetchFailDependencyProperty { get; }
-        public IEditObjectFactory.FetchFailAsyncDependencyDelegate FetchFailAsyncDependencyProperty { get; }
-        public IEditObjectFactory.SaveDelegate SaveProperty { get; set; }
-        public IEditObjectFactory.Save1Delegate Save1Property { get; set; }
-        public IEditObjectFactory.Save2Delegate Save2Property { get; set; }
+        public CreateRemoteDelegate CreateRemoteProperty { get; }
+        public FetchRemoteDelegate FetchRemoteProperty { get; }
+        public FetchFailDependencyDelegate FetchFailDependencyProperty { get; }
+        public FetchFailAsyncDependencyDelegate FetchFailAsyncDependencyProperty { get; }
 
+        public delegate Task<IEditObject> CreateRemoteDelegate(Guid criteria);
+        public delegate Task<IEditObject> FetchRemoteDelegate(Guid criteria);
+        public delegate Task<IEditObject?> FetchFailDependencyDelegate();
+        public delegate Task<IEditObject?> FetchFailAsyncDependencyDelegate();
         public EditObjectFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -65,12 +56,9 @@ namespace Neatoo.UnitTest.ObjectPortal
             FetchRemoteProperty = LocalFetchRemote;
             FetchFailDependencyProperty = LocalFetchFailDependency;
             FetchFailAsyncDependencyProperty = LocalFetchFailAsyncDependency;
-            SaveProperty = LocalSave;
-            Save1Property = LocalSave1;
-            Save2Property = LocalSave2;
         }
 
-        public EditObjectFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public EditObjectFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
@@ -78,8 +66,6 @@ namespace Neatoo.UnitTest.ObjectPortal
             FetchRemoteProperty = RemoteFetchRemote;
             FetchFailDependencyProperty = RemoteFetchFailDependency;
             FetchFailAsyncDependencyProperty = RemoteFetchFailAsyncDependency;
-            Save1Property = RemoteSave1;
-            Save2Property = RemoteSave2;
         }
 
         public virtual Task<IEditObject> CreateRemote(Guid criteria)
@@ -102,36 +88,16 @@ namespace Neatoo.UnitTest.ObjectPortal
             return FetchFailAsyncDependencyProperty();
         }
 
-        public override Task<IEditBase?> Save(EditObject target)
-        {
-            return Task.FromResult<IEditBase?>(SaveProperty(target));
-        }
-
-        public IEditObject? Save(IEditObject target)
-        {
-            return SaveProperty(target);
-        }
-
-        public Task<IEditObject?> Save(IEditObject target, int criteria)
-        {
-            return Save1Property(target, criteria);
-        }
-
-        public Task<IEditObject?> Save(IEditObject target, Guid criteria)
-        {
-            return Save2Property(target, criteria);
-        }
-
         public IEditObject Create()
         {
             var target = ServiceProvider.GetRequiredService<EditObject>();
             return DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Create, () => target.Create());
         }
 
-        public Task<IEditObject> CreateAsync(int criteria)
+        public async Task<IEditObject> CreateAsync(int criteria)
         {
             var target = ServiceProvider.GetRequiredService<EditObject>();
-            return DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Create, () => target.CreateAsync(criteria));
+            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Create, () => target.CreateAsync(criteria));
         }
 
         public IEditObject Create(Guid criteria)
@@ -154,10 +120,10 @@ namespace Neatoo.UnitTest.ObjectPortal
             return DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Fetch, () => target.Fetch());
         }
 
-        public Task<IEditObject> Fetch(int criteria)
+        public async Task<IEditObject> Fetch(int criteria)
         {
             var target = ServiceProvider.GetRequiredService<EditObject>();
-            return DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Fetch, () => target.Fetch(criteria));
+            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Fetch, () => target.Fetch(criteria));
         }
 
         public IEditObject Fetch(Guid criteria)
@@ -177,27 +143,27 @@ namespace Neatoo.UnitTest.ObjectPortal
         public IEditObject? FetchFail()
         {
             var target = ServiceProvider.GetRequiredService<EditObject>();
-            return DoMapperMethodCallBool<IEditObject?>(target, DataMapperMethod.Fetch, () => target.FetchFail());
+            return DoMapperMethodCallBool<IEditObject>(target, DataMapperMethod.Fetch, () => target.FetchFail());
         }
 
-        public Task<IEditObject?> FetchFailAsync()
+        public async Task<IEditObject?> FetchFailAsync()
         {
             var target = ServiceProvider.GetRequiredService<EditObject>();
-            return DoMapperMethodCallBoolAsync<IEditObject?>(target, DataMapperMethod.Fetch, () => target.FetchFailAsync());
+            return await DoMapperMethodCallBoolAsync<IEditObject>(target, DataMapperMethod.Fetch, () => target.FetchFailAsync());
         }
 
         public Task<IEditObject?> LocalFetchFailDependency()
         {
             var target = ServiceProvider.GetRequiredService<EditObject>();
             var dependency = ServiceProvider.GetService<IDisposableDependency>();
-            return DoMapperMethodCallBoolAsync<IEditObject?>(target, DataMapperMethod.Fetch, () => target.FetchFailDependency(dependency));
+            return DoMapperMethodCallBoolAsync<IEditObject>(target, DataMapperMethod.Fetch, () => target.FetchFailDependency(dependency));
         }
 
-        public Task<IEditObject?> LocalFetchFailAsyncDependency()
+        public async Task<IEditObject?> LocalFetchFailAsyncDependency()
         {
             var target = ServiceProvider.GetRequiredService<EditObject>();
             var dependency = ServiceProvider.GetService<IDisposableDependency>();
-            return DoMapperMethodCallBoolAsync<IEditObject?>(target, DataMapperMethod.Fetch, () => target.FetchFailAsyncDependency(dependency));
+            return await DoMapperMethodCallBoolAsync<IEditObject>(target, DataMapperMethod.Fetch, () => target.FetchFailAsyncDependency(dependency));
         }
 
         public virtual IEditObject? LocalInsert(IEditObject itarget)
@@ -206,10 +172,10 @@ namespace Neatoo.UnitTest.ObjectPortal
             return DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Insert, () => target.Insert());
         }
 
-        public virtual Task<IEditObject?> LocalInsert1(IEditObject itarget, int criteria)
+        public virtual async Task<IEditObject?> LocalInsert1(IEditObject itarget, int criteriaA)
         {
             var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
-            return DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Insert, () => target.Insert(criteria));
+            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Insert, () => target.Insert(criteriaA));
         }
 
         public virtual IEditObject? LocalInsert2(IEditObject itarget, Guid criteria)
@@ -219,23 +185,23 @@ namespace Neatoo.UnitTest.ObjectPortal
             return DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Insert, () => target.Insert(criteria, dependency));
         }
 
-        public virtual IEditObject? LocalUpdate(IEditObject itarget)
+        public virtual async Task<IEditObject?> LocalUpdate(IEditObject itarget)
         {
             var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
-            return DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Update, () => target.Update());
+            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Update, () => target.Update());
         }
 
-        public virtual Task<IEditObject?> LocalUpdate1(IEditObject itarget, int criteria)
+        public virtual async Task<IEditObject?> LocalUpdate1(IEditObject itarget, int criteriaB)
         {
             var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
-            return DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Update, () => target.Update(criteria));
+            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Update, () => target.Update(criteriaB));
         }
 
-        public virtual Task<IEditObject?> LocalUpdate2(IEditObject itarget, Guid criteria)
+        public virtual async Task<IEditObject?> LocalUpdate2(IEditObject itarget, Guid criteria)
         {
             var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
             var dependency = ServiceProvider.GetService<IDisposableDependency>();
-            return DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Update, () => target.Update(criteria, dependency));
+            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Update, () => target.Update(criteria, dependency));
         }
 
         public virtual IEditObject? LocalDelete(IEditObject itarget)
@@ -244,10 +210,10 @@ namespace Neatoo.UnitTest.ObjectPortal
             return DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Delete, () => target.Delete());
         }
 
-        public virtual Task<IEditObject?> LocalDelete1(IEditObject itarget, int criteria)
+        public virtual async Task<IEditObject?> LocalDelete1(IEditObject itarget, int criteriaC)
         {
             var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
-            return DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Delete, () => target.Delete(criteria));
+            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Delete, () => target.Delete(criteriaC));
         }
 
         public virtual IEditObject? LocalDelete2(IEditObject itarget, Guid criteria)
@@ -257,27 +223,32 @@ namespace Neatoo.UnitTest.ObjectPortal
             return DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Delete, () => target.Delete(criteria, dependency));
         }
 
-        public virtual async Task<IEditObject?> RemoteCreateRemote(Guid criteria)
+        public virtual async Task<IEditObject> RemoteCreateRemote(Guid criteria)
         {
-            return await DoRemoteRequest.ForDelegate<EditObject?>(typeof(IEditObjectFactory.CreateRemoteDelegate), [criteria]);
+            return await DoRemoteRequest.ForDelegate<EditObject>(typeof(CreateRemoteDelegate), [criteria]);
         }
 
-        public virtual async Task<IEditObject?> RemoteFetchRemote(Guid criteria)
+        public virtual async Task<IEditObject> RemoteFetchRemote(Guid criteria)
         {
-            return await DoRemoteRequest.ForDelegate<EditObject?>(typeof(IEditObjectFactory.FetchRemoteDelegate), [criteria]);
+            return await DoRemoteRequest.ForDelegate<EditObject>(typeof(FetchRemoteDelegate), [criteria]);
         }
 
         public virtual async Task<IEditObject?> RemoteFetchFailDependency()
         {
-            return await DoRemoteRequest.ForDelegate<EditObject?>(typeof(IEditObjectFactory.FetchFailDependencyDelegate), []);
+            return await DoRemoteRequest.ForDelegate<EditObject>(typeof(FetchFailDependencyDelegate), []);
         }
 
         public virtual async Task<IEditObject?> RemoteFetchFailAsyncDependency()
         {
-            return await DoRemoteRequest.ForDelegate<EditObject?>(typeof(IEditObjectFactory.FetchFailAsyncDependencyDelegate), []);
+            return await DoRemoteRequest.ForDelegate<EditObject>(typeof(FetchFailAsyncDependencyDelegate), []);
         }
 
-        public virtual IEditObject? LocalSave(IEditObject target)
+        public override async Task<IEditBase?> Save(EditObject target)
+        {
+            return await Task.FromResult((IEditBase? )Save(target));
+        }
+
+        public virtual async Task<IEditObject?> Save(IEditObject target)
         {
             if (target.IsDeleted)
             {
@@ -287,18 +258,21 @@ namespace Neatoo.UnitTest.ObjectPortal
                 }
 
                 return LocalDelete(target);
+                ;
             }
             else if (target.IsNew)
             {
                 return LocalInsert(target);
+                ;
             }
             else
             {
-                return LocalUpdate(target);
+                return await LocalUpdate(target);
+                ;
             }
         }
 
-        public virtual async Task<IEditObject?> LocalSave1(IEditObject target, int criteria)
+        public virtual async Task<IEditObject?> Save(IEditObject target, int criteriaA)
         {
             if (target.IsDeleted)
             {
@@ -307,24 +281,22 @@ namespace Neatoo.UnitTest.ObjectPortal
                     return null;
                 }
 
-                return await LocalDelete1(target, criteria);
+                return await LocalDelete1(target, criteriaA);
+                ;
             }
             else if (target.IsNew)
             {
-                return await LocalInsert1(target, criteria);
+                return await LocalInsert1(target, criteriaA);
+                ;
             }
             else
             {
-                return await LocalUpdate1(target, criteria);
+                return await LocalUpdate1(target, criteriaA);
+                ;
             }
         }
 
-        public async Task<IEditObject?> RemoteSave1(IEditObject target, int criteria)
-        {
-            return await DoRemoteRequest.ForDelegate<EditObject?>(typeof(IEditObjectFactory.Save1Delegate), [target, criteria]);
-        }
-
-        public virtual async Task<IEditObject?> LocalSave2(IEditObject target, Guid criteria)
+        public virtual async Task<IEditObject?> Save(IEditObject target, Guid criteria)
         {
             if (target.IsDeleted)
             {
@@ -334,97 +306,45 @@ namespace Neatoo.UnitTest.ObjectPortal
                 }
 
                 return LocalDelete2(target, criteria);
+                ;
             }
             else if (target.IsNew)
             {
                 return LocalInsert2(target, criteria);
+                ;
             }
             else
             {
                 return await LocalUpdate2(target, criteria);
+                ;
             }
-        }
-
-        public async Task<IEditObject?> RemoteSave2(IEditObject target, Guid criteria)
-        {
-            return await DoRemoteRequest.ForDelegate<EditObject?>(typeof(IEditObjectFactory.Save2Delegate), [target, criteria]);
         }
 
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<EditObject>();
-            services.AddTransient<IEditObject, EditObject>();
             services.AddScoped<EditObjectFactory>();
             services.AddScoped<IEditObjectFactory, EditObjectFactory>();
-            services.AddScoped<IEditObjectFactory.CreateDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<EditObjectFactory>();
-                return () => factory.Create();
-            });
-            services.AddScoped<IEditObjectFactory.CreateAsyncDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<EditObjectFactory>();
-                return (int criteria) => factory.CreateAsync(criteria);
-            });
-            services.AddScoped<IEditObjectFactory.Create1Delegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<EditObjectFactory>();
-                return (Guid criteria) => factory.Create(criteria);
-            });
-            services.AddScoped<IEditObjectFactory.CreateRemoteDelegate>(cc =>
+            services.AddTransient<IEditObject, EditObject>();
+            services.AddScoped<CreateRemoteDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<EditObjectFactory>();
                 return (Guid criteria) => factory.LocalCreateRemote(criteria);
             });
-            services.AddScoped<IEditObjectFactory.FetchDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<EditObjectFactory>();
-                return () => factory.Fetch();
-            });
-            services.AddScoped<IEditObjectFactory.Fetch1Delegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<EditObjectFactory>();
-                return (int criteria) => factory.Fetch(criteria);
-            });
-            services.AddScoped<IEditObjectFactory.Fetch2Delegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<EditObjectFactory>();
-                return (Guid criteria) => factory.Fetch(criteria);
-            });
-            services.AddScoped<IEditObjectFactory.FetchRemoteDelegate>(cc =>
+            services.AddScoped<FetchRemoteDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<EditObjectFactory>();
                 return (Guid criteria) => factory.LocalFetchRemote(criteria);
             });
-            services.AddScoped<IEditObjectFactory.FetchFailDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<EditObjectFactory>();
-                return () => factory.FetchFail();
-            });
-            services.AddScoped<IEditObjectFactory.FetchFailAsyncDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<EditObjectFactory>();
-                return () => factory.FetchFailAsync();
-            });
-            services.AddScoped<IEditObjectFactory.FetchFailDependencyDelegate>(cc =>
+            services.AddScoped<FetchFailDependencyDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<EditObjectFactory>();
                 return () => factory.LocalFetchFailDependency();
             });
-            services.AddScoped<IEditObjectFactory.FetchFailAsyncDependencyDelegate>(cc =>
+            services.AddScoped<FetchFailAsyncDependencyDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<EditObjectFactory>();
                 return () => factory.LocalFetchFailAsyncDependency();
-            });
-            services.AddScoped<IEditObjectFactory.Save1Delegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<EditObjectFactory>();
-                return (target, criteria) => factory.LocalSave1(target, criteria);
-            });
-            services.AddScoped<IEditObjectFactory.Save2Delegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<EditObjectFactory>();
-                return (target, criteria) => factory.LocalSave2(target, criteria);
             });
             services.AddScoped<IFactoryEditBase<EditObject>, EditObjectFactory>();
         }

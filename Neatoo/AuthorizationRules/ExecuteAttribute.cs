@@ -1,13 +1,24 @@
-﻿using System;
+﻿using Neatoo.Portal;
+using System;
 
 namespace Neatoo.AuthorizationRules;
 
-[System.AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-public sealed class ExecuteAttribute : Attribute
+
+[System.AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+public sealed class AuthorizeAttribute<T> : Attribute
 {
-    public AuthorizeOperation AuthorizeOperation { get; }
-    public ExecuteAttribute(AuthorizeOperation operation)
+    public AuthorizeAttribute()
     {
-        this.AuthorizeOperation = operation;
+
+    }
+}
+
+[System.AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+public sealed class AuthorizeAttribute : DataMapperMethodAttribute
+{
+    public DataMapperMethodType DataMapperMethodType { get; }
+    public AuthorizeAttribute(DataMapperMethodType operation) : base(DataMapperMethod.Authorize)
+    {
+        this.DataMapperMethodType = operation;
     }
 }

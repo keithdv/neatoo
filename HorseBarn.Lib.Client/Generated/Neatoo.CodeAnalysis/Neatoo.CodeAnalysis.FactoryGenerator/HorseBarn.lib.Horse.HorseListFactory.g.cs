@@ -14,13 +14,13 @@ namespace HorseBarn.lib.Horse
     public interface IHorseListFactory
     {
         IHorseList Create();
-        delegate IHorseList CreateDelegate();
     }
 
     internal class HorseListFactory : FactoryBase, IHorseListFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        public delegate IHorseList CreateDelegate();
         public HorseListFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -41,10 +41,10 @@ namespace HorseBarn.lib.Horse
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<HorseList>();
-            services.AddTransient<IHorseList, HorseList>();
             services.AddScoped<HorseListFactory>();
             services.AddScoped<IHorseListFactory, HorseListFactory>();
-            services.AddScoped<IHorseListFactory.CreateDelegate>(cc =>
+            services.AddTransient<IHorseList, HorseList>();
+            services.AddScoped<CreateDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<HorseListFactory>();
                 return () => factory.Create();

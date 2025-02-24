@@ -63,4 +63,9 @@ public class EditPerson : PersonEditBase<EditPerson>, IEditPerson
     {
         this.MarkUnmodified();
     }
+    [Insert]
+    public void Insert()
+    {
+
+    }
 }

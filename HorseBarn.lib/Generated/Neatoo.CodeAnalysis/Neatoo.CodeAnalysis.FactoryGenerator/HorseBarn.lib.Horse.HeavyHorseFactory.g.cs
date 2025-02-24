@@ -23,19 +23,19 @@ namespace HorseBarn.lib.Horse
         IHeavyHorse Fetch(Dal.Ef.Horse horse);
         Task<IHeavyHorse?> Save(IHeavyHorse target, Dal.Ef.Pasture pasture);
         Task<IHeavyHorse?> Save(IHeavyHorse target, Dal.Ef.Cart cart);
-        delegate IHeavyHorse CreateDelegate(IHorseCriteria horseCriteria);
-        delegate IHeavyHorse FetchDelegate(Dal.Ef.Horse horse);
-        delegate Task<IHeavyHorse?> SaveDelegate(IHeavyHorse target, Dal.Ef.Pasture pasture);
-        delegate Task<IHeavyHorse?> Save1Delegate(IHeavyHorse target, Dal.Ef.Cart cart);
     }
 
     internal class HeavyHorseFactory : FactoryEditBase<HeavyHorse>, IHeavyHorseFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public IHeavyHorseFactory.SaveDelegate SaveProperty { get; set; }
-        public IHeavyHorseFactory.Save1Delegate Save1Property { get; set; }
+        public SaveDelegate SaveProperty { get; set; }
+        public Save1Delegate Save1Property { get; set; }
 
+        public delegate IHeavyHorse CreateDelegate(IHorseCriteria horseCriteria);
+        public delegate IHeavyHorse FetchDelegate(Dal.Ef.Horse horse);
+        public delegate Task<IHeavyHorse?> SaveDelegate(IHeavyHorse target, Dal.Ef.Pasture pasture);
+        public delegate Task<IHeavyHorse?> Save1Delegate(IHeavyHorse target, Dal.Ef.Cart cart);
         public HeavyHorseFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -73,16 +73,16 @@ namespace HorseBarn.lib.Horse
             return DoMapperMethodCall<IHeavyHorse>(target, DataMapperMethod.Fetch, () => target.Fetch(horse));
         }
 
-        public virtual IHeavyHorse? LocalInsert(IHeavyHorse itarget, Dal.Ef.Pasture pasture)
+        public virtual Task<IHeavyHorse?> LocalInsert(IHeavyHorse itarget, Dal.Ef.Pasture pasture)
         {
             var target = (HeavyHorse)itarget ?? throw new Exception("HeavyHorse must implement IHeavyHorse");
-            return DoMapperMethodCall<IHeavyHorse>(target, DataMapperMethod.Insert, () => target.Insert(pasture));
+            return DoMapperMethodCallAsync<IHeavyHorse>(target, DataMapperMethod.Insert, () => target.Insert(pasture));
         }
 
-        public virtual IHeavyHorse? LocalInsert1(IHeavyHorse itarget, Dal.Ef.Cart cart)
+        public virtual Task<IHeavyHorse?> LocalInsert1(IHeavyHorse itarget, Dal.Ef.Cart cart)
         {
             var target = (HeavyHorse)itarget ?? throw new Exception("HeavyHorse must implement IHeavyHorse");
-            return DoMapperMethodCall<IHeavyHorse>(target, DataMapperMethod.Insert, () => target.Insert(cart));
+            return DoMapperMethodCallAsync<IHeavyHorse>(target, DataMapperMethod.Insert, () => target.Insert(cart));
         }
 
         public virtual Task<IHeavyHorse?> LocalUpdate(IHeavyHorse itarget, Dal.Ef.Pasture pasture)
@@ -99,16 +99,16 @@ namespace HorseBarn.lib.Horse
             return DoMapperMethodCallAsync<IHeavyHorse>(target, DataMapperMethod.Update, () => target.Update(cart, horseBarnContext));
         }
 
-        public virtual IHeavyHorse? LocalDelete(IHeavyHorse itarget, Dal.Ef.Cart cart)
+        public virtual Task<IHeavyHorse?> LocalDelete(IHeavyHorse itarget, Dal.Ef.Cart cart)
         {
             var target = (HeavyHorse)itarget ?? throw new Exception("HeavyHorse must implement IHeavyHorse");
-            return DoMapperMethodCall<IHeavyHorse>(target, DataMapperMethod.Delete, () => target.Delete(cart));
+            return DoMapperMethodCallAsync<IHeavyHorse>(target, DataMapperMethod.Delete, () => target.Delete(cart));
         }
 
-        public virtual IHeavyHorse? LocalDelete1(IHeavyHorse itarget, Dal.Ef.Pasture pasture)
+        public virtual Task<IHeavyHorse?> LocalDelete1(IHeavyHorse itarget, Dal.Ef.Pasture pasture)
         {
             var target = (HeavyHorse)itarget ?? throw new Exception("HeavyHorse must implement IHeavyHorse");
-            return DoMapperMethodCall<IHeavyHorse>(target, DataMapperMethod.Delete, () => target.Delete(pasture));
+            return DoMapperMethodCallAsync<IHeavyHorse>(target, DataMapperMethod.Delete, () => target.Delete(pasture));
         }
 
         public virtual async Task<IHeavyHorse?> LocalSave(IHeavyHorse target, Dal.Ef.Pasture pasture)
@@ -134,7 +134,7 @@ namespace HorseBarn.lib.Horse
 
         public async Task<IHeavyHorse?> RemoteSave(IHeavyHorse target, Dal.Ef.Pasture pasture)
         {
-            return await DoRemoteRequest.ForDelegate<HeavyHorse?>(typeof(IHeavyHorseFactory.SaveDelegate), [target, pasture]);
+            return await DoRemoteRequest.ForDelegate<HeavyHorse?>(typeof(SaveDelegate), [target, pasture]);
         }
 
         public virtual async Task<IHeavyHorse?> LocalSave1(IHeavyHorse target, Dal.Ef.Cart cart)
@@ -160,31 +160,31 @@ namespace HorseBarn.lib.Horse
 
         public async Task<IHeavyHorse?> RemoteSave1(IHeavyHorse target, Dal.Ef.Cart cart)
         {
-            return await DoRemoteRequest.ForDelegate<HeavyHorse?>(typeof(IHeavyHorseFactory.Save1Delegate), [target, cart]);
+            return await DoRemoteRequest.ForDelegate<HeavyHorse?>(typeof(Save1Delegate), [target, cart]);
         }
 
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<HeavyHorse>();
-            services.AddTransient<IHeavyHorse, HeavyHorse>();
             services.AddScoped<HeavyHorseFactory>();
             services.AddScoped<IHeavyHorseFactory, HeavyHorseFactory>();
-            services.AddScoped<IHeavyHorseFactory.CreateDelegate>(cc =>
+            services.AddTransient<IHeavyHorse, HeavyHorse>();
+            services.AddScoped<CreateDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<HeavyHorseFactory>();
                 return (IHorseCriteria horseCriteria) => factory.Create(horseCriteria);
             });
-            services.AddScoped<IHeavyHorseFactory.FetchDelegate>(cc =>
+            services.AddScoped<FetchDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<HeavyHorseFactory>();
                 return (Dal.Ef.Horse horse) => factory.Fetch(horse);
             });
-            services.AddScoped<IHeavyHorseFactory.SaveDelegate>(cc =>
+            services.AddScoped<SaveDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<HeavyHorseFactory>();
                 return (target, pasture) => factory.LocalSave(target, pasture);
             });
-            services.AddScoped<IHeavyHorseFactory.Save1Delegate>(cc =>
+            services.AddScoped<Save1Delegate>(cc =>
             {
                 var factory = cc.GetRequiredService<HeavyHorseFactory>();
                 return (target, cart) => factory.LocalSave1(target, cart);

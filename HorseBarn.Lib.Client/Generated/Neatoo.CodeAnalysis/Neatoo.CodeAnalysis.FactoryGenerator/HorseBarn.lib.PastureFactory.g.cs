@@ -35,9 +35,9 @@ namespace HorseBarn.lib
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<Pasture>();
-            services.AddTransient<IPasture, Pasture>();
             services.AddScoped<PastureFactory>();
             services.AddScoped<IPastureFactory, PastureFactory>();
+            services.AddTransient<IPasture, Pasture>();
             services.AddScoped<IFactoryEditBase<Pasture>, PastureFactory>();
         }
     }

@@ -16,14 +16,14 @@ namespace HorseBarn.lib.Horse
     {
         IHorseCriteria Fetch();
         IHorseCriteria Fetch(IEnumerable<string> horseNames);
-        delegate IHorseCriteria FetchDelegate();
-        delegate IHorseCriteria Fetch1Delegate(IEnumerable<string> horseNames);
     }
 
     internal class HorseCriteriaFactory : FactoryBase, IHorseCriteriaFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        public delegate IHorseCriteria FetchDelegate();
+        public delegate IHorseCriteria Fetch1Delegate(IEnumerable<string> horseNames);
         public HorseCriteriaFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -50,15 +50,15 @@ namespace HorseBarn.lib.Horse
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<HorseCriteria>();
-            services.AddTransient<IHorseCriteria, HorseCriteria>();
             services.AddScoped<HorseCriteriaFactory>();
             services.AddScoped<IHorseCriteriaFactory, HorseCriteriaFactory>();
-            services.AddScoped<IHorseCriteriaFactory.FetchDelegate>(cc =>
+            services.AddTransient<IHorseCriteria, HorseCriteria>();
+            services.AddScoped<FetchDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<HorseCriteriaFactory>();
                 return () => factory.Fetch();
             });
-            services.AddScoped<IHorseCriteriaFactory.Fetch1Delegate>(cc =>
+            services.AddScoped<Fetch1Delegate>(cc =>
             {
                 var factory = cc.GetRequiredService<HorseCriteriaFactory>();
                 return (IEnumerable<string> horseNames) => factory.Fetch(horseNames);

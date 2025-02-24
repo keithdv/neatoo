@@ -128,6 +128,7 @@ public class EditObject : EditBase<EditObject>, IEditObject
         return false;
     }
 
+    [Remote]
     [Fetch]
     public bool FetchFailDependency([Service] IDisposableDependency dependency)
     {
@@ -135,6 +136,7 @@ public class EditObject : EditBase<EditObject>, IEditObject
         return false;
     }
 
+    [Remote]
     [Fetch]
     public async Task<bool> FetchFailAsyncDependency([Service] IDisposableDependency dependency)
     {
@@ -153,11 +155,11 @@ public class EditObject : EditBase<EditObject>, IEditObject
     }
 
     [Insert]
-    public async Task Insert(int criteria)
+    public async Task Insert(int criteriaA)
     {
         await Task.Delay(2);
         InsertCalled = true;
-        IntCriteria = criteria;
+        IntCriteria = criteriaA;
     }
 
     [Insert]
@@ -171,17 +173,18 @@ public class EditObject : EditBase<EditObject>, IEditObject
     public bool UpdateCalled { get => Getter<bool>(); set => Setter(value); }
 
     [Update]
-    public void Update()
+    public async Task Update()
     {
+        await Task.Delay(2);
         ID = Guid.NewGuid();
         UpdateCalled = true;
     }
 
     [Update]
-    public async Task Update(int criteria)
+    public async Task Update(int criteriaB)
     {
         await Task.Delay(2);
-        IntCriteria = criteria;
+        IntCriteria = criteriaB;
         UpdateCalled = true;
     }
 
@@ -203,10 +206,10 @@ public class EditObject : EditBase<EditObject>, IEditObject
     }
 
     [Delete]
-    public async Task Delete(int criteria)
+    public async Task Delete(int criteriaC)
     {
         await Task.Delay(2);
-        IntCriteria = criteria;
+        IntCriteria = criteriaC;
         DeleteCalled = true;
     }
 

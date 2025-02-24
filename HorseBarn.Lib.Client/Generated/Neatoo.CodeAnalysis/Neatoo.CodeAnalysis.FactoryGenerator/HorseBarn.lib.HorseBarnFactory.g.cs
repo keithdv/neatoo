@@ -18,20 +18,20 @@ namespace HorseBarn.lib
     {
         Task<IHorseBarn> Fetch();
         Task<IHorseBarn> Create();
-        Task<IHorseBarn?> Save(IHorseBarn target);
-        delegate Task<IHorseBarn> FetchDelegate();
-        delegate Task<IHorseBarn> CreateDelegate();
-        delegate Task<IHorseBarn?> SaveDelegate(IHorseBarn target);
+        IHorseBarn? Save(IHorseBarn target);
     }
 
     internal class HorseBarnFactory : FactoryEditBase<HorseBarn>, IHorseBarnFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public IHorseBarnFactory.FetchDelegate FetchProperty { get; }
-        public IHorseBarnFactory.CreateDelegate CreateProperty { get; }
-        public IHorseBarnFactory.SaveDelegate SaveProperty { get; set; }
+        public FetchDelegate FetchProperty { get; }
+        public CreateDelegate CreateProperty { get; }
+        public SaveDelegate SaveProperty { get; set; }
 
+        public delegate Task<IHorseBarn> FetchDelegate();
+        public delegate Task<IHorseBarn> CreateDelegate();
+        public delegate IHorseBarn? SaveDelegate(IHorseBarn target);
         public HorseBarnFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -46,7 +46,6 @@ namespace HorseBarn.lib
             this.DoRemoteRequest = remoteMethodDelegate;
             FetchProperty = RemoteFetch;
             CreateProperty = RemoteCreate;
-            SaveProperty = RemoteSave;
         }
 
         public virtual Task<IHorseBarn> Fetch()
@@ -59,12 +58,12 @@ namespace HorseBarn.lib
             return CreateProperty();
         }
 
-        public override async Task<IEditBase?> Save(HorseBarn target)
+        public override Task<IEditBase?> Save(HorseBarn target)
         {
-            return (IEditBase? )(await SaveProperty(target));
+            return Task.FromResult<IEditBase?>(SaveProperty(target));
         }
 
-        public Task<IHorseBarn?> Save(IHorseBarn target)
+        public IHorseBarn? Save(IHorseBarn target)
         {
             return SaveProperty(target);
         }
@@ -89,15 +88,15 @@ namespace HorseBarn.lib
 
         public virtual async Task<IHorseBarn?> RemoteFetch()
         {
-            return await DoRemoteRequest.ForDelegate<HorseBarn?>(typeof(IHorseBarnFactory.FetchDelegate), []);
+            return await DoRemoteRequest.ForDelegate<HorseBarn?>(typeof(FetchDelegate), []);
         }
 
         public virtual async Task<IHorseBarn?> RemoteCreate()
         {
-            return await DoRemoteRequest.ForDelegate<HorseBarn?>(typeof(IHorseBarnFactory.CreateDelegate), []);
+            return await DoRemoteRequest.ForDelegate<HorseBarn?>(typeof(CreateDelegate), []);
         }
 
-        public virtual async Task<IHorseBarn?> LocalSave(IHorseBarn target)
+        public virtual IHorseBarn? LocalSave(IHorseBarn target)
         {
             if (target.IsDeleted)
             {
@@ -106,43 +105,33 @@ namespace HorseBarn.lib
                     return null;
                 }
 
-                throw new NotImplementedException("HorseBarnFactory.Update()");
+                throw new NotImplementedException();
             }
             else if (target.IsNew)
             {
-                throw new NotImplementedException("HorseBarnFactory.Update()");
+                throw new NotImplementedException();
             }
             else
             {
-                return await LocalUpdate(target);
+                return LocalUpdate(target);
             }
-        }
-
-        public async Task<IHorseBarn?> RemoteSave(IHorseBarn target)
-        {
-            return await DoRemoteRequest.ForDelegate<HorseBarn?>(typeof(IHorseBarnFactory.SaveDelegate), [target, ]);
         }
 
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<HorseBarn>();
-            services.AddTransient<IHorseBarn, HorseBarn>();
             services.AddScoped<HorseBarnFactory>();
             services.AddScoped<IHorseBarnFactory, HorseBarnFactory>();
-            services.AddScoped<IHorseBarnFactory.FetchDelegate>(cc =>
+            services.AddTransient<IHorseBarn, HorseBarn>();
+            services.AddScoped<FetchDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<HorseBarnFactory>();
                 return () => factory.LocalFetch();
             });
-            services.AddScoped<IHorseBarnFactory.CreateDelegate>(cc =>
+            services.AddScoped<CreateDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<HorseBarnFactory>();
                 return () => factory.LocalCreate();
-            });
-            services.AddScoped<IHorseBarnFactory.SaveDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<HorseBarnFactory>();
-                return (target) => factory.LocalSave(target);
             });
             services.AddScoped<IFactoryEditBase<HorseBarn>, HorseBarnFactory>();
         }

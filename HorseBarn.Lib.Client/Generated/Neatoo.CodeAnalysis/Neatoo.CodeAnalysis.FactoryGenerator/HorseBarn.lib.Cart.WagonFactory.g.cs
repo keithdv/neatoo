@@ -21,34 +21,25 @@ namespace HorseBarn.lib.Cart
     public interface IWagonFactory
     {
         Task<IWagon> Create();
-        delegate Task<IWagon> CreateDelegate();
     }
 
     internal class WagonFactory : FactoryEditBase<Wagon>, IWagonFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public IWagonFactory.CreateDelegate CreateProperty { get; }
-
+        public delegate Task<IWagon> CreateDelegate();
         public WagonFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
-            CreateProperty = LocalCreate;
         }
 
         public WagonFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
-            CreateProperty = RemoteCreate;
         }
 
-        public virtual Task<IWagon> Create()
-        {
-            return CreateProperty();
-        }
-
-        public Task<IWagon> LocalCreate()
+        public Task<IWagon> Create()
         {
             var target = ServiceProvider.GetRequiredService<Wagon>();
             var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
@@ -56,21 +47,16 @@ namespace HorseBarn.lib.Cart
             return DoMapperMethodCallAsync<IWagon>(target, DataMapperMethod.Create, () => target.Create(horsePortal, allRequiredRulesExecutedFactory));
         }
 
-        public virtual async Task<IWagon?> RemoteCreate()
-        {
-            return await DoRemoteRequest.ForDelegate<Wagon?>(typeof(IWagonFactory.CreateDelegate), []);
-        }
-
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<Wagon>();
-            services.AddTransient<IWagon, Wagon>();
             services.AddScoped<WagonFactory>();
             services.AddScoped<IWagonFactory, WagonFactory>();
-            services.AddScoped<IWagonFactory.CreateDelegate>(cc =>
+            services.AddTransient<IWagon, Wagon>();
+            services.AddScoped<CreateDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<WagonFactory>();
-                return () => factory.LocalCreate();
+                return () => factory.Create();
             });
             services.AddScoped<IFactoryEditBase<Wagon>, WagonFactory>();
         }

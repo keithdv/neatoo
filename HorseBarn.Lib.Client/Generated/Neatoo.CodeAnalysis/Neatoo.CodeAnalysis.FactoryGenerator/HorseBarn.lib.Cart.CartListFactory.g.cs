@@ -13,13 +13,13 @@ namespace HorseBarn.lib.Cart
     public interface ICartListFactory
     {
         ICartList Create();
-        delegate ICartList CreateDelegate();
     }
 
     internal class CartListFactory : FactoryBase, ICartListFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        public delegate ICartList CreateDelegate();
         public CartListFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -40,10 +40,10 @@ namespace HorseBarn.lib.Cart
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<CartList>();
-            services.AddTransient<ICartList, CartList>();
             services.AddScoped<CartListFactory>();
             services.AddScoped<ICartListFactory, CartListFactory>();
-            services.AddScoped<ICartListFactory.CreateDelegate>(cc =>
+            services.AddTransient<ICartList, CartList>();
+            services.AddScoped<CreateDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<CartListFactory>();
                 return () => factory.Create();

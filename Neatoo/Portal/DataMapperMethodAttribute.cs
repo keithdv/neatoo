@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Neatoo.Portal;
+﻿namespace Neatoo.Portal;
 
 [System.AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
 public class FactoryAttribute : Attribute
@@ -96,10 +94,3 @@ public sealed class  ExecuteAttribute<D> : DataMapperMethodAttribute
     }
 }
 
-[System.AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-public sealed class LocalAttribute<D> : Attribute where D : Delegate
-{
-    public LocalAttribute()
-    {
-    }
-}

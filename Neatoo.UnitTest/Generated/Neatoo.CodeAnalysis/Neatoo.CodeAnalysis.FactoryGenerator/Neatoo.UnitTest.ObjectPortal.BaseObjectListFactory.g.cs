@@ -26,7 +26,7 @@ namespace Neatoo.UnitTest.ObjectPortal
             this.ServiceProvider = serviceProvider;
         }
 
-        public BaseObjectListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public BaseObjectListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
@@ -35,9 +35,9 @@ namespace Neatoo.UnitTest.ObjectPortal
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<BaseObjectList>();
-            services.AddTransient<IBaseObjectList, BaseObjectList>();
             services.AddScoped<BaseObjectListFactory>();
             services.AddScoped<IBaseObjectListFactory, BaseObjectListFactory>();
+            services.AddTransient<IBaseObjectList, BaseObjectList>();
         }
     }
 }

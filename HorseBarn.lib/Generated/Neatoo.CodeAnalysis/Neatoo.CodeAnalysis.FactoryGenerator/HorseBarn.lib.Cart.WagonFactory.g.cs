@@ -24,22 +24,20 @@ namespace HorseBarn.lib.Cart
         Task<IWagon> Create();
         IWagon Fetch(Dal.Ef.Cart cart);
         IWagon? Save(IWagon target, Dal.Ef.HorseBarn horseBarn);
-        delegate Task<IWagon> CreateDelegate();
-        delegate IWagon FetchDelegate(Dal.Ef.Cart cart);
-        delegate IWagon? SaveDelegate(IWagon target, Dal.Ef.HorseBarn horseBarn);
     }
 
     internal class WagonFactory : FactoryEditBase<Wagon>, IWagonFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public IWagonFactory.CreateDelegate CreateProperty { get; }
-        public IWagonFactory.SaveDelegate SaveProperty { get; set; }
+        public SaveDelegate SaveProperty { get; set; }
 
+        public delegate Task<IWagon> CreateDelegate();
+        public delegate IWagon FetchDelegate(Dal.Ef.Cart cart);
+        public delegate IWagon? SaveDelegate(IWagon target, Dal.Ef.HorseBarn horseBarn);
         public WagonFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
-            CreateProperty = LocalCreate;
             SaveProperty = LocalSave;
         }
 
@@ -47,12 +45,6 @@ namespace HorseBarn.lib.Cart
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
-            CreateProperty = RemoteCreate;
-        }
-
-        public virtual Task<IWagon> Create()
-        {
-            return CreateProperty();
         }
 
         public IWagon? Save(IWagon target, Dal.Ef.HorseBarn horseBarn)
@@ -60,7 +52,7 @@ namespace HorseBarn.lib.Cart
             return SaveProperty(target, horseBarn);
         }
 
-        public Task<IWagon> LocalCreate()
+        public Task<IWagon> Create()
         {
             var target = ServiceProvider.GetRequiredService<Wagon>();
             var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
@@ -75,23 +67,18 @@ namespace HorseBarn.lib.Cart
             return DoMapperMethodCall<IWagon>(target, DataMapperMethod.Fetch, () => target.Fetch(cart, horsePortal));
         }
 
-        public virtual IWagon? LocalInsert(IWagon itarget, Dal.Ef.HorseBarn horseBarn)
+        public virtual Task<IWagon?> LocalInsert(IWagon itarget, Dal.Ef.HorseBarn horseBarn)
         {
             var target = (Wagon)itarget ?? throw new Exception("Wagon must implement IWagon");
             var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
-            return DoMapperMethodCall<IWagon>(target, DataMapperMethod.Insert, () => target.Insert(horseBarn, horsePortal));
+            return DoMapperMethodCallAsync<IWagon>(target, DataMapperMethod.Insert, () => target.Insert(horseBarn, horsePortal));
         }
 
-        public virtual IWagon? LocalUpdate(IWagon itarget, Dal.Ef.HorseBarn horseBarn)
+        public virtual Task<IWagon?> LocalUpdate(IWagon itarget, Dal.Ef.HorseBarn horseBarn)
         {
             var target = (Wagon)itarget ?? throw new Exception("Wagon must implement IWagon");
             var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
-            return DoMapperMethodCall<IWagon>(target, DataMapperMethod.Update, () => target.Update(horseBarn, horsePortal));
-        }
-
-        public virtual async Task<IWagon?> RemoteCreate()
-        {
-            return await DoRemoteRequest.ForDelegate<Wagon?>(typeof(IWagonFactory.CreateDelegate), []);
+            return DoMapperMethodCallAsync<IWagon>(target, DataMapperMethod.Update, () => target.Update(horseBarn, horsePortal));
         }
 
         public virtual IWagon? LocalSave(IWagon target, Dal.Ef.HorseBarn horseBarn)
@@ -103,7 +90,7 @@ namespace HorseBarn.lib.Cart
                     return null;
                 }
 
-                throw new NotImplementedException("WagonFactory.Update()");
+                throw new NotImplementedException();
             }
             else if (target.IsNew)
             {
@@ -118,15 +105,15 @@ namespace HorseBarn.lib.Cart
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<Wagon>();
-            services.AddTransient<IWagon, Wagon>();
             services.AddScoped<WagonFactory>();
             services.AddScoped<IWagonFactory, WagonFactory>();
-            services.AddScoped<IWagonFactory.CreateDelegate>(cc =>
+            services.AddTransient<IWagon, Wagon>();
+            services.AddScoped<CreateDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<WagonFactory>();
-                return () => factory.LocalCreate();
+                return () => factory.Create();
             });
-            services.AddScoped<IWagonFactory.FetchDelegate>(cc =>
+            services.AddScoped<FetchDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<WagonFactory>();
                 return (Dal.Ef.Cart cart) => factory.Fetch(cart);

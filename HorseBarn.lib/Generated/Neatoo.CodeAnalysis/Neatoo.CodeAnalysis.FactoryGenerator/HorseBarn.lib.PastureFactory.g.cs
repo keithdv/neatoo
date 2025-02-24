@@ -20,17 +20,17 @@ namespace HorseBarn.lib
         IPasture Create();
         IPasture Fetch(Dal.Ef.Pasture pasture);
         IPasture? Save(IPasture target, Dal.Ef.HorseBarn horseBarn);
-        delegate IPasture CreateDelegate();
-        delegate IPasture FetchDelegate(Dal.Ef.Pasture pasture);
-        delegate IPasture? SaveDelegate(IPasture target, Dal.Ef.HorseBarn horseBarn);
     }
 
     internal class PastureFactory : FactoryEditBase<Pasture>, IPastureFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public IPastureFactory.SaveDelegate SaveProperty { get; set; }
+        public SaveDelegate SaveProperty { get; set; }
 
+        public delegate IPasture CreateDelegate();
+        public delegate IPasture FetchDelegate(Dal.Ef.Pasture pasture);
+        public delegate IPasture? SaveDelegate(IPasture target, Dal.Ef.HorseBarn horseBarn);
         public PastureFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -62,18 +62,18 @@ namespace HorseBarn.lib
             return DoMapperMethodCall<IPasture>(target, DataMapperMethod.Fetch, () => target.Fetch(pasture, horseListPortal));
         }
 
-        public virtual IPasture? LocalInsert(IPasture itarget, Dal.Ef.HorseBarn horseBarn)
+        public virtual Task<IPasture?> LocalInsert(IPasture itarget, Dal.Ef.HorseBarn horseBarn)
         {
             var target = (Pasture)itarget ?? throw new Exception("Pasture must implement IPasture");
             var horseListPortal = ServiceProvider.GetService<IHorseListFactory>();
-            return DoMapperMethodCall<IPasture>(target, DataMapperMethod.Insert, () => target.Insert(horseBarn, horseListPortal));
+            return DoMapperMethodCallAsync<IPasture>(target, DataMapperMethod.Insert, () => target.Insert(horseBarn, horseListPortal));
         }
 
-        public virtual IPasture? LocalUpdate(IPasture itarget, Dal.Ef.HorseBarn horseBarn)
+        public virtual Task<IPasture?> LocalUpdate(IPasture itarget, Dal.Ef.HorseBarn horseBarn)
         {
             var target = (Pasture)itarget ?? throw new Exception("Pasture must implement IPasture");
             var horseListPortal = ServiceProvider.GetService<IHorseListFactory>();
-            return DoMapperMethodCall<IPasture>(target, DataMapperMethod.Update, () => target.Update(horseBarn, horseListPortal));
+            return DoMapperMethodCallAsync<IPasture>(target, DataMapperMethod.Update, () => target.Update(horseBarn, horseListPortal));
         }
 
         public virtual IPasture? LocalSave(IPasture target, Dal.Ef.HorseBarn horseBarn)
@@ -85,7 +85,7 @@ namespace HorseBarn.lib
                     return null;
                 }
 
-                throw new NotImplementedException("PastureFactory.Update()");
+                throw new NotImplementedException();
             }
             else if (target.IsNew)
             {
@@ -100,15 +100,15 @@ namespace HorseBarn.lib
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<Pasture>();
-            services.AddTransient<IPasture, Pasture>();
             services.AddScoped<PastureFactory>();
             services.AddScoped<IPastureFactory, PastureFactory>();
-            services.AddScoped<IPastureFactory.CreateDelegate>(cc =>
+            services.AddTransient<IPasture, Pasture>();
+            services.AddScoped<CreateDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<PastureFactory>();
                 return () => factory.Create();
             });
-            services.AddScoped<IPastureFactory.FetchDelegate>(cc =>
+            services.AddScoped<FetchDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<PastureFactory>();
                 return (Dal.Ef.Pasture pasture) => factory.Fetch(pasture);
