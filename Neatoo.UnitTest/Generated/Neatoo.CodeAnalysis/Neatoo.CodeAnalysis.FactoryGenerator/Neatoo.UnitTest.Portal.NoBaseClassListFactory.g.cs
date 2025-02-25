@@ -61,12 +61,12 @@ namespace Neatoo.UnitTest.Portal
             var target = ServiceProvider.GetRequiredService<NoBaseClassList>();
             var factoryA = ServiceProvider.GetService<INoBaseClassAFactory>();
             var factoryB = ServiceProvider.GetService<INoBaseClassBFactory>();
-            return DoMapperMethodCallAsync<INoBaseClassList>(target, DataMapperMethod.Create, () => target.CreateRemote(factoryA, factoryB));
+            return Task.FromResult(DoMapperMethodCall<INoBaseClassList>(target, DataMapperMethod.Create, () => target.CreateRemote(factoryA, factoryB)));
         }
 
         public virtual async Task<INoBaseClassList> RemoteCreateRemote()
         {
-            return await DoRemoteRequest.ForDelegate<NoBaseClassList>(typeof(CreateRemoteDelegate), []);
+            return await DoRemoteRequest.ForDelegate<INoBaseClassList>(typeof(CreateRemoteDelegate), []);
         }
 
         public static void FactoryServiceRegistrar(IServiceCollection services)

@@ -30,14 +30,18 @@ public interface IValidateMetaProperties : IBaseMetaProperties
     void ClearSelfErrors();
 }
 
-public interface IEditMetaProperties : IValidateMetaProperties
+public interface  IEditMetaSaveProperties
+{
+    bool IsDeleted { get; }
+    bool IsNew { get; }
+}
+
+public interface IEditMetaProperties : IEditMetaSaveProperties
 {
     bool IsChild { get; }
     bool IsModified { get; }
     bool IsSelfModified { get; }
     bool IsMarkedModified { get; }
-    bool IsNew { get; }
     bool IsSavable { get; }
 
-    bool IsDeleted { get; }
 }

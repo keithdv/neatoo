@@ -114,12 +114,12 @@ namespace Neatoo.UnitTest.ObjectPortal
 
         public virtual async Task<IBaseObject> RemoteCreate2(Guid criteria)
         {
-            return await DoRemoteRequest.ForDelegate<BaseObject>(typeof(Create2Delegate), [criteria]);
+            return await DoRemoteRequest.ForDelegate<IBaseObject>(typeof(Create2Delegate), [criteria]);
         }
 
         public virtual async Task<IBaseObject> RemoteFetch2(Guid criteria)
         {
-            return await DoRemoteRequest.ForDelegate<BaseObject>(typeof(Fetch2Delegate), [criteria]);
+            return await DoRemoteRequest.ForDelegate<IBaseObject>(typeof(Fetch2Delegate), [criteria]);
         }
 
         public static void FactoryServiceRegistrar(IServiceCollection services)

@@ -15,7 +15,7 @@ internal class CartNumberOfHorsesRule : RuleBase<ICart>, ICartNumberOfHorsesRule
     public override PropertyErrors Execute(ICart cart)
     {
         var horseCount = cart.Horses.Count();
-        if (cart.Horses.Count() > cart.NumberOfHorses)
+        if (horseCount > cart.NumberOfHorses)
         {
             cart.NumberOfHorses = horseCount;
         }

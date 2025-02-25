@@ -23,7 +23,7 @@
 //    public bool ExecuteCreateCalled { get; set; }
 
 //    [Execute(AuthorizeOperation.Create)]
-//    public async Task<IAuthorizationRuleResult> ExecuteCreate()
+//    public async Task<AuthorizationRuleResult> ExecuteCreate()
 //    {
 //        await Task.Delay(10);
 //        ExecuteCreateCalled = true;
@@ -31,7 +31,7 @@
 //    }
 
 //    [Execute(AuthorizeOperation.Create)]
-//    public async Task<IAuthorizationRuleResult> ExecuteCreate(int criteria)
+//    public async Task<AuthorizationRuleResult> ExecuteCreate(int criteria)
 //    {
 //        await Task.Delay(10);
 //        ExecuteCreateCalled = true;
@@ -42,7 +42,7 @@
 //    public bool ExecuteFetchCalled { get; set; }
 
 //    [Execute(AuthorizeOperation.Fetch)]
-//    public async Task<IAuthorizationRuleResult> ExecuteFetch()
+//    public async Task<AuthorizationRuleResult> ExecuteFetch()
 //    {
 //        await Task.Delay(10);
 //        ExecuteFetchCalled = true;
@@ -50,7 +50,7 @@
 //    }
 
 //    [Execute(AuthorizeOperation.Fetch)]
-//    public async Task<IAuthorizationRuleResult> ExecuteFetch(int criteria)
+//    public async Task<AuthorizationRuleResult> ExecuteFetch(int criteria)
 //    {
 //        await Task.Delay(10);
 //        ExecuteFetchCalled = true;
@@ -61,7 +61,7 @@
 //    public bool ExecuteUpdateCalled { get; set; }
 
 //    [Execute(AuthorizeOperation.Update)]
-//    public async Task<IAuthorizationRuleResult> ExecuteUpdate()
+//    public async Task<AuthorizationRuleResult> ExecuteUpdate()
 //    {
 //        await Task.Delay(10);
 //        ExecuteUpdateCalled = true;
@@ -71,7 +71,7 @@
 //    public bool ExecuteDeleteCalled { get; set; }
 
 //    [Execute(AuthorizeOperation.Delete)]
-//    public async Task<IAuthorizationRuleResult> ExecuteDelete()
+//    public async Task<AuthorizationRuleResult> ExecuteDelete()
 //    {
 //        await Task.Delay(10);
 //        ExecuteDeleteCalled = true;

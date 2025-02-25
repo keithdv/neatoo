@@ -30,7 +30,7 @@
 //    }
 
 //    [Execute(AuthorizeOperation.Create)]
-//    public IAuthorizationRuleResult ExecuteCreate()
+//    public AuthorizationRuleResult ExecuteCreate()
 //    {
 //        Assert.IsNotNull(DisposableDependency);
 //        ExecuteCreateCalled = true;
@@ -38,7 +38,7 @@
 //    }
 
 //    [Execute(AuthorizeOperation.Create)]
-//    public IAuthorizationRuleResult ExecuteCreate(int criteria)
+//    public AuthorizationRuleResult ExecuteCreate(int criteria)
 //    {
 //        Assert.IsNotNull(DisposableDependency);
 //        ExecuteCreateCalled = true;
@@ -48,7 +48,7 @@
 
 //    public bool ExecuteFetchCalled { get; set; }
 //    [Execute(AuthorizeOperation.Fetch)]
-//    public IAuthorizationRuleResult ExecuteFetch()
+//    public AuthorizationRuleResult ExecuteFetch()
 //    {
 //        Assert.IsNotNull(DisposableDependency);
 //        ExecuteFetchCalled = true;
@@ -56,7 +56,7 @@
 //    }
 
 //    [Execute(AuthorizeOperation.Fetch)]
-//    public IAuthorizationRuleResult ExecuteFetch(int criteria)
+//    public AuthorizationRuleResult ExecuteFetch(int criteria)
 //    {
 //        Assert.IsNotNull(DisposableDependency);
 //        ExecuteFetchCalled = true;
@@ -66,7 +66,7 @@
 
 //    public bool ExecuteUpdateCalled { get; set; }
 //    [Execute(AuthorizeOperation.Update)]
-//    public IAuthorizationRuleResult ExecuteUpdate()
+//    public AuthorizationRuleResult ExecuteUpdate()
 //    {
 //        Assert.IsNotNull(DisposableDependency);
 //        ExecuteUpdateCalled = true;
@@ -75,7 +75,7 @@
 
 //    public bool ExecuteDeleteCalled { get; set; }
 //    [Execute(AuthorizeOperation.Delete)]
-//    public IAuthorizationRuleResult ExecuteDelete()
+//    public AuthorizationRuleResult ExecuteDelete()
 //    {
 //        Assert.IsNotNull(DisposableDependency);
 //        ExecuteDeleteCalled = true;

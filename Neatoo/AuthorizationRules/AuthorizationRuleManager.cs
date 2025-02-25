@@ -108,10 +108,10 @@
 //        {
 //            var operation = m.GetCustomAttribute<ExecuteAttribute>().AuthorizeOperation;
 
-//            if (!(m.ReturnType == typeof(Task<IAuthorizationRuleResult>)
-//                || m.ReturnType == typeof(IAuthorizationRuleResult)))
+//            if (!(m.ReturnType == typeof(Task<AuthorizationRuleResult>)
+//                || m.ReturnType == typeof(AuthorizationRuleResult)))
 //            {
-//                throw new AuthorizationRuleWrongTypeException($"Execute method must return IAuthorizationRuleResult or Task<IAuthorizationRuleResult> not {m.ReturnType.FullName}");
+//                throw new AuthorizationRuleWrongTypeException($"Execute method must return AuthorizationRuleResult or Task<AuthorizationRuleResult> not {m.ReturnType.FullName}");
 //            }
 
 //            if (!AuthorizationMethods.TryGetValue(operation, out var methodInfoList))
@@ -145,18 +145,18 @@
 //                    }
 
 //                    methodFound = true;
-//                    IAuthorizationRuleResult ruleResult;
+//                    AuthorizationRuleResult ruleResult;
 //                    var methodResult = method.Invoke(ruleMethod.AuthorizationRule, new object[0]);
-//                    var methodResultAsync = methodResult as Task<IAuthorizationRuleResult>;
+//                    var methodResultAsync = methodResult as Task<AuthorizationRuleResult>;
 
 //                    if (methodResultAsync != null)
 //                    {
 //                        await methodResultAsync;
-//                        ruleResult = ((IAuthorizationRuleResult)methodResultAsync.Result);
+//                        ruleResult = ((AuthorizationRuleResult)methodResultAsync.Result);
 //                    }
 //                    else
 //                    {
-//                        ruleResult = ((IAuthorizationRuleResult)methodResult);
+//                        ruleResult = ((AuthorizationRuleResult)methodResult);
 //                    }
 
 //                    if (!ruleResult.HasAccess)
@@ -219,18 +219,18 @@
 //                        }
 //                        methodFound = true;
 
-//                        IAuthorizationRuleResult ruleResult;
+//                        AuthorizationRuleResult ruleResult;
 //                        var methodResult = method.Invoke(ruleMethod.AuthorizationRule, criteria);
-//                        var methodResultAsync = methodResult as Task<IAuthorizationRuleResult>;
+//                        var methodResultAsync = methodResult as Task<AuthorizationRuleResult>;
 
 //                        if (methodResultAsync != null)
 //                        {
 //                            await methodResultAsync;
-//                            ruleResult = ((IAuthorizationRuleResult)methodResultAsync.Result);
+//                            ruleResult = ((AuthorizationRuleResult)methodResultAsync.Result);
 //                        }
 //                        else
 //                        {
-//                            ruleResult = ((IAuthorizationRuleResult)methodResult);
+//                            ruleResult = ((AuthorizationRuleResult)methodResult);
 //                        }
 
 //                        if (!ruleResult.HasAccess)

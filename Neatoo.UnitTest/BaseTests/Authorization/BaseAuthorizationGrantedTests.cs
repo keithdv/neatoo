@@ -23,14 +23,14 @@
 //    public bool ExecuteCreateCalled { get; set; }
 
 //    [Execute(AuthorizeOperation.Create)]
-//    public IAuthorizationRuleResult ExecuteCreate()
+//    public AuthorizationRuleResult ExecuteCreate()
 //    {
 //        ExecuteCreateCalled = true;
 //        return AuthorizationRuleResult.AccessGranted();
 //    }
 
 //    [Execute(AuthorizeOperation.Create)]
-//    public IAuthorizationRuleResult ExecuteCreate(int criteria)
+//    public AuthorizationRuleResult ExecuteCreate(int criteria)
 //    {
 //        ExecuteCreateCalled = true;
 //        IntCriteria = criteria;
@@ -38,7 +38,7 @@
 //    }
 
 //    [Execute(AuthorizeOperation.Create)]
-//    public IAuthorizationRuleResult ExecuteCreate(int intCriteria, Guid? guidCriteria)
+//    public AuthorizationRuleResult ExecuteCreate(int intCriteria, Guid? guidCriteria)
 //    {
 //        ExecuteCreateCalled = true;
 //        IntCriteria = intCriteria;
@@ -48,14 +48,14 @@
 
 //    public bool ExecuteFetchCalled { get; set; }
 //    [Execute(AuthorizeOperation.Fetch)]
-//    public IAuthorizationRuleResult ExecuteFetch()
+//    public AuthorizationRuleResult ExecuteFetch()
 //    {
 //        ExecuteFetchCalled = true;
 //        return AuthorizationRuleResult.AccessGranted();
 //    }
 
 //    [Execute(AuthorizeOperation.Fetch)]
-//    public IAuthorizationRuleResult ExecuteFetch(int criteria)
+//    public AuthorizationRuleResult ExecuteFetch(int criteria)
 //    {
 //        ExecuteFetchCalled = true;
 //        IntCriteria = criteria;
@@ -64,7 +64,7 @@
 
 //    public bool ExecuteUpdateCalled { get; set; }
 //    [Execute(AuthorizeOperation.Update)]
-//    public IAuthorizationRuleResult ExecuteUpdate()
+//    public AuthorizationRuleResult ExecuteUpdate()
 //    {
 //        ExecuteUpdateCalled = true;
 //        return AuthorizationRuleResult.AccessGranted();
@@ -72,7 +72,7 @@
 
 //    public bool ExecuteDeleteCalled { get; set; }
 //    [Execute(AuthorizeOperation.Delete)]
-//    public IAuthorizationRuleResult ExecuteDelete()
+//    public AuthorizationRuleResult ExecuteDelete()
 //    {
 //        ExecuteDeleteCalled = true;
 //        return AuthorizationRuleResult.AccessGranted();

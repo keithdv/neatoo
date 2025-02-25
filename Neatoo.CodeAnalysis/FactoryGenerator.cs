@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -99,27 +100,44 @@ namespace Neatoo.CodeAnalysis
             }
 
             public string ClassName { get; set; }
-            public string ClassDeclarationType { get; set; }
-            public string Name { get; set; }
+            public string Name { get; }
             public string UniqueName { get; set; }
             public int? UniqueNumber { get; set; }
-            public string ReturnType { get; set; }
+            public string FactoryPublicMethodName
+            {
+                get
+                {
+                    var methodName = Name;
+                    if (HasAuth)
+                    {
+                        methodName = $"Try{methodName}";
+                    }
+                    return methodName;
+                }
+            }
+            public string ClassType { get; set; }
             public bool IsBoolReturn { get; set; }
             public List<ParameterInfo> Parameters { get; set; } = new List<ParameterInfo>();
             public bool IsAsync { get; set; }
             public bool IsRemote { get; set; }
-            public bool IsSave { get; set; }
+            public bool IsSave { get; }
+            public bool HasAuth => AuthMethods.Count > 0;
             public List<string> Attributes { get; set; }
             public DataMapper.DataMapperMethod? DataMapperMethod { get; set; }
             public DataMapper.DataMapperMethodType? DataMapperMethodType { get; set; }
-            public string DelegateName => $"{UniqueName}Delegate";
-            public string MethodReturn
+            public string FactoryMethodDelegateName => $"{UniqueName}Delegate";
+
+            public string FactoryMethodReturnType
             {
                 get
                 {
-                    var returnType = $"{ReturnType}";
+                    var returnType = ClassType;
 
-                    if (IsBoolReturn)
+                    if (AuthMethods.Count > 0)
+                    {
+                        returnType = $"Authorized<{returnType}>";
+                    }
+                    else if (IsBoolReturn)
                     {
                         returnType = $"{returnType}?";
                     }
@@ -129,21 +147,42 @@ namespace Neatoo.CodeAnalysis
                         returnType = $"Task<{returnType}>";
                     }
 
+
                     return returnType;
                 }
             }
 
-            public string DeserializeDelegateTo { get; set; }
+            public string DeserializeDelegateTo
+            {
+                get
+                {
+                    var typeText = ClassType;
+
+                    if (AuthMethods.Count > 0)
+                    {
+                        typeText = $"Authorized<{typeText}>";
+                    }
+                    else if (IsBoolReturn)
+                    {
+                        typeText = $"{typeText}?";
+                    }
+
+                    return typeText;
+                }
+            }
 
             public string SaveMethodReturn
             {
                 get
                 {
-                    if (MethodReturn.Contains(">"))
+                    var returnType = $"{ClassType}?";
+
+                    if (IsAsync)
                     {
-                        return MethodReturn.Replace(">", "?>");
+                        returnType = $"Task<{returnType}>";
                     }
-                    return $"{MethodReturn}?";
+
+                    return returnType;
                 }
             }
 
@@ -151,25 +190,44 @@ namespace Neatoo.CodeAnalysis
             public string ParameterIdentifiersNoServicesText => string.Join(", ", Parameters.Where(p => !p.IsService).Select(p => p.Name));
             public string ParameterDeclarationsNoServicesText => string.Join(", ", Parameters.Where(p => !p.IsService).Select(p => $"{p.Type} {p.Name}"));
             public string ParameterIdentifiersText => string.Join(", ", Parameters.Select(p => p.Name));
-            public string DoMapperMethodName
+            public string DoMapperMethodCall
             {
                 get
                 {
 
-                    var methodName = "DoMapperMethodCall";
+                    var methodCall = "DoMapperMethodCall";
 
                     if (IsBoolReturn)
                     {
-                        methodName += "Bool";
+                        methodCall += "Bool";
                     }
-                    if (IsAsync || IsRemote)
+
+                    if (IsAsync)
                     {
-                        methodName += "Async";
+                        methodCall += "Async";
+                        methodCall = $"await {methodCall}";
                     }
 
-                    methodName += $"<{ReturnType}>";
+                    methodCall += $"<{ClassType}>";
 
-                    return methodName;
+                    methodCall = $"{methodCall}(target, DataMapperMethod.{AttributeName}, () => target.{Name} ({ParameterIdentifiersText}))";
+
+                    if (!IsSave)
+                    {
+                        if (AuthMethods.Count > 0)
+                        {
+                            methodCall = $"new Authorized<{ClassType}>({methodCall})";
+                        }
+
+                        if (IsRemote && !IsAsync)
+                        {
+                            methodCall = $"Task.FromResult({methodCall})";
+                        }
+                    }
+
+
+
+                    return methodCall;
                 }
             }
 
@@ -194,6 +252,7 @@ namespace Neatoo.CodeAnalysis
             var methodNames = new List<string>();
             var className = classDeclarationSyntax.Identifier.Text;
             var returnType = $"{className}";
+            var concreteType = $"{className}";
             var hasInterface = false;
 
             var delegates = new StringBuilder();
@@ -217,20 +276,26 @@ namespace Neatoo.CodeAnalysis
                 hasInterface = true;
             }
 
+
             // Generate the source code for the found method
-            String namespaceName = "FAILURE";
+            String namespaceName = FindNamespace(classDeclarationSyntax);
 
-            if (classDeclarationSyntax.Parent is NamespaceDeclarationSyntax namespaceDeclarationSyntax)
+            var parentClassDeclaration = classDeclarationSyntax.Parent as ClassDeclarationSyntax;
+            var parentClassUsingText = "";
+            
+            while (parentClassDeclaration != null)
             {
-                namespaceName = namespaceDeclarationSyntax.Name.ToString();
+                messages.Add("Parent class: " + parentClassDeclaration.Identifier.Text);
+                parentClassUsingText = $"{parentClassDeclaration.Identifier.Text}.{parentClassUsingText}";
+                parentClassDeclaration = parentClassDeclaration.Parent as ClassDeclarationSyntax;
             }
-            else if (classDeclarationSyntax.Parent is FileScopedNamespaceDeclarationSyntax parentClassDeclarationSyntax)
+
+            if (!string.IsNullOrEmpty(parentClassUsingText))
             {
-                namespaceName = parentClassDeclarationSyntax.Name.ToString();
+                usingDirectives.Add($"using static {namespaceName}.{parentClassUsingText.TrimEnd('.')};");
             }
 
-            var authorizeAttribute = ClassOrBaseClassHasAttribute(semanticModel.GetDeclaredSymbol(classDeclarationSyntax), "AuthorizeAttribute");
-
+            var authorizeAttribute = ClassOrBaseClassHasAttribute(classNamedSymbol, "AuthorizeAttribute");
 
             List<MethodInfo> authClassMethods = new List<MethodInfo>();
 
@@ -238,7 +303,7 @@ namespace Neatoo.CodeAnalysis
             {
                 ITypeSymbol? authorizationRuleType = authorizeAttribute.AttributeClass?.TypeArguments[0];
 
-                var syntax = authorizationRuleType?.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as InterfaceDeclarationSyntax;
+                var syntax = authorizationRuleType?.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as TypeDeclarationSyntax;
 
                 if (syntax != null)
                 {
@@ -274,15 +339,20 @@ namespace Neatoo.CodeAnalysis
 
                         if (dataMapperMethodTypes.Count > 0)
                         {
+                            var methodReturnType = method.ReturnType.ToString();
+                            if (!(methodReturnType == "string?" || methodReturnType == "Task<string?>" || methodReturnType == "Task<string>"
+                                || methodReturnType == "bool" || methodReturnType == "Task<bool>"))
+                            {
+                                messages.Add($"Auth: Invalid return type of {methodReturnType} for {method.Identifier.Text}. Must be string?, Task<string?>, Task<string>, bool or Task<bool>.");
+                                continue;
+                            }
+
                             var dmType = dataMapperMethodTypes.Aggregate((a, b) => a | b);
 
                             var methodInfo = new MethodInfo(method)
                             {
                                 ClassName = syntax.Identifier.Text,
-                                ClassDeclarationType = syntax?.Identifier.Text ?? syntax.Identifier.Text,
-                                ReturnType = "IAuthorizationRuleResult",
-                                DataMapperMethodType = dmType,
-                                IsAsync = method.ReturnType.ToFullString().Contains("Task")
+                                DataMapperMethodType = dmType
                             };
 
                             authClassMethods.Add(methodInfo);
@@ -298,8 +368,6 @@ namespace Neatoo.CodeAnalysis
                     messages.Add($"No concrete classes for {authorizeAttribute.ToString()}");
                 }
             }
-
-
 
             List<MethodInfo> classMethods = new List<MethodInfo>();
 
@@ -325,10 +393,8 @@ namespace Neatoo.CodeAnalysis
                         var method = new MethodInfo(methodDeclaration)
                         {
                             ClassName = className,
-                            ReturnType = returnType,
-                            DataMapperMethod = dmm,
-                            DeserializeDelegateTo = className,
-                            IsAsync = methodDeclaration.ReturnType.ToFullString().Contains("Task"),
+                            ClassType = returnType,
+                            DataMapperMethod = dmm
                         };
 
                         classMethods.Add(method);
@@ -360,7 +426,7 @@ namespace Neatoo.CodeAnalysis
             foreach (var authMethods in authClassMethods.GroupBy(a => a.ClassName))
             {
                 var authMethod = authMethods.First();
-                var constructorParameter = $"{authMethod.ClassDeclarationType} {authMethod.ClassName.ToLower()}";
+                var constructorParameter = $"{authMethod.ClassName} {authMethod.ClassName.ToLower()}";
                 var propertyAssignment = $"this.{authMethod.ClassName} = {authMethod.ClassName.ToLower()};";
 
                 if (authMethods.Any(a => !a.IsRemote))
@@ -371,20 +437,8 @@ namespace Neatoo.CodeAnalysis
                 constructorParametersLocal.Add(constructorParameter);
                 constructorPropertyAssignmentsLocal.AppendLine(propertyAssignment);
 
-                propertyDeclarations.AppendLine($"public {authMethod.ClassDeclarationType} {authMethod.ClassName} {{ get; }}");
+                propertyDeclarations.AppendLine($"public {authMethod.ClassName} {authMethod.ClassName} {{ get; }}");
             }
-
-            //foreach (var authMethod in authClassMethods)
-            //{
-            //    var asyncReturn = authMethod.IsAsync ? "async Task<bool>" : "bool";
-            //    localMethods.AppendLine($"public {asyncReturn} {authMethod.UniqueName}Authorized({authMethod.ParameterDeclarationsNoServicesText}, out string message)");
-            //    localMethods.AppendLine("{");
-            //    localMethods.AppendLine(authMethod.ServiceAssignmentsText.ToString());
-            //    localMethods.AppendLine($"var authorized = {(authMethod.IsAsync ? "await" : "")} {authMethod.ClassName}.{authMethod.Name}({authMethod.ParameterIdentifiersText});");
-            //    localMethods.AppendLine("message = authorized.Message;");
-            //    localMethods.AppendLine("return authorized.HasAccess;");
-            //    localMethods.AppendLine("}");
-            //}
 
             foreach (var method in classMethods)
             {
@@ -419,7 +473,9 @@ namespace Neatoo.CodeAnalysis
                         method.AuthMethods.Add(authMethod);
                     }
                 }
+
                 // Consumer Delegates
+
 
                 var awaitText = method.IsAsync ? "await" : "";
                 var asyncText = method.IsAsync ? "async" : "";
@@ -427,74 +483,93 @@ namespace Neatoo.CodeAnalysis
                 // Local method implementations
                 if (!method.IsSave)
                 {
-                    interfaceMethods.AppendLine($"{method.MethodReturn} {method.Name}({method.ParameterDeclarationsNoServicesText});");
+                    interfaceMethods.AppendLine($"{method.FactoryMethodReturnType} {method.FactoryPublicMethodName}({method.ParameterDeclarationsNoServicesText});");
 
                     if (method.IsRemote)
                     {
-                        delegates.AppendLine($"public delegate {method.MethodReturn} {method.UniqueName}Delegate({method.ParameterDeclarationsNoServicesText});");
-                        propertyDeclarations.AppendLine($"public {method.DelegateName} {method.UniqueName}Property {{ get; }}");
+                        delegates.AppendLine($"public delegate {method.FactoryMethodReturnType} {method.UniqueName}Delegate({method.ParameterDeclarationsNoServicesText});");
+                        propertyDeclarations.AppendLine($"public {method.FactoryMethodDelegateName} {method.UniqueName}Property {{ get; }}");
                         constructorPropertyAssignmentsLocal.AppendLine($"{method.UniqueName}Property = Local{method.UniqueName};");
                         constructorPropertyAssignmentsRemote.AppendLine($"{method.UniqueName}Property = Remote{method.UniqueName};");
 
-                        publicMethods.AppendLine($"public virtual {method.MethodReturn} {method.Name}({method.ParameterDeclarationsNoServicesText})");
+                        publicMethods.AppendLine($"public virtual {method.FactoryMethodReturnType} {method.FactoryPublicMethodName}({method.ParameterDeclarationsNoServicesText})");
                         publicMethods.AppendLine("{");
                         publicMethods.AppendLine($"return {method.UniqueName}Property({method.ParameterIdentifiersNoServicesText});");
                         publicMethods.AppendLine("}");
 
-                        remoteMethods.AppendLine($"public virtual async {method.MethodReturn} Remote{method.UniqueName}({method.ParameterDeclarationsNoServicesText})");
+                        remoteMethods.AppendLine($"public virtual async {method.FactoryMethodReturnType} Remote{method.UniqueName}({method.ParameterDeclarationsNoServicesText})");
                         remoteMethods.AppendLine("{");
-                        remoteMethods.AppendLine($" return await DoRemoteRequest.ForDelegate<{method.DeserializeDelegateTo}>(typeof({method.DelegateName}), [{method.ParameterIdentifiersNoServicesText}]);");
+                        remoteMethods.AppendLine($" return await DoRemoteRequest.ForDelegate<{method.DeserializeDelegateTo}>(typeof({method.FactoryMethodDelegateName}), [{method.ParameterIdentifiersNoServicesText}]);");
                         remoteMethods.AppendLine("}");
                         remoteMethods.AppendLine("");
 
-                        serviceRegistrations.AppendLine($@"services.AddScoped<{method.DelegateName}>(cc => {{
+                        serviceRegistrations.AppendLine($@"services.AddScoped<{method.FactoryMethodDelegateName}>(cc => {{
                                         var factory = cc.GetRequiredService<{className}Factory>();
                                         return ({method.ParameterDeclarationsNoServicesText}) => factory.Local{method.UniqueName}({method.ParameterIdentifiersNoServicesText});
                                     }});");
 
-                        localMethods.AppendLine($"public {asyncText} {method.MethodReturn} Local{method.UniqueName}({method.ParameterDeclarationsNoServicesText})");
+                        localMethods.AppendLine($"public {asyncText} {method.FactoryMethodReturnType} Local{method.UniqueName}({method.ParameterDeclarationsNoServicesText})");
                     }
                     else
                     {
                         // Assume we can just call local if there are no services
                         // Don't need the delegate if there aren't any services
-                        localMethods.AppendLine($"public {asyncText} {method.MethodReturn} {method.Name}({method.ParameterDeclarationsNoServicesText})"); // Now a publicMethod...
+                        localMethods.AppendLine($"public {asyncText} {method.FactoryMethodReturnType} {method.FactoryPublicMethodName}({method.ParameterDeclarationsNoServicesText})"); // Now a publicMethod...
                     }
-
 
                     localMethods.AppendLine("{");
 
                     foreach (var authMethod in method.AuthMethods)
                     {
                         var varText = authMethod.UniqueName.ToLower();
-                        localMethods.AppendLine($"var {varText} = {(authMethod.IsAsync ? awaitText : "")} {authMethod.ClassName}.{authMethod.Name}({string.Join(", ", method.Parameters.Take(authMethod.Parameters.Count).Select(a => a.Name))});");
+                        localMethods.AppendLine($"Authorized {varText} = {(authMethod.IsAsync ? awaitText : "")} {authMethod.ClassName}.{authMethod.Name}({string.Join(", ", method.Parameters.Take(authMethod.Parameters.Count).Select(a => a.Name))});");
                         localMethods.AppendLine($"if (!{varText}.HasAccess)");
                         localMethods.AppendLine("{");
-                        localMethods.AppendLine($"throw new NotAuthorizedException({varText}.Message);");
+                        if (method.IsRemote && !method.IsAsync)
+                        {
+                            localMethods.AppendLine($"return Task.FromResult(new Authorized<{returnType}>({varText}));");
+                        }
+                        else
+                        {
+                            localMethods.AppendLine($"return new Authorized<{returnType}>({varText});");
+                        }
                         localMethods.AppendLine("}");
                     }
 
                     localMethods.AppendLine($"var target = ServiceProvider.GetRequiredService<{className}>();");
                     localMethods.AppendLine($"{method.ServiceAssignmentsText.ToString()}");
 
-                    localMethods.AppendLine($"return {awaitText} {method.DoMapperMethodName}(target, DataMapperMethod.{method.AttributeName}, () => target.{method.Name}({method.ParameterIdentifiersText}));");
+                    localMethods.AppendLine($"return {method.DoMapperMethodCall};");
 
                     localMethods.AppendLine("}");
                     localMethods.AppendLine("");
-                }
-                else
-                {
-                    // Save (Insert, Update, Delete) methods are always local
-                    localMethods.AppendLine($"public virtual {asyncText} {method.SaveMethodReturn} Local{method.UniqueName}({returnType} itarget, {method.ParameterDeclarationsNoServicesText})");
-                    localMethods.AppendLine("{");
-                    localMethods.AppendLine($"var target = ({className})itarget ?? throw new Exception(\"{className} must implement {returnType}\");");
-                    localMethods.AppendLine($"{method.ServiceAssignmentsText.ToString()}");
-                    localMethods.AppendLine($"return {awaitText} {method.DoMapperMethodName}(target, DataMapperMethod.{method.AttributeName}, () => target.{method.Name}({method.ParameterIdentifiersText}));");
 
-                    localMethods.AppendLine("}");
-                    localMethods.AppendLine("");
-                }
 
+                    if (method.HasAuth)
+                    {
+                        method.AuthMethods.Clear();
+                        method.IsBoolReturn = true;
+
+                        interfaceMethods.AppendLine($"{method.FactoryMethodReturnType} {method.FactoryPublicMethodName}({method.ParameterDeclarationsNoServicesText});");
+
+                        var methodBuilder = new StringBuilder();
+
+                        methodBuilder.AppendLine($@"public async {method.FactoryMethodReturnType} {method.FactoryPublicMethodName}({method.ParameterDeclarationsNoServicesText}){{");
+                        methodBuilder.AppendLine($@"var authorized = (await Try{method.FactoryPublicMethodName}({method.ParameterIdentifiersNoServicesText}));");
+                        methodBuilder.AppendLine("return authorized.Result;");
+                        methodBuilder.AppendLine("}");
+
+                        var methodText = methodBuilder.ToString();
+
+                        if (!method.FactoryMethodReturnType.Contains("Task"))
+                        {
+                            methodText = methodText.Replace("async", "");
+                            methodText = methodText.Replace("await", "");
+                        }
+
+                        publicMethods.AppendLine(methodText);
+                    }
+                }
             }
 
             var saveMethodSets = classMethods.Where(m => m.IsSave).GroupBy(m => m.ParameterTypesNoServicesText)
@@ -505,6 +580,7 @@ namespace Neatoo.CodeAnalysis
                     ParameterIdentifiersText = m.First().ParameterIdentifiersNoServicesText,
                     ParameterDeclarationText = m.First().ParameterDeclarationsNoServicesText,
                     IsAsync_ = m.Any(m => m.IsAsync),
+                    IsRemote = m.Any(m => m.IsRemote),
                     InsertMethod = m.FirstOrDefault(m => m.AttributeName == "Insert"),
                     UpdateMethod = m.FirstOrDefault(m => m.AttributeName == "Update"),
                     DeleteMethod = m.FirstOrDefault(m => m.AttributeName == "Delete"),
@@ -517,34 +593,36 @@ namespace Neatoo.CodeAnalysis
             foreach (var saveMethodSet in saveMethodSets)
             {
                 isEdit = true;
-                var saveMethodName = saveMethodSet.SaveMethodName;
+                var saveUniqueName = saveMethodSet.SaveMethodName;
 
-                if (methodNames.Contains(saveMethodName))
+                if (methodNames.Contains(saveUniqueName))
                 {
                     var count = 1;
-                    while (methodNames.Contains($"{saveMethodName}{count}"))
+                    while (methodNames.Contains($"{saveUniqueName}{count}"))
                     {
                         count += 1;
                     }
-                    saveMethodName = $"{saveMethodName}{count}";
+                    saveUniqueName = $"{saveUniqueName}{count}";
                 }
-                methodNames.Add(saveMethodName);
+                methodNames.Add(saveUniqueName);
 
                 var isDefault = string.IsNullOrWhiteSpace(saveMethodSet.ParameterIdentifiersText);
 
-                var delegateName = $"{saveMethodName}Delegate";
+                var delegateName = $"{saveUniqueName}Delegate";
                 var saveMethodReturn = $"{returnType}?";
                 var isSaveMethodAsync = saveMethodSet.IsAsync_;
-                var isRemote = false;
-                var authMethods = new StringBuilder();
+                var isRemote = saveMethodSet.IsRemote;
+                var isAuth = saveMethodSet.AuthMethods.Count > 0;
+                var publicMethodName = saveMethodSet.SaveMethodName;
 
-                foreach (var authMethod in saveMethodSet.AuthMethods)
+                foreach (var authMethod in saveMethodSet.AuthMethods.ToList())
                 {
+                    isAuth = true;
                     var varText = authMethod.UniqueName.ToLower();
 
                     var saveMethodParameter = saveMethodSet.Parameters.GetEnumerator();
                     var authMethodParameter = authMethod.Parameters.GetEnumerator();
-                    var parameterText = new List<string>();
+                    var parameters = new List<ParameterInfo>();
 
                     var matchFail = false;
 
@@ -557,7 +635,7 @@ namespace Neatoo.CodeAnalysis
                         {
                             if (authMethodParameter.Current.Type == returnType || authMethodParameter.Current.Type == $"I{returnType}")
                             {
-                                parameterText.Add("target");
+                                parameters.Add(new ParameterInfo() { Name = "target", Type = returnType });
                                 authMethodParameter.MoveNext();
                                 continue;
                             }
@@ -568,49 +646,66 @@ namespace Neatoo.CodeAnalysis
                             }
                             else
                             {
-                                parameterText.Add(saveMethodParameter.Current.Name);
+                                parameters.Add(saveMethodParameter.Current);
                             }
                         } while (authMethodParameter.MoveNext() && saveMethodParameter.MoveNext());
                     }
                     if (matchFail)
                     {
-                        saveMethods.AppendLine($"// Not able to call {authMethod.Name} due to parameter mismatch;");
+                        saveMethodSet.AuthMethods.Remove(authMethod);
                         continue;
                     }
 
                     isRemote = isRemote || authMethod.IsRemote;
                     isSaveMethodAsync = isSaveMethodAsync || authMethod.IsAsync;
-                    authMethods.AppendLine($"var {varText} = {(authMethod.IsAsync ? "await" : "")} {authMethod.ClassName}.{authMethod.Name}({string.Join(", ", parameterText)});");
-                    authMethods.AppendLine($"if (!{varText}.HasAccess)");
-                    authMethods.AppendLine("{");
-                    authMethods.AppendLine($"throw new NotAuthorizedException({varText}.Message);");
-                    authMethods.AppendLine("}");
-                }
-
-                if (isRemote)
-                {
-                    constructorPropertyAssignmentsLocal.AppendLine($"{saveMethodName}Property = Local{saveMethodName};");
-                    constructorPropertyAssignmentsRemote.AppendLine($"{saveMethodName}Property = Remote{saveMethodName};");
-                    delegates.AppendLine($"public delegate Task<{returnType}?> {saveMethodName}Delegate({returnType} target, {saveMethodSet.ParameterDeclarationText});");
-                    propertyDeclarations.AppendLine($"public {delegateName} {saveMethodName}Property {{ get; set; }}");
+                    authMethod.Parameters = parameters;
                 }
 
                 if (isSaveMethodAsync || isRemote)
                 {
-                    saveMethodReturn = $"Task<{returnType}?>";
+                    saveMethodReturn = $"Task<{saveMethodReturn}>";
                 }
 
-                interfaceMethods.AppendLine($"{saveMethodReturn} Save({returnType} target, {saveMethodSet.ParameterDeclarationText});");
+                if (isAuth)
+                {
+
+                    interfaceMethods.AppendLine($"{saveMethodReturn} {publicMethodName}({returnType} target, {saveMethodSet.ParameterDeclarationText});");
+
+                    var methodBuilder = new StringBuilder();
+
+                    methodBuilder.AppendLine($@"public async {saveMethodReturn} {publicMethodName}({returnType} target, {saveMethodSet.ParameterDeclarationText}){{");
+                    methodBuilder.AppendLine($@"var authorized = (await Try{publicMethodName}(target, {saveMethodSet.ParameterIdentifiersText}));");
+                    methodBuilder.AppendLine("if (!authorized.HasAccess){");
+                    methodBuilder.AppendLine("throw new NotAuthorizedException(authorized.Message);");
+                    methodBuilder.AppendLine("}");
+                    methodBuilder.AppendLine("return authorized.Result;");
+                    methodBuilder.AppendLine("}");
+
+                    var methodText = methodBuilder.ToString();
+
+                    if (!saveMethodReturn.Contains("Task"))
+                    {
+                        methodText = methodText.Replace("async", "");
+                        methodText = methodText.Replace("await", "");
+                    }
+
+                    saveMethods.AppendLine(methodText);
+
+                    saveMethodReturn = saveMethodReturn.Replace("?", "").Replace(returnType, $"Authorized<{returnType}>");
+                    publicMethodName = $"Try{publicMethodName}";
+                }
+
+
 
                 if (isDefault)
                 {
-                    saveMethods.AppendLine($"public override async Task<IEditBase?> Save({className} target)");
+                    saveMethods.AppendLine($"async Task<IEditBase?> IFactoryEditBase<{className}>.Save({className} target)");
                     saveMethods.AppendLine("{");
                     if (isRemote)
                     {
-                        saveMethods.AppendLine($"return (IEditBase?) (await {saveMethodName}Property(target));");
+                        saveMethods.AppendLine($"return (IEditBase?) (await {saveUniqueName}Property(target));");
                     }
-                    else if (isRemote)
+                    else if (isSaveMethodAsync)
                     {
                         saveMethods.AppendLine($"return (IEditBase?) await Save(target);");
                     }
@@ -621,35 +716,61 @@ namespace Neatoo.CodeAnalysis
                     saveMethods.AppendLine("}");
                 }
 
+                interfaceMethods.AppendLine($"{saveMethodReturn} {publicMethodName}({returnType} target, {saveMethodSet.ParameterDeclarationText});");
+
+
                 if (isRemote)
                 {
-                    saveMethods.AppendLine($"public Task<{returnType}?> Save({returnType} target, {saveMethodSet.ParameterDeclarationText})");
+                    constructorPropertyAssignmentsLocal.AppendLine($"{saveUniqueName}Property = Local{saveUniqueName};");
+                    constructorPropertyAssignmentsRemote.AppendLine($"{saveUniqueName}Property = Remote{saveUniqueName};");
+                    delegates.AppendLine($"public delegate {saveMethodReturn} {saveUniqueName}Delegate({returnType} target, {saveMethodSet.ParameterDeclarationText});");
+                    propertyDeclarations.AppendLine($"public {delegateName} {saveUniqueName}Property {{ get; set; }}");
+
+                    saveMethods.AppendLine($"public {saveMethodReturn} {publicMethodName}({returnType} target, {saveMethodSet.ParameterDeclarationText})");
                     saveMethods.AppendLine("{");
-                    saveMethods.AppendLine($"return {saveMethodName}Property(target, {saveMethodSet.ParameterIdentifiersText});");
+                    saveMethods.AppendLine($"return {saveUniqueName}Property(target, {saveMethodSet.ParameterIdentifiersText});");
                     saveMethods.AppendLine("}");
 
-                    saveMethods.AppendLine($@"public async Task<{returnType}?> Remote{saveMethodName}({returnType} target, {saveMethodSet.ParameterDeclarationText}){{");
-                    saveMethods.AppendLine($@"return await DoRemoteRequest.ForDelegate<{className}?>(typeof({delegateName}), [target, {saveMethodSet.ParameterIdentifiersText}]);");
+                    var remoteMethodReturn = isAuth ? $"Authorized<{returnType}>" : $"{returnType}?";
+
+                    saveMethods.AppendLine($@"public async {saveMethodReturn} Remote{saveUniqueName}({returnType} target, {saveMethodSet.ParameterDeclarationText}){{");
+                    saveMethods.AppendLine($@"return await DoRemoteRequest.ForDelegate<{remoteMethodReturn}?>(typeof({delegateName}), [target, {saveMethodSet.ParameterIdentifiersText}]);");
                     saveMethods.AppendLine("}");
 
                     serviceRegistrations.AppendLine($@"services.AddScoped<{delegateName}>(cc => {{
                                         var factory = cc.GetRequiredService<{className}Factory>();
-                                        return (target, {saveMethodSet.ParameterIdentifiersText}) => factory.Local{saveMethodName}(target, {saveMethodSet.ParameterIdentifiersText});
+                                        return (target, {saveMethodSet.ParameterIdentifiersText}) => factory.Local{saveUniqueName}(target, {saveMethodSet.ParameterIdentifiersText});
                                     }});");
 
-                    saveMethods.AppendLine($@"public virtual {(isSaveMethodAsync ? "async" : "")} Task<{returnType}?> Local{saveMethodName}({returnType} target, {saveMethodSet.ParameterDeclarationText})
+                    saveMethods.AppendLine($@"public virtual {(isSaveMethodAsync ? "async" : "")} {saveMethodReturn} Local{saveUniqueName}({returnType} target, {saveMethodSet.ParameterDeclarationText})
 {{");
                 }
                 else
                 {
-                    saveMethods.AppendLine($@"public virtual {(isSaveMethodAsync ? "async" : "")} {saveMethodReturn} Save({returnType} target, {saveMethodSet.ParameterDeclarationText})
+                    saveMethods.AppendLine($@"public virtual {(isSaveMethodAsync ? "async" : "")} {saveMethodReturn} {publicMethodName}({returnType} target, {saveMethodSet.ParameterDeclarationText})
 {{");
                 }
 
+                foreach (var authMethod in saveMethodSet.AuthMethods)
+                {
+                    var varText = authMethod.UniqueName.ToLower();
+                    saveMethods.AppendLine($"Authorized {varText} = {(authMethod.IsAsync ? "await" : "")} {authMethod.ClassName}.{authMethod.Name}({authMethod.ParameterIdentifiersText});");
+                    saveMethods.AppendLine($"if (!{varText}.HasAccess)");
+                    saveMethods.AppendLine("{");
 
-                saveMethods.Append(authMethods);
+                    if (isRemote && !isSaveMethodAsync)
+                    {
+                        saveMethods.AppendLine($"return Task.FromResult(new Authorized<{returnType}>({varText}));");
+                    }
+                    else
+                    {
+                        saveMethods.AppendLine($"return new Authorized<{returnType}>({varText});");
+                    }
 
-                string CallMethod(MethodInfo? method)
+                    saveMethods.AppendLine("}");
+                }
+
+                string DoInsertUpdateDeleteMethodCall(MethodInfo? method)
                 {
                     if (method == null)
                     {
@@ -662,12 +783,18 @@ namespace Neatoo.CodeAnalysis
                     {
                         methodCall = $"await {methodCall}";
                     }
-                    else if (isRemote && !isSaveMethodAsync)
+
+                    if (isAuth)
+                    {
+                        methodCall = $"new Authorized<{returnType}>({methodCall})";
+                    }
+
+                    if (!method.IsAsync && (isRemote && !isSaveMethodAsync))
                     {
                         methodCall = $"Task.FromResult({methodCall})";
                     }
 
-                    return $"return {methodCall};";
+                    return $"return {methodCall}";
                 }
 
                 saveMethods.AppendLine($@"
@@ -678,15 +805,15 @@ namespace Neatoo.CodeAnalysis
             {{
                 return null;
             }}
-            {CallMethod(saveMethodSet.DeleteMethod)};
+            {DoInsertUpdateDeleteMethodCall(saveMethodSet.DeleteMethod)};
         }}
         else if (target.IsNew)
         {{
-            {CallMethod(saveMethodSet.InsertMethod)};
+            {DoInsertUpdateDeleteMethodCall(saveMethodSet.InsertMethod)};
         }}
         else
         {{
-             {CallMethod(saveMethodSet.UpdateMethod)};
+             {DoInsertUpdateDeleteMethodCall(saveMethodSet.UpdateMethod)};
         }}
 ");
 
@@ -694,6 +821,24 @@ namespace Neatoo.CodeAnalysis
 
 
 
+                void AddInsertDeleteUpdateLocalMethod(MethodInfo? method)
+                {
+                    if (method == null)
+                    {
+                        return;
+                    }
+                    var doMapperMethodCall = method.DoMapperMethodCall;
+                    localMethods.AppendLine($"public virtual {(method.DoMapperMethodCall.Contains("await") ? "async" : "")} {method.SaveMethodReturn} Local{method.UniqueName}({returnType} itarget, {method.ParameterDeclarationsNoServicesText})");
+                    localMethods.AppendLine("{");
+                    localMethods.AppendLine($"var target = ({concreteType}) itarget ?? throw new Exception(\"{className} must implement {returnType}\");");
+                    localMethods.AppendLine($"{method.ServiceAssignmentsText.ToString()}");
+                    localMethods.AppendLine($"return {method.DoMapperMethodCall};");
+                    localMethods.AppendLine("}");
+                    localMethods.AppendLine("");
+                }
+                AddInsertDeleteUpdateLocalMethod(saveMethodSet.InsertMethod);
+                AddInsertDeleteUpdateLocalMethod(saveMethodSet.UpdateMethod);
+                AddInsertDeleteUpdateLocalMethod(saveMethodSet.DeleteMethod);
             }
 
 
@@ -720,7 +865,7 @@ namespace {namespaceName}
 {interfaceMethods.ToString()}
     }}
     
-    internal class {className}Factory : Factory{editText}Base{(isEdit ? $"<{className}>" : "")}, I{className}Factory
+    internal class {className}Factory : Factory{editText}Base{(isEdit ? $"<{className}>, IFactoryEditBase<{className}>" : "")}, I{className}Factory
     {{
     
         private readonly IServiceProvider ServiceProvider;  
@@ -796,30 +941,24 @@ namespace {namespaceName}
             }
         }
 
-        public static List<ClassDeclarationSyntax> FindImplementingClasses(InterfaceDeclarationSyntax interfaceSyntax, Compilation compilation)
+        private static string FindNamespace(SyntaxNode syntaxNode)
         {
-            var interfaceName = interfaceSyntax.Identifier.Text;
-            var implementingClasses = new List<ClassDeclarationSyntax>();
-
-            foreach (var tree in compilation.SyntaxTrees)
+            if (syntaxNode.Parent is NamespaceDeclarationSyntax namespaceDeclarationSyntax)
             {
-                var semanticModel = compilation.GetSemanticModel(tree);
-                var root = tree.GetRoot();
-
-                var classDeclarations = root.DescendantNodes().OfType<ClassDeclarationSyntax>();
-
-                foreach (var classDeclaration in classDeclarations)
-                {
-                    var classSymbol = semanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
-
-                    if (classSymbol != null && classSymbol.Interfaces.Any(i => i.Name == interfaceName))
-                    {
-                        implementingClasses.Add(classDeclaration);
-                    }
-                }
+                return namespaceDeclarationSyntax.Name.ToString();
             }
-
-            return implementingClasses;
+            else if (syntaxNode.Parent is FileScopedNamespaceDeclarationSyntax parentClassDeclarationSyntax)
+            {
+                return parentClassDeclarationSyntax.Name.ToString();
+            }
+            else if (syntaxNode.Parent != null)
+            {
+                return FindNamespace(syntaxNode.Parent);
+            }
+            else
+            {
+                return string.Empty;
+            }
         }
     }
 }

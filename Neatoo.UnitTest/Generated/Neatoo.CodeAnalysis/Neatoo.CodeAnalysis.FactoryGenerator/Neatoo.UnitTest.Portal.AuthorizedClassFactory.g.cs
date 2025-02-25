@@ -2,11 +2,14 @@
 using Neatoo.Portal.Internal;
 using Neatoo;
 using Neatoo.Portal;
+using static Neatoo.UnitTest.Portal.AuthorizationClassTests;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neatoo.AuthorizationRules;
 using Neatoo.Portal.Internal;
+using Neatoo.UnitTest.ObjectPortal;
 using Neatoo.UnitTest.Objects;
 using System;
 using System.Collections.Generic;
@@ -16,6 +19,7 @@ using System.Threading.Tasks;
 
 /*
 Debugging Messages:
+Parent class: AuthorizationClassTests
 For IAuthorizationClass using IAuthorizationClass
 : EditBase<AuthorizedClass>, IAuthorizedClass
 */
@@ -23,15 +27,21 @@ namespace Neatoo.UnitTest.Portal
 {
     public interface IAuthorizedClassFactory
     {
-        IAuthorizedClass Create();
-        IAuthorizedClass CreateInt(int param);
-        Task<IAuthorizedClass> CreateString(string name);
+        Authorized<IAuthorizedClass> TryCreate();
+        IAuthorizedClass? Create();
+        Task<Authorized<IAuthorizedClass>> TryCreateInt(int param);
+        Task<IAuthorizedClass?> CreateInt(int param);
+        Task<Authorized<IAuthorizedClass>> TryCreateString(string name);
+        Task<IAuthorizedClass?> CreateString(string name);
         IAuthorizedClass? Save(IAuthorizedClass target);
+        Authorized<IAuthorizedClass> TrySave(IAuthorizedClass target);
         IAuthorizedClass? Save(IAuthorizedClass target, int name);
+        Authorized<IAuthorizedClass> TrySave(IAuthorizedClass target, int name);
         Task<IAuthorizedClass?> Save(IAuthorizedClass target, string name);
+        Task<Authorized<IAuthorizedClass>> TrySave(IAuthorizedClass target, string name);
     }
 
-    internal class AuthorizedClassFactory : FactoryEditBase<AuthorizedClass>, IAuthorizedClassFactory
+    internal class AuthorizedClassFactory : FactoryEditBase<AuthorizedClass>, IFactoryEditBase<AuthorizedClass>, IAuthorizedClassFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
@@ -39,8 +49,8 @@ namespace Neatoo.UnitTest.Portal
         public CreateStringDelegate CreateStringProperty { get; }
         public Save2Delegate Save2Property { get; set; }
 
-        public delegate Task<IAuthorizedClass> CreateStringDelegate(string name);
-        public delegate Task<IAuthorizedClass?> Save2Delegate(IAuthorizedClass target, string name);
+        public delegate Task<Authorized<IAuthorizedClass>> CreateStringDelegate(string name);
+        public delegate Task<Authorized<IAuthorizedClass>> Save2Delegate(IAuthorizedClass target, string name);
         public AuthorizedClassFactory(IServiceProvider serviceProvider, IAuthorizationClass iauthorizationclass)
         {
             this.ServiceProvider = serviceProvider;
@@ -58,75 +68,111 @@ namespace Neatoo.UnitTest.Portal
             Save2Property = RemoteSave2;
         }
 
-        public virtual Task<IAuthorizedClass> CreateString(string name)
+        public IAuthorizedClass? Create()
+        {
+            var authorized = (TryCreate());
+            return authorized.Result;
+        }
+
+        public async Task<IAuthorizedClass?> CreateInt(int param)
+        {
+            var authorized = (await TryCreateInt(param));
+            return authorized.Result;
+        }
+
+        public virtual Task<Authorized<IAuthorizedClass>> TryCreateString(string name)
         {
             return CreateStringProperty(name);
         }
 
-        public IAuthorizedClass Create()
+        public async Task<IAuthorizedClass?> CreateString(string name)
         {
-            var anyaccess = IAuthorizationClass.AnyAccess();
+            var authorized = (await TryCreateString(name));
+            return authorized.Result;
+        }
+
+        public Authorized<IAuthorizedClass> TryCreate()
+        {
+            Authorized anyaccess = IAuthorizationClass.AnyAccess();
             if (!anyaccess.HasAccess)
             {
-                throw new NotAuthorizedException(anyaccess.Message);
+                return new Authorized<IAuthorizedClass>(anyaccess);
             }
 
-            var canread = IAuthorizationClass.CanRead();
+            Authorized canread = IAuthorizationClass.CanRead();
             if (!canread.HasAccess)
             {
-                throw new NotAuthorizedException(canread.Message);
+                return new Authorized<IAuthorizedClass>(canread);
+            }
+
+            Authorized canreadint2 = IAuthorizationClass.CanReadInt2();
+            if (!canreadint2.HasAccess)
+            {
+                return new Authorized<IAuthorizedClass>(canreadint2);
             }
 
             var target = ServiceProvider.GetRequiredService<AuthorizedClass>();
-            return DoMapperMethodCall<IAuthorizedClass>(target, DataMapperMethod.Create, () => target.Create());
+            return new Authorized<IAuthorizedClass>(DoMapperMethodCall<IAuthorizedClass>(target, DataMapperMethod.Create, () => target.Create()));
         }
 
-        public IAuthorizedClass CreateInt(int param)
+        public async Task<Authorized<IAuthorizedClass>> TryCreateInt(int param)
         {
-            var anyaccess = IAuthorizationClass.AnyAccess();
+            Authorized anyaccess = IAuthorizationClass.AnyAccess();
             if (!anyaccess.HasAccess)
             {
-                throw new NotAuthorizedException(anyaccess.Message);
+                return new Authorized<IAuthorizedClass>(anyaccess);
             }
 
-            var canread = IAuthorizationClass.CanRead();
+            Authorized canread = IAuthorizationClass.CanRead();
             if (!canread.HasAccess)
             {
-                throw new NotAuthorizedException(canread.Message);
+                return new Authorized<IAuthorizedClass>(canread);
             }
 
-            var canreadint = IAuthorizationClass.CanReadInt(param);
+            Authorized canreadint = IAuthorizationClass.CanReadInt(param);
             if (!canreadint.HasAccess)
             {
-                throw new NotAuthorizedException(canreadint.Message);
+                return new Authorized<IAuthorizedClass>(canreadint);
+            }
+
+            Authorized canreadint2 = IAuthorizationClass.CanReadInt2();
+            if (!canreadint2.HasAccess)
+            {
+                return new Authorized<IAuthorizedClass>(canreadint2);
             }
 
             var target = ServiceProvider.GetRequiredService<AuthorizedClass>();
-            return DoMapperMethodCall<IAuthorizedClass>(target, DataMapperMethod.Create, () => target.CreateInt(param));
+            return new Authorized<IAuthorizedClass>(await DoMapperMethodCallAsync<IAuthorizedClass>(target, DataMapperMethod.Create, () => target.CreateInt(param)));
         }
 
-        public Task<IAuthorizedClass> LocalCreateString(string name)
+        public Task<Authorized<IAuthorizedClass>> LocalCreateString(string name)
         {
-            var anyaccess = IAuthorizationClass.AnyAccess();
+            Authorized anyaccess = IAuthorizationClass.AnyAccess();
             if (!anyaccess.HasAccess)
             {
-                throw new NotAuthorizedException(anyaccess.Message);
+                return Task.FromResult(new Authorized<IAuthorizedClass>(anyaccess));
             }
 
-            var canread = IAuthorizationClass.CanRead();
+            Authorized canread = IAuthorizationClass.CanRead();
             if (!canread.HasAccess)
             {
-                throw new NotAuthorizedException(canread.Message);
+                return Task.FromResult(new Authorized<IAuthorizedClass>(canread));
             }
 
-            var canreadstringremote = IAuthorizationClass.CanReadStringRemote(name);
+            Authorized canreadint2 = IAuthorizationClass.CanReadInt2();
+            if (!canreadint2.HasAccess)
+            {
+                return Task.FromResult(new Authorized<IAuthorizedClass>(canreadint2));
+            }
+
+            Authorized canreadstringremote = IAuthorizationClass.CanReadStringRemote(name);
             if (!canreadstringremote.HasAccess)
             {
-                throw new NotAuthorizedException(canreadstringremote.Message);
+                return Task.FromResult(new Authorized<IAuthorizedClass>(canreadstringremote));
             }
 
             var target = ServiceProvider.GetRequiredService<AuthorizedClass>();
-            return DoMapperMethodCallAsync<IAuthorizedClass>(target, DataMapperMethod.Create, () => target.CreateString(name));
+            return Task.FromResult(new Authorized<IAuthorizedClass>(DoMapperMethodCall<IAuthorizedClass>(target, DataMapperMethod.Create, () => target.CreateString(name))));
         }
 
         public virtual IAuthorizedClass? LocalInsert(IAuthorizedClass itarget)
@@ -147,36 +193,45 @@ namespace Neatoo.UnitTest.Portal
             return DoMapperMethodCall<IAuthorizedClass>(target, DataMapperMethod.Insert, () => target.InsertString(name));
         }
 
-        public virtual async Task<IAuthorizedClass> RemoteCreateString(string name)
+        public virtual IAuthorizedClass? LocalUpdateString(IAuthorizedClass itarget, string name)
         {
-            return await DoRemoteRequest.ForDelegate<AuthorizedClass>(typeof(CreateStringDelegate), [name]);
+            var target = (AuthorizedClass)itarget ?? throw new Exception("AuthorizedClass must implement IAuthorizedClass");
+            return DoMapperMethodCall<IAuthorizedClass>(target, DataMapperMethod.Update, () => target.UpdateString(name));
         }
 
-        // Not able to call CanWriteInt due to parameter mismatch;
-        // Not able to call CanWriteStringRemote due to parameter mismatch;
-        public override async Task<IEditBase?> Save(AuthorizedClass target)
+        public virtual async Task<Authorized<IAuthorizedClass>> RemoteCreateString(string name)
+        {
+            return await DoRemoteRequest.ForDelegate<Authorized<IAuthorizedClass>>(typeof(CreateStringDelegate), [name]);
+        }
+
+        public IAuthorizedClass? Save(IAuthorizedClass target)
+        {
+            var authorized = (TrySave(target));
+            if (!authorized.HasAccess)
+            {
+                throw new NotAuthorizedException(authorized.Message);
+            }
+
+            return authorized.Result;
+        }
+
+        async Task<IEditBase?> IFactoryEditBase<AuthorizedClass>.Save(AuthorizedClass target)
         {
             return await Task.FromResult((IEditBase? )Save(target));
         }
 
-        public virtual IAuthorizedClass? Save(IAuthorizedClass target)
+        public virtual Authorized<IAuthorizedClass> TrySave(IAuthorizedClass target)
         {
-            var anyaccess = IAuthorizationClass.AnyAccess();
+            Authorized anyaccess = IAuthorizationClass.AnyAccess();
             if (!anyaccess.HasAccess)
             {
-                throw new NotAuthorizedException(anyaccess.Message);
+                return new Authorized<IAuthorizedClass>(anyaccess);
             }
 
-            var canwrite = IAuthorizationClass.CanWrite();
+            Authorized canwrite = IAuthorizationClass.CanWrite();
             if (!canwrite.HasAccess)
             {
-                throw new NotAuthorizedException(canwrite.Message);
-            }
-
-            var canwritetarget = IAuthorizationClass.CanWriteTarget(target);
-            if (!canwritetarget.HasAccess)
-            {
-                throw new NotAuthorizedException(canwritetarget.Message);
+                return new Authorized<IAuthorizedClass>(canwrite);
             }
 
             if (target.IsDeleted)
@@ -190,8 +245,7 @@ namespace Neatoo.UnitTest.Portal
             }
             else if (target.IsNew)
             {
-                return LocalInsert(target);
-                ;
+                return new Authorized<IAuthorizedClass>(LocalInsert(target));
             }
             else
             {
@@ -199,31 +253,35 @@ namespace Neatoo.UnitTest.Portal
             }
         }
 
-        // Not able to call CanWriteStringRemote due to parameter mismatch;
-        public virtual IAuthorizedClass? Save(IAuthorizedClass target, int name)
+        public IAuthorizedClass? Save(IAuthorizedClass target, int name)
         {
-            var anyaccess = IAuthorizationClass.AnyAccess();
+            var authorized = (TrySave(target, name));
+            if (!authorized.HasAccess)
+            {
+                throw new NotAuthorizedException(authorized.Message);
+            }
+
+            return authorized.Result;
+        }
+
+        public virtual Authorized<IAuthorizedClass> TrySave(IAuthorizedClass target, int name)
+        {
+            Authorized anyaccess = IAuthorizationClass.AnyAccess();
             if (!anyaccess.HasAccess)
             {
-                throw new NotAuthorizedException(anyaccess.Message);
+                return new Authorized<IAuthorizedClass>(anyaccess);
             }
 
-            var canwrite = IAuthorizationClass.CanWrite();
+            Authorized canwrite = IAuthorizationClass.CanWrite();
             if (!canwrite.HasAccess)
             {
-                throw new NotAuthorizedException(canwrite.Message);
+                return new Authorized<IAuthorizedClass>(canwrite);
             }
 
-            var canwritetarget = IAuthorizationClass.CanWriteTarget(target);
-            if (!canwritetarget.HasAccess)
-            {
-                throw new NotAuthorizedException(canwritetarget.Message);
-            }
-
-            var canwriteint = IAuthorizationClass.CanWriteInt(name);
+            Authorized canwriteint = IAuthorizationClass.CanWriteInt(name);
             if (!canwriteint.HasAccess)
             {
-                throw new NotAuthorizedException(canwriteint.Message);
+                return new Authorized<IAuthorizedClass>(canwriteint);
             }
 
             if (target.IsDeleted)
@@ -237,8 +295,7 @@ namespace Neatoo.UnitTest.Portal
             }
             else if (target.IsNew)
             {
-                return LocalInsertInt(target, name);
-                ;
+                return new Authorized<IAuthorizedClass>(LocalInsertInt(target, name));
             }
             else
             {
@@ -246,41 +303,45 @@ namespace Neatoo.UnitTest.Portal
             }
         }
 
-        // Not able to call CanWriteInt due to parameter mismatch;
-        public Task<IAuthorizedClass?> Save(IAuthorizedClass target, string name)
+        public async Task<IAuthorizedClass?> Save(IAuthorizedClass target, string name)
+        {
+            var authorized = (await TrySave(target, name));
+            if (!authorized.HasAccess)
+            {
+                throw new NotAuthorizedException(authorized.Message);
+            }
+
+            return authorized.Result;
+        }
+
+        public Task<Authorized<IAuthorizedClass>> TrySave(IAuthorizedClass target, string name)
         {
             return Save2Property(target, name);
         }
 
-        public async Task<IAuthorizedClass?> RemoteSave2(IAuthorizedClass target, string name)
+        public async Task<Authorized<IAuthorizedClass>> RemoteSave2(IAuthorizedClass target, string name)
         {
-            return await DoRemoteRequest.ForDelegate<AuthorizedClass?>(typeof(Save2Delegate), [target, name]);
+            return await DoRemoteRequest.ForDelegate<Authorized<IAuthorizedClass>?>(typeof(Save2Delegate), [target, name]);
         }
 
-        public virtual Task<IAuthorizedClass?> LocalSave2(IAuthorizedClass target, string name)
+        public virtual Task<Authorized<IAuthorizedClass>> LocalSave2(IAuthorizedClass target, string name)
         {
-            var anyaccess = IAuthorizationClass.AnyAccess();
+            Authorized anyaccess = IAuthorizationClass.AnyAccess();
             if (!anyaccess.HasAccess)
             {
-                throw new NotAuthorizedException(anyaccess.Message);
+                return Task.FromResult(new Authorized<IAuthorizedClass>(anyaccess));
             }
 
-            var canwrite = IAuthorizationClass.CanWrite();
+            Authorized canwrite = IAuthorizationClass.CanWrite();
             if (!canwrite.HasAccess)
             {
-                throw new NotAuthorizedException(canwrite.Message);
+                return Task.FromResult(new Authorized<IAuthorizedClass>(canwrite));
             }
 
-            var canwritetarget = IAuthorizationClass.CanWriteTarget(target);
-            if (!canwritetarget.HasAccess)
-            {
-                throw new NotAuthorizedException(canwritetarget.Message);
-            }
-
-            var canwritestringremote = IAuthorizationClass.CanWriteStringRemote(name);
+            Authorized canwritestringremote = IAuthorizationClass.CanWriteStringRemote(name);
             if (!canwritestringremote.HasAccess)
             {
-                throw new NotAuthorizedException(canwritestringremote.Message);
+                return Task.FromResult(new Authorized<IAuthorizedClass>(canwritestringremote));
             }
 
             if (target.IsDeleted)
@@ -294,12 +355,11 @@ namespace Neatoo.UnitTest.Portal
             }
             else if (target.IsNew)
             {
-                return Task.FromResult(LocalInsertString(target, name));
-                ;
+                return Task.FromResult(new Authorized<IAuthorizedClass>(LocalInsertString(target, name)));
             }
             else
             {
-                throw new NotImplementedException();
+                return Task.FromResult(new Authorized<IAuthorizedClass>(LocalUpdateString(target, name)));
             }
         }
 

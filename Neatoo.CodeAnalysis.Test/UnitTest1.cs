@@ -364,27 +364,27 @@ namespace Neatoo;
 public interface IAuthorizeBaseObject {
 
     [Authorize(DataMapperMethodType.Read | DataMapperMethodType.Write)]
-    IAuthorizationRuleResult Anything();
+    bool Anything();
 
     [Authorize(DataMapperMethodType.Read)]
-    IAuthorizationRuleResult Create();
+    bool Create();
 
     [Remote]
     [Authorize(DataMapperMethodType.Read)]
-    IAuthorizationRuleResult Create(int parameter);
+    string? Create(int parameter);
     
     [Authorize(DataMapperMethodType.Read)]
-    Task<IAuthorizationRuleResult> CreateAuthorizeAsync(int parameter);
+    Task<bool> CreateAuthorizeAsync(int parameter);
 
     [Authorize(DataMapperMethodType.Write)]
-    IAuthorizationRuleResult WriteBaseObject(BaseObject target);
+    string? WriteBaseObject(BaseObject target);
 
     [Authorize(DataMapperMethodType.Write)]
-    IAuthorizationRuleResult WriteInt(int parameter);
+    bool WriteInt(int parameter);
 
     [Remote]
     [Authorize(DataMapperMethodType.Write)]
-    IAuthorizationRuleResult WriteString(string parameter);
+    string? WriteString(string parameter);
     
 }
 
@@ -394,4 +394,55 @@ public interface IAuthorizeBaseObject {
         return TestHelper.Verify(source, source2);
     }
 
+
+
+    [Fact]
+    public Task AuthorizationConcrete()
+    {
+        // The source code to test
+        var source = @"
+using Neatoo;
+
+namespace Neatoo;
+
+[Factory]
+[Authorize<AuthorizeBaseObject>]
+internal class BaseObject {
+
+
+    [Create]
+    public void Create(){
+
+    }
+
+    [Insert]
+    public void Insert(){
+    }
+
+}
+";
+
+        var source2 = @"
+using Neatoo;
+
+namespace Neatoo;
+
+public class AuthorizeBaseObject {
+
+    [Authorize(DataMapperMethodType.Read | DataMapperMethodType.Write)]
+    bool Anything();
+
+    [Authorize(DataMapperMethodType.Read)]
+    bool Create();
+
+    [Authorize(DataMapperMethodType.Write)]
+    bool Write();
+   
+}
+
+
+";
+        // Pass the source code to our helper and snapshot test the output
+        return TestHelper.Verify(source, source2);
+    }
 }

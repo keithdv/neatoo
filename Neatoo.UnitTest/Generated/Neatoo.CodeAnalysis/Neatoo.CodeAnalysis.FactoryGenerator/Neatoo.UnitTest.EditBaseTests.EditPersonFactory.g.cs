@@ -24,7 +24,7 @@ namespace Neatoo.UnitTest.EditBaseTests
         IEditPerson? Save(IEditPerson target);
     }
 
-    internal class EditPersonFactory : FactoryEditBase<EditPerson>, IEditPersonFactory
+    internal class EditPersonFactory : FactoryEditBase<EditPerson>, IFactoryEditBase<EditPerson>, IEditPersonFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
@@ -39,19 +39,19 @@ namespace Neatoo.UnitTest.EditBaseTests
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public virtual IEditPerson? LocalInsert(IEditPerson itarget)
-        {
-            var target = (EditPerson)itarget ?? throw new Exception("EditPerson must implement IEditPerson");
-            return DoMapperMethodCall<IEditPerson>(target, DataMapperMethod.Insert, () => target.Insert());
-        }
-
         public IEditPerson FillFromDto(PersonDto dto)
         {
             var target = ServiceProvider.GetRequiredService<EditPerson>();
             return DoMapperMethodCall<IEditPerson>(target, DataMapperMethod.Fetch, () => target.FillFromDto(dto));
         }
 
-        public override async Task<IEditBase?> Save(EditPerson target)
+        public virtual IEditPerson? LocalInsert(IEditPerson itarget)
+        {
+            var target = (EditPerson)itarget ?? throw new Exception("EditPerson must implement IEditPerson");
+            return DoMapperMethodCall<IEditPerson>(target, DataMapperMethod.Insert, () => target.Insert());
+        }
+
+        async Task<IEditBase?> IFactoryEditBase<EditPerson>.Save(EditPerson target)
         {
             return await Task.FromResult((IEditBase? )Save(target));
         }
@@ -70,7 +70,6 @@ namespace Neatoo.UnitTest.EditBaseTests
             else if (target.IsNew)
             {
                 return LocalInsert(target);
-                ;
             }
             else
             {

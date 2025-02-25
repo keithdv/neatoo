@@ -57,12 +57,12 @@ namespace Neatoo.UnitTest.Portal
         public Task<INoBaseClassB> LocalCreateRemote(string name)
         {
             var target = ServiceProvider.GetRequiredService<NoBaseClassB>();
-            return DoMapperMethodCallAsync<INoBaseClassB>(target, DataMapperMethod.Create, () => target.CreateRemote(name));
+            return Task.FromResult(DoMapperMethodCall<INoBaseClassB>(target, DataMapperMethod.Create, () => target.CreateRemote(name)));
         }
 
         public virtual async Task<INoBaseClassB> RemoteCreateRemote(string name)
         {
-            return await DoRemoteRequest.ForDelegate<NoBaseClassB>(typeof(CreateRemoteDelegate), [name]);
+            return await DoRemoteRequest.ForDelegate<INoBaseClassB>(typeof(CreateRemoteDelegate), [name]);
         }
 
         public static void FactoryServiceRegistrar(IServiceCollection services)

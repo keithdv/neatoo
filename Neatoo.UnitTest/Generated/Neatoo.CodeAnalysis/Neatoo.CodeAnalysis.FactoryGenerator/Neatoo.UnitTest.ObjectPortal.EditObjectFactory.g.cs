@@ -36,7 +36,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         Task<IEditObject?> Save(IEditObject target, Guid criteria);
     }
 
-    internal class EditObjectFactory : FactoryEditBase<EditObject>, IEditObjectFactory
+    internal class EditObjectFactory : FactoryEditBase<EditObject>, IFactoryEditBase<EditObject>, IEditObjectFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
@@ -111,7 +111,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         {
             var target = ServiceProvider.GetRequiredService<EditObject>();
             var dependency = ServiceProvider.GetService<IDisposableDependency>();
-            return DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Create, () => target.CreateRemote(criteria, dependency));
+            return Task.FromResult(DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Create, () => target.CreateRemote(criteria, dependency)));
         }
 
         public IEditObject Fetch()
@@ -137,7 +137,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         {
             var target = ServiceProvider.GetRequiredService<EditObject>();
             var dependency = ServiceProvider.GetService<IDisposableDependency>();
-            return DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Fetch, () => target.FetchRemote(criteria, dependency));
+            return Task.FromResult(DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Fetch, () => target.FetchRemote(criteria, dependency)));
         }
 
         public IEditObject? FetchFail()
@@ -156,7 +156,7 @@ namespace Neatoo.UnitTest.ObjectPortal
         {
             var target = ServiceProvider.GetRequiredService<EditObject>();
             var dependency = ServiceProvider.GetService<IDisposableDependency>();
-            return DoMapperMethodCallBoolAsync<IEditObject>(target, DataMapperMethod.Fetch, () => target.FetchFailDependency(dependency));
+            return Task.FromResult(DoMapperMethodCallBool<IEditObject>(target, DataMapperMethod.Fetch, () => target.FetchFailDependency(dependency)));
         }
 
         public async Task<IEditObject?> LocalFetchFailAsyncDependency()
@@ -172,10 +172,34 @@ namespace Neatoo.UnitTest.ObjectPortal
             return DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Insert, () => target.Insert());
         }
 
+        public virtual async Task<IEditObject?> LocalUpdate(IEditObject itarget)
+        {
+            var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
+            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Update, () => target.Update());
+        }
+
+        public virtual IEditObject? LocalDelete(IEditObject itarget)
+        {
+            var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
+            return DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Delete, () => target.Delete());
+        }
+
         public virtual async Task<IEditObject?> LocalInsert1(IEditObject itarget, int criteriaA)
         {
             var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
             return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Insert, () => target.Insert(criteriaA));
+        }
+
+        public virtual async Task<IEditObject?> LocalUpdate1(IEditObject itarget, int criteriaB)
+        {
+            var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
+            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Update, () => target.Update(criteriaB));
+        }
+
+        public virtual async Task<IEditObject?> LocalDelete1(IEditObject itarget, int criteriaC)
+        {
+            var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
+            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Delete, () => target.Delete(criteriaC));
         }
 
         public virtual IEditObject? LocalInsert2(IEditObject itarget, Guid criteria)
@@ -185,35 +209,11 @@ namespace Neatoo.UnitTest.ObjectPortal
             return DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Insert, () => target.Insert(criteria, dependency));
         }
 
-        public virtual async Task<IEditObject?> LocalUpdate(IEditObject itarget)
-        {
-            var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
-            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Update, () => target.Update());
-        }
-
-        public virtual async Task<IEditObject?> LocalUpdate1(IEditObject itarget, int criteriaB)
-        {
-            var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
-            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Update, () => target.Update(criteriaB));
-        }
-
         public virtual async Task<IEditObject?> LocalUpdate2(IEditObject itarget, Guid criteria)
         {
             var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
             var dependency = ServiceProvider.GetService<IDisposableDependency>();
             return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Update, () => target.Update(criteria, dependency));
-        }
-
-        public virtual IEditObject? LocalDelete(IEditObject itarget)
-        {
-            var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
-            return DoMapperMethodCall<IEditObject>(target, DataMapperMethod.Delete, () => target.Delete());
-        }
-
-        public virtual async Task<IEditObject?> LocalDelete1(IEditObject itarget, int criteriaC)
-        {
-            var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
-            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Delete, () => target.Delete(criteriaC));
         }
 
         public virtual IEditObject? LocalDelete2(IEditObject itarget, Guid criteria)
@@ -225,27 +225,27 @@ namespace Neatoo.UnitTest.ObjectPortal
 
         public virtual async Task<IEditObject> RemoteCreateRemote(Guid criteria)
         {
-            return await DoRemoteRequest.ForDelegate<EditObject>(typeof(CreateRemoteDelegate), [criteria]);
+            return await DoRemoteRequest.ForDelegate<IEditObject>(typeof(CreateRemoteDelegate), [criteria]);
         }
 
         public virtual async Task<IEditObject> RemoteFetchRemote(Guid criteria)
         {
-            return await DoRemoteRequest.ForDelegate<EditObject>(typeof(FetchRemoteDelegate), [criteria]);
+            return await DoRemoteRequest.ForDelegate<IEditObject>(typeof(FetchRemoteDelegate), [criteria]);
         }
 
         public virtual async Task<IEditObject?> RemoteFetchFailDependency()
         {
-            return await DoRemoteRequest.ForDelegate<EditObject>(typeof(FetchFailDependencyDelegate), []);
+            return await DoRemoteRequest.ForDelegate<IEditObject?>(typeof(FetchFailDependencyDelegate), []);
         }
 
         public virtual async Task<IEditObject?> RemoteFetchFailAsyncDependency()
         {
-            return await DoRemoteRequest.ForDelegate<EditObject>(typeof(FetchFailAsyncDependencyDelegate), []);
+            return await DoRemoteRequest.ForDelegate<IEditObject?>(typeof(FetchFailAsyncDependencyDelegate), []);
         }
 
-        public override async Task<IEditBase?> Save(EditObject target)
+        async Task<IEditBase?> IFactoryEditBase<EditObject>.Save(EditObject target)
         {
-            return await Task.FromResult((IEditBase? )Save(target));
+            return (IEditBase? )await Save(target);
         }
 
         public virtual async Task<IEditObject?> Save(IEditObject target)
@@ -258,17 +258,14 @@ namespace Neatoo.UnitTest.ObjectPortal
                 }
 
                 return LocalDelete(target);
-                ;
             }
             else if (target.IsNew)
             {
                 return LocalInsert(target);
-                ;
             }
             else
             {
                 return await LocalUpdate(target);
-                ;
             }
         }
 
@@ -282,17 +279,14 @@ namespace Neatoo.UnitTest.ObjectPortal
                 }
 
                 return await LocalDelete1(target, criteriaA);
-                ;
             }
             else if (target.IsNew)
             {
                 return await LocalInsert1(target, criteriaA);
-                ;
             }
             else
             {
                 return await LocalUpdate1(target, criteriaA);
-                ;
             }
         }
 
@@ -306,17 +300,14 @@ namespace Neatoo.UnitTest.ObjectPortal
                 }
 
                 return LocalDelete2(target, criteria);
-                ;
             }
             else if (target.IsNew)
             {
                 return LocalInsert2(target, criteria);
-                ;
             }
             else
             {
                 return await LocalUpdate2(target, criteria);
-                ;
             }
         }
 

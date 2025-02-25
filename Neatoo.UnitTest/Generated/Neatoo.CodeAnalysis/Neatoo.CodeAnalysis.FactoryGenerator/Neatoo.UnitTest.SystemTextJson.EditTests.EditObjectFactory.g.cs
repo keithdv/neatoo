@@ -21,7 +21,7 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
         Task<IEditObject?> Save(IEditObject target);
     }
 
-    internal class EditObjectFactory : FactoryEditBase<EditObject>, IEditObjectFactory
+    internal class EditObjectFactory : FactoryEditBase<EditObject>, IFactoryEditBase<EditObject>, IEditObjectFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
@@ -48,9 +48,9 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
             return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Update, () => target.Update());
         }
 
-        public override async Task<IEditBase?> Save(EditObject target)
+        async Task<IEditBase?> IFactoryEditBase<EditObject>.Save(EditObject target)
         {
-            return await Task.FromResult((IEditBase? )Save(target));
+            return (IEditBase? )await Save(target);
         }
 
         public virtual async Task<IEditObject?> Save(IEditObject target)
@@ -71,7 +71,6 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
             else
             {
                 return await LocalUpdate(target);
-                ;
             }
         }
 

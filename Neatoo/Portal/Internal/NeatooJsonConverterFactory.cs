@@ -32,7 +32,7 @@ public class NeatooJsonConverterFactory : JsonConverterFactory
         else if (typeToConvert.IsAssignableTo(typeof(IListBase)))
         {
             return true;
-        } else if (typeToConvert.IsInterface && !typeToConvert.IsGenericType && localAssemblies.HasType(typeToConvert))
+        } else if ((typeToConvert.IsInterface || typeToConvert.IsAbstract) && !typeToConvert.IsGenericType && localAssemblies.HasType(typeToConvert))
         {
             return true;
         }
@@ -49,7 +49,7 @@ public class NeatooJsonConverterFactory : JsonConverterFactory
         else if (typeToConvert.IsAssignableTo(typeof(IListBase)))
         {
             return (JsonConverter)scope.GetRequiredService(typeof(NeatooListBaseJsonTypeConverter<>).MakeGenericType(typeToConvert));
-        }else if (typeToConvert.IsInterface)
+        }else if (typeToConvert.IsInterface || typeToConvert.IsAbstract)
         {
             return (JsonConverter)scope.GetRequiredService(typeof(NeatooInterfaceJsonTypeConverter<>).MakeGenericType(typeToConvert));
         }

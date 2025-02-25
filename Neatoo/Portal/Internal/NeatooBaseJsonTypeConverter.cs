@@ -204,6 +204,7 @@ public class NeatooBaseJsonTypeConverter<T> : JsonConverter<T>
             if (value is IEditMetaProperties editMetaProperties)
             {
                 var editProperties = typeof(IEditMetaProperties).GetProperties().ToList();
+                editProperties.AddRange(typeof(IEditMetaSaveProperties).GetProperties());
 
                 foreach (var p in editProperties)
                 {
