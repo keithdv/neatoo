@@ -68,14 +68,14 @@ namespace Neatoo.UnitTest.Portal
                     serverCollection.AddNeatooServices(NeatooHost.Local, Assembly.GetExecutingAssembly());
                     serverCollection.AddTransient<Objects.IDisposableDependency, Objects.DisposableDependency>();
                     serverCollection.AddScoped<Objects.DisposableDependencyList>();
-                    serverCollection.AddScoped<AuthorizationClassTests.IAuthorizationClass, AuthorizationClassTests.AuthorizationClass>();
-                    serverCollection.AddScoped<AuthorizationConcreteClassTests.AuthorizationConcreteClass>();
+                    //serverCollection.AddScoped<AuthorizationClassTests.IAuthorizationClass, AuthorizationClassTests.AuthorizationClass>();
+                    //serverCollection.AddScoped<AuthorizationConcreteClassTests.AuthorizationConcreteClass>();
                     serverCollection.AddScoped<AuthorizationAllCombinations>();
 
                     clientCollection.AddNeatooServices(NeatooHost.Remote, Assembly.GetExecutingAssembly());
                     clientCollection.AddScoped<ServerServiceProvider>();
                     clientCollection.AddScoped<Objects.DisposableDependencyList>();
-                    clientCollection.AddScoped<AuthorizationClassTests.IAuthorizationClass, AuthorizationClassTests.AuthorizationClass>();
+                    //clientCollection.AddScoped<AuthorizationClassTests.IAuthorizationClass, AuthorizationClassTests.AuthorizationClass>();
                     clientCollection.AddScoped<AuthorizationAllCombinations>();
 
                     clientCollection.AddScoped<IDoRemoteRequest, DoRemoteRequestTest>();

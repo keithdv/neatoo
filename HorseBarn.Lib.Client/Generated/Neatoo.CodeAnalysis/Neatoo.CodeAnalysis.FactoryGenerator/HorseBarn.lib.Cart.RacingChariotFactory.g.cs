@@ -14,6 +14,9 @@ using System.ComponentModel;
 Debugging Messages:
 : Cart<RacingChariot, ILightHorse>, IRacingChariot
 : CustomEditBase<C>, ICart
+No DataMapperMethod attribute for RemoveHorse
+No DataMapperMethod attribute for AddHorse
+No DataMapperMethod attribute for CanAddHorse
 : EditBase<T>
 */
 namespace HorseBarn.lib.Cart
@@ -23,23 +26,29 @@ namespace HorseBarn.lib.Cart
         Task<IRacingChariot> Create();
     }
 
-    internal class RacingChariotFactory : FactoryEditBase<RacingChariot>, IRacingChariotFactory
+    internal class RacingChariotFactory : FactoryBase, IRacingChariotFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public delegate Task<IRacingChariot> CreateDelegate();
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public RacingChariotFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
         }
 
-        public RacingChariotFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public RacingChariotFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public Task<IRacingChariot> Create()
+        public virtual Task<IRacingChariot> Create()
+        {
+            return LocalCreate();
+        }
+
+        public Task<IRacingChariot> LocalCreate()
         {
             var target = ServiceProvider.GetRequiredService<RacingChariot>();
             var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
@@ -53,12 +62,6 @@ namespace HorseBarn.lib.Cart
             services.AddScoped<RacingChariotFactory>();
             services.AddScoped<IRacingChariotFactory, RacingChariotFactory>();
             services.AddTransient<IRacingChariot, RacingChariot>();
-            services.AddScoped<CreateDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<RacingChariotFactory>();
-                return () => factory.Create();
-            });
-            services.AddScoped<IFactoryEditBase<RacingChariot>, RacingChariotFactory>();
         }
     }
 }

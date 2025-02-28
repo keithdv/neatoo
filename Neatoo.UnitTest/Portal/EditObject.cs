@@ -188,6 +188,7 @@ public class EditObject : EditBase<EditObject>, IEditObject
         UpdateCalled = true;
     }
 
+    [Remote]
     [Update]
     public async Task Update(Guid criteria, [Service] IDisposableDependency dependency)
     {

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
@@ -82,6 +83,8 @@ public class PropertyManager<P> : IPropertyManager<P>, IJsonOnDeserialized
         return Factory.CreateProperty<PV>(propertyInfo);
     }
 
+    private MethodInfo? createPropertyMethod;
+
     public virtual P GetProperty(string propertyName)
     {
         if (PropertyBag.TryGetValue(propertyName, out var property))
@@ -89,9 +92,14 @@ public class PropertyManager<P> : IPropertyManager<P>, IJsonOnDeserialized
             return property;
         }
 
+        if (createPropertyMethod == null)
+        {
+            createPropertyMethod = GetType().GetMethod(nameof(CreateProperty), BindingFlags.NonPublic | BindingFlags.Instance);
+        }
+
         var propertyInfo = PropertyInfoList.GetPropertyInfo(propertyName);
 
-        var newProperty = (P)this.GetType().GetMethod(nameof(this.CreateProperty), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.MakeGenericMethod(propertyInfo.Type).Invoke(this, new object[] { propertyInfo })!;
+        var newProperty = (P)createPropertyMethod!.MakeGenericMethod(propertyInfo.Type).Invoke(this, new object[] { propertyInfo })!;
 
         newProperty.NeatooPropertyChanged += _Property_NeatooPropertyChanged;
         newProperty.PropertyChanged += _Property_PropertyChanged;

@@ -65,21 +65,9 @@ namespace Neatoo.UnitTest.Portal
             Save1Property = RemoteSave1;
         }
 
-        public AuthorizedConcreteClass? Create()
-        {
-            var authorized = (TryCreate());
-            return authorized.Result;
-        }
-
         public virtual Task<Authorized<AuthorizedConcreteClass>> TryCreateString(string name)
         {
             return CreateStringProperty(name);
-        }
-
-        public async Task<AuthorizedConcreteClass?> CreateString(string name)
-        {
-            var authorized = (await TryCreateString(name));
-            return authorized.Result;
         }
 
         public Authorized<AuthorizedConcreteClass> TryCreate()
@@ -98,6 +86,12 @@ namespace Neatoo.UnitTest.Portal
 
             var target = ServiceProvider.GetRequiredService<AuthorizedConcreteClass>();
             return new Authorized<AuthorizedConcreteClass>(DoMapperMethodCall<AuthorizedConcreteClass>(target, DataMapperMethod.Create, () => target.Create()));
+        }
+
+        public AuthorizedConcreteClass? Create()
+        {
+            var authorized = (TryCreate());
+            return authorized.Result;
         }
 
         public Task<Authorized<AuthorizedConcreteClass>> LocalCreateString(string name)
@@ -122,6 +116,12 @@ namespace Neatoo.UnitTest.Portal
 
             var target = ServiceProvider.GetRequiredService<AuthorizedConcreteClass>();
             return Task.FromResult(new Authorized<AuthorizedConcreteClass>(DoMapperMethodCall<AuthorizedConcreteClass>(target, DataMapperMethod.Create, () => target.CreateString(name))));
+        }
+
+        public async Task<AuthorizedConcreteClass?> CreateString(string name)
+        {
+            var authorized = (await TryCreateString(name));
+            return authorized.Result;
         }
 
         public virtual AuthorizedConcreteClass? LocalInsert(AuthorizedConcreteClass itarget)

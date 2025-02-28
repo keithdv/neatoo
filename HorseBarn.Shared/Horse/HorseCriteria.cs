@@ -1,4 +1,5 @@
 ﻿using Neatoo;
+using Neatoo.AuthorizationRules;
 using Neatoo.Portal;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
@@ -13,7 +14,23 @@ public interface IHorseCriteria : IValidateBase
     Breed Breed { get; set; }
 }
 
+internal interface IHorseCriteriaAuthorization
+{
+
+    [Authorize(DataMapperMethodType.Read)]
+    public bool CanFetch();
+}
+
+internal class HorseCriteriaAuthorization : IHorseCriteriaAuthorization
+{
+    public bool CanFetch()
+    {
+        return true;
+    }
+}
+
 [Factory]
+[Authorize<IHorseCriteriaAuthorization>]
 internal class HorseCriteria : ValidateBase<HorseCriteria>, IHorseCriteria
 {
     public HorseCriteria(IValidateBaseServices<HorseCriteria> services,

@@ -22,6 +22,8 @@ namespace Neatoo.UnitTest.EditBaseTests
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public EditPersonListFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;

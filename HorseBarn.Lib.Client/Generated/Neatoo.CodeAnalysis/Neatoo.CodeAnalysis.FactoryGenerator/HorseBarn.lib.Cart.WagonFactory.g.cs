@@ -14,6 +14,9 @@ using System.ComponentModel;
 Debugging Messages:
 : Cart<Wagon, IHeavyHorse>, IWagon
 : CustomEditBase<C>, ICart
+No DataMapperMethod attribute for RemoveHorse
+No DataMapperMethod attribute for AddHorse
+No DataMapperMethod attribute for CanAddHorse
 : EditBase<T>
 */
 namespace HorseBarn.lib.Cart
@@ -23,23 +26,29 @@ namespace HorseBarn.lib.Cart
         Task<IWagon> Create();
     }
 
-    internal class WagonFactory : FactoryEditBase<Wagon>, IWagonFactory
+    internal class WagonFactory : FactoryBase, IWagonFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public delegate Task<IWagon> CreateDelegate();
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public WagonFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
         }
 
-        public WagonFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public WagonFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public Task<IWagon> Create()
+        public virtual Task<IWagon> Create()
+        {
+            return LocalCreate();
+        }
+
+        public Task<IWagon> LocalCreate()
         {
             var target = ServiceProvider.GetRequiredService<Wagon>();
             var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
@@ -53,12 +62,6 @@ namespace HorseBarn.lib.Cart
             services.AddScoped<WagonFactory>();
             services.AddScoped<IWagonFactory, WagonFactory>();
             services.AddTransient<IWagon, Wagon>();
-            services.AddScoped<CreateDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<WagonFactory>();
-                return () => factory.Create();
-            });
-            services.AddScoped<IFactoryEditBase<Wagon>, WagonFactory>();
         }
     }
 }

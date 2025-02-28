@@ -25,6 +25,8 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public EditObjectFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -36,16 +38,21 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public async Task<IEditObject> Create(Guid ID, string Name)
+        public virtual Task<IEditObject> Create(Guid ID, string Name)
         {
-            var target = ServiceProvider.GetRequiredService<EditObject>();
-            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Create, () => target.Create(ID, Name));
+            return LocalCreate(ID, Name);
         }
 
-        public virtual async Task<IEditObject?> LocalUpdate(IEditObject itarget)
+        public Task<IEditObject> LocalCreate(Guid ID, string Name)
         {
-            var target = (EditObject)itarget ?? throw new Exception("EditObject must implement IEditObject");
-            return await DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Update, () => target.Update());
+            var target = ServiceProvider.GetRequiredService<EditObject>();
+            return DoMapperMethodCallAsync<IEditObject>(target, DataMapperMethod.Create, () => target.Create(ID, Name));
+        }
+
+        public virtual Task<IEditObject?> LocalUpdate(IEditObject target)
+        {
+            var cTarget = (EditObject)target ?? throw new Exception("EditObject must implement IEditObject");
+            return DoMapperMethodCallAsync<IEditObject>(cTarget, DataMapperMethod.Update, () => cTarget.Update());
         }
 
         async Task<IEditBase?> IFactoryEditBase<EditObject>.Save(EditObject target)
@@ -53,7 +60,12 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
             return (IEditBase? )await Save(target);
         }
 
-        public virtual async Task<IEditObject?> Save(IEditObject target)
+        public virtual Task<IEditObject?> Save(IEditObject target)
+        {
+            return LocalSave(target);
+        }
+
+        public virtual Task<IEditObject?> LocalSave(IEditObject target)
         {
             if (target.IsDeleted)
             {
@@ -70,7 +82,7 @@ namespace Neatoo.UnitTest.SystemTextJson.EditTests
             }
             else
             {
-                return await LocalUpdate(target);
+                return LocalUpdate(target);
             }
         }
 

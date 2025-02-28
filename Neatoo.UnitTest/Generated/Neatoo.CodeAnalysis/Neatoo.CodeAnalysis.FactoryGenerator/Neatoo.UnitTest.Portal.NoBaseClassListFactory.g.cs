@@ -27,9 +27,11 @@ namespace Neatoo.UnitTest.Portal
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        // Delegates
+        public delegate Task<INoBaseClassList> CreateRemoteDelegate();
+        // Delegate Properties to provide Local or Remote fork in execution
         public CreateRemoteDelegate CreateRemoteProperty { get; }
 
-        public delegate Task<INoBaseClassList> CreateRemoteDelegate();
         public NoBaseClassListFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -43,17 +45,27 @@ namespace Neatoo.UnitTest.Portal
             CreateRemoteProperty = RemoteCreateRemote;
         }
 
-        public virtual Task<INoBaseClassList> CreateRemote()
+        public virtual INoBaseClassList Create()
         {
-            return CreateRemoteProperty();
+            return LocalCreate();
         }
 
-        public INoBaseClassList Create()
+        public INoBaseClassList LocalCreate()
         {
             var target = ServiceProvider.GetRequiredService<NoBaseClassList>();
             var factoryA = ServiceProvider.GetService<INoBaseClassAFactory>();
             var factoryB = ServiceProvider.GetService<INoBaseClassBFactory>();
             return DoMapperMethodCall<INoBaseClassList>(target, DataMapperMethod.Create, () => target.Create(factoryA, factoryB));
+        }
+
+        public virtual Task<INoBaseClassList> CreateRemote()
+        {
+            return CreateRemoteProperty();
+        }
+
+        public virtual async Task<INoBaseClassList> RemoteCreateRemote()
+        {
+            return await DoRemoteRequest.ForDelegate<INoBaseClassList>(typeof(CreateRemoteDelegate), []);
         }
 
         public Task<INoBaseClassList> LocalCreateRemote()
@@ -62,11 +74,6 @@ namespace Neatoo.UnitTest.Portal
             var factoryA = ServiceProvider.GetService<INoBaseClassAFactory>();
             var factoryB = ServiceProvider.GetService<INoBaseClassBFactory>();
             return Task.FromResult(DoMapperMethodCall<INoBaseClassList>(target, DataMapperMethod.Create, () => target.CreateRemote(factoryA, factoryB)));
-        }
-
-        public virtual async Task<INoBaseClassList> RemoteCreateRemote()
-        {
-            return await DoRemoteRequest.ForDelegate<INoBaseClassList>(typeof(CreateRemoteDelegate), []);
         }
 
         public static void FactoryServiceRegistrar(IServiceCollection services)

@@ -25,6 +25,8 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public ValidateDependencyRulesFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;

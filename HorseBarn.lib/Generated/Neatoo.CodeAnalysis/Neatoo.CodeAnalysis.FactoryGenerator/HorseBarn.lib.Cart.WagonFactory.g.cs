@@ -15,7 +15,11 @@ using HorseBarn.Dal.Ef;
 Debugging Messages:
 : Cart<Wagon, IHeavyHorse>, IWagon
 : CustomEditBase<C>, ICart
+No DataMapperMethod attribute for RemoveHorse
+No DataMapperMethod attribute for AddHorse
+No DataMapperMethod attribute for CanAddHorse
 : EditBase<T>
+No DataMapperMethod attribute for HandleIdPropertyChanged
 */
 namespace HorseBarn.lib.Cart
 {
@@ -26,33 +30,29 @@ namespace HorseBarn.lib.Cart
         IWagon? Save(IWagon target, Dal.Ef.HorseBarn horseBarn);
     }
 
-    internal class WagonFactory : FactoryEditBase<Wagon>, IWagonFactory
+    internal class WagonFactory : FactoryEditBase<Wagon>, IFactoryEditBase<Wagon>, IWagonFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public SaveDelegate SaveProperty { get; set; }
-
-        public delegate Task<IWagon> CreateDelegate();
-        public delegate IWagon FetchDelegate(Dal.Ef.Cart cart);
-        public delegate IWagon? SaveDelegate(IWagon target, Dal.Ef.HorseBarn horseBarn);
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public WagonFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
-            SaveProperty = LocalSave;
         }
 
-        public WagonFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public WagonFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public IWagon? Save(IWagon target, Dal.Ef.HorseBarn horseBarn)
+        public virtual Task<IWagon> Create()
         {
-            return SaveProperty(target, horseBarn);
+            return LocalCreate();
         }
 
-        public Task<IWagon> Create()
+        public Task<IWagon> LocalCreate()
         {
             var target = ServiceProvider.GetRequiredService<Wagon>();
             var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
@@ -60,25 +60,35 @@ namespace HorseBarn.lib.Cart
             return DoMapperMethodCallAsync<IWagon>(target, DataMapperMethod.Create, () => target.Create(horsePortal, allRequiredRulesExecutedFactory));
         }
 
-        public IWagon Fetch(Dal.Ef.Cart cart)
+        public virtual IWagon Fetch(Dal.Ef.Cart cart)
+        {
+            return LocalFetch(cart);
+        }
+
+        public IWagon LocalFetch(Dal.Ef.Cart cart)
         {
             var target = ServiceProvider.GetRequiredService<Wagon>();
             var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
             return DoMapperMethodCall<IWagon>(target, DataMapperMethod.Fetch, () => target.Fetch(cart, horsePortal));
         }
 
-        public virtual Task<IWagon?> LocalInsert(IWagon itarget, Dal.Ef.HorseBarn horseBarn)
+        public virtual IWagon? LocalInsert(IWagon target, Dal.Ef.HorseBarn horseBarn)
         {
-            var target = (Wagon)itarget ?? throw new Exception("Wagon must implement IWagon");
+            var cTarget = (Wagon)target ?? throw new Exception("Wagon must implement IWagon");
             var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
-            return DoMapperMethodCallAsync<IWagon>(target, DataMapperMethod.Insert, () => target.Insert(horseBarn, horsePortal));
+            return DoMapperMethodCall<IWagon>(cTarget, DataMapperMethod.Insert, () => cTarget.Insert(horseBarn, horsePortal));
         }
 
-        public virtual Task<IWagon?> LocalUpdate(IWagon itarget, Dal.Ef.HorseBarn horseBarn)
+        public virtual IWagon? LocalUpdate(IWagon target, Dal.Ef.HorseBarn horseBarn)
         {
-            var target = (Wagon)itarget ?? throw new Exception("Wagon must implement IWagon");
+            var cTarget = (Wagon)target ?? throw new Exception("Wagon must implement IWagon");
             var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
-            return DoMapperMethodCallAsync<IWagon>(target, DataMapperMethod.Update, () => target.Update(horseBarn, horsePortal));
+            return DoMapperMethodCall<IWagon>(cTarget, DataMapperMethod.Update, () => cTarget.Update(horseBarn, horsePortal));
+        }
+
+        public virtual IWagon? Save(IWagon target, Dal.Ef.HorseBarn horseBarn)
+        {
+            return LocalSave(target, horseBarn);
         }
 
         public virtual IWagon? LocalSave(IWagon target, Dal.Ef.HorseBarn horseBarn)
@@ -108,16 +118,6 @@ namespace HorseBarn.lib.Cart
             services.AddScoped<WagonFactory>();
             services.AddScoped<IWagonFactory, WagonFactory>();
             services.AddTransient<IWagon, Wagon>();
-            services.AddScoped<CreateDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<WagonFactory>();
-                return () => factory.Create();
-            });
-            services.AddScoped<FetchDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<WagonFactory>();
-                return (Dal.Ef.Cart cart) => factory.Fetch(cart);
-            });
             services.AddScoped<IFactoryEditBase<Wagon>, WagonFactory>();
         }
     }

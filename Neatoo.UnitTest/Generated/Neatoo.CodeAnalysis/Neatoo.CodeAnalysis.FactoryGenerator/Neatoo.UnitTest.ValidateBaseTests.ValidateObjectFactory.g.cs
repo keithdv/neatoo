@@ -26,6 +26,8 @@ namespace Neatoo.UnitTest.ValidateBaseTests
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public ValidateObjectFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -37,12 +39,17 @@ namespace Neatoo.UnitTest.ValidateBaseTests
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public async Task<IValidateObject> Fetch(PersonDto person)
+        public virtual Task<IValidateObject> Fetch(PersonDto person)
+        {
+            return LocalFetch(person);
+        }
+
+        public Task<IValidateObject> LocalFetch(PersonDto person)
         {
             var target = ServiceProvider.GetRequiredService<ValidateObject>();
             var portal = ServiceProvider.GetService<ValidateObjectFactory>();
             var personTable = ServiceProvider.GetService<IReadOnlyList<PersonDto>>();
-            return await DoMapperMethodCallAsync<IValidateObject>(target, DataMapperMethod.Fetch, () => target.Fetch(person, portal, personTable));
+            return DoMapperMethodCallAsync<IValidateObject>(target, DataMapperMethod.Fetch, () => target.Fetch(person, portal, personTable));
         }
 
         public static void FactoryServiceRegistrar(IServiceCollection services)

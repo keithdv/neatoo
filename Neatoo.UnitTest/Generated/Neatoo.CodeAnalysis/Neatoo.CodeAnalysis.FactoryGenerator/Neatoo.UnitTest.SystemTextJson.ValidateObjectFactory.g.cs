@@ -22,6 +22,8 @@ namespace Neatoo.UnitTest.SystemTextJson
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public ValidateObjectFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -33,7 +35,12 @@ namespace Neatoo.UnitTest.SystemTextJson
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public IValidateObject Create(Guid ID, string Name)
+        public virtual IValidateObject Create(Guid ID, string Name)
+        {
+            return LocalCreate(ID, Name);
+        }
+
+        public IValidateObject LocalCreate(Guid ID, string Name)
         {
             var target = ServiceProvider.GetRequiredService<ValidateObject>();
             return DoMapperMethodCall<IValidateObject>(target, DataMapperMethod.Create, () => target.Create(ID, Name));

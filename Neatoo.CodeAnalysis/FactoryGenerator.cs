@@ -82,13 +82,30 @@ namespace Neatoo.CodeAnalysis
 
         internal class MethodInfo
         {
-            public MethodInfo(MethodDeclarationSyntax methodDeclaration)
+
+            public MethodInfo(IEnumerable<MethodInfo> methodDeclarations)
+            {
+                var methodDeclaration = methodDeclarations.First();
+                Name = methodDeclaration.Name;
+                ClassName = methodDeclaration.ClassName;
+                ClassType = methodDeclaration.ClassType;
+                UniqueName = methodDeclaration.Name;
+                Parameters = methodDeclaration.Parameters;
+                IsSave = methodDeclaration.IsSave;
+                IsSelfTask = methodDeclarations.Any(m => m.IsSelfTask);
+                IsRemote = IsSelfRemote = methodDeclarations.Any(m => m.IsRemote);
+                IsTask = IsSelfTask || IsRemote;
+            }
+
+            public MethodInfo(string classType, MethodDeclarationSyntax methodDeclaration)
             {
                 Name = methodDeclaration.Identifier.Text;
+                ClassType = classType;
                 UniqueName = methodDeclaration.Identifier.Text;
-                IsBoolReturn = methodDeclaration.ReturnType.ToString().Contains("bool");
-                IsAsync = methodDeclaration.ReturnType.ToString().Contains("Task");
+                IsSelfBool = methodDeclaration.ReturnType.ToString().Contains("bool");
+                IsSelfTask = methodDeclaration.ReturnType.ToString().Contains("Task");
                 IsRemote = methodDeclaration.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Remote");
+                IsSelfRemote = IsRemote;
                 IsSave = methodDeclaration.AttributeLists.SelectMany(a => a.Attributes).Any(a => dataMapperSaveAttributes.Contains(a.Name.ToString()));
                 Attributes = methodDeclaration.AttributeLists.SelectMany(a => a.Attributes).Select(a => a.Name.ToString()).ToList();
                 Parameters = methodDeclaration.ParameterList.Parameters.Select(p => new ParameterInfo()
@@ -97,143 +114,124 @@ namespace Neatoo.CodeAnalysis
                     Type = p.Type.ToString(),
                     IsService = p.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Service")
                 }).ToList();
+
+                if (IsSave)
+                {
+                    Parameters.Insert(0, new ParameterInfo() { Name = "target", Type = ClassType, IsService = false, IsTarget = true });
+                    IsTask = IsSelfTask;
+                } 
+                else
+                {
+                    IsTask = IsSelfTask || IsRemote;
+                }
             }
 
             public string ClassName { get; set; }
-            public string Name { get; }
+            public string Name { get; set; }
             public string UniqueName { get; set; }
             public int? UniqueNumber { get; set; }
-            public string FactoryPublicMethodName
-            {
-                get
-                {
-                    var methodName = Name;
-                    if (HasAuth)
-                    {
-                        methodName = $"Try{methodName}";
-                    }
-                    return methodName;
-                }
-            }
-            public string ClassType { get; set; }
-            public bool IsBoolReturn { get; set; }
+            public string ClassType { get; }
+            public bool IsSelfBool { get; set; }
             public List<ParameterInfo> Parameters { get; set; } = new List<ParameterInfo>();
             public bool IsAsync { get; set; }
+            public string AsyncKeyword => IsAsync ? "async" : "";
+            public string AwaitKeyword => IsTask ? "await" : "";
+            public bool IsTask { get; set; }
+            public bool IsSelfTask { get; set; }
             public bool IsRemote { get; set; }
+            public bool IsSelfRemote { get; set; }
             public bool IsSave { get; }
             public bool HasAuth => AuthMethods.Count > 0;
             public List<string> Attributes { get; set; }
             public DataMapper.DataMapperMethod? DataMapperMethod { get; set; }
             public DataMapper.DataMapperMethodType? DataMapperMethodType { get; set; }
             public string FactoryMethodDelegateName => $"{UniqueName}Delegate";
+            public string AuthResult => HasAuth ? $".Result" : "";
 
-            public string FactoryMethodReturnType
+            public string ReturnType(bool includeTask = true, bool includeAuth = true, bool includeBool = true, bool authCheck = false)
             {
-                get
+                var returnType = ClassType;
+
+                if (AuthMethods.Count > 0 && authCheck)
                 {
-                    var returnType = ClassType;
-
-                    if (AuthMethods.Count > 0)
-                    {
-                        returnType = $"Authorized<{returnType}>";
-                    }
-                    else if (IsBoolReturn)
-                    {
-                        returnType = $"{returnType}?";
-                    }
-
-                    if (IsAsync || IsRemote)
-                    {
-                        returnType = $"Task<{returnType}>";
-                    }
-
-
-                    return returnType;
+                    returnType = $"Authorized";
                 }
-            }
-
-            public string DeserializeDelegateTo
-            {
-                get
+                else if (AuthMethods.Count > 0 && includeAuth)
                 {
-                    var typeText = ClassType;
-
-                    if (AuthMethods.Count > 0)
-                    {
-                        typeText = $"Authorized<{typeText}>";
-                    }
-                    else if (IsBoolReturn)
-                    {
-                        typeText = $"{typeText}?";
-                    }
-
-                    return typeText;
+                    returnType = $"Authorized<{returnType}>";
                 }
-            }
-
-            public string SaveMethodReturn
-            {
-                get
+                else if ((IsSave || IsSelfBool) && includeBool)
                 {
-                    var returnType = $"{ClassType}?";
-
-                    if (IsAsync)
-                    {
-                        returnType = $"Task<{returnType}>";
-                    }
-
-                    return returnType;
+                    returnType = $"{returnType}?";
                 }
+
+                if (includeTask && IsTask)
+                {
+                    returnType = $"Task<{returnType}>";
+                }
+
+                return returnType;
             }
 
             public string AttributeName => Attributes.FirstOrDefault(a => dataMapperAttributes.Contains(a)) ?? "";
-            public string ParameterIdentifiersNoServicesText => string.Join(", ", Parameters.Where(p => !p.IsService).Select(p => p.Name));
-            public string ParameterDeclarationsNoServicesText => string.Join(", ", Parameters.Where(p => !p.IsService).Select(p => $"{p.Type} {p.Name}"));
-            public string ParameterIdentifiersText => string.Join(", ", Parameters.Select(p => p.Name));
+
+            public string ParameterDeclarationsText(bool includeServices = false, bool includeAuth = false)
+            {
+                return string.Join(", ", Parameters.Where(p => (includeServices || !p.IsService) && (includeAuth || !p.IsAuth)).Select(p => $"{p.Type} {p.Name}"));
+            }
+
+            public string ParameterIdentifiersText(bool includeServices = false, bool includeAuth = false, string? checkAuthOnly = "false", bool includeTarget = true)
+            {
+                var result = string.Join(", ", Parameters.Where(p => (includeServices || !p.IsService) && (includeAuth || !p.IsAuth) && (includeTarget || !p.IsTarget)).Select(p => p.Name));
+
+                if (HasAuth && !string.IsNullOrEmpty(checkAuthOnly))
+                {
+                    result += $", {checkAuthOnly}";
+                }
+
+                return result;
+            }
+
             public string DoMapperMethodCall
             {
                 get
                 {
-
                     var methodCall = "DoMapperMethodCall";
 
-                    if (IsBoolReturn)
+                    if (IsSelfBool)
                     {
                         methodCall += "Bool";
                     }
 
-                    if (IsAsync)
+                    if (IsSelfTask)
                     {
                         methodCall += "Async";
-                        methodCall = $"await {methodCall}";
                     }
 
                     methodCall += $"<{ClassType}>";
 
-                    methodCall = $"{methodCall}(target, DataMapperMethod.{AttributeName}, () => target.{Name} ({ParameterIdentifiersText}))";
+                    methodCall = $"{methodCall}(target, DataMapperMethod.{AttributeName}, () => target.{Name} ({ParameterIdentifiersText(includeServices: true, includeTarget: false, checkAuthOnly: null)}))";
 
-                    if (!IsSave)
+
+                    if (AuthMethods.Count > 0)
                     {
-                        if (AuthMethods.Count > 0)
+                        if (IsSelfTask)
                         {
-                            methodCall = $"new Authorized<{ClassType}>({methodCall})";
+                            methodCall = $"await {methodCall}";
                         }
-
-                        if (IsRemote && !IsAsync)
-                        {
-                            methodCall = $"Task.FromResult({methodCall})";
-                        }
+                        methodCall = $"new Authorized<{ClassType}>({methodCall})";
+                    } else if (!IsSelfTask && IsTask)
+                    {
+                        methodCall = $"Task.FromResult({methodCall})";
                     }
-
-
 
                     return methodCall;
                 }
             }
-
             public string ParameterTypesNoServicesText => string.Join(", ", Parameters.Where(p => !p.IsService).Select(p => p.Type));
-            public List<MethodInfo> AuthMethods { get; } = new List<MethodInfo>();
+            public List<MethodInfo> AuthMethods { get; set; } = new List<MethodInfo>();
             public string ServiceAssignmentsText => string.Join("\n", Parameters.Where(p => p.IsService).Select(p => $"\t\t\tvar {p.Name} = ServiceProvider.GetService<{p.Type}>();"));
+            public List<MethodInfo> SaveMethods { get; set; }
         }
 
         public class ParameterInfo
@@ -241,615 +239,467 @@ namespace Neatoo.CodeAnalysis
             public string Name { get; set; }
             public string Type { get; set; }
             public bool IsService { get; set; }
+            public bool IsAuth { get; internal set; }
+            public bool IsTarget { get; set; }
         }
 
+        private class ClassText
+        {
+            public StringBuilder Delegates { get; set; } = new StringBuilder();
+            public StringBuilder ConstructorPropertyAssignmentsLocal { get; set; } = new StringBuilder();
+            public StringBuilder ConstructorPropertyAssignmentsRemote { get; set; } = new StringBuilder();
+            public StringBuilder PropertyDeclarations { get; set; } = new StringBuilder();
+            public StringBuilder MethodsBuilder { get; set; } = new StringBuilder();
+            public StringBuilder SaveMethods { get; set; } = new StringBuilder();
+            public StringBuilder InterfaceMethods { get; set; } = new StringBuilder();
+            public StringBuilder ServiceRegistrations { get; set; } = new StringBuilder();
+            public List<string> ConstructorParametersLocal { get; set; } = new List<string>();
+            public List<string> ConstructorParametersRemote { get; set; } = new List<string>();
+        }
 
         private static void Execute(SourceProductionContext context, ClassDeclarationSyntax classDeclarationSyntax, SemanticModel semanticModel)
         {
-            var classNamedSymbol = semanticModel.GetDeclaredSymbol(classDeclarationSyntax) ?? throw new Exception($"Cannot get named symbol for {classDeclarationSyntax.ToString()}");
-            var usingDirectives = new List<string>() { "using Neatoo;", "using Neatoo.Portal;" };
             var messages = new List<string>();
-            var methodNames = new List<string>();
-            var className = classDeclarationSyntax.Identifier.Text;
-            var returnType = $"{className}";
-            var concreteType = $"{className}";
-            var hasInterface = false;
+            string source;
 
-            var delegates = new StringBuilder();
-            var constructorPropertyAssignmentsLocal = new StringBuilder();
-            var constructorPropertyAssignmentsRemote = new StringBuilder();
-
-            var propertyDeclarations = new StringBuilder();
-            var publicMethods = new StringBuilder();
-            var localMethods = new StringBuilder();
-            var remoteMethods = new StringBuilder();
-            var saveMethods = new StringBuilder();
-            var interfaceMethods = new StringBuilder();
-            var serviceRegistrations = new StringBuilder();
-            var constructorParametersLocal = new List<string>();
-            var constructorParametersRemote = new List<string>();
-
-            if (classNamedSymbol.Interfaces.Any(i => i.Name == $"I{classNamedSymbol.Name}"))
+            try
             {
-                returnType = $"I{classNamedSymbol.Name}";
-                serviceRegistrations.AppendLine($@"services.AddTransient<I{classNamedSymbol.Name}, {classNamedSymbol.Name}>();");
-                hasInterface = true;
-            }
+                var classNamedSymbol = semanticModel.GetDeclaredSymbol(classDeclarationSyntax) ?? throw new Exception($"Cannot get named symbol for {classDeclarationSyntax.ToString()}");
+                var usingDirectives = new List<string>() { "using Neatoo;", "using Neatoo.Portal;" };
+                var methodNames = new List<string>();
+                var className = classDeclarationSyntax.Identifier.Text;
+                var returnType = $"{className}";
+                var concreteType = $"{className}";
+                var hasInterface = false;
+                var classText = new ClassText();
 
-
-            // Generate the source code for the found method
-            String namespaceName = FindNamespace(classDeclarationSyntax);
-
-            var parentClassDeclaration = classDeclarationSyntax.Parent as ClassDeclarationSyntax;
-            var parentClassUsingText = "";
-            
-            while (parentClassDeclaration != null)
-            {
-                messages.Add("Parent class: " + parentClassDeclaration.Identifier.Text);
-                parentClassUsingText = $"{parentClassDeclaration.Identifier.Text}.{parentClassUsingText}";
-                parentClassDeclaration = parentClassDeclaration.Parent as ClassDeclarationSyntax;
-            }
-
-            if (!string.IsNullOrEmpty(parentClassUsingText))
-            {
-                usingDirectives.Add($"using static {namespaceName}.{parentClassUsingText.TrimEnd('.')};");
-            }
-
-            var authorizeAttribute = ClassOrBaseClassHasAttribute(classNamedSymbol, "AuthorizeAttribute");
-
-            List<MethodInfo> authClassMethods = new List<MethodInfo>();
-
-            if (authorizeAttribute != null)
-            {
-                ITypeSymbol? authorizationRuleType = authorizeAttribute.AttributeClass?.TypeArguments[0];
-
-                var syntax = authorizationRuleType?.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as TypeDeclarationSyntax;
-
-                if (syntax != null)
+                if (classNamedSymbol.Interfaces.Any(i => i.Name == $"I{classNamedSymbol.Name}"))
                 {
-                    messages.Add($"For {syntax.Identifier.Text} using {syntax.Identifier.Text}");
+                    returnType = $"I{classNamedSymbol.Name}";
+                    classText.ServiceRegistrations.AppendLine($@"services.AddTransient<I{classNamedSymbol.Name}, {classNamedSymbol.Name}>();");
+                    hasInterface = true;
+                }
 
-                    foreach (var method in syntax.Members.OfType<MethodDeclarationSyntax>())
+
+                // Generate the source code for the found method
+                String namespaceName = FindNamespace(classDeclarationSyntax);
+
+                try
+                {
+
+                    var parentClassDeclaration = classDeclarationSyntax.Parent as ClassDeclarationSyntax;
+                    var parentClassUsingText = "";
+
+                    while (parentClassDeclaration != null)
                     {
-                        // Ex [Authorize(DataMapperMethodType.Read | DataMapperMethodType.Write)]
-                        var attr = method.AttributeLists.SelectMany(a => a.Attributes)
-                                        .Where(a => a.Name.ToString() == "Authorize")
-                                        .SingleOrDefault()?
-                                        .ArgumentList?.Arguments.ToFullString();
+                        messages.Add("Parent class: " + parentClassDeclaration.Identifier.Text);
+                        parentClassUsingText = $"{parentClassDeclaration.Identifier.Text}.{parentClassUsingText}";
+                        parentClassDeclaration = parentClassDeclaration.Parent as ClassDeclarationSyntax;
+                    }
 
+                    if (!string.IsNullOrEmpty(parentClassUsingText))
+                    {
+                        usingDirectives.Add($"using static {namespaceName}.{parentClassUsingText.TrimEnd('.')};");
+                    }
 
-                        string pattern = @"DataMapperMethodType\.(\w+)";
+                    var authorizeAttribute = ClassOrBaseClassHasAttribute(classNamedSymbol, "AuthorizeAttribute");
 
-                        // Use Regex.Matches to find all matches in the attr string
-                        var matches = Regex.Matches(attr, pattern);
-                        var dataMapperMethodTypes = new List<DataMapperMethodType>();
+                    List<MethodInfo> authClassMethods = [];
 
-                        foreach (Match match in matches)
+                    if (authorizeAttribute != null)
+                    {
+                        ITypeSymbol? authorizationRuleType = authorizeAttribute.AttributeClass?.TypeArguments[0];
+
+                        TypeDeclarationSyntax? syntax = authorizationRuleType?.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as TypeDeclarationSyntax;
+
+                        if (syntax != null)
                         {
-                            // Extract the matched value (e.g., "Read", "Write")
-                            string value = match.Groups[1].Value;
+                            messages.Add($"For {syntax.Identifier.Text} using {syntax.Identifier.Text}");
 
-                            // Try to parse the value into the DataMapperMethodType enum
-                            if (Enum.TryParse<DataMapperMethodType>(value, out var dmType))
+                            foreach (var method in syntax.Members.OfType<MethodDeclarationSyntax>())
                             {
-                                // Successfully parsed the value into the DataMapperMethodType enum
-                                dataMapperMethodTypes.Add(dmType);
+                                // Ex [Authorize(DataMapperMethodType.Read | DataMapperMethodType.Write)]
+                                var attr = method.AttributeLists.SelectMany(a => a.Attributes)
+                                                .Where(a => a.Name.ToString() == "Authorize")
+                                                .SingleOrDefault()?
+                                                .ArgumentList?.Arguments.ToFullString();
+
+                                string pattern = @"DataMapperMethodType\.(\w+)";
+
+                                // Use Regex.Matches to find all matches in the attr string
+                                var matches = Regex.Matches(attr, pattern);
+                                var dataMapperMethodTypes = new List<DataMapperMethodType>();
+
+                                foreach (Match match in matches)
+                                {
+                                    // Extract the matched value (e.g., "Read", "Write")
+                                    string value = match.Groups[1].Value;
+
+                                    // Try to parse the value into the DataMapperMethodType enum
+                                    if (Enum.TryParse<DataMapperMethodType>(value, out var dmType))
+                                    {
+                                        // Successfully parsed the value into the DataMapperMethodType enum
+                                        dataMapperMethodTypes.Add(dmType);
+                                    }
+                                }
+
+                                if (dataMapperMethodTypes.Count > 0)
+                                {
+                                    var methodReturnType = method.ReturnType.ToString();
+                                    if (!(methodReturnType == "string?" || methodReturnType == "Task<string?>" || methodReturnType == "Task<string>"
+                                        || methodReturnType == "bool" || methodReturnType == "Task<bool>"))
+                                    {
+                                        messages.Add($"Auth: Invalid return type of {methodReturnType} for {method.Identifier.Text}. Must be string?, Task<string?>, Task<string>, bool or Task<bool>.");
+                                        continue;
+                                    }
+
+                                    var dmType = dataMapperMethodTypes.Aggregate((a, b) => a | b);
+
+                                    var methodInfo = new MethodInfo(returnType, method)
+                                    {
+                                        ClassName = syntax.Identifier.Text,
+                                        DataMapperMethodType = dmType
+                                    };
+
+                                    authClassMethods.Add(methodInfo);
+                                }
+                                else
+                                {
+                                    messages.Add($"Auth: No DataMapperMethod for {method.Identifier.Text} in {string.Join(", ", method.AttributeLists.SelectMany(a => a.Attributes).Select(a => a.ToFullString()))}");
+                                }
                             }
-                        }
-
-                        if (dataMapperMethodTypes.Count > 0)
-                        {
-                            var methodReturnType = method.ReturnType.ToString();
-                            if (!(methodReturnType == "string?" || methodReturnType == "Task<string?>" || methodReturnType == "Task<string>"
-                                || methodReturnType == "bool" || methodReturnType == "Task<bool>"))
-                            {
-                                messages.Add($"Auth: Invalid return type of {methodReturnType} for {method.Identifier.Text}. Must be string?, Task<string?>, Task<string>, bool or Task<bool>.");
-                                continue;
-                            }
-
-                            var dmType = dataMapperMethodTypes.Aggregate((a, b) => a | b);
-
-                            var methodInfo = new MethodInfo(method)
-                            {
-                                ClassName = syntax.Identifier.Text,
-                                DataMapperMethodType = dmType
-                            };
-
-                            authClassMethods.Add(methodInfo);
                         }
                         else
                         {
-                            messages.Add($"Auth: No DataMapperMethod for {method.Identifier.Text} in {string.Join(", ", method.AttributeLists.SelectMany(a => a.Attributes).Select(a => a.ToFullString()))}");
-                        }
-                    }
-                }
-                else
-                {
-                    messages.Add($"No concrete classes for {authorizeAttribute.ToString()}");
-                }
-            }
-
-            List<MethodInfo> classMethods = new List<MethodInfo>();
-
-            while (classDeclarationSyntax != null)
-            {
-                var compilationUnitSyntax = classDeclarationSyntax.SyntaxTree.GetCompilationUnitRoot();
-                foreach (var using_ in compilationUnitSyntax.Usings)
-                {
-                    if (!usingDirectives.Contains(using_.ToString()))
-                    {
-                        usingDirectives.Add(using_.ToString());
-                    }
-                }
-
-                messages.Add(classDeclarationSyntax.BaseList?.ToString());
-
-                foreach (var methodDeclaration in classDeclarationSyntax.Members.OfType<MethodDeclarationSyntax>())
-                {
-                    var attribute = methodDeclaration.AttributeLists.SelectMany(a => a.Attributes).Where(a => dataMapperAttributes.Contains(a.Name.ToString())).FirstOrDefault();
-
-                    if (attribute != null && (Enum.TryParse<DataMapper.DataMapperMethod>(attribute.Name.ToString(), out var dmm)))
-                    {
-                        var method = new MethodInfo(methodDeclaration)
-                        {
-                            ClassName = className,
-                            ClassType = returnType,
-                            DataMapperMethod = dmm
-                        };
-
-                        classMethods.Add(method);
-                    }
-                    else
-                    {
-                        messages.Add($"No DataMapperMethod attribute for {methodDeclaration.Identifier.Text}");
-                    }
-                }
-                classDeclarationSyntax = GetBaseClassDeclarationSyntax(semanticModel, classDeclarationSyntax, messages);
-
-            }
-
-            foreach (var method in classMethods.OrderBy(m => m.Parameters.Count).ToList())
-            {
-                if (methodNames.Contains(method.Name))
-                {
-                    var count = 1;
-                    while (methodNames.Contains($"{method.UniqueName}{count}"))
-                    {
-                        count += 1;
-                    }
-                    method.UniqueName = $"{method.UniqueName}{count}";
-                    method.UniqueNumber = count;
-                }
-                methodNames.Add(method.UniqueName);
-            }
-
-            foreach (var authMethods in authClassMethods.GroupBy(a => a.ClassName))
-            {
-                var authMethod = authMethods.First();
-                var constructorParameter = $"{authMethod.ClassName} {authMethod.ClassName.ToLower()}";
-                var propertyAssignment = $"this.{authMethod.ClassName} = {authMethod.ClassName.ToLower()};";
-
-                if (authMethods.Any(a => !a.IsRemote))
-                {
-                    constructorParametersRemote.Add(constructorParameter);
-                    constructorPropertyAssignmentsRemote.AppendLine(propertyAssignment);
-                }
-                constructorParametersLocal.Add(constructorParameter);
-                constructorPropertyAssignmentsLocal.AppendLine(propertyAssignment);
-
-                propertyDeclarations.AppendLine($"public {authMethod.ClassName} {authMethod.ClassName} {{ get; }}");
-            }
-
-            foreach (var method in classMethods)
-            {
-
-                foreach (var authMethod in authClassMethods)
-                {
-                    var assignAuthMethod = false;
-
-                    if (((int)authMethod.DataMapperMethodType & (int)method.DataMapperMethod) != 0)
-                    {
-                        if (authMethod.ParameterTypesNoServicesText == method.ParameterTypesNoServicesText
-                            || authMethod.Parameters.Count() == 0)
-                        {
-                            assignAuthMethod = true;
-                        }
-                    }
-
-                    if (((int)authMethod.DataMapperMethodType & (int)DataMapperMethodType.Write) != 0
-                        && ((int)method.DataMapperMethod & (int)DataMapperMethodType.Write) != 0)
-                    {
-                        // Want to allow the write method to have the target as a parameter
-                        assignAuthMethod = true;
-                    }
-
-                    if (assignAuthMethod)
-                    {
-                        if (!method.IsSave)
-                        {
-                            method.IsAsync = method.IsAsync || authMethod.IsAsync;
-                            method.IsRemote = method.IsRemote || authMethod.IsRemote;
-                        }
-                        method.AuthMethods.Add(authMethod);
-                    }
-                }
-
-                // Consumer Delegates
-
-
-                var awaitText = method.IsAsync ? "await" : "";
-                var asyncText = method.IsAsync ? "async" : "";
-
-                // Local method implementations
-                if (!method.IsSave)
-                {
-                    interfaceMethods.AppendLine($"{method.FactoryMethodReturnType} {method.FactoryPublicMethodName}({method.ParameterDeclarationsNoServicesText});");
-
-                    if (method.IsRemote)
-                    {
-                        delegates.AppendLine($"public delegate {method.FactoryMethodReturnType} {method.UniqueName}Delegate({method.ParameterDeclarationsNoServicesText});");
-                        propertyDeclarations.AppendLine($"public {method.FactoryMethodDelegateName} {method.UniqueName}Property {{ get; }}");
-                        constructorPropertyAssignmentsLocal.AppendLine($"{method.UniqueName}Property = Local{method.UniqueName};");
-                        constructorPropertyAssignmentsRemote.AppendLine($"{method.UniqueName}Property = Remote{method.UniqueName};");
-
-                        publicMethods.AppendLine($"public virtual {method.FactoryMethodReturnType} {method.FactoryPublicMethodName}({method.ParameterDeclarationsNoServicesText})");
-                        publicMethods.AppendLine("{");
-                        publicMethods.AppendLine($"return {method.UniqueName}Property({method.ParameterIdentifiersNoServicesText});");
-                        publicMethods.AppendLine("}");
-
-                        remoteMethods.AppendLine($"public virtual async {method.FactoryMethodReturnType} Remote{method.UniqueName}({method.ParameterDeclarationsNoServicesText})");
-                        remoteMethods.AppendLine("{");
-                        remoteMethods.AppendLine($" return await DoRemoteRequest.ForDelegate<{method.DeserializeDelegateTo}>(typeof({method.FactoryMethodDelegateName}), [{method.ParameterIdentifiersNoServicesText}]);");
-                        remoteMethods.AppendLine("}");
-                        remoteMethods.AppendLine("");
-
-                        serviceRegistrations.AppendLine($@"services.AddScoped<{method.FactoryMethodDelegateName}>(cc => {{
-                                        var factory = cc.GetRequiredService<{className}Factory>();
-                                        return ({method.ParameterDeclarationsNoServicesText}) => factory.Local{method.UniqueName}({method.ParameterIdentifiersNoServicesText});
-                                    }});");
-
-                        localMethods.AppendLine($"public {asyncText} {method.FactoryMethodReturnType} Local{method.UniqueName}({method.ParameterDeclarationsNoServicesText})");
-                    }
-                    else
-                    {
-                        // Assume we can just call local if there are no services
-                        // Don't need the delegate if there aren't any services
-                        localMethods.AppendLine($"public {asyncText} {method.FactoryMethodReturnType} {method.FactoryPublicMethodName}({method.ParameterDeclarationsNoServicesText})"); // Now a publicMethod...
-                    }
-
-                    localMethods.AppendLine("{");
-
-                    foreach (var authMethod in method.AuthMethods)
-                    {
-                        var varText = authMethod.UniqueName.ToLower();
-                        localMethods.AppendLine($"Authorized {varText} = {(authMethod.IsAsync ? awaitText : "")} {authMethod.ClassName}.{authMethod.Name}({string.Join(", ", method.Parameters.Take(authMethod.Parameters.Count).Select(a => a.Name))});");
-                        localMethods.AppendLine($"if (!{varText}.HasAccess)");
-                        localMethods.AppendLine("{");
-                        if (method.IsRemote && !method.IsAsync)
-                        {
-                            localMethods.AppendLine($"return Task.FromResult(new Authorized<{returnType}>({varText}));");
-                        }
-                        else
-                        {
-                            localMethods.AppendLine($"return new Authorized<{returnType}>({varText});");
-                        }
-                        localMethods.AppendLine("}");
-                    }
-
-                    localMethods.AppendLine($"var target = ServiceProvider.GetRequiredService<{className}>();");
-                    localMethods.AppendLine($"{method.ServiceAssignmentsText.ToString()}");
-
-                    localMethods.AppendLine($"return {method.DoMapperMethodCall};");
-
-                    localMethods.AppendLine("}");
-                    localMethods.AppendLine("");
-
-
-                    if (method.HasAuth)
-                    {
-                        method.AuthMethods.Clear();
-                        method.IsBoolReturn = true;
-
-                        interfaceMethods.AppendLine($"{method.FactoryMethodReturnType} {method.FactoryPublicMethodName}({method.ParameterDeclarationsNoServicesText});");
-
-                        var methodBuilder = new StringBuilder();
-
-                        methodBuilder.AppendLine($@"public async {method.FactoryMethodReturnType} {method.FactoryPublicMethodName}({method.ParameterDeclarationsNoServicesText}){{");
-                        methodBuilder.AppendLine($@"var authorized = (await Try{method.FactoryPublicMethodName}({method.ParameterIdentifiersNoServicesText}));");
-                        methodBuilder.AppendLine("return authorized.Result;");
-                        methodBuilder.AppendLine("}");
-
-                        var methodText = methodBuilder.ToString();
-
-                        if (!method.FactoryMethodReturnType.Contains("Task"))
-                        {
-                            methodText = methodText.Replace("async", "");
-                            methodText = methodText.Replace("await", "");
+                            messages.Add($"No concrete classes for {authorizeAttribute}");
                         }
 
-                        publicMethods.AppendLine(methodText);
+
                     }
-                }
-            }
 
-            var saveMethodSets = classMethods.Where(m => m.IsSave).GroupBy(m => m.ParameterTypesNoServicesText)
-                .Select(m =>
-                new
-                {
-                    SaveMethodName = $"Save",
-                    ParameterIdentifiersText = m.First().ParameterIdentifiersNoServicesText,
-                    ParameterDeclarationText = m.First().ParameterDeclarationsNoServicesText,
-                    IsAsync_ = m.Any(m => m.IsAsync),
-                    IsRemote = m.Any(m => m.IsRemote),
-                    InsertMethod = m.FirstOrDefault(m => m.AttributeName == "Insert"),
-                    UpdateMethod = m.FirstOrDefault(m => m.AttributeName == "Update"),
-                    DeleteMethod = m.FirstOrDefault(m => m.AttributeName == "Delete"),
-                    AuthMethods = m.SelectMany(m => m.AuthMethods).Distinct().ToList(),
-                    Parameters = m.First().Parameters
-                });
+                    List<MethodInfo> classMethods = [];
 
-            var isEdit = false;
-
-            foreach (var saveMethodSet in saveMethodSets)
-            {
-                isEdit = true;
-                var saveUniqueName = saveMethodSet.SaveMethodName;
-
-                if (methodNames.Contains(saveUniqueName))
-                {
-                    var count = 1;
-                    while (methodNames.Contains($"{saveUniqueName}{count}"))
+                    while (classDeclarationSyntax != null)
                     {
-                        count += 1;
-                    }
-                    saveUniqueName = $"{saveUniqueName}{count}";
-                }
-                methodNames.Add(saveUniqueName);
-
-                var isDefault = string.IsNullOrWhiteSpace(saveMethodSet.ParameterIdentifiersText);
-
-                var delegateName = $"{saveUniqueName}Delegate";
-                var saveMethodReturn = $"{returnType}?";
-                var isSaveMethodAsync = saveMethodSet.IsAsync_;
-                var isRemote = saveMethodSet.IsRemote;
-                var isAuth = saveMethodSet.AuthMethods.Count > 0;
-                var publicMethodName = saveMethodSet.SaveMethodName;
-
-                foreach (var authMethod in saveMethodSet.AuthMethods.ToList())
-                {
-                    isAuth = true;
-                    var varText = authMethod.UniqueName.ToLower();
-
-                    var saveMethodParameter = saveMethodSet.Parameters.GetEnumerator();
-                    var authMethodParameter = authMethod.Parameters.GetEnumerator();
-                    var parameters = new List<ParameterInfo>();
-
-                    var matchFail = false;
-
-                    saveMethodParameter.MoveNext();
-                    authMethodParameter.MoveNext();
-
-                    if (authMethodParameter.Current != null)
-                    {
-                        do
+                        var compilationUnitSyntax = classDeclarationSyntax.SyntaxTree.GetCompilationUnitRoot();
+                        foreach (var using_ in compilationUnitSyntax.Usings)
                         {
-                            if (authMethodParameter.Current.Type == returnType || authMethodParameter.Current.Type == $"I{returnType}")
+                            if (!usingDirectives.Contains(using_.ToString()))
                             {
-                                parameters.Add(new ParameterInfo() { Name = "target", Type = returnType });
-                                authMethodParameter.MoveNext();
-                                continue;
+                                usingDirectives.Add(using_.ToString());
                             }
-                            else if (authMethodParameter.Current.Type != saveMethodParameter.Current?.Type)
+                        }
+
+                        messages.Add(item: classDeclarationSyntax.BaseList?.ToString());
+
+                        foreach (var methodDeclaration in classDeclarationSyntax.Members.OfType<MethodDeclarationSyntax>())
+                        {
+                            var attribute = methodDeclaration.AttributeLists.SelectMany(a => a.Attributes).Where(a => dataMapperAttributes.Contains(a.Name.ToString())).FirstOrDefault();
+
+                            if (attribute != null && (Enum.TryParse<DataMapper.DataMapperMethod>(attribute.Name.ToString(), out var dmm)))
                             {
-                                matchFail = true;
-                                break;
+                                var method = new MethodInfo(returnType, methodDeclaration)
+                                {
+                                    ClassName = className,
+                                    DataMapperMethod = dmm
+                                };
+
+                                classMethods.Add(method);
                             }
                             else
                             {
-                                parameters.Add(saveMethodParameter.Current);
+                                messages.Add($"No DataMapperMethod attribute for {methodDeclaration.Identifier.Text}");
                             }
-                        } while (authMethodParameter.MoveNext() && saveMethodParameter.MoveNext());
+                        }
+                        classDeclarationSyntax = GetBaseClassDeclarationSyntax(semanticModel, classDeclarationSyntax, messages);
+
                     }
-                    if (matchFail)
+
+                    foreach (var method in classMethods.OrderBy(m => m.Parameters.Count).ToList())
                     {
-                        saveMethodSet.AuthMethods.Remove(authMethod);
-                        continue;
+                        if (methodNames.Contains(method.Name))
+                        {
+                            var count = 1;
+                            while (methodNames.Contains($"{method.UniqueName}{count}"))
+                            {
+                                count += 1;
+                            }
+                            method.UniqueName = $"{method.UniqueName}{count}";
+                            method.UniqueNumber = count;
+                        }
+                        methodNames.Add(method.UniqueName);
                     }
 
-                    isRemote = isRemote || authMethod.IsRemote;
-                    isSaveMethodAsync = isSaveMethodAsync || authMethod.IsAsync;
-                    authMethod.Parameters = parameters;
-                }
-
-                if (isSaveMethodAsync || isRemote)
-                {
-                    saveMethodReturn = $"Task<{saveMethodReturn}>";
-                }
-
-                if (isAuth)
-                {
-
-                    interfaceMethods.AppendLine($"{saveMethodReturn} {publicMethodName}({returnType} target, {saveMethodSet.ParameterDeclarationText});");
-
-                    var methodBuilder = new StringBuilder();
-
-                    methodBuilder.AppendLine($@"public async {saveMethodReturn} {publicMethodName}({returnType} target, {saveMethodSet.ParameterDeclarationText}){{");
-                    methodBuilder.AppendLine($@"var authorized = (await Try{publicMethodName}(target, {saveMethodSet.ParameterIdentifiersText}));");
-                    methodBuilder.AppendLine("if (!authorized.HasAccess){");
-                    methodBuilder.AppendLine("throw new NotAuthorizedException(authorized.Message);");
-                    methodBuilder.AppendLine("}");
-                    methodBuilder.AppendLine("return authorized.Result;");
-                    methodBuilder.AppendLine("}");
-
-                    var methodText = methodBuilder.ToString();
-
-                    if (!saveMethodReturn.Contains("Task"))
+                    foreach (var authMethods in authClassMethods.GroupBy(a => a.ClassName))
                     {
-                        methodText = methodText.Replace("async", "");
-                        methodText = methodText.Replace("await", "");
+                        var authMethod = authMethods.First();
+                        var constructorParameter = $"{authMethod.ClassName} {authMethod.ClassName.ToLower()}";
+                        var propertyAssignment = $"this.{authMethod.ClassName} = {authMethod.ClassName.ToLower()};";
+
+                        if (authMethods.Any(a => !a.IsRemote))
+                        {
+                            classText.ConstructorParametersRemote.Add(constructorParameter);
+                            classText.ConstructorPropertyAssignmentsRemote.AppendLine(propertyAssignment);
+                        }
+                        classText.ConstructorParametersLocal.Add(constructorParameter);
+                        classText.ConstructorPropertyAssignmentsLocal.AppendLine(propertyAssignment);
+
+                        classText.PropertyDeclarations.AppendLine($"public {authMethod.ClassName} {authMethod.ClassName} {{ get; }}");
                     }
 
-                    saveMethods.AppendLine(methodText);
-
-                    saveMethodReturn = saveMethodReturn.Replace("?", "").Replace(returnType, $"Authorized<{returnType}>");
-                    publicMethodName = $"Try{publicMethodName}";
-                }
-
-
-
-                if (isDefault)
-                {
-                    saveMethods.AppendLine($"async Task<IEditBase?> IFactoryEditBase<{className}>.Save({className} target)");
-                    saveMethods.AppendLine("{");
-                    if (isRemote)
+                    foreach (var method in classMethods)
                     {
-                        saveMethods.AppendLine($"return (IEditBase?) (await {saveUniqueName}Property(target));");
+
+
+
+                        foreach (var authMethod in authClassMethods)
+                        {
+                            var assignAuthMethod = false;
+
+                            if (((int)authMethod.DataMapperMethodType & (int)method.DataMapperMethod) != 0)
+                            {
+                                if (authMethod.ParameterTypesNoServicesText == method.ParameterTypesNoServicesText
+                                    || authMethod.Parameters.Count() == 0)
+                                {
+                                    assignAuthMethod = true;
+                                }
+                            }
+
+                            if (((int)authMethod.DataMapperMethodType & (int)DataMapperMethodType.Write) != 0
+                                && ((int)method.DataMapperMethod & (int)DataMapperMethodType.Write) != 0)
+                            {
+                                // Want to allow the write method to have the target as a parameter
+                                assignAuthMethod = true;
+                            }
+
+                            if (assignAuthMethod)
+                            {
+                                if (!method.IsSave)
+                                {
+                                    method.IsTask = method.IsTask || authMethod.IsTask;
+                                    method.IsRemote = method.IsRemote || authMethod.IsRemote;
+                                    method.IsAsync = method.IsTask;
+                                }
+                                method.AuthMethods.Add(authMethod);
+                            }
+                        }
+
+                        if (method.IsSave) { continue; }
+
+
+                        if (method.HasAuth)
+                        {
+                            method.Name = $"{method.Name}";
+                            method.Parameters.Add(new ParameterInfo() { Name = "checkAuthOnly", Type = "bool", IsAuth = true, IsService = false });
+                        }
+                        // Consumer Delegates
+
+                        var methodBuilder = new StringBuilder();
+
+                        PublicMethods(classText, method, methodBuilder);
+
+                        RemoteMethod(classText, method, methodBuilder);
+
+                        LocalMethod(method, methodBuilder);
+
+                        classText.MethodsBuilder.Append(methodBuilder);
                     }
-                    else if (isSaveMethodAsync)
+
+                    var saveMethodSets = classMethods.Where(m => m.IsSave).GroupBy(m => m.ParameterTypesNoServicesText)
+                        .Select(m =>
+                        new MethodInfo(m)
+                        {
+                            Name = $"Save",
+                            SaveMethods = m.ToList(),
+                            AuthMethods = m.SelectMany(m => m.AuthMethods).Distinct().ToList()
+                        });
+
+                    var isEdit = false;
+
+                    foreach (var saveMethod in saveMethodSets)
                     {
-                        saveMethods.AppendLine($"return (IEditBase?) await Save(target);");
-                    }
+                        isEdit = true;
+
+                        saveMethod.UniqueName = saveMethod.Name;
+
+                        if (methodNames.Contains(saveMethod.UniqueName))
+                        {
+                            var count = 1;
+                            while (methodNames.Contains($"{saveMethod.UniqueName}{count}"))
+                            {
+                                count += 1;
+                            }
+                            saveMethod.UniqueName = $"{saveMethod.UniqueName}{count}";
+                        }
+                        methodNames.Add(saveMethod.UniqueName);
+
+                        var isDefault = !saveMethod.Parameters.Where(p => !p.IsTarget && !p.IsAuth).Any();
+
+                        foreach (var authMethod in saveMethod.AuthMethods.ToList())
+                        {
+                            var varText = authMethod.UniqueName.ToLower();
+
+                            var saveMethodParameter = saveMethod.Parameters.Where(p => !p.IsTarget).GetEnumerator();
+                            var authMethodParameter = authMethod.Parameters.GetEnumerator();
+                            var parameters = new List<ParameterInfo>();
+
+                            var matchFail = false;
+
+                            saveMethodParameter.MoveNext();
+                            authMethodParameter.MoveNext();
+
+                            if (authMethodParameter.Current != null)
+                            {
+                                do
+                                {
+                                    if (authMethodParameter.Current.Type == returnType || authMethodParameter.Current.Type == $"I{returnType}")
+                                    {
+                                        parameters.Add(new ParameterInfo() { Name = "target", Type = returnType });
+                                        authMethodParameter.MoveNext();
+                                        continue;
+                                    }
+                                    else if (authMethodParameter.Current.Type != saveMethodParameter.Current?.Type)
+                                    {
+                                        matchFail = true;
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        parameters.Add(saveMethodParameter.Current);
+                                    }
+                                } while (authMethodParameter.MoveNext() && saveMethodParameter.MoveNext());
+                            }
+                            if (matchFail)
+                            {
+                                saveMethod.AuthMethods.Remove(authMethod);
+                                continue;
+                            }
+
+                            authMethod.Parameters = parameters;
+                        }
+
+                        if (saveMethod.HasAuth)
+                        {
+                            saveMethod.Parameters.Add(new ParameterInfo() { Name = "checkAuthOnly", Type = "bool", IsAuth = true, IsService = false });
+                        }
+
+                        saveMethod.IsRemote = saveMethod.IsRemote || saveMethod.AuthMethods.Any(m => m.IsRemote);
+
+                        saveMethod.IsSelfTask = saveMethod.IsSelfTask || saveMethod.AuthMethods.Any(m => m.IsSelfTask);
+                        saveMethod.IsTask = saveMethod.IsTask || saveMethod.AuthMethods.Any(m => m.IsTask);
+                        saveMethod.IsAsync = saveMethod.AuthMethods.Any() && (saveMethod.SaveMethods.Any(m => m.IsTask) || saveMethod.AuthMethods.Any(m => m.IsTask));
+
+                        saveMethod.SaveMethods.ForEach(s => s.AuthMethods.Clear());
+
+                        if (isDefault)
+                        {
+                            classText.SaveMethods.AppendLine($"async Task<IEditBase?> IFactoryEditBase<{className}>.Save({className} target)");
+                            classText.SaveMethods.AppendLine("{");
+                            if (saveMethod.IsRemote)
+                            {
+                                classText.SaveMethods.AppendLine($"return (IEditBase?) (await {saveMethod.UniqueName}Property(target));");
+                            }
+                            else if (saveMethod.IsTask)
+                            {
+                                classText.SaveMethods.AppendLine($"return (IEditBase?) await Save(target);");
+                            }
+                            else
+                            {
+                                classText.SaveMethods.AppendLine($"return await Task.FromResult((IEditBase?) Save(target));");
+                            }
+                            classText.SaveMethods.AppendLine("}");
+                        }
+
+                        PublicMethods(classText, saveMethod, classText.SaveMethods);
+                        RemoteMethod(classText, saveMethod, classText.SaveMethods);
+
+
+                        classText.SaveMethods.AppendLine($@"public virtual {saveMethod.AsyncKeyword} {saveMethod.ReturnType()} Local{saveMethod.UniqueName}({saveMethod.ParameterDeclarationsText(includeAuth: true)})
+                            {{");
+
+                        AuthMethods(saveMethod, classText.SaveMethods);
+
+                        string DoInsertUpdateDeleteMethodCall(MethodInfo? method)
+                        {
+                            if (method == null)
+                            {
+                                return $"throw new NotImplementedException()";
+                            }
+
+                            var methodCall = $"Local{method.UniqueName}({saveMethod.ParameterIdentifiersText(checkAuthOnly: null)})";
+
+
+
+                            if (saveMethod.HasAuth)
+                            {
+                                if (method.IsTask)
+                                {
+                                    methodCall = $"await {methodCall}";
+                                }
+                                methodCall = $"new Authorized<{returnType}>({methodCall})";
+                            }
+
+                            if (!method.IsTask && saveMethod.IsTask && !saveMethod.IsAsync)
+                            {
+                                methodCall = $"Task.FromResult({methodCall})";
+                            }
+
+                            return $"return {methodCall}";
+                        }
+
+                        classText.SaveMethods.AppendLine($@"
+
+                            if (target.IsDeleted)
+                    {{
+                        if (target.IsNew)
+                        {{
+                            return null;
+                        }}
+                        {DoInsertUpdateDeleteMethodCall(saveMethod.SaveMethods.Where(s => s.AttributeName == "Delete").SingleOrDefault())};
+                    }}
+                    else if (target.IsNew)
+                    {{
+                        {DoInsertUpdateDeleteMethodCall(saveMethod.SaveMethods.Where(s => s.AttributeName == "Insert").SingleOrDefault())};
+                    }}
                     else
-                    {
-                        saveMethods.AppendLine($"return await Task.FromResult((IEditBase?) Save(target));");
-                    }
-                    saveMethods.AppendLine("}");
-                }
+                    {{
+                         {DoInsertUpdateDeleteMethodCall(saveMethod.SaveMethods.Where(s => s.AttributeName == "Update").SingleOrDefault())};
+                    }}
+            ");
 
-                interfaceMethods.AppendLine($"{saveMethodReturn} {publicMethodName}({returnType} target, {saveMethodSet.ParameterDeclarationText});");
+                        classText.SaveMethods.AppendLine("}");
 
 
-                if (isRemote)
-                {
-                    constructorPropertyAssignmentsLocal.AppendLine($"{saveUniqueName}Property = Local{saveUniqueName};");
-                    constructorPropertyAssignmentsRemote.AppendLine($"{saveUniqueName}Property = Remote{saveUniqueName};");
-                    delegates.AppendLine($"public delegate {saveMethodReturn} {saveUniqueName}Delegate({returnType} target, {saveMethodSet.ParameterDeclarationText});");
-                    propertyDeclarations.AppendLine($"public {delegateName} {saveUniqueName}Property {{ get; set; }}");
 
-                    saveMethods.AppendLine($"public {saveMethodReturn} {publicMethodName}({returnType} target, {saveMethodSet.ParameterDeclarationText})");
-                    saveMethods.AppendLine("{");
-                    saveMethods.AppendLine($"return {saveUniqueName}Property(target, {saveMethodSet.ParameterIdentifiersText});");
-                    saveMethods.AppendLine("}");
-
-                    var remoteMethodReturn = isAuth ? $"Authorized<{returnType}>" : $"{returnType}?";
-
-                    saveMethods.AppendLine($@"public async {saveMethodReturn} Remote{saveUniqueName}({returnType} target, {saveMethodSet.ParameterDeclarationText}){{");
-                    saveMethods.AppendLine($@"return await DoRemoteRequest.ForDelegate<{remoteMethodReturn}?>(typeof({delegateName}), [target, {saveMethodSet.ParameterIdentifiersText}]);");
-                    saveMethods.AppendLine("}");
-
-                    serviceRegistrations.AppendLine($@"services.AddScoped<{delegateName}>(cc => {{
-                                        var factory = cc.GetRequiredService<{className}Factory>();
-                                        return (target, {saveMethodSet.ParameterIdentifiersText}) => factory.Local{saveUniqueName}(target, {saveMethodSet.ParameterIdentifiersText});
-                                    }});");
-
-                    saveMethods.AppendLine($@"public virtual {(isSaveMethodAsync ? "async" : "")} {saveMethodReturn} Local{saveUniqueName}({returnType} target, {saveMethodSet.ParameterDeclarationText})
-{{");
-                }
-                else
-                {
-                    saveMethods.AppendLine($@"public virtual {(isSaveMethodAsync ? "async" : "")} {saveMethodReturn} {publicMethodName}({returnType} target, {saveMethodSet.ParameterDeclarationText})
-{{");
-                }
-
-                foreach (var authMethod in saveMethodSet.AuthMethods)
-                {
-                    var varText = authMethod.UniqueName.ToLower();
-                    saveMethods.AppendLine($"Authorized {varText} = {(authMethod.IsAsync ? "await" : "")} {authMethod.ClassName}.{authMethod.Name}({authMethod.ParameterIdentifiersText});");
-                    saveMethods.AppendLine($"if (!{varText}.HasAccess)");
-                    saveMethods.AppendLine("{");
-
-                    if (isRemote && !isSaveMethodAsync)
-                    {
-                        saveMethods.AppendLine($"return Task.FromResult(new Authorized<{returnType}>({varText}));");
-                    }
-                    else
-                    {
-                        saveMethods.AppendLine($"return new Authorized<{returnType}>({varText});");
+                        void AddInsertDeleteUpdateLocalMethod(MethodInfo? method)
+                        {
+                            if (method == null)
+                            {
+                                return;
+                            }
+                            var doMapperMethodCall = method.DoMapperMethodCall;
+                            classText.MethodsBuilder.AppendLine($"public virtual {method.ReturnType(includeAuth: false)} Local{method.UniqueName}({method.ParameterDeclarationsText()})");
+                            classText.MethodsBuilder.AppendLine("{");
+                            classText.MethodsBuilder.AppendLine($"var cTarget = ({concreteType}) target ?? throw new Exception(\"{className} must implement {returnType}\");");
+                            classText.MethodsBuilder.AppendLine($"{method.ServiceAssignmentsText.ToString()}");
+                            classText.MethodsBuilder.AppendLine($"return {method.DoMapperMethodCall.Replace("target", "cTarget")};");
+                            classText.MethodsBuilder.AppendLine("}");
+                            classText.MethodsBuilder.AppendLine("");
+                        }
+                        AddInsertDeleteUpdateLocalMethod(saveMethod.SaveMethods.Where(s => s.AttributeName == "Insert").SingleOrDefault());
+                        AddInsertDeleteUpdateLocalMethod(saveMethod.SaveMethods.Where(s => s.AttributeName == "Update").SingleOrDefault());
+                        AddInsertDeleteUpdateLocalMethod(saveMethod.SaveMethods.Where(s => s.AttributeName == "Delete").SingleOrDefault());
                     }
 
-                    saveMethods.AppendLine("}");
-                }
 
-                string DoInsertUpdateDeleteMethodCall(MethodInfo? method)
-                {
-                    if (method == null)
+                    if (isEdit)
                     {
-                        return $"throw new NotImplementedException()";
+                        classText.ServiceRegistrations.AppendLine($@"services.AddScoped<IFactoryEditBase<{className}>, {className}Factory>();");
                     }
 
-                    var methodCall = $"Local{method.UniqueName}(target, {saveMethodSet.ParameterIdentifiersText})";
+                    var editText = isEdit ? "Edit" : "";
 
-                    if (method.IsAsync)
-                    {
-                        methodCall = $"await {methodCall}";
-                    }
-
-                    if (isAuth)
-                    {
-                        methodCall = $"new Authorized<{returnType}>({methodCall})";
-                    }
-
-                    if (!method.IsAsync && (isRemote && !isSaveMethodAsync))
-                    {
-                        methodCall = $"Task.FromResult({methodCall})";
-                    }
-
-                    return $"return {methodCall}";
-                }
-
-                saveMethods.AppendLine($@"
-
-                if (target.IsDeleted)
-        {{
-            if (target.IsNew)
-            {{
-                return null;
-            }}
-            {DoInsertUpdateDeleteMethodCall(saveMethodSet.DeleteMethod)};
-        }}
-        else if (target.IsNew)
-        {{
-            {DoInsertUpdateDeleteMethodCall(saveMethodSet.InsertMethod)};
-        }}
-        else
-        {{
-             {DoInsertUpdateDeleteMethodCall(saveMethodSet.UpdateMethod)};
-        }}
-");
-
-                saveMethods.AppendLine("}");
-
-
-
-                void AddInsertDeleteUpdateLocalMethod(MethodInfo? method)
-                {
-                    if (method == null)
-                    {
-                        return;
-                    }
-                    var doMapperMethodCall = method.DoMapperMethodCall;
-                    localMethods.AppendLine($"public virtual {(method.DoMapperMethodCall.Contains("await") ? "async" : "")} {method.SaveMethodReturn} Local{method.UniqueName}({returnType} itarget, {method.ParameterDeclarationsNoServicesText})");
-                    localMethods.AppendLine("{");
-                    localMethods.AppendLine($"var target = ({concreteType}) itarget ?? throw new Exception(\"{className} must implement {returnType}\");");
-                    localMethods.AppendLine($"{method.ServiceAssignmentsText.ToString()}");
-                    localMethods.AppendLine($"return {method.DoMapperMethodCall};");
-                    localMethods.AppendLine("}");
-                    localMethods.AppendLine("");
-                }
-                AddInsertDeleteUpdateLocalMethod(saveMethodSet.InsertMethod);
-                AddInsertDeleteUpdateLocalMethod(saveMethodSet.UpdateMethod);
-                AddInsertDeleteUpdateLocalMethod(saveMethodSet.DeleteMethod);
-            }
-
-
-            if (isEdit)
-            {
-                serviceRegistrations.AppendLine($@"services.AddScoped<IFactoryEditBase<{className}>, {className}Factory>();");
-            }
-
-            var editText = isEdit ? "Edit" : "";
-
-            var source = $@"
+                    source = $@"
 using Microsoft.Extensions.DependencyInjection;
 using Neatoo.Portal.Internal;
 {string.Join("\n", usingDirectives)}
@@ -862,7 +712,7 @@ namespace {namespaceName}
 
     public interface I{className}Factory
     {{
-{interfaceMethods.ToString()}
+{classText.InterfaceMethods.ToString()}
     }}
     
     internal class {className}Factory : Factory{editText}Base{(isEdit ? $"<{className}>, IFactoryEditBase<{className}>" : "")}, I{className}Factory
@@ -871,42 +721,170 @@ namespace {namespaceName}
         private readonly IServiceProvider ServiceProvider;  
         private readonly IDoRemoteRequest DoRemoteRequest;
 
+// Delegates
+{classText.Delegates.ToString()}
+// Delegate Properties to provide Local or Remote fork in execution
+{classText.PropertyDeclarations.ToString()}
 
-{propertyDeclarations.ToString()}
-{delegates.ToString()}
-
-        public {className}Factory(IServiceProvider serviceProvider, {string.Join("\n,", constructorParametersLocal)})
+        public {className}Factory(IServiceProvider serviceProvider, {string.Join("\n,", classText.ConstructorParametersLocal)})
         {{
                 this.ServiceProvider = serviceProvider;
-                {constructorPropertyAssignmentsLocal.ToString()}
+                {classText.ConstructorPropertyAssignmentsLocal.ToString()}
         }}
 
-        public {className}Factory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate, {string.Join("\n,", constructorParametersLocal)})
+        public {className}Factory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate, {string.Join("\n,", classText.ConstructorParametersLocal)})
         {{
                 this.ServiceProvider = serviceProvider;
                 this.DoRemoteRequest = remoteMethodDelegate;
-                {constructorPropertyAssignmentsRemote.ToString()}
+                {classText.ConstructorPropertyAssignmentsRemote.ToString()}
         }}
 
-{publicMethods.ToString()}
-{localMethods.ToString()}
-{remoteMethods.ToString()}
-{saveMethods.ToString()}
+{classText.MethodsBuilder.ToString()}
+{classText.SaveMethods.ToString()}
 
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {{
             services.AddTransient<{className}>();
             services.AddScoped<{className}Factory>();
             services.AddScoped<I{className}Factory, {className}Factory>();
-{serviceRegistrations.ToString()}
+{classText.ServiceRegistrations.ToString()}
         }}
 
     }}
 }}";
-            source = source.Replace("(, ", "(");
-            source = source.Replace(", )", ")");
-            source = CSharpSyntaxTree.ParseText(source).GetRoot().NormalizeWhitespace().SyntaxTree.GetText().ToString();
-            context.AddSource($"{namespaceName}.{className}Factory.g.cs", source);
+                    source = source.Replace("(, ", "(");
+                    source = source.Replace(", )", ")");
+                    source = CSharpSyntaxTree.ParseText(source).GetRoot().NormalizeWhitespace().SyntaxTree.GetText().ToString();
+                } catch(Exception ex)
+                {
+                    source = $"/* Error: {ex.GetType().FullName} {ex.Message} */";
+                }
+
+                context.AddSource($"{namespaceName}.{className}Factory.g.cs", source);
+            }
+            catch (Exception ex)
+            {
+                source = $"// Error: {ex.Message}";
+            }
+                
+        }
+
+        private static void PublicMethods(ClassText classText, MethodInfo method, StringBuilder methodBuilder)
+        {
+            classText.InterfaceMethods.AppendLine($"{method.ReturnType(includeAuth: false)} {method.Name}({method.ParameterDeclarationsText()});");
+
+            if (!method.HasAuth)
+            {
+                methodBuilder.AppendLine($"public virtual {method.ReturnType(includeAuth: false)} {method.Name}({method.ParameterDeclarationsText()})");
+                methodBuilder.AppendLine("{");
+                methodBuilder.AppendLine($"return Local{method.UniqueName}({method.ParameterIdentifiersText()});");
+                methodBuilder.AppendLine("}");
+            }
+            else
+            {
+                methodBuilder.AppendLine($"public virtual {method.AsyncKeyword} {method.ReturnType(includeAuth: false)} {method.Name}({method.ParameterDeclarationsText()})");
+                methodBuilder.AppendLine("{");
+
+                if (method.IsSave)
+                {
+                    methodBuilder.AppendLine($"var authorized = ({method.AwaitKeyword} Local{method.UniqueName}({method.ParameterIdentifiersText()}));");
+
+                    methodBuilder.AppendLine("if (!authorized.HasAccess)");
+                    methodBuilder.AppendLine("{");
+                    methodBuilder.AppendLine("throw new NotAuthorizedException(authorized.Message);");
+                    methodBuilder.AppendLine("}");
+                    methodBuilder.AppendLine("return authorized.Result;");
+                } else
+                {
+                    methodBuilder.AppendLine($"return ({method.AwaitKeyword} Local{method.UniqueName}({method.ParameterIdentifiersText()})).Result;");
+                }
+                methodBuilder.AppendLine("}");
+
+                classText.InterfaceMethods.AppendLine($"{method.ReturnType()} Try{method.Name}({method.ParameterDeclarationsText()});");
+
+                // Try and Can methods
+                methodBuilder.AppendLine($"public virtual {method.AsyncKeyword} {method.ReturnType()} Try{method.Name}({method.ParameterDeclarationsText()})");
+                methodBuilder.AppendLine("{");
+                methodBuilder.AppendLine($"return {method.AwaitKeyword} Local{method.UniqueName}({method.ParameterIdentifiersText(includeAuth: false)});");
+                methodBuilder.AppendLine("}");
+
+                classText.InterfaceMethods.AppendLine($"{method.ReturnType(authCheck: true)} Can{method.Name}({method.ParameterDeclarationsText()});");
+
+                // Try and Can methods
+                methodBuilder.AppendLine($"public virtual {method.AsyncKeyword} {method.ReturnType(authCheck: true)} Can{method.Name}({method.ParameterDeclarationsText()})");
+                methodBuilder.AppendLine("{");
+                methodBuilder.AppendLine($"return {method.AwaitKeyword} Local{method.UniqueName}({method.ParameterIdentifiersText(includeAuth: false, checkAuthOnly: "true")});");
+                methodBuilder.AppendLine("}");
+            }
+
+        }
+
+        private static void RemoteMethod(ClassText classText, MethodInfo method, StringBuilder methodBuilder)
+        {
+            if (method.IsRemote)
+            {
+                methodBuilder.Replace($"Local{method.UniqueName}", $"{method.UniqueName}Property");
+
+                classText.Delegates.AppendLine($"public delegate {method.ReturnType()} {method.FactoryMethodDelegateName}({method.ParameterDeclarationsText(includeAuth: true)});");
+                classText.PropertyDeclarations.AppendLine($"public {method.FactoryMethodDelegateName} {method.UniqueName}Property {{ get; }}");
+                classText.ConstructorPropertyAssignmentsLocal.AppendLine($"{method.UniqueName}Property = Local{method.UniqueName};");
+                classText.ConstructorPropertyAssignmentsRemote.AppendLine($"{method.UniqueName}Property = Remote{method.UniqueName};");
+
+                methodBuilder.AppendLine($"public virtual async {method.ReturnType()} Remote{method.UniqueName}({method.ParameterDeclarationsText(includeAuth: true)})");
+                methodBuilder.AppendLine("{");
+                methodBuilder.AppendLine($" return await DoRemoteRequest.ForDelegate<{method.ReturnType(includeTask: false)}>(typeof({method.FactoryMethodDelegateName}), [{method.ParameterIdentifiersText(checkAuthOnly: "checkAuthOnly")}]);");
+                methodBuilder.AppendLine("}");
+                methodBuilder.AppendLine("");
+
+                classText.ServiceRegistrations.AppendLine($@"services.AddScoped<{method.FactoryMethodDelegateName}>(cc => {{
+                                        var factory = cc.GetRequiredService<{method.ClassName}Factory>();
+                                        return ({method.ParameterDeclarationsText(includeAuth: true)}) => factory.Local{method.UniqueName}({method.ParameterIdentifiersText(checkAuthOnly: "checkAuthOnly")});
+                                    }});");
+            }
+        }
+
+        private static void LocalMethod(MethodInfo method, StringBuilder methodBuilder)
+        {
+            methodBuilder.AppendLine($"public {method.AsyncKeyword} {method.ReturnType()} Local{method.UniqueName}({method.ParameterDeclarationsText(includeAuth: true)})");
+            methodBuilder.AppendLine("{");
+
+            AuthMethods(method, methodBuilder);
+
+            methodBuilder.AppendLine($"var target = ServiceProvider.GetRequiredService<{method.ClassName}>();");
+            methodBuilder.AppendLine($"{method.ServiceAssignmentsText}");
+
+            methodBuilder.AppendLine($"return {method.DoMapperMethodCall};");
+
+            methodBuilder.AppendLine("}");
+            methodBuilder.AppendLine("");
+        }
+
+        private static void AuthMethods(MethodInfo method, StringBuilder methodBuilder)
+        {
+            foreach (var authMethod in method.AuthMethods)
+            {
+                var varText = authMethod.UniqueName.ToLower();
+                var callText = $"{authMethod.ClassName}.{authMethod.Name}({string.Join(", ", method.Parameters.Where(p => !p.IsTarget).Take(authMethod.Parameters.Count).Select(a => a.Name))})";
+                if (authMethod.IsSelfTask)
+                {
+                    callText = $"await {callText}";
+                }
+
+                methodBuilder.AppendLine($"Authorized {varText} = {callText};");
+                methodBuilder.AppendLine($"if (!{varText}.HasAccess)");
+
+                methodBuilder.AppendLine("{");
+                methodBuilder.AppendLine($"return new {method.ReturnType(includeTask: false)}({varText});");
+                methodBuilder.AppendLine("}");
+            }
+
+            if (method.HasAuth)
+            {
+                methodBuilder.AppendLine($"if (checkAuthOnly)");
+                methodBuilder.AppendLine("{");
+                methodBuilder.AppendLine($"return new Authorized<{method.ClassType}>(true);");
+                methodBuilder.AppendLine("}");
+            }
         }
 
         private static ClassDeclarationSyntax? GetBaseClassDeclarationSyntax(SemanticModel semanticModel, ClassDeclarationSyntax classDeclaration, List<string> messages)

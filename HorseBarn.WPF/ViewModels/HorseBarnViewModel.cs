@@ -120,6 +120,8 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
         NotifyOfPropertyChange(nameof(PastureHorses));
     }
 
+    public bool CanAddHorse => horseCriteriaPortal.CanFetch();
+
     public Task AddHorse()
     {
         return windowManager.ShowDialogAsync(createHorseViewModel(HorseBarn.Horses.Select(h => h.Name).ToList()));

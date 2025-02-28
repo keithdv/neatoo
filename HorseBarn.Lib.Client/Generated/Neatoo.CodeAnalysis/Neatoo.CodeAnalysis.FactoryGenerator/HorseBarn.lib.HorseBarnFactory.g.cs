@@ -10,6 +10,11 @@ using System.Diagnostics;
 /*
 Debugging Messages:
 : CustomEditBase<HorseBarn>, IHorseBarn
+No DataMapperMethod attribute for AddRacingChariot
+No DataMapperMethod attribute for AddWagon
+No DataMapperMethod attribute for AddNewHorse
+No DataMapperMethod attribute for MoveHorseToCart
+No DataMapperMethod attribute for MoveHorseToPasture
 : EditBase<T>
 */
 namespace HorseBarn.lib
@@ -18,20 +23,22 @@ namespace HorseBarn.lib
     {
         Task<IHorseBarn> Fetch();
         Task<IHorseBarn> Create();
-        IHorseBarn? Save(IHorseBarn target);
+        Task<IHorseBarn?> Save(IHorseBarn target);
     }
 
-    internal class HorseBarnFactory : FactoryEditBase<HorseBarn>, IHorseBarnFactory
+    internal class HorseBarnFactory : FactoryEditBase<HorseBarn>, IFactoryEditBase<HorseBarn>, IHorseBarnFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public FetchDelegate FetchProperty { get; }
-        public CreateDelegate CreateProperty { get; }
-        public SaveDelegate SaveProperty { get; set; }
-
+        // Delegates
         public delegate Task<IHorseBarn> FetchDelegate();
         public delegate Task<IHorseBarn> CreateDelegate();
-        public delegate IHorseBarn? SaveDelegate(IHorseBarn target);
+        public delegate Task<IHorseBarn?> SaveDelegate(IHorseBarn target);
+        // Delegate Properties to provide Local or Remote fork in execution
+        public FetchDelegate FetchProperty { get; }
+        public CreateDelegate CreateProperty { get; }
+        public SaveDelegate SaveProperty { get; }
+
         public HorseBarnFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -40,12 +47,13 @@ namespace HorseBarn.lib
             SaveProperty = LocalSave;
         }
 
-        public HorseBarnFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public HorseBarnFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
             FetchProperty = RemoteFetch;
             CreateProperty = RemoteCreate;
+            SaveProperty = RemoteSave;
         }
 
         public virtual Task<IHorseBarn> Fetch()
@@ -53,50 +61,55 @@ namespace HorseBarn.lib
             return FetchProperty();
         }
 
-        public virtual Task<IHorseBarn> Create()
+        public virtual async Task<IHorseBarn> RemoteFetch()
         {
-            return CreateProperty();
-        }
-
-        public override Task<IEditBase?> Save(HorseBarn target)
-        {
-            return Task.FromResult<IEditBase?>(SaveProperty(target));
-        }
-
-        public IHorseBarn? Save(IHorseBarn target)
-        {
-            return SaveProperty(target);
+            return await DoRemoteRequest.ForDelegate<IHorseBarn>(typeof(FetchDelegate), []);
         }
 
         public Task<IHorseBarn> LocalFetch()
         {
             var target = ServiceProvider.GetRequiredService<HorseBarn>();
-            return DoMapperMethodCallAsync<IHorseBarn>(target, DataMapperMethod.Fetch, () => target.Fetch());
+            return Task.FromResult(DoMapperMethodCall<IHorseBarn>(target, DataMapperMethod.Fetch, () => target.Fetch()));
+        }
+
+        public virtual Task<IHorseBarn> Create()
+        {
+            return CreateProperty();
+        }
+
+        public virtual async Task<IHorseBarn> RemoteCreate()
+        {
+            return await DoRemoteRequest.ForDelegate<IHorseBarn>(typeof(CreateDelegate), []);
         }
 
         public Task<IHorseBarn> LocalCreate()
         {
             var target = ServiceProvider.GetRequiredService<HorseBarn>();
-            return DoMapperMethodCallAsync<IHorseBarn>(target, DataMapperMethod.Create, () => target.Create());
+            return Task.FromResult(DoMapperMethodCall<IHorseBarn>(target, DataMapperMethod.Create, () => target.Create()));
         }
 
-        public virtual Task<IHorseBarn?> LocalUpdate(IHorseBarn itarget)
+        public virtual IHorseBarn? LocalUpdate(IHorseBarn target)
         {
-            var target = (HorseBarn)itarget ?? throw new Exception("HorseBarn must implement IHorseBarn");
-            return DoMapperMethodCallAsync<IHorseBarn>(target, DataMapperMethod.Update, () => target.Update());
+            var cTarget = (HorseBarn)target ?? throw new Exception("HorseBarn must implement IHorseBarn");
+            return DoMapperMethodCall<IHorseBarn>(cTarget, DataMapperMethod.Update, () => cTarget.Update());
         }
 
-        public virtual async Task<IHorseBarn?> RemoteFetch()
+        async Task<IEditBase?> IFactoryEditBase<HorseBarn>.Save(HorseBarn target)
         {
-            return await DoRemoteRequest.ForDelegate<HorseBarn?>(typeof(FetchDelegate), []);
+            return (IEditBase? )(await SaveProperty(target));
         }
 
-        public virtual async Task<IHorseBarn?> RemoteCreate()
+        public virtual Task<IHorseBarn?> Save(IHorseBarn target)
         {
-            return await DoRemoteRequest.ForDelegate<HorseBarn?>(typeof(CreateDelegate), []);
+            return SaveProperty(target);
         }
 
-        public virtual IHorseBarn? LocalSave(IHorseBarn target)
+        public virtual async Task<IHorseBarn?> RemoteSave(IHorseBarn target)
+        {
+            return await DoRemoteRequest.ForDelegate<IHorseBarn?>(typeof(SaveDelegate), [target]);
+        }
+
+        public virtual Task<IHorseBarn?> LocalSave(IHorseBarn target)
         {
             if (target.IsDeleted)
             {
@@ -113,7 +126,7 @@ namespace HorseBarn.lib
             }
             else
             {
-                return LocalUpdate(target);
+                return Task.FromResult(LocalUpdate(target));
             }
         }
 
@@ -132,6 +145,11 @@ namespace HorseBarn.lib
             {
                 var factory = cc.GetRequiredService<HorseBarnFactory>();
                 return () => factory.LocalCreate();
+            });
+            services.AddScoped<SaveDelegate>(cc =>
+            {
+                var factory = cc.GetRequiredService<HorseBarnFactory>();
+                return (IHorseBarn target) => factory.LocalSave(target);
             });
             services.AddScoped<IFactoryEditBase<HorseBarn>, HorseBarnFactory>();
         }

@@ -31,6 +31,7 @@ public class Authorized
         Message = message;
     }
 
+
     public static implicit operator Authorized(string? message)
     {
         if (string.IsNullOrEmpty(message))

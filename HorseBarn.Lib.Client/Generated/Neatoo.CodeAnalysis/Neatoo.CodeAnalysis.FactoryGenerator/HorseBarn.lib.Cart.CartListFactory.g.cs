@@ -7,6 +7,7 @@ using HorseBarn.lib.Horse;
 /*
 Debugging Messages:
 : EditListBase<CartList, ICart>, ICartList
+No DataMapperMethod attribute for RemoveHorse
 */
 namespace HorseBarn.lib.Cart
 {
@@ -19,19 +20,25 @@ namespace HorseBarn.lib.Cart
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public delegate ICartList CreateDelegate();
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public CartListFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
         }
 
-        public CartListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public CartListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public ICartList Create()
+        public virtual ICartList Create()
+        {
+            return LocalCreate();
+        }
+
+        public ICartList LocalCreate()
         {
             var target = ServiceProvider.GetRequiredService<CartList>();
             return DoMapperMethodCall<ICartList>(target, DataMapperMethod.Create, () => target.Create());
@@ -43,11 +50,6 @@ namespace HorseBarn.lib.Cart
             services.AddScoped<CartListFactory>();
             services.AddScoped<ICartListFactory, CartListFactory>();
             services.AddTransient<ICartList, CartList>();
-            services.AddScoped<CreateDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<CartListFactory>();
-                return () => factory.Create();
-            });
         }
     }
 }

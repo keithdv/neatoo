@@ -191,8 +191,6 @@ public class NeatooBaseJsonTypeConverter<T> : JsonConverter<T>
 
                 writer.WritePropertyName("$value");
 
-                //writer.WriteStartObject();
-
                 JsonSerializer.Serialize(writer, p, p.GetType(), options);
 
                 writer.WriteEndObject();

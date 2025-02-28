@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 /*
 Debugging Messages:
 : EditListBase<HorseList, IHorse>, IHorseList
+No DataMapperMethod attribute for RemoveHorse
 */
 namespace HorseBarn.lib.Horse
 {
@@ -20,47 +21,40 @@ namespace HorseBarn.lib.Horse
         IHorseList? Save(IHorseList target, Dal.Ef.Pasture pasture);
     }
 
-    internal class HorseListFactory : FactoryBase, IHorseListFactory
+    internal class HorseListFactory : FactoryEditBase<HorseList>, IFactoryEditBase<HorseList>, IHorseListFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public SaveDelegate SaveProperty { get; set; }
-        public Save1Delegate Save1Property { get; set; }
-
-        public delegate IHorseList CreateDelegate();
-        public delegate IHorseList FetchDelegate(ICollection<Dal.Ef.Horse> horses);
-        public delegate IHorseList? SaveDelegate(IHorseList target, Dal.Ef.Cart cart);
-        public delegate IHorseList? Save1Delegate(IHorseList target, Dal.Ef.Pasture pasture);
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public HorseListFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
-            SaveProperty = LocalSave;
-            Save1Property = LocalSave1;
         }
 
-        public HorseListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public HorseListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
         }
 
-        public IHorseList? Save(IHorseList target, Dal.Ef.Cart cart)
+        public virtual IHorseList Create()
         {
-            return SaveProperty(target, cart);
+            return LocalCreate();
         }
 
-        public IHorseList? Save(IHorseList target, Dal.Ef.Pasture pasture)
-        {
-            return Save1Property(target, pasture);
-        }
-
-        public IHorseList Create()
+        public IHorseList LocalCreate()
         {
             var target = ServiceProvider.GetRequiredService<HorseList>();
             return DoMapperMethodCall<IHorseList>(target, DataMapperMethod.Create, () => target.Create());
         }
 
-        public IHorseList Fetch(ICollection<Dal.Ef.Horse> horses)
+        public virtual IHorseList Fetch(ICollection<Dal.Ef.Horse> horses)
+        {
+            return LocalFetch(horses);
+        }
+
+        public IHorseList LocalFetch(ICollection<Dal.Ef.Horse> horses)
         {
             var target = ServiceProvider.GetRequiredService<HorseList>();
             var lightHorsePortal = ServiceProvider.GetService<ILightHorseFactory>();
@@ -68,20 +62,25 @@ namespace HorseBarn.lib.Horse
             return DoMapperMethodCall<IHorseList>(target, DataMapperMethod.Fetch, () => target.Fetch(horses, lightHorsePortal, heavyHorsePortal));
         }
 
-        public virtual Task<IHorseList?> LocalUpdate(IHorseList itarget, Dal.Ef.Cart cart)
+        public virtual IHorseList? LocalUpdate(IHorseList target, Dal.Ef.Cart cart)
         {
-            var target = (HorseList)itarget ?? throw new Exception("HorseList must implement IHorseList");
+            var cTarget = (HorseList)target ?? throw new Exception("HorseList must implement IHorseList");
             var lightHorsePortal = ServiceProvider.GetService<ILightHorseFactory>();
             var heavyHorsePortal = ServiceProvider.GetService<IHeavyHorseFactory>();
-            return DoMapperMethodCallAsync<IHorseList>(target, DataMapperMethod.Update, () => target.Update(cart, lightHorsePortal, heavyHorsePortal));
+            return DoMapperMethodCall<IHorseList>(cTarget, DataMapperMethod.Update, () => cTarget.Update(cart, lightHorsePortal, heavyHorsePortal));
         }
 
-        public virtual Task<IHorseList?> LocalUpdate1(IHorseList itarget, Dal.Ef.Pasture pasture)
+        public virtual IHorseList? LocalUpdate1(IHorseList target, Dal.Ef.Pasture pasture)
         {
-            var target = (HorseList)itarget ?? throw new Exception("HorseList must implement IHorseList");
+            var cTarget = (HorseList)target ?? throw new Exception("HorseList must implement IHorseList");
             var lightHorsePortal = ServiceProvider.GetService<ILightHorseFactory>();
             var heavyHorsePortal = ServiceProvider.GetService<IHeavyHorseFactory>();
-            return DoMapperMethodCallAsync<IHorseList>(target, DataMapperMethod.Update, () => target.Update(pasture, lightHorsePortal, heavyHorsePortal));
+            return DoMapperMethodCall<IHorseList>(cTarget, DataMapperMethod.Update, () => cTarget.Update(pasture, lightHorsePortal, heavyHorsePortal));
+        }
+
+        public virtual IHorseList? Save(IHorseList target, Dal.Ef.Cart cart)
+        {
+            return LocalSave(target, cart);
         }
 
         public virtual IHorseList? LocalSave(IHorseList target, Dal.Ef.Cart cart)
@@ -103,6 +102,11 @@ namespace HorseBarn.lib.Horse
             {
                 return LocalUpdate(target, cart);
             }
+        }
+
+        public virtual IHorseList? Save(IHorseList target, Dal.Ef.Pasture pasture)
+        {
+            return LocalSave1(target, pasture);
         }
 
         public virtual IHorseList? LocalSave1(IHorseList target, Dal.Ef.Pasture pasture)
@@ -132,16 +136,7 @@ namespace HorseBarn.lib.Horse
             services.AddScoped<HorseListFactory>();
             services.AddScoped<IHorseListFactory, HorseListFactory>();
             services.AddTransient<IHorseList, HorseList>();
-            services.AddScoped<CreateDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<HorseListFactory>();
-                return () => factory.Create();
-            });
-            services.AddScoped<FetchDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<HorseListFactory>();
-                return (ICollection<Dal.Ef.Horse> horses) => factory.Fetch(horses);
-            });
+            services.AddScoped<IFactoryEditBase<HorseList>, HorseListFactory>();
         }
     }
 }

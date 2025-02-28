@@ -9,6 +9,7 @@ using System.ComponentModel;
 /*
 Debugging Messages:
 : CustomEditBase<Pasture>, IPasture
+No DataMapperMethod attribute for RemoveHorse
 : EditBase<T>
 */
 namespace HorseBarn.lib
@@ -17,16 +18,18 @@ namespace HorseBarn.lib
     {
     }
 
-    internal class PastureFactory : FactoryEditBase<Pasture>, IPastureFactory
+    internal class PastureFactory : FactoryBase, IPastureFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public PastureFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
         }
 
-        public PastureFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public PastureFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
@@ -38,7 +41,6 @@ namespace HorseBarn.lib
             services.AddScoped<PastureFactory>();
             services.AddScoped<IPastureFactory, PastureFactory>();
             services.AddTransient<IPasture, Pasture>();
-            services.AddScoped<IFactoryEditBase<Pasture>, PastureFactory>();
         }
     }
 }

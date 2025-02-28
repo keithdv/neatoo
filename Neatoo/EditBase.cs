@@ -20,7 +20,7 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
         this.Factory = services.Factory;
     }
 
-    public IFactoryEditBase<T> Factory { get; protected set; }
+    public IFactoryEditBase<T>? Factory { get; protected set; }
     public bool IsMarkedModified { get; protected set; } = false;
     public bool IsModified => PropertyManager.IsModified || IsDeleted || IsNew || IsSelfModified;
     public bool IsSelfModified { get => PropertyManager.IsSelfModified || IsDeleted || IsMarkedModified; protected set => IsMarkedModified = value; }
@@ -201,6 +201,11 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
                 // TODO await this.WaitForTasks(); ??
                 throw new Exception("Object is busy and cannot be saved.");
             }
+        }
+
+        if (Factory == null)
+        {
+            throw new Exception("Factory is not set. Use the Factory attriute and add [Insert], [Update] and [Delete] Factory methods to Save.");
         }
 
         return await Factory.Save((T)(IEditBase)this);

@@ -22,158 +22,18 @@ internal class BaseHasAttributes : SharedObject<BaseHasAttributes> {
 
 
 [Factory]
-internal class SharedObject<T> {
-    [Create]
-    public void Create(long sharedParameter){
-
-    }
-
-}
-
-
-[Factory]
-internal class EditObject : EditBase<EditObject> {
-
-}
-
-
-[Factory]
-internal class BaseObject : SharedObject<BaseObject> {
-
-
-    [Create]
-    public Task CreateAsync(){
-
-    }
-
-    [Create]
-    public void CreateVoid(int parameter){
-
-    }
-
-    [Create]
-    public void CreateVoid(string parameter){
-
-    }
-
-    [Create]
-    public Task Create(string parameter){
-
-    }
-
-    [Create]
-    public Task Create(string parameter){
-
-    }
-
-    [Remote]
-    [Create]
-    public Task CreateRemote(string parameter){
-
-    }
-
-    [Remote]
-    [Create]
-    public void CreateRemote(int parameter){
-
-    }
-
-    [Create]
-    public Task Create(Guid parameter, [Service] IDependency dependency){
-
-    }
-
-    [Create]
-    public bool CreateBool(Guid parameter, [Service] IDependency dependency){
-
-    }
-
-    [Create]
-    public Task<bool> CreateBoolAsync(Guid parameter, [Service] IDependency dependency){
-
-    }
-
-    [Fetch]
-    public void FetchVoid(int parameter){
-
-    }
-
-    [Fetch]
-    public void FetchVoid(string parameter){
-
-    }
-
-    [Fetch]
-    public Task FetchAsync(string parameter){
-
-    }
-
-    [Fetch]
-    public Task FetchAsync(string parameter1, int parameter2){
-
-    }
-
-    [Create]
-    public bool FetchBool(Guid parameter, [Service] IDependency dependency){
-
-    }
-
-    [Create]
-    public Task<bool> FetchBoolAsync(Guid parameter, [Service] IDependency dependency){
-
-    }
-
-#if CLIENT
-
-    [Fetch]
-    public Task Fetch(Guid parameter, [Service] IDependency dependency){
-
-    }
-
-    [Insert]
-    public Task Insert([Service] IDependency dependency){
-
-    }
-
-    [Update]
-    public Task Update([Service] IDependency dependency){
-    }
-
-    [Delete]
-    public Task Delete([Service] IDependency dependency){
-    }
-
-    [Insert]
-    public Task Insert(int parameter1, [Service] IDependency dependency){
-
-    }
-
-    [Update]
-    public Task Update(int parameter2, [Service] IDependency dependency){
-    }
-
-    [Delete]
-    public Task Delete(int parameter3, [Service] IDependency dependency){
-    }
+internal class BaseObject {
 
 
     [Insert]
-    public void Insert(string parameter){
+    public bool Insert(){
 
-    }
-    [Update]
-    public Task Update(string parameter, [Service] IDependency dependency){
-    }
-
-    [Delete]
-    public void Delete(string parameter){
     }
 
     [Update]
-    public Task UpdateList(Guid makeUnique){
-        // Lists only have an update, don't force to have a corresponding insert and delete
+    public bool Update(){
     }
-#endif
+
 }
 ";
 
@@ -317,42 +177,11 @@ namespace Neatoo;
 [Authorize<IAuthorizeBaseObject>]
 internal class BaseObject {
 
+        [Create]
+        public void Create(VoidTaskStringDeny v) { List.Add(v); }
 
-    [Create]
-    public void Create(){
-
-    }
-
-    [Create]
-    public void Create(int parameter){
-        return 0;
-    }
-
-    [Create]
-    public bool CreateBool(int parameter){
-        return false;
-    }
-
-    [Create]
-    public Task<bool> CreateBoolAsync(int parameter, [Service] IInjectableService injectService){
-        return Task.FromResult<bool>(false);
-    }
-
-    [Create]
-    public void CreateAuthorizeAsync(int parameter){
-    }
-
-    [Insert]
-    public void Insert(){
-    }
-
-    [Insert]
-    public void InsertInt(int parameter){
-    }
-
-    [Insert]
-    public Task InsertStringAsync(string parameter){
-    }
+        [Insert]
+        public void Insert(VoidTaskStringDeny v) { List.Add(v); }
 }
 ";
 
@@ -363,29 +192,12 @@ namespace Neatoo;
 
 public interface IAuthorizeBaseObject {
 
-    [Authorize(DataMapperMethodType.Read | DataMapperMethodType.Write)]
-    bool Anything();
 
-    [Authorize(DataMapperMethodType.Read)]
-    bool Create();
+        [Authorize(DataMapperMethodType.Write)]
+        bool Create(Int v);
 
-    [Remote]
-    [Authorize(DataMapperMethodType.Read)]
-    string? Create(int parameter);
-    
-    [Authorize(DataMapperMethodType.Read)]
-    Task<bool> CreateAuthorizeAsync(int parameter);
-
-    [Authorize(DataMapperMethodType.Write)]
-    string? WriteBaseObject(BaseObject target);
-
-    [Authorize(DataMapperMethodType.Write)]
-    bool WriteInt(int parameter);
-
-    [Remote]
-    [Authorize(DataMapperMethodType.Write)]
-    string? WriteString(string parameter);
-    
+        [Authorize(DataMapperMethodType.Write)]
+        bool Insert(int v);
 }
 
 
@@ -410,15 +222,43 @@ namespace Neatoo;
 internal class BaseObject {
 
 
-    [Create]
-    public void Create(){
+        [Create]
+        public void Create(VoidBool voidBool)
+        {
+            List.Add(voidBool);
+        }
 
-    }
+        [Create]
+        public Task Create(TaskBool taskBool)
+        {
+            List.Add(taskBool);
+            return Task.CompletedTask;
+        }
 
-    [Insert]
-    public void Insert(){
-    }
+        [Create]
+        public void Create(VoidBoolRemote voidBoolRemote)
+        {
+            List.Add(voidBoolRemote);
+        }
 
+        [Insert]
+        public void Insert(VoidBool voidBool)
+        {
+            List.Add(voidBool);
+        }
+
+        [Insert]
+        public Task Insert(TaskBool taskBool)
+        {
+            List.Add(taskBool);
+            return Task.CompletedTask;
+        }
+
+        [Create]
+        public void Create(VoidTaskStringDeny v) { List.Add(v); }
+
+        [Insert]
+        public void Insert(VoidTaskStringDeny v) { List.Add(v); }
 }
 ";
 
@@ -429,14 +269,31 @@ namespace Neatoo;
 
 public class AuthorizeBaseObject {
 
-    [Authorize(DataMapperMethodType.Read | DataMapperMethodType.Write)]
-    bool Anything();
 
-    [Authorize(DataMapperMethodType.Read)]
-    bool Create();
+        [Authorize(DataMapperMethodType.Read)]
+        bool CanRead(VoidBool voidBool);
 
-    [Authorize(DataMapperMethodType.Write)]
-    bool Write();
+        [Authorize(DataMapperMethodType.Read)]
+        bool CanRead(TaskBool voidBool);
+
+        [Remote]
+        [Authorize(DataMapperMethodType.Read)]
+        bool CanRead(VoidBoolRemote voidBoolRemote);
+
+        [Authorize(DataMapperMethodType.Write)]
+        bool CanWrite(VoidBool voidBool);
+
+        [Authorize(DataMapperMethodType.Write)]
+        bool CanWrite(TaskBool voidBool);
+
+        [Authorize(DataMapperMethodType.Write)]
+        bool CanWrite(VoidBoolRemote voidBoolRemote);
+
+        [Authorize(DataMapperMethodType.Read)]
+        Task<bool> Read(VoidTaskStringDeny v);
+
+        [Authorize(DataMapperMethodType.Write)]
+        Task<string> Write(VoidTaskStringDeny v);
    
 }
 

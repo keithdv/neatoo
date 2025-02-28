@@ -27,9 +27,11 @@ namespace Neatoo.UnitTest.Portal
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        // Delegates
+        public delegate Task<INoBaseClassA> CreateRemoteDelegate(string name);
+        // Delegate Properties to provide Local or Remote fork in execution
         public CreateRemoteDelegate CreateRemoteProperty { get; }
 
-        public delegate Task<INoBaseClassA> CreateRemoteDelegate(string name);
         public NoBaseClassAFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -43,26 +45,31 @@ namespace Neatoo.UnitTest.Portal
             CreateRemoteProperty = RemoteCreateRemote;
         }
 
+        public virtual INoBaseClassA Create(string name)
+        {
+            return LocalCreate(name);
+        }
+
+        public INoBaseClassA LocalCreate(string name)
+        {
+            var target = ServiceProvider.GetRequiredService<NoBaseClassA>();
+            return DoMapperMethodCall<INoBaseClassA>(target, DataMapperMethod.Create, () => target.Create(name));
+        }
+
         public virtual Task<INoBaseClassA> CreateRemote(string name)
         {
             return CreateRemoteProperty(name);
         }
 
-        public INoBaseClassA Create(string name)
+        public virtual async Task<INoBaseClassA> RemoteCreateRemote(string name)
         {
-            var target = ServiceProvider.GetRequiredService<NoBaseClassA>();
-            return DoMapperMethodCall<INoBaseClassA>(target, DataMapperMethod.Create, () => target.Create(name));
+            return await DoRemoteRequest.ForDelegate<INoBaseClassA>(typeof(CreateRemoteDelegate), [name]);
         }
 
         public Task<INoBaseClassA> LocalCreateRemote(string name)
         {
             var target = ServiceProvider.GetRequiredService<NoBaseClassA>();
             return Task.FromResult(DoMapperMethodCall<INoBaseClassA>(target, DataMapperMethod.Create, () => target.CreateRemote(name)));
-        }
-
-        public virtual async Task<INoBaseClassA> RemoteCreateRemote(string name)
-        {
-            return await DoRemoteRequest.ForDelegate<INoBaseClassA>(typeof(CreateRemoteDelegate), [name]);
         }
 
         public static void FactoryServiceRegistrar(IServiceCollection services)
