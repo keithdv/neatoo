@@ -111,6 +111,7 @@ internal class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
         this.Carts = cartListPortal.Create();
     }
 
+    [Remote]
     [Fetch]
     public async Task Fetch([Service] IHorseBarnContext horseBarnContext,
                             [Service] IPastureFactory pasturePortal,
@@ -126,6 +127,7 @@ internal class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
         }
     }
 
+    [Remote]
     [Insert]
     public async Task Insert([Service] IHorseBarnContext horseBarnContext,
                             [Service] IPastureFactory pasturePortal,
@@ -143,6 +145,7 @@ internal class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
         await horseBarnContext.SaveChangesAsync();
     }
 
+    [Remote]
     [Update]
     public async Task Update([Service] IHorseBarnContext horseBarnContext,
                             [Service] IPastureFactory pasturePortal,

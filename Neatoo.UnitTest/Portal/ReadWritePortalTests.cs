@@ -90,12 +90,12 @@ public class ReadWritePortalTests
 
 
     [TestMethod]
-    public void ReadWritePortal_Update()
+    public async Task ReadWritePortal_Update()
     {
         editObject = portal.Fetch();
         var id = Guid.NewGuid();
         editObject.ID = Guid.NewGuid();
-        portal.Save(editObject);
+        await portal.Save(editObject);
         Assert.AreNotEqual(id, editObject.ID);
         Assert.IsTrue(editObject.UpdateCalled);
         Assert.IsFalse(editObject.IsNew);

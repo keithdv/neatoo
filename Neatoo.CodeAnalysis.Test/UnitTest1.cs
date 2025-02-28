@@ -14,116 +14,26 @@ using Neatoo;
 
 namespace Neatoo;
 
+
+
 internal class BaseHasAttributes : SharedObject<BaseHasAttributes> {
 
 }
 
-[Factory]
-internal class SharedObject<T> {
-    [Create]
-    public void Create(long sharedParameter){
-
-    }
-
-}
-
 
 [Factory]
-internal class EditObject : EditBase<EditObject> {
-
-}
-
-
-[Factory]
-internal class BaseObject : SharedObject<BaseObject> {
-
-
-    [Create]
-    public void Create(int parameter){
-
-    }
-
-    [Create]
-    public Task Create(string parameter){
-
-    }
-
-    [Create]
-    public Task Create(string parameter){
-
-    }
-
-    [Create]
-    public Task Create(Guid parameter, [Service] IDependency dependency){
-
-    }
-
-    [Fetch]
-    public void Fetch(int parameter){
-
-    }
-
-    [Fetch]
-    public Task Fetch(string parameter){
-
-    }
-
-    [Fetch]
-    public Task Fetch(string parameter1, int parameter2){
-
-    }
-
-#if CLIENT
-
-    [Fetch]
-    public Task Fetch(Guid parameter, [Service] IDependency dependency){
-
-    }
-
-    [Insert]
-    public Task Insert([Service] IDependency dependency){
-
-    }
-
-    [Update]
-    public Task Update([Service] IDependency dependency){
-    }
-
-    [Delete]
-    public Task Delete([Service] IDependency dependency){
-    }
-
-    [Insert]
-    public Task Insert(int parameter, [Service] IDependency dependency){
-
-    }
-
-    [Update]
-    public Task Update(int parameter, [Service] IDependency dependency){
-    }
-
-    [Delete]
-    public Task Delete(int parameter, [Service] IDependency dependency){
-    }
+internal class BaseObject {
 
 
     [Insert]
-    public void Insert(string parameter){
+    public bool Insert(){
 
-    }
-    [Update]
-    public Task Update(string parameter, [Service] IDependency dependency){
-    }
-
-    [Delete]
-    public void Delete(string parameter){
     }
 
     [Update]
-    public Task UpdateList(Guid makeUnique){
-        // Lists only have an update, don't force to have a corresponding insert and delete
+    public bool Update(){
     }
-#endif
+
 }
 ";
 
@@ -146,7 +56,6 @@ namespace NeatooLibrary.Specific {
 
     }
 
-    [Factory]
     internal abstract class EditBaseA<T> : EditBaseB<T> {
 
     }
@@ -165,6 +74,8 @@ var source2 = @"
 
 namespace NeatooLibrary {
 
+
+[Factory]
 internal abstract class EditBaseB<T> : EditBase<T> {
 
 }
@@ -220,6 +131,9 @@ internal class BaseObject : SharedObject<BaseObject> {
     {
         // The source code to test
         var source = @"
+
+namespace Neatoo;
+
     public interface INoBaseClass
     {
         string Name { get; set; }
@@ -248,4 +162,144 @@ internal class BaseObject : SharedObject<BaseObject> {
         TestHelper.Verify(source);
     }
 
+
+
+    [Fact]
+    public Task Authorization()
+    {
+        // The source code to test
+        var source = @"
+using Neatoo;
+
+namespace Neatoo;
+
+[Factory]
+[Authorize<IAuthorizeBaseObject>]
+internal class BaseObject {
+
+        [Create]
+        public void Create(VoidTaskStringDeny v) { List.Add(v); }
+
+        [Insert]
+        public void Insert(VoidTaskStringDeny v) { List.Add(v); }
+}
+";
+
+        var source2 = @"
+using Neatoo;
+
+namespace Neatoo;
+
+public interface IAuthorizeBaseObject {
+
+
+        [Authorize(DataMapperMethodType.Write)]
+        bool Create(Int v);
+
+        [Authorize(DataMapperMethodType.Write)]
+        bool Insert(int v);
+}
+
+
+";
+        // Pass the source code to our helper and snapshot test the output
+        return TestHelper.Verify(source, source2);
+    }
+
+
+
+    [Fact]
+    public Task AuthorizationConcrete()
+    {
+        // The source code to test
+        var source = @"
+using Neatoo;
+
+namespace Neatoo;
+
+[Factory]
+[Authorize<AuthorizeBaseObject>]
+internal class BaseObject {
+
+
+        [Create]
+        public void Create(VoidBool voidBool)
+        {
+            List.Add(voidBool);
+        }
+
+        [Create]
+        public Task Create(TaskBool taskBool)
+        {
+            List.Add(taskBool);
+            return Task.CompletedTask;
+        }
+
+        [Create]
+        public void Create(VoidBoolRemote voidBoolRemote)
+        {
+            List.Add(voidBoolRemote);
+        }
+
+        [Insert]
+        public void Insert(VoidBool voidBool)
+        {
+            List.Add(voidBool);
+        }
+
+        [Insert]
+        public Task Insert(TaskBool taskBool)
+        {
+            List.Add(taskBool);
+            return Task.CompletedTask;
+        }
+
+        [Create]
+        public void Create(VoidTaskStringDeny v) { List.Add(v); }
+
+        [Insert]
+        public void Insert(VoidTaskStringDeny v) { List.Add(v); }
+}
+";
+
+        var source2 = @"
+using Neatoo;
+
+namespace Neatoo;
+
+public class AuthorizeBaseObject {
+
+
+        [Authorize(DataMapperMethodType.Read)]
+        bool CanRead(VoidBool voidBool);
+
+        [Authorize(DataMapperMethodType.Read)]
+        bool CanRead(TaskBool voidBool);
+
+        [Remote]
+        [Authorize(DataMapperMethodType.Read)]
+        bool CanRead(VoidBoolRemote voidBoolRemote);
+
+        [Authorize(DataMapperMethodType.Write)]
+        bool CanWrite(VoidBool voidBool);
+
+        [Authorize(DataMapperMethodType.Write)]
+        bool CanWrite(TaskBool voidBool);
+
+        [Authorize(DataMapperMethodType.Write)]
+        bool CanWrite(VoidBoolRemote voidBoolRemote);
+
+        [Authorize(DataMapperMethodType.Read)]
+        Task<bool> Read(VoidTaskStringDeny v);
+
+        [Authorize(DataMapperMethodType.Write)]
+        Task<string> Write(VoidTaskStringDeny v);
+   
+}
+
+
+";
+        // Pass the source code to our helper and snapshot test the output
+        return TestHelper.Verify(source, source2);
+    }
 }

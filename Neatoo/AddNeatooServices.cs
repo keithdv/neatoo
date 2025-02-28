@@ -77,7 +77,19 @@ public static class AddNeatooServicesExtension
                     result = task.GetType().GetProperty("Result").GetValue(task);
                 }
 
-                var portalResponse = new RemoteResponseDto(seralizer.Serialize(result));
+                // This is the return type the client is looking for
+                // If it is an Interface - match the interface
+                // Was having issues with the FactoryGenerator when this was returning the concrete type 
+                // instead of the interface with the concrete type specific in the JSON
+
+                var returnType = method.GetMethodInfo().ReturnType;
+
+                if(returnType.GetGenericTypeDefinition() == typeof(Task<>))
+                {
+                    returnType = returnType.GetGenericArguments()[0];
+                }
+
+                var portalResponse = new RemoteResponseDto(seralizer.Serialize(result, returnType));
 
                 return portalResponse;
             };
@@ -104,7 +116,6 @@ public static class AddNeatooServicesExtension
 
         services.AddSingleton<IAttributeToRule, AttributeToRule>();
 
-        services.AddScoped(typeof(IAuthorizationRuleManager<>), typeof(AuthorizationRuleManager<>));
         services.AddTransient(typeof(IRuleManager<>), typeof(RuleManager<>));
 
         services.AddTransient(typeof(RuleManagerFactory<>));

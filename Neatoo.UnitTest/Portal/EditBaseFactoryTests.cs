@@ -120,13 +120,13 @@ namespace Neatoo.UnitTest.Portal
         }
 
         [TestMethod]
-        public void EditBaseFactoryTests_Save()
+        public async Task EditBaseFactoryTests_Save()
         {
             var factory = clientScope.GetRequiredService<EditObjectFactory>();
 
             var result = factory.Create();
 
-            result = factory.Save(result);
+            result = await factory.Save(result);
 
             Assert.IsTrue(result.InsertCalled);
             Assert.IsFalse(result.IsNew);

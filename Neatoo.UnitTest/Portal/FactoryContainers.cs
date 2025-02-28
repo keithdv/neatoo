@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using static Neatoo.UnitTest.Portal.AuthorizationAllCombinationTests;
 
 namespace Neatoo.UnitTest.Portal
 {
@@ -36,7 +37,12 @@ namespace Neatoo.UnitTest.Portal
 
             var json = NeatooJsonSerializer.Serialize(remoteRequest);
             var remoteRequestOnServer = NeatooJsonSerializer.Deserialize<RemoteRequestDto>(json);
-            var remoteResponseOnServer = await serviceProvider.GetRequiredService<ServerHandlePortalRequest>()(remoteRequestOnServer);
+
+            // Use the Server's container
+            var remoteResponseOnServer = await serviceProvider.GetRequiredService<ServerServiceProvider>()
+                                                                .serverProvider
+                                                                .GetRequiredService<ServerHandlePortalRequest>()(remoteRequestOnServer);
+
             json = NeatooJsonSerializer.Serialize(remoteResponseOnServer);
             var result = NeatooJsonSerializer.Deserialize<RemoteResponseDto>(json);
 
@@ -62,11 +68,15 @@ namespace Neatoo.UnitTest.Portal
                     serverCollection.AddNeatooServices(NeatooHost.Local, Assembly.GetExecutingAssembly());
                     serverCollection.AddTransient<Objects.IDisposableDependency, Objects.DisposableDependency>();
                     serverCollection.AddScoped<Objects.DisposableDependencyList>();
+                    //serverCollection.AddScoped<AuthorizationClassTests.IAuthorizationClass, AuthorizationClassTests.AuthorizationClass>();
+                    //serverCollection.AddScoped<AuthorizationConcreteClassTests.AuthorizationConcreteClass>();
+                    serverCollection.AddScoped<AuthorizationAllCombinations>();
 
                     clientCollection.AddNeatooServices(NeatooHost.Remote, Assembly.GetExecutingAssembly());
                     clientCollection.AddScoped<ServerServiceProvider>();
-                    clientCollection.AddScoped<ServerServiceProvider>();
                     clientCollection.AddScoped<Objects.DisposableDependencyList>();
+                    //clientCollection.AddScoped<AuthorizationClassTests.IAuthorizationClass, AuthorizationClassTests.AuthorizationClass>();
+                    clientCollection.AddScoped<AuthorizationAllCombinations>();
 
                     clientCollection.AddScoped<IDoRemoteRequest, DoRemoteRequestTest>();
                     serverContainer = serverCollection.BuildServiceProvider();

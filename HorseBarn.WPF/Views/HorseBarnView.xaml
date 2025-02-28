@@ -63,7 +63,7 @@
 
         <UniformGrid Grid.Row="2" Grid.ColumnSpan="2" Margin="10">
             <Button x:Name="AddHorse">Add Horse</Button>
-            <Button x:Name="AddRacingChariot">Add Racing Chariot</Button>
+            <Button x:Name="AddRacingChariot" IsEnabled="{Binding CanAddHorse}">Add Racing Chariot</Button>
             <Button x:Name="AddWagon">Add Wagon</Button>
             <Button x:Name="Save" IsEnabled="{Binding Path=HorseBarn.IsSavable}">Save</Button>
         </UniformGrid>

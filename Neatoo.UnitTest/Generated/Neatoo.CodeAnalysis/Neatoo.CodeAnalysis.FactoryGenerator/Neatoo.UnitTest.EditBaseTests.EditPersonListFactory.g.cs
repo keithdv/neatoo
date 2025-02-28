@@ -22,12 +22,14 @@ namespace Neatoo.UnitTest.EditBaseTests
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public EditPersonListFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
         }
 
-        public EditPersonListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public EditPersonListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
@@ -36,9 +38,9 @@ namespace Neatoo.UnitTest.EditBaseTests
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<EditPersonList>();
-            services.AddTransient<IEditPersonList, EditPersonList>();
             services.AddScoped<EditPersonListFactory>();
             services.AddScoped<IEditPersonListFactory, EditPersonListFactory>();
+            services.AddTransient<IEditPersonList, EditPersonList>();
         }
     }
 }

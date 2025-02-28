@@ -28,9 +28,11 @@ public class BasePropertyChangedTests
     {
         scope = UnitTestServices.GetLifetimeScope();
         grandChild = scope.GetRequiredService<IBaseObject>();
+        grandChild.StringProperty = "GrandChild";
         Assert.IsFalse(grandChild.IsBusy);
 
         child = scope.GetRequiredService<IBaseObject>();
+        child.StringProperty = "Child";
         child.Child = grandChild;
         Assert.IsFalse(grandChild.IsBusy);
 
@@ -39,6 +41,7 @@ public class BasePropertyChangedTests
         Assert.IsFalse(list.IsBusy);
 
         parent = scope.GetRequiredService<IBaseObject>();
+        parent.StringProperty = "Parent";
         parent.ChildList = list;
         Assert.IsFalse(parent.IsBusy);
 

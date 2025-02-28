@@ -4,6 +4,7 @@
     <IsPackable>false</IsPackable>
 	  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 	  <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+	  <NoWarn>CS8602,CA2007</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +30,10 @@
   <ItemGroup>
     <Folder Include="Generated\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.FactoryGenerator\" />
     <Folder Include="Generated\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.ServiceRegistrarGenerator\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Portal\AuthorizationConcreteTests.cs" />
   </ItemGroup>
 
 </Project>

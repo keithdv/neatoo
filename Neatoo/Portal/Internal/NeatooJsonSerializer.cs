@@ -8,6 +8,7 @@ namespace Neatoo.Portal.Internal;
 public interface INeatooJsonSerializer
 {
     string? Serialize(object? target);
+    string? Serialize(object? target, Type targetType);
     T? Deserialize<T>(string json);
     object? Deserialize(string json, Type type);
     RemoteRequestDto ToRemoteRequest(Type delegateType, params object[]? parameters);
@@ -49,6 +50,19 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         MyReferenceHandler.asyncLocal.Value = rr;
 
         return JsonSerializer.Serialize(target, Options);
+    }
+
+    public string? Serialize(object? target, Type targetType)
+    {
+        if (target == null)
+        {
+            return null;
+        }
+
+        using var rr = new NeatooReferenceResolver();
+        MyReferenceHandler.asyncLocal.Value = rr;
+
+        return JsonSerializer.Serialize(target, targetType, Options);
     }
 
     public T? Deserialize<T>(string? json)

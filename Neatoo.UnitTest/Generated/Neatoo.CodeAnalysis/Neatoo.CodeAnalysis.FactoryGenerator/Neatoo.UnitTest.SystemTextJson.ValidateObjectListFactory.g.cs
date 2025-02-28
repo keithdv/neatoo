@@ -20,12 +20,14 @@ namespace Neatoo.UnitTest.SystemTextJson
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
+        // Delegates
+        // Delegate Properties to provide Local or Remote fork in execution
         public ValidateObjectListFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
         }
 
-        public ValidateObjectListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public ValidateObjectListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
@@ -34,9 +36,9 @@ namespace Neatoo.UnitTest.SystemTextJson
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<ValidateObjectList>();
-            services.AddTransient<IValidateObjectList, ValidateObjectList>();
             services.AddScoped<ValidateObjectListFactory>();
             services.AddScoped<IValidateObjectListFactory, ValidateObjectListFactory>();
+            services.AddTransient<IValidateObjectList, ValidateObjectList>();
         }
     }
 }

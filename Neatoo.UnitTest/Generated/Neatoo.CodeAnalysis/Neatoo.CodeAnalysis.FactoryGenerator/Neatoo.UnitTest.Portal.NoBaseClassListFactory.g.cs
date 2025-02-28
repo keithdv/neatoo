@@ -4,6 +4,7 @@ using Neatoo;
 using Neatoo.Portal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neatoo.AuthorizationRules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,15 +21,16 @@ namespace Neatoo.UnitTest.Portal
     {
         INoBaseClassList Create();
         Task<INoBaseClassList> CreateRemote();
-        delegate INoBaseClassList CreateDelegate();
-        delegate Task<INoBaseClassList> CreateRemoteDelegate();
     }
 
     internal class NoBaseClassListFactory : FactoryBase, INoBaseClassListFactory
     {
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
-        public INoBaseClassListFactory.CreateRemoteDelegate CreateRemoteProperty { get; }
+        // Delegates
+        public delegate Task<INoBaseClassList> CreateRemoteDelegate();
+        // Delegate Properties to provide Local or Remote fork in execution
+        public CreateRemoteDelegate CreateRemoteProperty { get; }
 
         public NoBaseClassListFactory(IServiceProvider serviceProvider)
         {
@@ -36,19 +38,19 @@ namespace Neatoo.UnitTest.Portal
             CreateRemoteProperty = LocalCreateRemote;
         }
 
-        public NoBaseClassListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate) : this(serviceProvider)
+        public NoBaseClassListFactory(IServiceProvider serviceProvider, IDoRemoteRequest remoteMethodDelegate)
         {
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
             CreateRemoteProperty = RemoteCreateRemote;
         }
 
-        public virtual Task<INoBaseClassList> CreateRemote()
+        public virtual INoBaseClassList Create()
         {
-            return CreateRemoteProperty();
+            return LocalCreate();
         }
 
-        public INoBaseClassList Create()
+        public INoBaseClassList LocalCreate()
         {
             var target = ServiceProvider.GetRequiredService<NoBaseClassList>();
             var factoryA = ServiceProvider.GetService<INoBaseClassAFactory>();
@@ -56,31 +58,31 @@ namespace Neatoo.UnitTest.Portal
             return DoMapperMethodCall<INoBaseClassList>(target, DataMapperMethod.Create, () => target.Create(factoryA, factoryB));
         }
 
+        public virtual Task<INoBaseClassList> CreateRemote()
+        {
+            return CreateRemoteProperty();
+        }
+
+        public virtual async Task<INoBaseClassList> RemoteCreateRemote()
+        {
+            return await DoRemoteRequest.ForDelegate<INoBaseClassList>(typeof(CreateRemoteDelegate), []);
+        }
+
         public Task<INoBaseClassList> LocalCreateRemote()
         {
             var target = ServiceProvider.GetRequiredService<NoBaseClassList>();
             var factoryA = ServiceProvider.GetService<INoBaseClassAFactory>();
             var factoryB = ServiceProvider.GetService<INoBaseClassBFactory>();
-            return DoMapperMethodCallAsync<INoBaseClassList>(target, DataMapperMethod.Create, () => target.CreateRemote(factoryA, factoryB));
-        }
-
-        public virtual async Task<INoBaseClassList?> RemoteCreateRemote()
-        {
-            return await DoRemoteRequest.ForDelegate<NoBaseClassList?>(typeof(INoBaseClassListFactory.CreateRemoteDelegate), []);
+            return Task.FromResult(DoMapperMethodCall<INoBaseClassList>(target, DataMapperMethod.Create, () => target.CreateRemote(factoryA, factoryB)));
         }
 
         public static void FactoryServiceRegistrar(IServiceCollection services)
         {
             services.AddTransient<NoBaseClassList>();
-            services.AddTransient<INoBaseClassList, NoBaseClassList>();
             services.AddScoped<NoBaseClassListFactory>();
             services.AddScoped<INoBaseClassListFactory, NoBaseClassListFactory>();
-            services.AddScoped<INoBaseClassListFactory.CreateDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<NoBaseClassListFactory>();
-                return () => factory.Create();
-            });
-            services.AddScoped<INoBaseClassListFactory.CreateRemoteDelegate>(cc =>
+            services.AddTransient<INoBaseClassList, NoBaseClassList>();
+            services.AddScoped<CreateRemoteDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<NoBaseClassListFactory>();
                 return () => factory.LocalCreateRemote();
