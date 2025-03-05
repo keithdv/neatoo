@@ -189,7 +189,7 @@ namespace Neatoo.UnitTest.Portal
 
         public virtual async Task<Authorized<IDemoObject>> RemoteCreateRemote(bool checkAuthOnly)
         {
-            return await DoRemoteRequest.ForDelegate<Authorized<IDemoObject>>(typeof(CreateRemoteDelegate), [checkAuthOnly]);
+            return await DoRemoteRequest.ForDelegate<Authorized<IDemoObject>>(typeof(CreateRemoteDelegate), [, checkAuthOnly]);
         }
 
         public async Task<Authorized<IDemoObject>> LocalCreateRemote(bool checkAuthOnly)
