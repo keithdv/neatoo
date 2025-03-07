@@ -61,9 +61,10 @@ public class NeatooInterfaceJsonTypeConverter<T> : JsonConverter<T>
 
             if (propertyName == "$type")
             {
-                var typeString = reader.GetString();
-                concreteType = localAssemblies.FindType(typeString);
-            } else if (propertyName == "$value")
+                var typeName = reader.GetString();
+                concreteType = localAssemblies.FindType(typeName);
+            }
+            else if (propertyName == "$value")
             {
                 result = (T?)JsonSerializer.Deserialize(ref reader, concreteType, options);
             }
@@ -76,7 +77,9 @@ public class NeatooInterfaceJsonTypeConverter<T> : JsonConverter<T>
         writer.WriteStartObject();
 
         writer.WritePropertyName("$type");
-        writer.WriteStringValue(value.GetType().FullName);
+        var type = value.GetType().FullName;
+        writer.WriteStringValue(type);
+
 
         writer.WritePropertyName("$value");
         JsonSerializer.Serialize(writer, value, value.GetType(), options);

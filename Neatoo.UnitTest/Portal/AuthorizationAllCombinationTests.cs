@@ -7,6 +7,7 @@ using Neatoo.Portal;
 using Neatoo.Portal.Internal;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Text.RegularExpressions;
 using static Neatoo.UnitTest.Portal.AuthorizationAllCombinationTests;
 
 namespace Neatoo.UnitTest.Portal;
@@ -3063,63 +3064,6 @@ public class AuthorizationAllCombinationTests
     }
 
     [TestMethod]
-    public async Task TestTryCreate()
-    {
-        var parameterTypes = Assembly.GetAssembly(typeof(AuthorizationAllCombinations)).GetTypes().Where(t => t.IsClass && t.BaseType.Name.ToString() == "IDd").ToList();
-
-        foreach (var parameterType in parameterTypes)
-        {
-            var parameter = Activator.CreateInstance(parameterType)!;
-
-            var factoryCreateMethod = authorizedObjectFactory.GetType().GetMethods().Where(m => m.Name == "TryCreate" && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == parameterType).Single();
-
-            var result = factoryCreateMethod.Invoke(authorizedObjectFactory, new object[] { parameter });
-
-            var parameterName = parameterType.Name;
-
-            if (parameterName.Contains("Task") || parameterName.Contains("Remote"))
-            {
-                Assert.IsInstanceOfType<Task>(result);
-                await (Task)result;
-                result = ((Task)result).GetType().GetProperty("Result").GetValue(result);
-            }
-            else
-            {
-                Assert.IsNotInstanceOfType<Task>(result);
-            }
-
-            var authorized = result as Authorized<IAuthorizedAllCombinations>;
-
-            if (parameterName.Contains("Deny"))
-            {
-                Assert.IsNull(authorized.Result);
-                Assert.IsFalse(authorized.HasAccess);
-            }
-            else if (parameterName.Contains("FalseBool"))
-            {
-                Assert.IsNull(authorized.Result);
-                Assert.IsTrue(authorized.HasAccess);
-            }
-            else
-            {
-                Assert.IsNotNull(authorized.Result);
-                CollectionAssert.Contains(authorized.Result.Received, parameter);
-            }
-
-            if (parameterType.Name.Contains("Remote"))
-            {
-                CollectionAssert.DoesNotContain(authorizationClient.ReadReceived, parameter);
-                CollectionAssert.Contains(authorizationServer.ReadReceived, parameter);
-            }
-            else
-            {
-                CollectionAssert.Contains(authorizationClient.ReadReceived, parameter);
-                CollectionAssert.DoesNotContain(authorizationServer.ReadReceived, parameter);
-            }
-        }
-    }
-
-    [TestMethod]
     public async Task TestCanCreate()
     {
         var parameterTypes = Assembly.GetAssembly(typeof(AuthorizationAllCombinations)).GetTypes().Where(t => t.IsClass && t.BaseType.Name.ToString() == "IDd").ToList();
@@ -3134,7 +3078,7 @@ public class AuthorizationAllCombinationTests
 
             var parameterName = parameterType.Name;
 
-            if (parameterName.Contains("Task") || parameterName.Contains("Remote"))
+            if (parameterName.Contains("TaskString") || parameterName.Contains("TaskBool") || Regex.IsMatch(parameterName, @".\w+Remote\w*"))
             {
                 Assert.IsInstanceOfType<Task>(result);
                 await (Task)result;
@@ -3145,9 +3089,9 @@ public class AuthorizationAllCombinationTests
                 Assert.IsNotInstanceOfType<Task>(result);
             }
 
-            var authorized = result as Authorized<IAuthorizedAllCombinations>;
+            Assert.IsInstanceOfType<Authorized>(result);
 
-            Assert.IsNull(authorized.Result);
+            var authorized = result as Authorized;
 
             if (parameterName.Contains("Deny"))
             {
@@ -3158,7 +3102,7 @@ public class AuthorizationAllCombinationTests
                 Assert.IsTrue(authorized.HasAccess);
             }
 
-            if (parameterType.Name.Contains("Remote"))
+            if (Regex.IsMatch(parameterName, @".\w+Remote\w*"))
             {
                 CollectionAssert.DoesNotContain(authorizationClient.ReadReceived, parameter);
                 CollectionAssert.Contains(authorizationServer.ReadReceived, parameter);
@@ -3310,7 +3254,7 @@ public class AuthorizationAllCombinationTests
 
 
     [TestMethod]
-    public async Task TestCanSave()
+    public async Task TestCanInsert()
     {
         var parameterTypes = Assembly.GetAssembly(typeof(AuthorizationAllCombinations)).GetTypes().Where(t => t.IsClass && t.BaseType.Name.ToString() == "IDd").ToList();
 
@@ -3318,23 +3262,27 @@ public class AuthorizationAllCombinationTests
         {
             var parameter = Activator.CreateInstance(parameterType)!;
 
-            var factoryCreateMethod = authorizedObjectFactory.GetType().GetMethods().Where(m => m.Name == "CanSave" && m.GetParameters().Length == 2 && m.GetParameters()[1].ParameterType == parameterType).Single();
+            var factoryCreateMethod = authorizedObjectFactory.GetType().GetMethods().Where(m => m.Name == "CanInsert" && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == parameterType).Single();
 
-            var result = factoryCreateMethod.Invoke(authorizedObjectFactory, new object[] { writeAuthorizedObject, parameter });
+            var result = factoryCreateMethod.Invoke(authorizedObjectFactory, new object[] { parameter });
 
             var parameterName = parameterType.Name;
 
-            if (parameterName.Contains("Task") || parameterName.Contains("Remote"))
+            if (parameterName.Contains("TaskString") || parameterName.Contains("TaskBool") || Regex.IsMatch(parameterName, @".\w+Remote\w*"))
             {
                 Assert.IsInstanceOfType<Task>(result);
                 await (Task)result;
                 result = ((Task)result).GetType().GetProperty("Result").GetValue(result);
             }
+            else
+            {
+                Assert.IsNotInstanceOfType<Task>(result);
+            }
 
-            var authorized = result as Authorized<IAuthorizedAllCombinations>;
+            Assert.IsInstanceOfType<Authorized>(result);
 
-            Assert.IsNull(authorized.Result);
-            
+            var authorized = result as Authorized;
+
             if (parameterName.Contains("Deny"))
             {
                 Assert.IsFalse(authorized.HasAccess);
@@ -3344,7 +3292,7 @@ public class AuthorizationAllCombinationTests
                 Assert.IsTrue(authorized.HasAccess);
             }
 
-            if (parameterType.Name.Contains("Remote"))
+            if (Regex.IsMatch(parameterName, @".\w+Remote\w*"))
             {
                 CollectionAssert.DoesNotContain(authorizationClient.WriteReceived, parameter);
                 CollectionAssert.Contains(authorizationServer.WriteReceived, parameter);
@@ -3356,4 +3304,5 @@ public class AuthorizationAllCombinationTests
             }
         }
     }
+
 }

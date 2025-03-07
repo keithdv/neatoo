@@ -1,13 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.Portal.Internal;
-
-/*
+﻿/*
 Debugging Messages:
 
 */
 namespace HorseBarn.lib.Cart
 {
-    internal partial class ServiceRegistrar : ServiceRegistrarBase
+    internal partial class TypeId : TypeIdBase
     {
+        public long Wagon = 54;
     }
 }

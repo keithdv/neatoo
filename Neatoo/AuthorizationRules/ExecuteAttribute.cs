@@ -14,10 +14,10 @@ public sealed class AuthorizeAttribute<T> : Attribute
 }
 
 [System.AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-public sealed class AuthorizeAttribute : DataMapperMethodAttribute
+public sealed class AuthorizeAttribute : Attribute
 {
     public DataMapperMethodType DataMapperMethodType { get; }
-    public AuthorizeAttribute(DataMapperMethodType operation) : base(DataMapperMethod.Authorize)
+    public AuthorizeAttribute(DataMapperMethodType operation)
     {
         this.DataMapperMethodType = operation;
     }

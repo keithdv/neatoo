@@ -12,15 +12,56 @@ using System.ComponentModel;
 using HorseBarn.Dal.Ef;
 
 /*
-Debugging Messages:
-: Cart<Wagon, IHeavyHorse>, IWagon
+                    Debugging Messages:
+                    : Cart<Wagon, IHeavyHorse>, IWagon
 : CustomEditBase<C>, ICart
-No DataMapperMethod attribute for RemoveHorse
-No DataMapperMethod attribute for AddHorse
-No DataMapperMethod attribute for CanAddHorse
 : EditBase<T>
-No DataMapperMethod attribute for HandleIdPropertyChanged
-*/
+No MethodDeclarationSyntax for get_PropertyManager
+No MethodDeclarationSyntax for .ctor
+No MethodDeclarationSyntax for get_Factory
+No MethodDeclarationSyntax for set_Factory
+No MethodDeclarationSyntax for get_IsMarkedModified
+No MethodDeclarationSyntax for set_IsMarkedModified
+No MethodDeclarationSyntax for get_IsNew
+No MethodDeclarationSyntax for set_IsNew
+No MethodDeclarationSyntax for get_IsDeleted
+No MethodDeclarationSyntax for set_IsDeleted
+No MethodDeclarationSyntax for get_ModifiedProperties
+No MethodDeclarationSyntax for get_IsChild
+No MethodDeclarationSyntax for set_IsChild
+No MethodDeclarationSyntax for get_EditMetaState
+No MethodDeclarationSyntax for ChildNeatooPropertyChanged
+No MethodDeclarationSyntax for Save
+No MethodDeclarationSyntax for GetProperty
+No MethodDeclarationSyntax for PauseAllActions
+No MethodDeclarationSyntax for get_Item
+No MethodDeclarationSyntax for get_RuleManager
+No MethodDeclarationSyntax for get_MetaState
+No MethodDeclarationSyntax for ChildNeatooPropertyChanged
+No MethodDeclarationSyntax for get_ObjectInvalid
+No MethodDeclarationSyntax for set_ObjectInvalid
+No MethodDeclarationSyntax for get_IsPaused
+No MethodDeclarationSyntax for set_IsPaused
+No MethodDeclarationSyntax for RunSelfRules
+No MethodDeclarationSyntax for RunAllRules
+No MethodDeclarationSyntax for get_AsyncTaskSequencer
+No MethodDeclarationSyntax for get_PropertyManager
+No MethodDeclarationSyntax for set_PropertyManager
+No MethodDeclarationSyntax for get_Parent
+No MethodDeclarationSyntax for set_Parent
+No MethodDeclarationSyntax for SetParent
+No MethodDeclarationSyntax for Neatoo.Core.ISetParent.SetParent
+No MethodDeclarationSyntax for Getter
+No MethodDeclarationSyntax for Setter
+No MethodDeclarationSyntax for WaitForTasks
+No MethodDeclarationSyntax for add_PropertyChanged
+No MethodDeclarationSyntax for remove_PropertyChanged
+No MethodDeclarationSyntax for add_NeatooPropertyChanged
+No MethodDeclarationSyntax for remove_NeatooPropertyChanged
+No MethodDeclarationSyntax for GetType
+No MethodDeclarationSyntax for MemberwiseClone
+No AuthorizeAttribute
+                    */
 namespace HorseBarn.lib.Cart
 {
     public interface IWagonFactory
@@ -72,16 +113,16 @@ namespace HorseBarn.lib.Cart
             return DoMapperMethodCall<IWagon>(target, DataMapperMethod.Fetch, () => target.Fetch(cart, horsePortal));
         }
 
-        public virtual IWagon? LocalInsert(IWagon target, Dal.Ef.HorseBarn horseBarn)
+        public IWagon LocalInsert(IWagon target, Dal.Ef.HorseBarn horseBarn)
         {
-            var cTarget = (Wagon)target ?? throw new Exception("Wagon must implement IWagon");
+            var cTarget = (Wagon)target ?? throw new Exception("IWagon must implement Wagon");
             var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
             return DoMapperMethodCall<IWagon>(cTarget, DataMapperMethod.Insert, () => cTarget.Insert(horseBarn, horsePortal));
         }
 
-        public virtual IWagon? LocalUpdate(IWagon target, Dal.Ef.HorseBarn horseBarn)
+        public IWagon LocalUpdate(IWagon target, Dal.Ef.HorseBarn horseBarn)
         {
-            var cTarget = (Wagon)target ?? throw new Exception("Wagon must implement IWagon");
+            var cTarget = (Wagon)target ?? throw new Exception("IWagon must implement Wagon");
             var horsePortal = ServiceProvider.GetService<IHorseListFactory>();
             return DoMapperMethodCall<IWagon>(cTarget, DataMapperMethod.Update, () => cTarget.Update(horseBarn, horsePortal));
         }

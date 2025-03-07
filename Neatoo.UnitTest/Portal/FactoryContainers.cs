@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using static Neatoo.UnitTest.Portal.AuthorizationAllCombinationTests;
 
@@ -35,16 +36,17 @@ namespace Neatoo.UnitTest.Portal
 
             var remoteRequest = NeatooJsonSerializer.ToRemoteRequest(delegateType, parameters);
 
-            var json = NeatooJsonSerializer.Serialize(remoteRequest);
-            var remoteRequestOnServer = NeatooJsonSerializer.Deserialize<RemoteRequestDto>(json);
+            // Mimic real life - use standard ASP.NET Core JSON serialization
+            var json = JsonSerializer.Serialize(remoteRequest); //NeatooJsonSerializer.Serialize(remoteRequest);
+            var remoteRequestOnServer = JsonSerializer.Deserialize<RemoteRequestDto>(json); NeatooJsonSerializer.Deserialize<RemoteRequestDto>(json);
 
             // Use the Server's container
             var remoteResponseOnServer = await serviceProvider.GetRequiredService<ServerServiceProvider>()
                                                                 .serverProvider
                                                                 .GetRequiredService<ServerHandlePortalRequest>()(remoteRequestOnServer);
 
-            json = NeatooJsonSerializer.Serialize(remoteResponseOnServer);
-            var result = NeatooJsonSerializer.Deserialize<RemoteResponseDto>(json);
+            json = JsonSerializer.Serialize(remoteResponseOnServer); // NeatooJsonSerializer.Serialize(remoteResponseOnServer);
+            var result = JsonSerializer.Deserialize<RemoteResponseDto>(json); // NeatooJsonSerializer.Deserialize<RemoteResponseDto>(json);
 
             return NeatooJsonSerializer.DeserializeRemoteResponse<T>(result);
         }
@@ -71,12 +73,20 @@ namespace Neatoo.UnitTest.Portal
                     //serverCollection.AddScoped<AuthorizationClassTests.IAuthorizationClass, AuthorizationClassTests.AuthorizationClass>();
                     //serverCollection.AddScoped<AuthorizationConcreteClassTests.AuthorizationConcreteClass>();
                     serverCollection.AddScoped<AuthorizationAllCombinations>();
+                    serverCollection.AddScoped<ReadAuthTests.ReadAuth>();
+                    serverCollection.AddScoped<ReadAuthTests.ReadAuthTask>();
+                    serverCollection.AddScoped<ReadRemoteAuthTests.ReadRemoteAuth>();
+                    serverCollection.AddScoped<ReadRemoteAuthTests.ReadRemoteAuthTask>();
 
                     clientCollection.AddNeatooServices(NeatooHost.Remote, Assembly.GetExecutingAssembly());
                     clientCollection.AddScoped<ServerServiceProvider>();
                     clientCollection.AddScoped<Objects.DisposableDependencyList>();
                     //clientCollection.AddScoped<AuthorizationClassTests.IAuthorizationClass, AuthorizationClassTests.AuthorizationClass>();
                     clientCollection.AddScoped<AuthorizationAllCombinations>();
+                    clientCollection.AddScoped<ReadAuthTests.ReadAuth>();
+                    clientCollection.AddScoped<ReadAuthTests.ReadAuthTask>();
+                    clientCollection.AddScoped<ReadRemoteAuthTests.ReadRemoteAuth>();
+                    clientCollection.AddScoped<ReadRemoteAuthTests.ReadRemoteAuthTask>();
 
                     clientCollection.AddScoped<IDoRemoteRequest, DoRemoteRequestTest>();
                     serverContainer = serverCollection.BuildServiceProvider();

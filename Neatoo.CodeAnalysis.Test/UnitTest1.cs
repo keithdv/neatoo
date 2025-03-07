@@ -13,28 +13,490 @@ public class FactoryGeneratorTests
 using Neatoo;
 
 namespace Neatoo;
+        [Factory]
+        public class WriteDataMapper
+        {
+            public bool IsDeleted { get; set; }
+
+            public bool IsNew { get; set; }
+
+            public bool InsertCalled { get; set; }
+            [Insert]
+            public void InsertVoid()
+            {
+                InsertCalled = true;
+            }
+
+            [Insert]
+            public bool InsertBool()
+            {
+                InsertCalled = true;
+                return true;
+            }
+
+            [Insert]
+            public Task InsertTask()
+            {
+                InsertCalled = true;
+                return Task.CompletedTask;
+            }
+
+            [Insert]
+            public Task<bool> InsertTaskBool()
+            {
+                InsertCalled = true;
+                return Task.FromResult(true);
+            }
+
+            [Insert]
+            public void InsertVoid(int? param)
+            {
+                InsertCalled = true;
+                Assert.AreEqual(1, param);
+            }
+
+            [Insert]
+            public bool InsertBool(int? param)
+            {
+                InsertCalled = true;
+                Assert.AreEqual(1, param);
+                return true;
+            }
+
+            [Insert]
+            public Task InsertTask(int? param)
+            {
+                InsertCalled = true;
+                Assert.AreEqual(1, param);
+                return Task.CompletedTask;
+            }
+
+            [Insert]
+            public Task<bool> InsertTaskBool(int? param)
+            {
+                InsertCalled = true;
+                Assert.AreEqual(1, param);
+                return Task.FromResult(true);
+            }
+
+            [Insert]
+            public Task<bool> InsertTaskBoolFalse(int? param)
+            {
+                InsertCalled = true;
+                Assert.AreEqual(1, param);
+                return Task.FromResult(false);
+            }
+
+            [Insert]
+            public void InsertVoidDep([Service] IDisposableDependency disposableDependency)
+            {
+                InsertCalled = true;
+                Assert.IsNotNull(disposableDependency);
+            }
+
+            [Insert]
+            public bool InsertBoolTrueDep([Service] IDisposableDependency disposableDependency)
+            {
+                InsertCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return true;
+            }
+
+            [Insert]
+            public bool InsertBoolFalseDep([Service] IDisposableDependency disposableDependency)
+            {
+                InsertCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return false;
+            }
+
+            [Insert]
+            public Task InsertTaskDep([Service] IDisposableDependency disposableDependency)
+            {
+                InsertCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return Task.CompletedTask;
+            }
+
+            [Insert]
+            public Task<bool> InsertTaskBoolDep([Service] IDisposableDependency disposableDependency)
+            {
+                InsertCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return Task.FromResult(true);
+            }
+
+            [Insert]
+            public Task<bool> InsertTaskBoolFalseDep([Service] IDisposableDependency disposableDependency)
+            {
+                InsertCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return Task.FromResult(false);
+            }
+
+            [Insert]
+            public void InsertVoidDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                InsertCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+            }
+
+            [Insert]
+            public bool InsertBoolTrueDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                InsertCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+                return true;
+            }
+
+            [Insert]
+            public bool InsertBoolFalseDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                InsertCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+                return false;
+            }
+
+            [Insert]
+            public Task InsertTaskDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                InsertCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+                return Task.CompletedTask;
+            }
+
+            [Insert]
+            public Task<bool> InsertTaskBoolDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                InsertCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+                return Task.FromResult(true);
+            }
 
 
 
-internal class BaseHasAttributes : SharedObject<BaseHasAttributes> {
+            public bool UpdateCalled { get; set; }
+            [Update]
+            public void UpdateVoid()
+            {
+                UpdateCalled = true;
+            }
 
-}
+            [Update]
+            public bool UpdateBool()
+            {
+                UpdateCalled = true;
+                return true;
+            }
 
+            [Update]
+            public Task UpdateTask()
+            {
+                UpdateCalled = true;
+                return Task.CompletedTask;
+            }
 
-[Factory]
-internal class BaseObject {
+            [Update]
+            public Task<bool> UpdateTaskBool()
+            {
+                UpdateCalled = true;
+                return Task.FromResult(true);
+            }
 
+            [Update]
+            public void UpdateVoid(int? param)
+            {
+                UpdateCalled = true;
+                Assert.AreEqual(1, param);
+            }
 
-    [Insert]
-    public bool Insert(){
+            [Update]
+            public bool UpdateBool(int? param)
+            {
+                UpdateCalled = true;
+                Assert.AreEqual(1, param);
+                return true;
+            }
 
-    }
+            [Update]
+            public Task UpdateTask(int? param)
+            {
+                UpdateCalled = true;
+                Assert.AreEqual(1, param);
+                return Task.CompletedTask;
+            }
 
-    [Update]
-    public bool Update(){
-    }
+            [Update]
+            public Task<bool> UpdateTaskBool(int? param)
+            {
+                UpdateCalled = true;
+                Assert.AreEqual(1, param);
+                return Task.FromResult(true);
+            }
 
-}
+            [Update]
+            public Task<bool> UpdateTaskBoolFalse(int? param)
+            {
+                UpdateCalled = true;
+                Assert.AreEqual(1, param);
+                return Task.FromResult(false);
+            }
+
+            [Update]
+            public void UpdateVoidDep([Service] IDisposableDependency disposableDependency)
+            {
+                UpdateCalled = true;
+                Assert.IsNotNull(disposableDependency);
+            }
+
+            [Update]
+            public bool UpdateBoolTrueDep([Service] IDisposableDependency disposableDependency)
+            {
+                UpdateCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return true;
+            }
+
+            [Update]
+            public bool UpdateBoolFalseDep([Service] IDisposableDependency disposableDependency)
+            {
+                UpdateCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return false;
+            }
+
+            [Update]
+            public Task UpdateTaskDep([Service] IDisposableDependency disposableDependency)
+            {
+                UpdateCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return Task.CompletedTask;
+            }
+
+            [Update]
+            public Task<bool> UpdateTaskBoolDep([Service] IDisposableDependency disposableDependency)
+            {
+                UpdateCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return Task.FromResult(true);
+            }
+
+            [Update]
+            public Task<bool> UpdateTaskBoolFalseDep([Service] IDisposableDependency disposableDependency)
+            {
+                UpdateCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return Task.FromResult(false);
+            }
+
+            [Update]
+            public void UpdateVoidDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                UpdateCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+            }
+
+            [Update]
+            public bool UpdateBoolTrueDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                UpdateCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+                return true;
+            }
+
+            [Update]
+            public bool UpdateBoolFalseDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                UpdateCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+                return false;
+            }
+
+            [Update]
+            public Task UpdateTaskDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                UpdateCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+                return Task.CompletedTask;
+            }
+
+            [Update]
+            public Task<bool> UpdateTaskBoolDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                UpdateCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+                return Task.FromResult(true);
+            }
+
+            public bool DeleteCalled { get; set; }
+            [Delete]
+            public void DeleteVoid()
+            {
+                DeleteCalled = true;
+            }
+
+            [Delete]
+            public bool DeleteBool()
+            {
+                DeleteCalled = true;
+                return true;
+            }
+
+            [Delete]
+            public Task DeleteTask()
+            {
+                DeleteCalled = true;
+                return Task.CompletedTask;
+            }
+
+            [Delete]
+            public Task<bool> DeleteTaskBool()
+            {
+                DeleteCalled = true;
+                return Task.FromResult(true);
+            }
+
+            [Delete]
+            public void DeleteVoid(int? param)
+            {
+                DeleteCalled = true;
+                Assert.AreEqual(1, param);
+            }
+
+            [Delete]
+            public bool DeleteBool(int? param)
+            {
+                DeleteCalled = true;
+                Assert.AreEqual(1, param);
+                return true;
+            }
+
+            [Delete]
+            public Task DeleteTask(int? param)
+            {
+                DeleteCalled = true;
+                Assert.AreEqual(1, param);
+                return Task.CompletedTask;
+            }
+
+            [Delete]
+            public Task<bool> DeleteTaskBool(int? param)
+            {
+                DeleteCalled = true;
+                Assert.AreEqual(1, param);
+                return Task.FromResult(true);
+            }
+
+            [Delete]
+            public Task<bool> DeleteTaskBoolFalse(int? param)
+            {
+                DeleteCalled = true;
+                Assert.AreEqual(1, param);
+                return Task.FromResult(false);
+            }
+
+            [Delete]
+            public void DeleteVoidDep([Service] IDisposableDependency disposableDependency)
+            {
+                DeleteCalled = true;
+                Assert.IsNotNull(disposableDependency);
+            }
+
+            [Delete]
+            public bool DeleteBoolTrueDep([Service] IDisposableDependency disposableDependency)
+            {
+                DeleteCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return true;
+            }
+
+            [Delete]
+            public bool DeleteBoolFalseDep([Service] IDisposableDependency disposableDependency)
+            {
+                DeleteCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return false;
+            }
+
+            [Delete]
+            public Task DeleteTaskDep([Service] IDisposableDependency disposableDependency)
+            {
+                DeleteCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return Task.CompletedTask;
+            }
+
+            [Delete]
+            public Task<bool> DeleteTaskBoolDep([Service] IDisposableDependency disposableDependency)
+            {
+                DeleteCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return Task.FromResult(true);
+            }
+
+            [Delete]
+            public Task<bool> DeleteTaskBoolFalseDep([Service] IDisposableDependency disposableDependency)
+            {
+                DeleteCalled = true;
+                Assert.IsNotNull(disposableDependency);
+                return Task.FromResult(false);
+            }
+
+            [Delete]
+            public void DeleteVoidDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                DeleteCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+            }
+
+            [Delete]
+            public bool DeleteBoolTrueDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                DeleteCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+                return true;
+            }
+
+            [Delete]
+            public bool DeleteBoolFalseDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                DeleteCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+                return false;
+            }
+
+            [Delete]
+            public Task DeleteTaskDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                DeleteCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+                return Task.CompletedTask;
+            }
+
+            [Delete]
+            public Task<bool> DeleteTaskBoolDep(int? param, [Service] IDisposableDependency disposableDependency)
+            {
+                DeleteCalled = true;
+                Assert.AreEqual(1, param);
+                Assert.IsNotNull(disposableDependency);
+                return Task.FromResult(true);
+            }
+
+        }
 ";
 
         // Pass the source code to our helper and snapshot test the output
@@ -170,19 +632,35 @@ namespace Neatoo;
         // The source code to test
         var source = @"
 using Neatoo;
+using System.Collections.Generic;
 
 namespace Neatoo;
 
 [Factory]
-[Authorize<IAuthorizeBaseObject>]
+//[Authorize<AuthorizeBaseObject>]
 internal class BaseObject {
 
-        [Create]
-        public void Create(VoidTaskStringDeny v) { List.Add(v); }
 
-        [Insert]
-        public void Insert(VoidTaskStringDeny v) { List.Add(v); }
+    [Fetch]
+    [Remote]
+    public void Fetch()
+    {
+    }
+
+    [Create]
+    [Remote]
+    public void Create(){
+    }
+
+    [Update]
+    [Remote]
+    public void Update()
+    {
+    }
+
 }
+
+public class Dto {}
 ";
 
         var source2 = @"
@@ -190,17 +668,12 @@ using Neatoo;
 
 namespace Neatoo;
 
-public interface IAuthorizeBaseObject {
+public class AuthorizeBaseObject {
 
+        [Authorize(DataMapperMethodType.Read | DataMapperMethodType.Write)]
+        bool AnyAccess(BaseObject b);
 
-        [Authorize(DataMapperMethodType.Write)]
-        bool Create(Int v);
-
-        [Authorize(DataMapperMethodType.Write)]
-        bool Insert(int v);
 }
-
-
 ";
         // Pass the source code to our helper and snapshot test the output
         return TestHelper.Verify(source, source2);

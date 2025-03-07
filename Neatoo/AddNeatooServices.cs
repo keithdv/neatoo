@@ -12,6 +12,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Neatoo;
@@ -24,7 +25,8 @@ public enum NeatooHost
 }
 
 
-public delegate Type GetImplementationType(Type type);
+public delegate Type GetServiceImplementationType(Type type);
+public delegate IEnumerable<Type> GetServiceImplementationTypes(Type type);
 
 public static class AddNeatooServicesExtension
 {
@@ -32,18 +34,28 @@ public static class AddNeatooServicesExtension
     public static void AddNeatooServices(this IServiceCollection services, NeatooHost portalServer, params Assembly[] assemblies)
     {
 
-        services.AddTransient<GetImplementationType>(s =>
+        services.AddSingleton<GetServiceImplementationTypes>(s =>
         {
+            return (Type type) =>
+            {
+                // This is why these are delegates
+                // Need access to the DI container
+                return services
+                        .Where(d => d.ServiceType == type && d.ImplementationType != null)
+                        .Select(d => d.ImplementationType);
+            };
+        });
+
+        services.AddSingleton<GetServiceImplementationType>(s =>
+        {
+            var getServiceImplementationTypes = s.GetRequiredService<GetServiceImplementationTypes>();
             return (Type type) =>
             {
                 if (type.IsInterface)
                 {
                     // This is why these are delegates
                     // Need access to the DI container
-                    var implementationType = services
-                                             .Where(d => d.ServiceType == type && d.ImplementationType != null)
-                                             .Select(d => d.ImplementationType)
-                                             .SingleOrDefault();
+                    var implementationType = getServiceImplementationTypes(type).SingleOrDefault();
 
                     if (implementationType == null)
                     {
@@ -218,17 +230,23 @@ public static class AddNeatooServicesExtension
         ArgumentNullException.ThrowIfNull(assembly, nameof(assembly));
 
         var types = assembly.GetTypes().Where(t => t.IsClass && !t.IsAbstract).ToList();
-        var interfaces = assembly.GetTypes().Where(t => t.IsInterface).ToDictionary(x => x.FullName);
+        var interfaces = assembly.GetTypes().Where(t => t.IsInterface && t.Name.StartsWith("I")).ToDictionary(x => Regex.Replace(x.FullName, @"(.*)([\.|\+])\w+$", $"$1$2{x.Name.Substring(1)}"));
 
         foreach (var t in types)
         {
+            if(t.GetCustomAttribute<FactoryAttribute>() != null)
+            {
+                // Let the factory handle the registration
+                continue;
+            }
+
             var registrationMethod = t.GetMethod("FactoryServiceRegistrar", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
 
             if (registrationMethod != null)
             {
                 registrationMethod.Invoke(null, new object[] { services });
             }
-            else if (interfaces.TryGetValue($"{t.Namespace}.I{t.Name}", out var i))
+            else if (interfaces.TryGetValue(t.FullName, out var i))
             {
                 //var singleConstructor = t.GetConstructors().SingleOrDefault();
                 //var zeroConstructorParams = singleConstructor != null && !singleConstructor.GetParameters().Any();

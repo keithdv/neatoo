@@ -8,21 +8,61 @@ using System.ComponentModel;
 using System.Diagnostics;
 
 /*
-Debugging Messages:
-: CustomEditBase<HorseBarn>, IHorseBarn
-No DataMapperMethod attribute for AddRacingChariot
-No DataMapperMethod attribute for AddWagon
-No DataMapperMethod attribute for AddNewHorse
-No DataMapperMethod attribute for MoveHorseToCart
-No DataMapperMethod attribute for MoveHorseToPasture
+                    Debugging Messages:
+                    : CustomEditBase<HorseBarn>, IHorseBarn
 : EditBase<T>
-*/
+No MethodDeclarationSyntax for get_PropertyManager
+No MethodDeclarationSyntax for .ctor
+No MethodDeclarationSyntax for get_Factory
+No MethodDeclarationSyntax for set_Factory
+No MethodDeclarationSyntax for get_IsMarkedModified
+No MethodDeclarationSyntax for set_IsMarkedModified
+No MethodDeclarationSyntax for get_IsNew
+No MethodDeclarationSyntax for set_IsNew
+No MethodDeclarationSyntax for get_IsDeleted
+No MethodDeclarationSyntax for set_IsDeleted
+No MethodDeclarationSyntax for get_ModifiedProperties
+No MethodDeclarationSyntax for get_IsChild
+No MethodDeclarationSyntax for set_IsChild
+No MethodDeclarationSyntax for get_EditMetaState
+No MethodDeclarationSyntax for ChildNeatooPropertyChanged
+No MethodDeclarationSyntax for Save
+No MethodDeclarationSyntax for GetProperty
+No MethodDeclarationSyntax for PauseAllActions
+No MethodDeclarationSyntax for get_Item
+No MethodDeclarationSyntax for get_RuleManager
+No MethodDeclarationSyntax for get_MetaState
+No MethodDeclarationSyntax for ChildNeatooPropertyChanged
+No MethodDeclarationSyntax for get_ObjectInvalid
+No MethodDeclarationSyntax for set_ObjectInvalid
+No MethodDeclarationSyntax for get_IsPaused
+No MethodDeclarationSyntax for set_IsPaused
+No MethodDeclarationSyntax for RunSelfRules
+No MethodDeclarationSyntax for RunAllRules
+No MethodDeclarationSyntax for get_AsyncTaskSequencer
+No MethodDeclarationSyntax for get_PropertyManager
+No MethodDeclarationSyntax for set_PropertyManager
+No MethodDeclarationSyntax for get_Parent
+No MethodDeclarationSyntax for set_Parent
+No MethodDeclarationSyntax for SetParent
+No MethodDeclarationSyntax for Neatoo.Core.ISetParent.SetParent
+No MethodDeclarationSyntax for Getter
+No MethodDeclarationSyntax for Setter
+No MethodDeclarationSyntax for WaitForTasks
+No MethodDeclarationSyntax for add_PropertyChanged
+No MethodDeclarationSyntax for remove_PropertyChanged
+No MethodDeclarationSyntax for add_NeatooPropertyChanged
+No MethodDeclarationSyntax for remove_NeatooPropertyChanged
+No MethodDeclarationSyntax for GetType
+No MethodDeclarationSyntax for MemberwiseClone
+No AuthorizeAttribute
+                    */
 namespace HorseBarn.lib
 {
     public interface IHorseBarnFactory
     {
+        IHorseBarn Create();
         Task<IHorseBarn> Fetch();
-        Task<IHorseBarn> Create();
         Task<IHorseBarn?> Save(IHorseBarn target);
     }
 
@@ -32,18 +72,15 @@ namespace HorseBarn.lib
         private readonly IDoRemoteRequest DoRemoteRequest;
         // Delegates
         public delegate Task<IHorseBarn> FetchDelegate();
-        public delegate Task<IHorseBarn> CreateDelegate();
         public delegate Task<IHorseBarn?> SaveDelegate(IHorseBarn target);
         // Delegate Properties to provide Local or Remote fork in execution
         public FetchDelegate FetchProperty { get; }
-        public CreateDelegate CreateProperty { get; }
         public SaveDelegate SaveProperty { get; }
 
         public HorseBarnFactory(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
             FetchProperty = LocalFetch;
-            CreateProperty = LocalCreate;
             SaveProperty = LocalSave;
         }
 
@@ -52,8 +89,20 @@ namespace HorseBarn.lib
             this.ServiceProvider = serviceProvider;
             this.DoRemoteRequest = remoteMethodDelegate;
             FetchProperty = RemoteFetch;
-            CreateProperty = RemoteCreate;
             SaveProperty = RemoteSave;
+        }
+
+        public virtual IHorseBarn Create()
+        {
+            return LocalCreate();
+        }
+
+        public IHorseBarn LocalCreate()
+        {
+            var target = ServiceProvider.GetRequiredService<HorseBarn>();
+            var pasturePortal = ServiceProvider.GetService<IPastureFactory>();
+            var cartListPortal = ServiceProvider.GetService<ICartListFactory>();
+            return DoMapperMethodCall<IHorseBarn>(target, DataMapperMethod.Create, () => target.Create(pasturePortal, cartListPortal));
         }
 
         public virtual Task<IHorseBarn> Fetch()
@@ -72,31 +121,10 @@ namespace HorseBarn.lib
             return Task.FromResult(DoMapperMethodCall<IHorseBarn>(target, DataMapperMethod.Fetch, () => target.Fetch()));
         }
 
-        public virtual Task<IHorseBarn> Create()
+        public Task<IHorseBarn> LocalUpdate(IHorseBarn target)
         {
-            return CreateProperty();
-        }
-
-        public virtual async Task<IHorseBarn> RemoteCreate()
-        {
-            return await DoRemoteRequest.ForDelegate<IHorseBarn>(typeof(CreateDelegate), []);
-        }
-
-        public Task<IHorseBarn> LocalCreate()
-        {
-            var target = ServiceProvider.GetRequiredService<HorseBarn>();
-            return Task.FromResult(DoMapperMethodCall<IHorseBarn>(target, DataMapperMethod.Create, () => target.Create()));
-        }
-
-        public virtual IHorseBarn? LocalUpdate(IHorseBarn target)
-        {
-            var cTarget = (HorseBarn)target ?? throw new Exception("HorseBarn must implement IHorseBarn");
-            return DoMapperMethodCall<IHorseBarn>(cTarget, DataMapperMethod.Update, () => cTarget.Update());
-        }
-
-        async Task<IEditBase?> IFactoryEditBase<HorseBarn>.Save(HorseBarn target)
-        {
-            return (IEditBase? )(await SaveProperty(target));
+            var cTarget = (HorseBarn)target ?? throw new Exception("IHorseBarn must implement HorseBarn");
+            return Task.FromResult(DoMapperMethodCall<IHorseBarn>(cTarget, DataMapperMethod.Update, () => cTarget.Update()));
         }
 
         public virtual Task<IHorseBarn?> Save(IHorseBarn target)
@@ -107,6 +135,11 @@ namespace HorseBarn.lib
         public virtual async Task<IHorseBarn?> RemoteSave(IHorseBarn target)
         {
             return await DoRemoteRequest.ForDelegate<IHorseBarn?>(typeof(SaveDelegate), [target]);
+        }
+
+        async Task<IEditBase?> IFactoryEditBase<HorseBarn>.Save(HorseBarn target)
+        {
+            return (IEditBase? )await Save(target);
         }
 
         public virtual Task<IHorseBarn?> LocalSave(IHorseBarn target)
@@ -126,7 +159,7 @@ namespace HorseBarn.lib
             }
             else
             {
-                return Task.FromResult(LocalUpdate(target));
+                return LocalUpdate(target);
             }
         }
 
@@ -140,11 +173,6 @@ namespace HorseBarn.lib
             {
                 var factory = cc.GetRequiredService<HorseBarnFactory>();
                 return () => factory.LocalFetch();
-            });
-            services.AddScoped<CreateDelegate>(cc =>
-            {
-                var factory = cc.GetRequiredService<HorseBarnFactory>();
-                return () => factory.LocalCreate();
             });
             services.AddScoped<SaveDelegate>(cc =>
             {

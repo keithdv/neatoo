@@ -5,16 +5,21 @@ using Neatoo.Portal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.AuthorizationRules;
+using Neatoo.Portal.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 /*
-Debugging Messages:
-: INoBaseClassB
-*/
+                    Debugging Messages:
+                    : INoBaseClassB
+No MethodDeclarationSyntax for GetType
+No MethodDeclarationSyntax for MemberwiseClone
+No AuthorizeAttribute
+                    */
 namespace Neatoo.UnitTest.Portal
 {
     public interface INoBaseClassBFactory

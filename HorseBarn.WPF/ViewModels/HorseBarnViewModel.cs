@@ -49,7 +49,7 @@ public class HorseBarnViewModel : Screen, IHandle<IHorseCriteria>
         // how does CSLA handle this?
         if (HorseBarn.Pasture is null)
         {
-            HorseBarn = await horseBarnFactory.Create();
+            HorseBarn = horseBarnFactory.Create();
 
             var horseCriteria = horseCriteriaPortal.Fetch();
             horseCriteria.Name = "Secretariat";

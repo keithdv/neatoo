@@ -205,10 +205,10 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
 
         if (Factory == null)
         {
-            throw new Exception("Factory is not set. Use the Factory attriute and add [Insert], [Update] and [Delete] Factory methods to Save.");
+            throw new Exception("Default Factory.Save() is not set. To use the save method [Insert], [Update] and/or [Delete] methods with no non-service parameters are required.");
         }
 
-        return await Factory.Save((T)(IEditBase)this);
+        return await Factory.Save((T)this);
     }
 
     new protected IEditProperty GetProperty(string propertyName)

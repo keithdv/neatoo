@@ -101,15 +101,16 @@ internal class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
         }
     }
 
-
-#if !CLIENT
-
     [Create]
     public void Create([Service] IPastureFactory pasturePortal, [Service] ICartListFactory cartListPortal)
     {
         this.Pasture = pasturePortal.Create();
         this.Carts = cartListPortal.Create();
     }
+
+#if !CLIENT
+
+
 
     [Remote]
     [Fetch]
@@ -173,11 +174,6 @@ internal class HorseBarn : CustomEditBase<HorseBarn>, IHorseBarn
     [Remote]
     public void Fetch()
     {
-    }
-
-    [Create]
-    [Remote]
-    public void Create(){
     }
 
     [Update]

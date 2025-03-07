@@ -76,8 +76,8 @@ public class NeatooBaseJsonTypeConverter<T> : JsonConverter<T>
             }
             else if (propertyName == "$type")
             {
-                var typeString = reader.GetString();
-                var type = localAssemblies.FindType(typeString);
+                var fullName = reader.GetString();
+                var type = localAssemblies.FindType(fullName);
                 result = (T)scope.GetRequiredService(type);
 
                 if (result is IJsonOnDeserializing jsonOnDeserializing)
@@ -85,6 +85,7 @@ public class NeatooBaseJsonTypeConverter<T> : JsonConverter<T>
                     jsonOnDeserializing.OnDeserializing();
                 }
 
+                // TODO : Ugly code block
                 editBaseType = result.GetType();
 
                 do
@@ -113,7 +114,7 @@ public class NeatooBaseJsonTypeConverter<T> : JsonConverter<T>
                     if (reader.TokenType != JsonTokenType.StartObject) { throw new JsonException(); }
 
                     Type propertyType = default;
-
+                    string? pName = null;
                     while (reader.Read())
                     {
                         if (reader.TokenType == JsonTokenType.EndObject) { break; }
@@ -123,11 +124,19 @@ public class NeatooBaseJsonTypeConverter<T> : JsonConverter<T>
 
                         reader.Read();
 
-                        if (propertyName == "$type")
+                        if (propertyName == "$name")
+                        {
+                            pName = reader.GetString();
+                            propertyType = result.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).First(p => p.Name == pName).PropertyType;
+                        }
+                        else if (propertyName == "$type")
                         {
                             var typeFullName = reader.GetString();
 
-                            propertyType = Type.GetType(reader.GetString());
+                            // Assume a Property<T> of some derivation
+                            var pType = localAssemblies.FindType(typeFullName);
+                            propertyType = pType.MakeGenericType(propertyType);
+
                         }
                         else if (propertyName == "$value")
                         {
@@ -186,8 +195,11 @@ public class NeatooBaseJsonTypeConverter<T> : JsonConverter<T>
             {
                 writer.WriteStartObject();
 
+                writer.WritePropertyName("$name");
+                writer.WriteStringValue(p.Name);
+
                 writer.WritePropertyName("$type");
-                writer.WriteStringValue(p.GetType().AssemblyQualifiedName);
+                writer.WriteStringValue(p.GetType().GetGenericTypeDefinition().FullName);
 
                 writer.WritePropertyName("$value");
 

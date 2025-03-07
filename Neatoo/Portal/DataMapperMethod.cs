@@ -16,7 +16,7 @@ internal static class DataMapper
         Delete = 16,
         Read = 64,
         Write = 128,
-        Authorization = 256,
+        Execute = 256
     }
 
     public enum DataMapperMethod
@@ -26,8 +26,7 @@ internal static class DataMapper
         Fetch = DataMapperMethodType.Fetch | DataMapperMethodType.Read,
         Insert = DataMapperMethodType.Insert | DataMapperMethodType.Write,
         Update = DataMapperMethodType.Update | DataMapperMethodType.Write,
-        Delete = DataMapperMethodType.Delete | DataMapperMethodType.Write,
-        Authorize = DataMapperMethodType.Authorization,
+        Delete = DataMapperMethodType.Delete | DataMapperMethodType.Write
     }
 
 

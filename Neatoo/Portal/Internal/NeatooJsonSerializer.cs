@@ -19,13 +19,13 @@ public interface INeatooJsonSerializer
 
 public class NeatooJsonSerializer : INeatooJsonSerializer
 {
-    private readonly GetImplementationType getImplementationType;
+    private readonly GetServiceImplementationType getImplementationType;
     private readonly ILocalAssemblies localAssemblies;
 
     JsonSerializerOptions Options { get; }
 
     private NeatooReferenceHandler MyReferenceHandler { get; } = new NeatooReferenceHandler();
-    public NeatooJsonSerializer(NeatooJsonConverterFactory neatooJsonConverterFactory, GetImplementationType getImplementationType, ILocalAssemblies localAssemblies)
+    public NeatooJsonSerializer(NeatooJsonConverterFactory neatooJsonConverterFactory, GetServiceImplementationType getImplementationType, ILocalAssemblies localAssemblies)
     {
         Options = new JsonSerializerOptions
         {
@@ -41,7 +41,7 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
 
     public string? Serialize(object? target)
     {
-        if(target == null)
+        if (target == null)
         {
             return null;
         }
@@ -93,7 +93,7 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
 
     public RemoteRequestDto ToRemoteRequest(Type delegateType, params object[]? parameters)
     {
-        List<ObjectTypeJson>? parameterJson = null;
+        List<ObjectTypeJson?>? parameterJson = null;
 
         if (parameters != null)
         {
@@ -113,7 +113,7 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         ArgumentNullException.ThrowIfNull(saveTarget, nameof(saveTarget));
 
 
-        List<ObjectTypeJson>? parameterJson = null;
+        List<ObjectTypeJson?>? parameterJson = null;
 
         if (parameters != null)
         {
@@ -132,8 +132,12 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         };
     }
 
-    public ObjectTypeJson ToObjectTypeJson(object target)
+    public ObjectTypeJson? ToObjectTypeJson(object? target)
     {
+        if (target == null)
+        {
+            return null;
+        }
         ArgumentNullException.ThrowIfNull(target, nameof(target));
         ArgumentNullException.ThrowIfNull(target.GetType().FullName, nameof(Type.FullName));
         return new ObjectTypeJson(Serialize(target)!, target.GetType().FullName!);
@@ -150,7 +154,7 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         {
             target = FromObjectTypeJson(remoteRequest.SaveTarget);
         }
-        if(remoteRequest.Parameters != null)
+        if (remoteRequest.Parameters != null)
         {
             parameters = remoteRequest.Parameters.Select(c => FromObjectTypeJson(c)).ToArray();
         }
@@ -175,8 +179,13 @@ public class NeatooJsonSerializer : INeatooJsonSerializer
         return Deserialize<T>(portalResponse.ObjectJson);
     }
 
-    public object FromObjectTypeJson(ObjectTypeJson objectTypeJson)
+    public object? FromObjectTypeJson(ObjectTypeJson? objectTypeJson)
     {
+        if (objectTypeJson == null)
+        {
+            return null;
+        }
+
         return Deserialize(objectTypeJson.Json, localAssemblies.FindType(objectTypeJson.AssemblyType));
     }
 

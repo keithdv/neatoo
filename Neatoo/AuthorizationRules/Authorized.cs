@@ -5,8 +5,11 @@ namespace Neatoo.AuthorizationRules;
 
 public class Authorized
 {
-    public bool HasAccess { get; protected set; }
-    public string? Message { get; protected set; }
+    [JsonInclude]
+    public bool HasAccess { get; init; }
+
+    [JsonInclude]
+    public string? Message { get; init; }
 
     public Authorized()
     {
@@ -56,7 +59,12 @@ public class Authorized
 
 public class Authorized<T> : Authorized
 {
-    public T? Result { get; protected set; }
+    [JsonInclude]
+    public T? Result { get; init; }
+
+    public Authorized()
+    {
+    }
 
     public Authorized(Authorized result){
         HasAccess = result.HasAccess;
@@ -69,11 +77,11 @@ public class Authorized<T> : Authorized
         HasAccess = true;
     }
 
-    [JsonConstructor]
-    public Authorized(bool hasAccess, string message, T result) : base(hasAccess, message)
-    {
-        Result = result;
-    }
+    //[JsonConstructor]
+    //public Authorized(bool hasAccess, string message, T result) : base(hasAccess, message)
+    //{
+    //    Result = result;
+    //}
 
     public static Authorized<T> AccessGranted(T result)
     {

@@ -36,13 +36,15 @@ internal class Pasture : CustomEditBase<Pasture>, IPasture
         HorseList.RemoveHorse(horse);
     }
 
-#if !CLIENT
-
     [Create]
     public void Create([Service] IHorseListFactory horseListPortal)
     {
         HorseList = horseListPortal.Create(); 
     }
+
+#if !CLIENT
+
+
 
     [Fetch]
     public void Fetch(Dal.Ef.Pasture pasture, [Service] IHorseListFactory horseListPortal)

@@ -20,30 +20,29 @@ using System.Text;
 using System.Threading.Tasks;
 
 /*
-Debugging Messages:
-Parent class: AuthorizationClassTests
-For IAuthorization using IAuthorization
+                    Debugging Messages:
+                    Parent class: AuthorizationClassTests
 : IDemoObject
-*/
+No MethodDeclarationSyntax for GetType
+No MethodDeclarationSyntax for MemberwiseClone
+                    */
 namespace Neatoo.UnitTest.Portal
 {
     public interface IDemoObjectFactory
     {
         IDemoObject Create();
-        Authorized<IDemoObject> TryCreate();
-        Authorized CanCreate();
         IDemoObject? CreateCanReturnNull();
-        Authorized<IDemoObject> TryCreateCanReturnNull();
-        Authorized CanCreateCanReturnNull();
         Task<IDemoObject> CreateAsync();
-        Task<Authorized<IDemoObject>> TryCreateAsync();
-        Task<Authorized> CanCreateAsync();
         Task<IDemoObject?> CreateRemote();
-        Task<Authorized<IDemoObject>> TryCreateRemote();
-        Task<Authorized> CanCreateRemote();
+        Authorized CanCreate();
+        Authorized CanCreateCanReturnNull();
+        Authorized CanCreateAsync();
+        Authorized CanCreateRemote();
+        Authorized CanInsert();
+        Authorized CanUpdate();
+        Authorized CanDelete();
         Task<IDemoObject?> Save(IDemoObject target);
         Task<Authorized<IDemoObject>> TrySave(IDemoObject target);
-        Task<Authorized> CanSave(IDemoObject target);
     }
 
     internal class DemoObjectFactory : FactoryEditBase<DemoObject>, IFactoryEditBase<DemoObject>, IDemoObjectFactory
@@ -51,8 +50,8 @@ namespace Neatoo.UnitTest.Portal
         private readonly IServiceProvider ServiceProvider;
         private readonly IDoRemoteRequest DoRemoteRequest;
         // Delegates
-        public delegate Task<Authorized<IDemoObject>> CreateRemoteDelegate(bool checkAuthOnly);
-        public delegate Task<Authorized<IDemoObject>> SaveDelegate(IDemoObject target, bool checkAuthOnly);
+        public delegate Task<Authorized<IDemoObject>> CreateRemoteDelegate();
+        public delegate Task<Authorized<IDemoObject>> SaveDelegate(IDemoObject target);
         // Delegate Properties to provide Local or Remote fork in execution
         public IAuthorization IAuthorization { get; }
         public CreateRemoteDelegate CreateRemoteProperty { get; }
@@ -77,30 +76,16 @@ namespace Neatoo.UnitTest.Portal
 
         public virtual IDemoObject Create()
         {
-            return (LocalCreate(false)).Result;
+            return (LocalCreate()).Result;
         }
 
-        public virtual Authorized<IDemoObject> TryCreate()
+        public Authorized<IDemoObject> LocalCreate()
         {
-            return LocalCreate(false);
-        }
-
-        public virtual Authorized CanCreate()
-        {
-            return LocalCreate(true);
-        }
-
-        public Authorized<IDemoObject> LocalCreate(bool checkAuthOnly)
-        {
-            Authorized anyaccess = IAuthorization.AnyAccess();
-            if (!anyaccess.HasAccess)
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
             {
-                return new Authorized<IDemoObject>(anyaccess);
-            }
-
-            if (checkAuthOnly)
-            {
-                return new Authorized<IDemoObject>(true);
+                return new Authorized<IDemoObject>(authorized);
             }
 
             var target = ServiceProvider.GetRequiredService<DemoObject>();
@@ -109,30 +94,16 @@ namespace Neatoo.UnitTest.Portal
 
         public virtual IDemoObject? CreateCanReturnNull()
         {
-            return (LocalCreateCanReturnNull(false)).Result;
+            return (LocalCreateCanReturnNull()).Result;
         }
 
-        public virtual Authorized<IDemoObject> TryCreateCanReturnNull()
+        public Authorized<IDemoObject> LocalCreateCanReturnNull()
         {
-            return LocalCreateCanReturnNull(false);
-        }
-
-        public virtual Authorized CanCreateCanReturnNull()
-        {
-            return LocalCreateCanReturnNull(true);
-        }
-
-        public Authorized<IDemoObject> LocalCreateCanReturnNull(bool checkAuthOnly)
-        {
-            Authorized anyaccess = IAuthorization.AnyAccess();
-            if (!anyaccess.HasAccess)
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
             {
-                return new Authorized<IDemoObject>(anyaccess);
-            }
-
-            if (checkAuthOnly)
-            {
-                return new Authorized<IDemoObject>(true);
+                return new Authorized<IDemoObject>(authorized);
             }
 
             var target = ServiceProvider.GetRequiredService<DemoObject>();
@@ -141,30 +112,16 @@ namespace Neatoo.UnitTest.Portal
 
         public virtual async Task<IDemoObject> CreateAsync()
         {
-            return (await LocalCreateAsync(false)).Result;
+            return (await LocalCreateAsync()).Result;
         }
 
-        public virtual async Task<Authorized<IDemoObject>> TryCreateAsync()
+        public async Task<Authorized<IDemoObject>> LocalCreateAsync()
         {
-            return await LocalCreateAsync(false);
-        }
-
-        public virtual async Task<Authorized> CanCreateAsync()
-        {
-            return await LocalCreateAsync(true);
-        }
-
-        public async Task<Authorized<IDemoObject>> LocalCreateAsync(bool checkAuthOnly)
-        {
-            Authorized anyaccess = IAuthorization.AnyAccess();
-            if (!anyaccess.HasAccess)
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
             {
-                return new Authorized<IDemoObject>(anyaccess);
-            }
-
-            if (checkAuthOnly)
-            {
-                return new Authorized<IDemoObject>(true);
+                return new Authorized<IDemoObject>(authorized);
             }
 
             var target = ServiceProvider.GetRequiredService<DemoObject>();
@@ -174,65 +131,191 @@ namespace Neatoo.UnitTest.Portal
 
         public virtual async Task<IDemoObject?> CreateRemote()
         {
-            return (await CreateRemoteProperty(false)).Result;
+            return (await CreateRemoteProperty()).Result;
         }
 
-        public virtual async Task<Authorized<IDemoObject>> TryCreateRemote()
+        public virtual async Task<Authorized<IDemoObject>> RemoteCreateRemote()
         {
-            return await CreateRemoteProperty(false);
+            return await DoRemoteRequest.ForDelegate<Authorized<IDemoObject>>(typeof(CreateRemoteDelegate), []);
         }
 
-        public virtual async Task<Authorized> CanCreateRemote()
+        public Task<Authorized<IDemoObject>> LocalCreateRemote()
         {
-            return await CreateRemoteProperty(true);
-        }
-
-        public virtual async Task<Authorized<IDemoObject>> RemoteCreateRemote(bool checkAuthOnly)
-        {
-            return await DoRemoteRequest.ForDelegate<Authorized<IDemoObject>>(typeof(CreateRemoteDelegate), [, checkAuthOnly]);
-        }
-
-        public async Task<Authorized<IDemoObject>> LocalCreateRemote(bool checkAuthOnly)
-        {
-            Authorized anyaccess = IAuthorization.AnyAccess();
-            if (!anyaccess.HasAccess)
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
             {
-                return new Authorized<IDemoObject>(anyaccess);
-            }
-
-            if (checkAuthOnly)
-            {
-                return new Authorized<IDemoObject>(true);
+                return Task.FromResult(new Authorized<IDemoObject>(authorized));
             }
 
             var target = ServiceProvider.GetRequiredService<DemoObject>();
-            return new Authorized<IDemoObject>(DoMapperMethodCallBool<IDemoObject>(target, DataMapperMethod.Create, () => target.CreateRemote()));
+            return Task.FromResult(new Authorized<IDemoObject>(DoMapperMethodCallBool<IDemoObject>(target, DataMapperMethod.Create, () => target.CreateRemote())));
         }
 
-        public virtual IDemoObject? LocalInsert(IDemoObject target)
+        public Task<Authorized<IDemoObject>> LocalInsert(IDemoObject target)
         {
-            var cTarget = (DemoObject)target ?? throw new Exception("DemoObject must implement IDemoObject");
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
+            {
+                return Task.FromResult(new Authorized<IDemoObject>(authorized));
+            }
+
+            var cTarget = (DemoObject)target ?? throw new Exception("IDemoObject must implement DemoObject");
             var disposableDependency = ServiceProvider.GetService<IDisposableDependency>();
-            return DoMapperMethodCall<IDemoObject>(cTarget, DataMapperMethod.Insert, () => cTarget.Insert(disposableDependency));
+            return Task.FromResult(new Authorized<IDemoObject>(DoMapperMethodCall<IDemoObject>(cTarget, DataMapperMethod.Insert, () => cTarget.Insert(disposableDependency))));
         }
 
-        public virtual IDemoObject? LocalUpdate(IDemoObject target)
+        public Authorized<IDemoObject> LocalUpdate(IDemoObject target)
         {
-            var cTarget = (DemoObject)target ?? throw new Exception("DemoObject must implement IDemoObject");
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
+            {
+                return new Authorized<IDemoObject>(authorized);
+            }
+
+            var cTarget = (DemoObject)target ?? throw new Exception("IDemoObject must implement DemoObject");
             var disposableDependency = ServiceProvider.GetService<IDisposableDependency>();
-            return DoMapperMethodCall<IDemoObject>(cTarget, DataMapperMethod.Update, () => cTarget.Update(disposableDependency));
+            return new Authorized<IDemoObject>(DoMapperMethodCall<IDemoObject>(cTarget, DataMapperMethod.Update, () => cTarget.Update(disposableDependency)));
         }
 
-        public virtual IDemoObject? LocalDelete(IDemoObject target)
+        public Authorized<IDemoObject> LocalDelete(IDemoObject target)
         {
-            var cTarget = (DemoObject)target ?? throw new Exception("DemoObject must implement IDemoObject");
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
+            {
+                return new Authorized<IDemoObject>(authorized);
+            }
+
+            var cTarget = (DemoObject)target ?? throw new Exception("IDemoObject must implement DemoObject");
             var disposableDependency = ServiceProvider.GetService<IDisposableDependency>();
-            return DoMapperMethodCall<IDemoObject>(cTarget, DataMapperMethod.Delete, () => cTarget.Delete(disposableDependency));
+            return new Authorized<IDemoObject>(DoMapperMethodCall<IDemoObject>(cTarget, DataMapperMethod.Delete, () => cTarget.Delete(disposableDependency)));
         }
 
-        public virtual Task<IDemoObject?> Save(IDemoObject target)
+        public virtual Authorized CanCreate()
         {
-            var authorized = (await SaveProperty(target, false));
+            return LocalCanCreate();
+        }
+
+        public Authorized LocalCanCreate()
+        {
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
+            {
+                return authorized;
+            }
+
+            return new Authorized(true);
+        }
+
+        public virtual Authorized CanCreateCanReturnNull()
+        {
+            return LocalCanCreateCanReturnNull();
+        }
+
+        public Authorized LocalCanCreateCanReturnNull()
+        {
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
+            {
+                return authorized;
+            }
+
+            return new Authorized(true);
+        }
+
+        public virtual Authorized CanCreateAsync()
+        {
+            return LocalCanCreateAsync();
+        }
+
+        public Authorized LocalCanCreateAsync()
+        {
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
+            {
+                return authorized;
+            }
+
+            return new Authorized(true);
+        }
+
+        public virtual Authorized CanCreateRemote()
+        {
+            return LocalCanCreateRemote();
+        }
+
+        public Authorized LocalCanCreateRemote()
+        {
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
+            {
+                return authorized;
+            }
+
+            return new Authorized(true);
+        }
+
+        public virtual Authorized CanInsert()
+        {
+            return LocalCanInsert();
+        }
+
+        public Authorized LocalCanInsert()
+        {
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
+            {
+                return authorized;
+            }
+
+            return new Authorized(true);
+        }
+
+        public virtual Authorized CanUpdate()
+        {
+            return LocalCanUpdate();
+        }
+
+        public Authorized LocalCanUpdate()
+        {
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
+            {
+                return authorized;
+            }
+
+            return new Authorized(true);
+        }
+
+        public virtual Authorized CanDelete()
+        {
+            return LocalCanDelete();
+        }
+
+        public Authorized LocalCanDelete()
+        {
+            Authorized authorized;
+            authorized = IAuthorization.AnyAccess();
+            if (!authorized.HasAccess)
+            {
+                return authorized;
+            }
+
+            return new Authorized(true);
+        }
+
+        public virtual async Task<IDemoObject?> Save(IDemoObject target)
+        {
+            var authorized = (await SaveProperty(target));
             if (!authorized.HasAccess)
             {
                 throw new NotAuthorizedException(authorized.Message);
@@ -241,34 +324,23 @@ namespace Neatoo.UnitTest.Portal
             return authorized.Result;
         }
 
-        public virtual Task<Authorized<IDemoObject>> TrySave(IDemoObject target)
+        public virtual async Task<Authorized<IDemoObject>> TrySave(IDemoObject target)
         {
-            return await SaveProperty(target, false);
+            return await SaveProperty(target);
         }
 
-        public virtual Task<Authorized> CanSave(IDemoObject target)
+        public virtual async Task<Authorized<IDemoObject>> RemoteSave(IDemoObject target)
         {
-            return await SaveProperty(target, true);
+            return await DoRemoteRequest.ForDelegate<Authorized<IDemoObject>>(typeof(SaveDelegate), [target]);
         }
 
-        public virtual async Task<Authorized<IDemoObject>> RemoteSave(IDemoObject target, bool checkAuthOnly)
+        async Task<IEditBase?> IFactoryEditBase<DemoObject>.Save(DemoObject target)
         {
-            return await DoRemoteRequest.ForDelegate<Authorized<IDemoObject>>(typeof(SaveDelegate), [target, checkAuthOnly]);
+            return (IEditBase? )await Save(target);
         }
 
-        public virtual Task<Authorized<IDemoObject>> LocalSave(IDemoObject target, bool checkAuthOnly)
+        public virtual async Task<Authorized<IDemoObject>> LocalSave(IDemoObject target)
         {
-            Authorized anyaccess = IAuthorization.AnyAccess();
-            if (!anyaccess.HasAccess)
-            {
-                return new Authorized<IDemoObject>(anyaccess);
-            }
-
-            if (checkAuthOnly)
-            {
-                return new Authorized<IDemoObject>(true);
-            }
-
             if (target.IsDeleted)
             {
                 if (target.IsNew)
@@ -276,15 +348,15 @@ namespace Neatoo.UnitTest.Portal
                     return null;
                 }
 
-                return Task.FromResult(new Authorized<IDemoObject>(LocalDelete(target)));
+                return LocalDelete(target);
             }
             else if (target.IsNew)
             {
-                return Task.FromResult(new Authorized<IDemoObject>(LocalInsert(target)));
+                return await LocalInsert(target);
             }
             else
             {
-                return Task.FromResult(new Authorized<IDemoObject>(LocalUpdate(target)));
+                return LocalUpdate(target);
             }
         }
 
@@ -297,12 +369,12 @@ namespace Neatoo.UnitTest.Portal
             services.AddScoped<CreateRemoteDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<DemoObjectFactory>();
-                return (bool checkAuthOnly) => factory.LocalCreateRemote(checkAuthOnly);
+                return () => factory.LocalCreateRemote();
             });
             services.AddScoped<SaveDelegate>(cc =>
             {
                 var factory = cc.GetRequiredService<DemoObjectFactory>();
-                return (IDemoObject target, bool checkAuthOnly) => factory.LocalSave(target, checkAuthOnly);
+                return (IDemoObject target) => factory.LocalSave(target);
             });
             services.AddScoped<IFactoryEditBase<DemoObject>, DemoObjectFactory>();
         }

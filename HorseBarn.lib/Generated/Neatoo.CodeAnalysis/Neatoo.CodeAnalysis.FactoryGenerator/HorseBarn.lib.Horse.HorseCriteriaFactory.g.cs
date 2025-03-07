@@ -8,19 +8,41 @@ using Neatoo.Rules.Rules;
 using System.ComponentModel.DataAnnotations;
 
 /*
-Debugging Messages:
-For IHorseCriteriaAuthorization using IHorseCriteriaAuthorization
-: ValidateBase<HorseCriteria>, IHorseCriteria
-*/
+                    Debugging Messages:
+                    : ValidateBase<HorseCriteria>, IHorseCriteria
+No MethodDeclarationSyntax for get_RuleManager
+No MethodDeclarationSyntax for get_MetaState
+No MethodDeclarationSyntax for ChildNeatooPropertyChanged
+No MethodDeclarationSyntax for get_ObjectInvalid
+No MethodDeclarationSyntax for set_ObjectInvalid
+No MethodDeclarationSyntax for get_IsPaused
+No MethodDeclarationSyntax for set_IsPaused
+No MethodDeclarationSyntax for RunSelfRules
+No MethodDeclarationSyntax for RunAllRules
+No MethodDeclarationSyntax for get_AsyncTaskSequencer
+No MethodDeclarationSyntax for get_PropertyManager
+No MethodDeclarationSyntax for set_PropertyManager
+No MethodDeclarationSyntax for get_Parent
+No MethodDeclarationSyntax for set_Parent
+No MethodDeclarationSyntax for SetParent
+No MethodDeclarationSyntax for Neatoo.Core.ISetParent.SetParent
+No MethodDeclarationSyntax for Getter
+No MethodDeclarationSyntax for Setter
+No MethodDeclarationSyntax for WaitForTasks
+No MethodDeclarationSyntax for add_PropertyChanged
+No MethodDeclarationSyntax for remove_PropertyChanged
+No MethodDeclarationSyntax for add_NeatooPropertyChanged
+No MethodDeclarationSyntax for remove_NeatooPropertyChanged
+No MethodDeclarationSyntax for GetType
+No MethodDeclarationSyntax for MemberwiseClone
+                    */
 namespace HorseBarn.lib.Horse
 {
     public interface IHorseCriteriaFactory
     {
         IHorseCriteria Fetch();
-        Authorized<IHorseCriteria> TryFetch();
-        Authorized CanFetch();
         IHorseCriteria Fetch(IEnumerable<string> horseNames);
-        Authorized<IHorseCriteria> TryFetch(IEnumerable<string> horseNames);
+        Authorized CanFetch();
         Authorized CanFetch(IEnumerable<string> horseNames);
     }
 
@@ -47,30 +69,16 @@ namespace HorseBarn.lib.Horse
 
         public virtual IHorseCriteria Fetch()
         {
-            return (LocalFetch(false)).Result;
+            return (LocalFetch()).Result;
         }
 
-        public virtual Authorized<IHorseCriteria> TryFetch()
+        public Authorized<IHorseCriteria> LocalFetch()
         {
-            return LocalFetch(false);
-        }
-
-        public virtual Authorized CanFetch()
-        {
-            return LocalFetch(true);
-        }
-
-        public Authorized<IHorseCriteria> LocalFetch(bool checkAuthOnly)
-        {
-            Authorized canfetch = IHorseCriteriaAuthorization.CanFetch();
-            if (!canfetch.HasAccess)
+            Authorized authorized;
+            authorized = IHorseCriteriaAuthorization.CanFetch();
+            if (!authorized.HasAccess)
             {
-                return new Authorized<IHorseCriteria>(canfetch);
-            }
-
-            if (checkAuthOnly)
-            {
-                return new Authorized<IHorseCriteria>(true);
+                return new Authorized<IHorseCriteria>(authorized);
             }
 
             var target = ServiceProvider.GetRequiredService<HorseCriteria>();
@@ -79,34 +87,54 @@ namespace HorseBarn.lib.Horse
 
         public virtual IHorseCriteria Fetch(IEnumerable<string> horseNames)
         {
-            return (LocalFetch1(horseNames, false)).Result;
+            return (LocalFetch1(horseNames)).Result;
         }
 
-        public virtual Authorized<IHorseCriteria> TryFetch(IEnumerable<string> horseNames)
+        public Authorized<IHorseCriteria> LocalFetch1(IEnumerable<string> horseNames)
         {
-            return LocalFetch1(horseNames, false);
-        }
-
-        public virtual Authorized CanFetch(IEnumerable<string> horseNames)
-        {
-            return LocalFetch1(horseNames, true);
-        }
-
-        public Authorized<IHorseCriteria> LocalFetch1(IEnumerable<string> horseNames, bool checkAuthOnly)
-        {
-            Authorized canfetch = IHorseCriteriaAuthorization.CanFetch();
-            if (!canfetch.HasAccess)
+            Authorized authorized;
+            authorized = IHorseCriteriaAuthorization.CanFetch();
+            if (!authorized.HasAccess)
             {
-                return new Authorized<IHorseCriteria>(canfetch);
-            }
-
-            if (checkAuthOnly)
-            {
-                return new Authorized<IHorseCriteria>(true);
+                return new Authorized<IHorseCriteria>(authorized);
             }
 
             var target = ServiceProvider.GetRequiredService<HorseCriteria>();
             return new Authorized<IHorseCriteria>(DoMapperMethodCall<IHorseCriteria>(target, DataMapperMethod.Fetch, () => target.Fetch(horseNames)));
+        }
+
+        public virtual Authorized CanFetch()
+        {
+            return LocalCanFetch();
+        }
+
+        public Authorized LocalCanFetch()
+        {
+            Authorized authorized;
+            authorized = IHorseCriteriaAuthorization.CanFetch();
+            if (!authorized.HasAccess)
+            {
+                return authorized;
+            }
+
+            return new Authorized(true);
+        }
+
+        public virtual Authorized CanFetch(IEnumerable<string> horseNames)
+        {
+            return LocalCanFetch1(horseNames);
+        }
+
+        public Authorized LocalCanFetch1(IEnumerable<string> horseNames)
+        {
+            Authorized authorized;
+            authorized = IHorseCriteriaAuthorization.CanFetch();
+            if (!authorized.HasAccess)
+            {
+                return authorized;
+            }
+
+            return new Authorized(true);
         }
 
         public static void FactoryServiceRegistrar(IServiceCollection services)

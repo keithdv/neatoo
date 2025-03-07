@@ -2,9 +2,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.AuthorizationRules;
 using Neatoo.Portal;
+using Neatoo.Portal.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -49,6 +51,7 @@ namespace Neatoo.UnitTest.Portal
     public class NoBaseClassB : INoBaseClassB
     {
         public string Name { get; set; }
+        public string Value { get; set; }
 
         [Create]
         public void Create(string name)
@@ -64,6 +67,33 @@ namespace Neatoo.UnitTest.Portal
             Name = name;
         }
     }
+
+    public interface INoBaseClassAList : IList<INoBaseClassA>
+    {
+    }
+
+    [Factory]
+    public class NoBaseClassAList : List<INoBaseClassA>, INoBaseClassAList
+    {
+        [Create]
+        public void Create([Service] INoBaseClassAFactory factoryA)
+        {
+            Add(factoryA.Create(Guid.NewGuid().ToString()));
+            Add(factoryA.Create(Guid.NewGuid().ToString()));
+            Add(this[0]);
+        }
+
+
+        [Remote]
+        [Create]
+        public void CreateRemote([Service] INoBaseClassAFactory factoryA)
+        {
+            Add(factoryA.Create(Guid.NewGuid().ToString()));
+            Add(factoryA.Create(Guid.NewGuid().ToString()));
+            Add(this[0]);
+        }
+    }
+
 
     public interface INoBaseClassList : IList<INoBaseClass>
     {
@@ -110,6 +140,31 @@ namespace Neatoo.UnitTest.Portal
         }
 
         [TestMethod]
+        public void NoBaseClassTests_SerializeInterface_INoBaseClass()
+        {
+            var guidStr = Guid.NewGuid().ToString();
+            var obj = new NoBaseClassA() { Name = guidStr };
+            var neatooJsonSerializer = serverScope.ServiceProvider.GetRequiredService<INeatooJsonSerializer>();
+
+            var json = neatooJsonSerializer.Serialize(obj, typeof(INoBaseClass));
+        }
+
+        [TestMethod]
+        public void NoBaseClassTests_DeSerialize_INoBaseClassA()
+        {
+            var guidStr = Guid.NewGuid().ToString();
+            var obj = new NoBaseClassA() { Name = guidStr };
+            var neatooJsonSerializer = serverScope.ServiceProvider.GetRequiredService<INeatooJsonSerializer>();
+
+            var json = neatooJsonSerializer.Serialize(obj, typeof(INoBaseClassA));
+
+            var result = neatooJsonSerializer.Deserialize<INoBaseClassA>(json);
+
+            Assert.AreNotSame(obj, result);
+            Assert.AreEqual(obj.Name, result.Name);
+        }
+
+        [TestMethod]
         public void NoBaseClassTests_Create()
         {
             var factory = clientScope.GetRequiredService<INoBaseClassAFactory>();
@@ -128,6 +183,27 @@ namespace Neatoo.UnitTest.Portal
             var result = await factory.CreateRemote(guid);
 
             Assert.AreEqual(guid, result.Name);
+        }
+
+
+        [TestMethod]
+        public void NoBaseClassAListTests_Create()
+        {
+            var factory = clientScope.GetRequiredService<INoBaseClassAListFactory>();
+            var result = factory.Create();
+            Assert.AreEqual(3, result.Count);
+            Assert.AreSame(result[0], result[2]);
+        }
+
+        [TestMethod]
+        public async Task NoBaseClassAListTests_CreateRemote()
+        {
+            var factory = clientScope.GetRequiredService<INoBaseClassAListFactory>();
+            var result = await factory.CreateRemote();
+            Assert.AreEqual(3, result.Count);
+            Assert.IsInstanceOfType<NoBaseClassA>(result[0]);
+            Assert.IsInstanceOfType<NoBaseClassA>(result[1]);
+            Assert.AreSame(result[0], result[2]);
         }
 
         [TestMethod]

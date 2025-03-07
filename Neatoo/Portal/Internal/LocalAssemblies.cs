@@ -18,18 +18,29 @@ internal class LocalAssemblies : ILocalAssemblies
         var foundTypes = assemblies.SelectMany(a => a.GetTypes())
         .Where(a => a != null && a.FullName != null);
 
+
         lock (lockObject)
         {
             foreach (var type in foundTypes)
             {
                 TypeCache[type.FullName!] = type;
             }
+
+            foreach (var assembly in assemblies)
+            {
+                var typeIds = assembly.GetTypes()
+                    .Where(t => t.FullName != null && t.FullName.EndsWith("TypeId"))
+                    .ToDictionary(t => (long)t.GetField("TypeId")!.GetValue(null));
+                SerializationTypeIds[assembly] = typeIds;
+            }
         }
+
     }
 
 
-    private Dictionary<string, Type?> TypeCache { get; set; } = new Dictionary<string, Type?>();
-    private Dictionary<string, Type?> DelegateTypeCache { get; set; } = new Dictionary<string, Type?>();
+    private Dictionary<string, Type?> TypeCache { get; set; } = [];
+    private Dictionary<string, Type?> DelegateTypeCache { get; set; } = [];
+    private Dictionary<Assembly, Dictionary<long, Type?>> SerializationTypeIds { get; set; } = new();
     private object lockObject = new object();
 
     public bool HasType(Type type)
@@ -47,12 +58,9 @@ internal class LocalAssemblies : ILocalAssemblies
             }
         }
 
-        var foundType = AppDomain.CurrentDomain.GetAssemblies()
-                .Select(a => a.GetType(fullName))
-                .Where(a => a != null && a.FullName != null)
-                .FirstOrDefault() ?? throw new Exception($"Could not find type {fullName}");
+        var foundType = Type.GetType(fullName);
 
-        if(foundType == null)
+        if (foundType == null)
         {
             return null;
         }

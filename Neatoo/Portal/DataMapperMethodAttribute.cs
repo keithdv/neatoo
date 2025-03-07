@@ -16,14 +16,6 @@ public class SuppressFactoryAttribute : Attribute
     }
 }
 
-[System.AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-public class FactoryAttribute<T> : Attribute
-{
-    public FactoryAttribute()
-    {
-    }
-}
-
 [System.AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
 public class RemoteAttribute : Attribute
 {

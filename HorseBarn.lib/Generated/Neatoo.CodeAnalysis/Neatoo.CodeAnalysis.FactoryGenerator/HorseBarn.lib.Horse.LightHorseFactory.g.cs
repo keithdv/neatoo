@@ -10,13 +10,56 @@ using System.ComponentModel;
 using System.Diagnostics;
 
 /*
-Debugging Messages:
-: Horse<LightHorse>, ILightHorse
+                    Debugging Messages:
+                    : Horse<LightHorse>, ILightHorse
 : CustomEditBase<H>, IHorse
-No DataMapperMethod attribute for Create
 : EditBase<T>
-No DataMapperMethod attribute for HandleIdPropertyChanged
-*/
+No MethodDeclarationSyntax for get_PropertyManager
+No MethodDeclarationSyntax for .ctor
+No MethodDeclarationSyntax for get_Factory
+No MethodDeclarationSyntax for set_Factory
+No MethodDeclarationSyntax for get_IsMarkedModified
+No MethodDeclarationSyntax for set_IsMarkedModified
+No MethodDeclarationSyntax for get_IsNew
+No MethodDeclarationSyntax for set_IsNew
+No MethodDeclarationSyntax for get_IsDeleted
+No MethodDeclarationSyntax for set_IsDeleted
+No MethodDeclarationSyntax for get_ModifiedProperties
+No MethodDeclarationSyntax for get_IsChild
+No MethodDeclarationSyntax for set_IsChild
+No MethodDeclarationSyntax for get_EditMetaState
+No MethodDeclarationSyntax for ChildNeatooPropertyChanged
+No MethodDeclarationSyntax for Save
+No MethodDeclarationSyntax for GetProperty
+No MethodDeclarationSyntax for PauseAllActions
+No MethodDeclarationSyntax for get_Item
+No MethodDeclarationSyntax for get_RuleManager
+No MethodDeclarationSyntax for get_MetaState
+No MethodDeclarationSyntax for ChildNeatooPropertyChanged
+No MethodDeclarationSyntax for get_ObjectInvalid
+No MethodDeclarationSyntax for set_ObjectInvalid
+No MethodDeclarationSyntax for get_IsPaused
+No MethodDeclarationSyntax for set_IsPaused
+No MethodDeclarationSyntax for RunSelfRules
+No MethodDeclarationSyntax for RunAllRules
+No MethodDeclarationSyntax for get_AsyncTaskSequencer
+No MethodDeclarationSyntax for get_PropertyManager
+No MethodDeclarationSyntax for set_PropertyManager
+No MethodDeclarationSyntax for get_Parent
+No MethodDeclarationSyntax for set_Parent
+No MethodDeclarationSyntax for SetParent
+No MethodDeclarationSyntax for Neatoo.Core.ISetParent.SetParent
+No MethodDeclarationSyntax for Getter
+No MethodDeclarationSyntax for Setter
+No MethodDeclarationSyntax for WaitForTasks
+No MethodDeclarationSyntax for add_PropertyChanged
+No MethodDeclarationSyntax for remove_PropertyChanged
+No MethodDeclarationSyntax for add_NeatooPropertyChanged
+No MethodDeclarationSyntax for remove_NeatooPropertyChanged
+No MethodDeclarationSyntax for GetType
+No MethodDeclarationSyntax for MemberwiseClone
+No AuthorizeAttribute
+                    */
 namespace HorseBarn.lib.Horse
 {
     public interface ILightHorseFactory
@@ -66,42 +109,42 @@ namespace HorseBarn.lib.Horse
             return DoMapperMethodCall<ILightHorse>(target, DataMapperMethod.Fetch, () => target.Fetch(horse));
         }
 
-        public virtual ILightHorse? LocalInsert(ILightHorse target, Dal.Ef.Pasture pasture)
+        public ILightHorse LocalInsert(ILightHorse target, Dal.Ef.Pasture pasture)
         {
-            var cTarget = (LightHorse)target ?? throw new Exception("LightHorse must implement ILightHorse");
+            var cTarget = (LightHorse)target ?? throw new Exception("ILightHorse must implement LightHorse");
             return DoMapperMethodCall<ILightHorse>(cTarget, DataMapperMethod.Insert, () => cTarget.Insert(pasture));
         }
 
-        public virtual Task<ILightHorse?> LocalUpdate(ILightHorse target, Dal.Ef.Pasture pasture)
+        public ILightHorse LocalInsert1(ILightHorse target, Dal.Ef.Cart cart)
         {
-            var cTarget = (LightHorse)target ?? throw new Exception("LightHorse must implement ILightHorse");
+            var cTarget = (LightHorse)target ?? throw new Exception("ILightHorse must implement LightHorse");
+            return DoMapperMethodCall<ILightHorse>(cTarget, DataMapperMethod.Insert, () => cTarget.Insert(cart));
+        }
+
+        public Task<ILightHorse> LocalUpdate(ILightHorse target, Dal.Ef.Pasture pasture)
+        {
+            var cTarget = (LightHorse)target ?? throw new Exception("ILightHorse must implement LightHorse");
             var horseBarnContext = ServiceProvider.GetService<IHorseBarnContext>();
             return DoMapperMethodCallAsync<ILightHorse>(cTarget, DataMapperMethod.Update, () => cTarget.Update(pasture, horseBarnContext));
         }
 
-        public virtual ILightHorse? LocalDelete1(ILightHorse target, Dal.Ef.Pasture pasture)
+        public Task<ILightHorse> LocalUpdate1(ILightHorse target, Dal.Ef.Cart cart)
         {
-            var cTarget = (LightHorse)target ?? throw new Exception("LightHorse must implement ILightHorse");
-            return DoMapperMethodCall<ILightHorse>(cTarget, DataMapperMethod.Delete, () => cTarget.Delete(pasture));
-        }
-
-        public virtual ILightHorse? LocalInsert1(ILightHorse target, Dal.Ef.Cart cart)
-        {
-            var cTarget = (LightHorse)target ?? throw new Exception("LightHorse must implement ILightHorse");
-            return DoMapperMethodCall<ILightHorse>(cTarget, DataMapperMethod.Insert, () => cTarget.Insert(cart));
-        }
-
-        public virtual Task<ILightHorse?> LocalUpdate1(ILightHorse target, Dal.Ef.Cart cart)
-        {
-            var cTarget = (LightHorse)target ?? throw new Exception("LightHorse must implement ILightHorse");
+            var cTarget = (LightHorse)target ?? throw new Exception("ILightHorse must implement LightHorse");
             var horseBarnContext = ServiceProvider.GetService<IHorseBarnContext>();
             return DoMapperMethodCallAsync<ILightHorse>(cTarget, DataMapperMethod.Update, () => cTarget.Update(cart, horseBarnContext));
         }
 
-        public virtual ILightHorse? LocalDelete(ILightHorse target, Dal.Ef.Cart cart)
+        public ILightHorse LocalDelete(ILightHorse target, Dal.Ef.Cart cart)
         {
-            var cTarget = (LightHorse)target ?? throw new Exception("LightHorse must implement ILightHorse");
+            var cTarget = (LightHorse)target ?? throw new Exception("ILightHorse must implement LightHorse");
             return DoMapperMethodCall<ILightHorse>(cTarget, DataMapperMethod.Delete, () => cTarget.Delete(cart));
+        }
+
+        public ILightHorse LocalDelete1(ILightHorse target, Dal.Ef.Pasture pasture)
+        {
+            var cTarget = (LightHorse)target ?? throw new Exception("ILightHorse must implement LightHorse");
+            return DoMapperMethodCall<ILightHorse>(cTarget, DataMapperMethod.Delete, () => cTarget.Delete(pasture));
         }
 
         public virtual Task<ILightHorse?> Save(ILightHorse target, Dal.Ef.Pasture pasture)
@@ -109,7 +152,7 @@ namespace HorseBarn.lib.Horse
             return LocalSave(target, pasture);
         }
 
-        public virtual Task<ILightHorse?> LocalSave(ILightHorse target, Dal.Ef.Pasture pasture)
+        public virtual async Task<ILightHorse?> LocalSave(ILightHorse target, Dal.Ef.Pasture pasture)
         {
             if (target.IsDeleted)
             {
@@ -118,15 +161,15 @@ namespace HorseBarn.lib.Horse
                     return null;
                 }
 
-                return Task.FromResult(LocalDelete1(target, pasture));
+                return LocalDelete1(target, pasture);
             }
             else if (target.IsNew)
             {
-                return Task.FromResult(LocalInsert(target, pasture));
+                return LocalInsert(target, pasture);
             }
             else
             {
-                return LocalUpdate(target, pasture);
+                return await LocalUpdate(target, pasture);
             }
         }
 
@@ -135,7 +178,7 @@ namespace HorseBarn.lib.Horse
             return LocalSave1(target, cart);
         }
 
-        public virtual Task<ILightHorse?> LocalSave1(ILightHorse target, Dal.Ef.Cart cart)
+        public virtual async Task<ILightHorse?> LocalSave1(ILightHorse target, Dal.Ef.Cart cart)
         {
             if (target.IsDeleted)
             {
@@ -144,15 +187,15 @@ namespace HorseBarn.lib.Horse
                     return null;
                 }
 
-                return Task.FromResult(LocalDelete(target, cart));
+                return LocalDelete(target, cart);
             }
             else if (target.IsNew)
             {
-                return Task.FromResult(LocalInsert1(target, cart));
+                return LocalInsert1(target, cart);
             }
             else
             {
-                return LocalUpdate1(target, cart);
+                return await LocalUpdate1(target, cart);
             }
         }
 

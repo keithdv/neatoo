@@ -8,8 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Generated\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.ServiceRegistrarGenerator\**" />
     <Compile Remove="Rules\**" />
+    <EmbeddedResource Remove="Generated\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.ServiceRegistrarGenerator\**" />
     <EmbeddedResource Remove="Rules\**" />
+    <None Remove="Generated\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.ServiceRegistrarGenerator\**" />
     <None Remove="Rules\**" />
     <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
     <None Include="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
@@ -29,7 +32,6 @@
 
   <ItemGroup>
     <Folder Include="Generated\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.FactoryGenerator\" />
-    <Folder Include="Generated\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.ServiceRegistrarGenerator\" />
   </ItemGroup>
 
   <ItemGroup>
