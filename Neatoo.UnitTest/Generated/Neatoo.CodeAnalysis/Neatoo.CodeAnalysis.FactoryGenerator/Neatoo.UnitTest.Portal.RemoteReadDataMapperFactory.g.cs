@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory.Internal;
 using Neatoo;
-using Neatoo.Portal;
-using static Neatoo.UnitTest.Portal.RemoteReadTests;
+using Neatoo.RemoteFactory;
+using static Neatoo.UnitTest.RemoteFactory.RemoteReadTests;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.UnitTest.Objects;
@@ -20,7 +20,7 @@ No MethodDeclarationSyntax for GetType
 No MethodDeclarationSyntax for MemberwiseClone
 No AuthorizeAttribute
                     */
-namespace Neatoo.UnitTest.Portal
+namespace Neatoo.UnitTest.RemoteFactory
 {
     public interface IRemoteReadDataMapperFactory
     {

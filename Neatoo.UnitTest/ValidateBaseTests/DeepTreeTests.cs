@@ -1,11 +1,4 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neatoo.Portal;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ValidateBaseTests
 {
@@ -14,7 +7,7 @@ namespace Neatoo.UnitTest.ValidateBaseTests
         public NeatooDeepTreeNode(int depth) : base(new ValidateBaseServices<NeatooDeepTreeNode>()) {
             Depth = depth;
 
-            using (PauseAllActions())
+            //using (PauseAllActions())
             {
                 if (depth < 10)
                 {

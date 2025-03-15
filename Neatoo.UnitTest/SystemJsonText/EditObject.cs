@@ -1,5 +1,4 @@
-﻿using Neatoo.Portal;
-using System;
+﻿using Neatoo.RemoteFactory;
 
 namespace Neatoo.UnitTest.SystemTextJson.EditTests;
 
@@ -80,7 +79,7 @@ public interface IEditObjectList : IEditListBase<IEditObject>
 
 }
 
-public class EditObjectList : EditListBase<EditObjectList, IEditObject>, IEditObjectList
+public class EditObjectList : EditListBase<IEditObject>, IEditObjectList
 {
     public EditObjectList() : base()
     {

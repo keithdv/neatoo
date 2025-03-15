@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory.Internal;
 using Neatoo;
-using Neatoo.Portal;
-using static Neatoo.UnitTest.Portal.ReadAuthTests;
+using Neatoo.RemoteFactory;
+using static Neatoo.UnitTest.RemoteFactory.ReadAuthTests;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.AuthorizationRules;
@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Neatoo.UnitTest.Portal.ReadRemoteAuthTests;
+using static Neatoo.UnitTest.RemoteFactory.ReadRemoteAuthTests;
 
 /*
                     Debugging Messages:
@@ -38,7 +38,7 @@ No MethodDeclarationSyntax for MemberwiseClone
 No MethodDeclarationSyntax for ReferenceEquals
 No MethodDeclarationSyntax for ToString
                     */
-namespace Neatoo.UnitTest.Portal
+namespace Neatoo.UnitTest.RemoteFactory
 {
     public interface IReadAuthDataMapperFactory
     {

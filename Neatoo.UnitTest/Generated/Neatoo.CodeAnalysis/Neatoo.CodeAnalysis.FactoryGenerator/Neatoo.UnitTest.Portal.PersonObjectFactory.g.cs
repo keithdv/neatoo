@@ -1,16 +1,16 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory.Internal;
 using Neatoo;
-using Neatoo.Portal;
-using static Neatoo.UnitTest.Portal.PersonObjectTests;
+using Neatoo.RemoteFactory;
+using static Neatoo.UnitTest.RemoteFactory.PersonObjectTests;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neatoo.AuthorizationRules;
 using Neatoo.Internal;
-using Neatoo.Portal.Internal;
-using Neatoo.UnitTest.ObjectPortal;
+using Neatoo.RemoteFactory.Internal;
+using Neatoo.UnitTest.RemoteFactory;
 using Neatoo.UnitTest.Objects;
 using System;
 using System.Collections.Generic;
@@ -45,7 +45,7 @@ Factory CanInsert not created because it matches to an auth method with a IPerso
 Factory CanUpdate not created because it matches to an auth method with a IPersonObject parameter
 Factory CanDelete not created because it matches to an auth method with a IPersonObject parameter
                     */
-namespace Neatoo.UnitTest.Portal
+namespace Neatoo.UnitTest.RemoteFactory
 {
     public interface IPersonObjectFactory
     {

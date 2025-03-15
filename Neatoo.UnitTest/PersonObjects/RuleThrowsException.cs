@@ -1,5 +1,4 @@
 ﻿using Neatoo.Rules;
-using System;
 
 namespace Neatoo.UnitTest.PersonObjects;
 

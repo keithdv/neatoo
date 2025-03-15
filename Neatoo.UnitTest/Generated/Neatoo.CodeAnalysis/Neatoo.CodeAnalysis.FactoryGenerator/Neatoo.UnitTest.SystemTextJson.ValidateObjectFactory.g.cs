@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory.Internal;
 using Neatoo;
-using Neatoo.Portal;
+using Neatoo.RemoteFactory;
 using Neatoo.Rules;
 using System;
 using System.Collections.Generic;

@@ -1,7 +1,4 @@
-﻿using Neatoo.Portal;
-using System;
-
-namespace Neatoo.UnitTest.PersonObjects;
+﻿namespace Neatoo.UnitTest.PersonObjects;
 
 
 public abstract class PersonValidateBase<T> : ValidateBase<T>, IPersonBase

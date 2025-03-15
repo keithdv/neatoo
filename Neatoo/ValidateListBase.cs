@@ -1,12 +1,7 @@
 ﻿using Neatoo.Core;
 using Neatoo.Internal;
-using Neatoo.Portal.Internal;
-using System;
 using System.ComponentModel;
-using System.Linq;
 using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neatoo;
 
@@ -21,8 +16,7 @@ public interface IValidateListBase<I> : IListBase<I>, IValidateListBase, IValida
 
 }
 
-public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase<I>, IValidateListBase, INotifyPropertyChanged, IDataMapperTarget
-    where T : ValidateListBase<T, I>
+public abstract class ValidateListBase<I> : ListBase<I>, IValidateListBase<I>, IValidateListBase, INotifyPropertyChanged
     where I : IValidateBase
 {
     public ValidateListBase() : base()
@@ -101,13 +95,6 @@ public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase
         }
     }
 
-    public virtual IDisposable? PauseAllActions()
-    {
-        if (IsPaused) { return null; } // You are a nested using; You get nothing!!
-        IsPaused = true;
-        return new Core.Paused(this);
-    }
-
     public virtual void ResumeAllActions()
     {
         if (IsPaused)
@@ -116,15 +103,4 @@ public abstract class ValidateListBase<T, I> : ListBase<T, I>, IValidateListBase
             ResetMetaState();
         }
     }
-
-    IDisposable? IDataMapperTarget.PauseAllActions()
-    {
-        return PauseAllActions();
-    }
-
-    void IDataMapperTarget.ResumeAllActions()
-    {
-        ResumeAllActions();
-    }
-
 }

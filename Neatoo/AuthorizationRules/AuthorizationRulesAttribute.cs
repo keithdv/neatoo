@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Neatoo.AuthorizationRules;
+﻿namespace Neatoo.AuthorizationRules;
 
 
 /// <summary>

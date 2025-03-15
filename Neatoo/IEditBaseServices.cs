@@ -1,7 +1,6 @@
 ﻿using Neatoo.Core;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory;
 using Neatoo.Rules;
-using static Neatoo.Rules.Rules.IAllRequiredRulesExecuted;
 
 namespace Neatoo;
 
@@ -16,13 +15,13 @@ public interface IEditBaseServices<T> : IValidateBaseServices<T>
 {
 
     IEditPropertyManager EditPropertyManager { get; }
-    IFactoryEditBase<T>? Factory { get; }
+    IFactorySave<T>? Factory { get; }
 }
 
 public class EditBaseServices<T> : ValidateBaseServices<T>, IEditBaseServices<T>
     where T : EditBase<T>
 {
-    public IFactoryEditBase<T>? Factory { get; }
+    public IFactorySave<T>? Factory { get; }
 
     public IEditPropertyManager EditPropertyManager { get; }
 
@@ -30,7 +29,7 @@ public class EditBaseServices<T> : ValidateBaseServices<T>, IEditBaseServices<T>
 
     public new IPropertyManager<IProperty> PropertyManager => EditPropertyManager;
 
-    public EditBaseServices(IFactoryEditBase<T> factory) : base() {
+    public EditBaseServices(IFactorySave<T> factory) : base() {
 
         PropertyInfoList = new PropertyInfoList<T>((System.Reflection.PropertyInfo pi) => new PropertyInfoWrapper(pi));
 
@@ -44,7 +43,7 @@ public class EditBaseServices<T> : ValidateBaseServices<T>, IEditBaseServices<T>
         EditPropertyManager = propertyManager(propertyInfoList);
     }
 
-    public EditBaseServices(CreateEditPropertyManager propertyManager, IPropertyInfoList<T> propertyInfoList, RuleManagerFactory<T> ruleManager, IFactoryEditBase<T> factory)
+    public EditBaseServices(CreateEditPropertyManager propertyManager, IPropertyInfoList<T> propertyInfoList, RuleManagerFactory<T> ruleManager, IFactorySave<T> factory)
     {
         PropertyInfoList = propertyInfoList;
         this.ruleManagerFactory = ruleManager;

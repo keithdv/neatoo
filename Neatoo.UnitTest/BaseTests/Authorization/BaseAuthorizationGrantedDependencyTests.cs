@@ -1,7 +1,7 @@
 ﻿//using Microsoft.Extensions.DependencyInjection;
 //using Microsoft.VisualStudio.TestTools.UnitTesting;
 //using Neatoo.AuthorizationRules;
-//using Neatoo.Portal;
+//using Neatoo.RemoteFactory;
 //using Neatoo.UnitTest.Objects;
 //using System;
 //using System.Threading.Tasks;

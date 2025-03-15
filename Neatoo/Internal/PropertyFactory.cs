@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Neatoo.Core;
+﻿namespace Neatoo.Core;
 
 
 /// <summary>

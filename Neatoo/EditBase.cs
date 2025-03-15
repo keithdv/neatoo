@@ -1,16 +1,22 @@
 ﻿using Neatoo.Core;
 using Neatoo.Internal;
-using Neatoo.Portal;
-using Neatoo.Portal.Internal;
-using System;
-using System.Collections.Generic;
+using Neatoo.RemoteFactory;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Neatoo;
 
+public interface IEditBase : IValidateBase, IEditMetaProperties, IFactorySaveMeta
+{
+    IEnumerable<string> ModifiedProperties { get; }
+
+    void Delete();
+    void UnDelete();
+    Task<IEditBase> Save();
+    new IEditProperty this[string propertyName] { get; }
+}
+
 [Factory]
-public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, IDataMapperEditTarget, IEditMetaProperties, IJsonOnDeserializing, IJsonOnDeserialized
+public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, IEditMetaProperties
     where T : EditBase<T>
 {
     protected new IEditPropertyManager PropertyManager => (IEditPropertyManager)base.PropertyManager;
@@ -20,7 +26,7 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
         this.Factory = services.Factory;
     }
 
-    public IFactoryEditBase<T>? Factory { get; protected set; }
+    public IFactorySave<T>? Factory { get; protected set; }
     public bool IsMarkedModified { get; protected set; } = false;
     public bool IsModified => PropertyManager.IsModified || IsDeleted || IsNew || IsSelfModified;
     public bool IsSelfModified { get => PropertyManager.IsSelfModified || IsDeleted || IsMarkedModified; protected set => IsMarkedModified = value; }
@@ -73,11 +79,6 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
         }
     }
 
-    void IDataMapperEditTarget.MarkAsChild()
-    {
-        MarkAsChild();
-    }
-
     // TODO - Recursive set clean for all children
     protected virtual void MarkUnmodified()
     {
@@ -90,11 +91,6 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
         }
     }
 
-    void IDataMapperEditTarget.MarkUnmodified()
-    {
-        MarkUnmodified();
-    }
-
     protected virtual void MarkModified()
     {
         if (!IsPaused)
@@ -102,11 +98,6 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
             IsMarkedModified = true;
             CheckIfMetaPropertiesChanged();
         }
-    }
-
-    void IDataMapperEditTarget.MarkModified()
-    {
-        MarkModified();
     }
 
     protected virtual void MarkNew()
@@ -117,21 +108,12 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
         }
     }
 
-    void IDataMapperEditTarget.MarkNew()
-    {
-        MarkNew();
-    }
-
     protected virtual void MarkOld()
     {
         if (!IsPaused)
         {
             IsNew = false;
         }
-    }
-    void IDataMapperEditTarget.MarkOld()
-    {
-        MarkOld();
     }
 
     protected virtual void MarkDeleted()
@@ -141,11 +123,6 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
             IsDeleted = true;
             CheckIfMetaPropertiesChanged();
         }
-    }
-
-    void IDataMapperEditTarget.MarkDeleted()
-    {
-        MarkDeleted();
     }
 
     public void Delete()
@@ -208,37 +185,47 @@ public abstract class EditBase<T> : ValidateBase<T>, INeatooObject, IEditBase, I
             throw new Exception("Default Factory.Save() is not set. To use the save method [Insert], [Update] and/or [Delete] methods with no non-service parameters are required.");
         }
 
-        return await Factory.Save((T)this);
+        return (IEditBase) await Factory.Save((T)this);
     }
 
     new protected IEditProperty GetProperty(string propertyName)
     {
         return PropertyManager[propertyName];
     }
+    new public IEditProperty this[string propertyName] { get => GetProperty(propertyName); }
 
-    public override IDisposable PauseAllActions()
+    public override void PauseAllActions()
     {
+        base.PauseAllActions();
         PropertyManager.PauseAllActions();
-        return base.PauseAllActions();
     }
 
     public override void ResumeAllActions()
     {
-        PropertyManager.ResumeAllActions();
         base.ResumeAllActions();
+        PropertyManager.ResumeAllActions();
     }
 
-    public void OnDeserializing()
+    public override void FactoryComplete(FactoryOperation factoryOperation)
     {
-        IsPaused = true;
+        base.FactoryComplete(factoryOperation);
+
+        switch (factoryOperation)
+        {
+            case FactoryOperation.Create:
+                MarkNew();
+                break;
+            case FactoryOperation.Fetch:
+                break;
+            case FactoryOperation.Delete:
+                break;
+            case FactoryOperation.Insert:
+            case FactoryOperation.Update:
+                MarkUnmodified();
+                MarkOld();
+                break;
+            default:
+                break;
+        }
     }
-
-    override public void OnDeserialized()
-    {
-        base.OnDeserialized();
-        IsPaused = false;
-    }
-
-    new protected IEditProperty this[string propertyName] { get => GetProperty(propertyName); }
-
 }

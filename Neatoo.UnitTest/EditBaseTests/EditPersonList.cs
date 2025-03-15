@@ -1,11 +1,4 @@
-﻿using Neatoo.Portal;
-using Neatoo.UnitTest.PersonObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Neatoo.UnitTest.EditBaseTests;
+﻿namespace Neatoo.UnitTest.EditBaseTests;
 
 
 public interface IEditPersonList : IEditListBase<IEditPerson>
@@ -14,7 +7,7 @@ public interface IEditPersonList : IEditListBase<IEditPerson>
 
 }
 
-public class EditPersonList : EditListBase<EditPersonList, IEditPerson>, IEditPersonList
+public class EditPersonList : EditListBase<IEditPerson>, IEditPersonList
 {
     public EditPersonList() : base()
     {

@@ -5,7 +5,7 @@ using System.Reflection;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
-builder.Services.AddNeatooServices(NeatooHost.Remote, Assembly.GetAssembly(typeof(IHorseBarn)));
+builder.Services.AddNeatooServices( Neatoo.RemoteFactory.NeatooFactory.Remote, Assembly.GetAssembly(typeof(IHorseBarn)));
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 

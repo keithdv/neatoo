@@ -3,7 +3,7 @@ using HorseBarn.Dal.Ef;
 #endif
 using HorseBarn.lib.Horse;
 using Neatoo;
-using Neatoo.Portal;
+using Neatoo.RemoteFactory;
 
 namespace HorseBarn.lib.Cart;
 
@@ -17,7 +17,7 @@ public interface ICartList : IEditListBase<ICart>
 }
 
 [Factory]
-internal class CartList : EditListBase<CartList, ICart>, ICartList
+internal class CartList : EditListBase<ICart>, ICartList
 {
     public CartList() : base()
     {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory.Internal;
 using Neatoo;
-using Neatoo.Portal;
+using Neatoo.RemoteFactory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.UnitTest.Objects;
 using System;
@@ -30,7 +30,7 @@ No MethodDeclarationSyntax for GetType
 No MethodDeclarationSyntax for MemberwiseClone
 No AuthorizeAttribute
                     */
-namespace Neatoo.UnitTest.ObjectPortal
+namespace Neatoo.UnitTest.RemoteFactory
 {
     public interface IBaseObjectFactory
     {

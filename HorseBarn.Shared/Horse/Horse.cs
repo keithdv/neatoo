@@ -1,7 +1,7 @@
 ﻿using Neatoo;
-using Neatoo.Portal;
-using Neatoo.Rules;
 using System.ComponentModel.DataAnnotations;
+using Neatoo.RemoteFactory;
+
 
 #if !CLIENT
 using HorseBarn.Dal.Ef;

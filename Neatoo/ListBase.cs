@@ -1,16 +1,11 @@
 ﻿using Neatoo.Core;
 using Neatoo.Internal;
-using Neatoo.Portal;
-using Neatoo.Portal.Internal;
-using System;
+using Neatoo.RemoteFactory;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Linq;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Neatoo;
 
@@ -34,8 +29,7 @@ public interface IListBase<I> : IListBase, IReadOnlyListBase<I>, IEnumerable<I>,
 }
 
 [Factory]
-public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, ISetParent, IJsonOnDeserialized, IJsonOnDeserializing, IBaseMetaProperties, IDataMapperTarget
-    where T : ListBase<T, I>
+public abstract class ListBase<I> : ObservableCollection<I>, INeatooObject, IListBase<I>, IListBase, IReadOnlyListBase<I>, ISetParent, IJsonOnDeserialized, IJsonOnDeserializing, IBaseMetaProperties
     where I : IBase
 {
 
@@ -85,20 +79,6 @@ public abstract class ListBase<T, I> : ObservableCollection<I>, INeatooObject, I
         base.RemoveItem(index);
 
         RaiseNeatooPropertyChanged(new PropertyChangedBreadCrumbs(nameof(Count), this));
-    }
-
-    IDisposable? IDataMapperTarget.PauseAllActions()
-    {
-        return default;
-    }
-
-    void IDataMapperTarget.ResumeAllActions()
-    {
-    }
-
-    Task IDataMapperTarget.PostPortalConstruct()
-    {
-        return this.PostPortalConstruct();
     }
 
     protected virtual Task PostPortalConstruct()

@@ -1,11 +1,10 @@
 ﻿using Neatoo.Core;
 using Neatoo.Internal;
-using Neatoo.Portal;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory;
 using Neatoo.Rules;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 
 namespace Neatoo
 {
@@ -29,7 +28,7 @@ namespace Neatoo
     }
 
     [Factory]
-    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IDataMapperTarget
+    public abstract class ValidateBase<T> : Base<T>, IValidateBase, INotifyPropertyChanged, IJsonOnDeserializing, IJsonOnDeserialized, IFactoryOnStart, IFactoryOnComplete
         where T : ValidateBase<T>
     {
         protected new IValidatePropertyManager<IValidateProperty> PropertyManager => (IValidatePropertyManager<IValidateProperty>)base.PropertyManager;
@@ -125,11 +124,12 @@ namespace Neatoo
 
         public bool IsPaused { get; protected set; }
 
-        public virtual IDisposable PauseAllActions()
+        public virtual void PauseAllActions()
         {
-            if (IsPaused) { return null; } // You are a nested using; You get nothing!!
-            IsPaused = true;
-            return new Core.Paused(this);
+            if (!IsPaused)
+            {
+                IsPaused = true;
+            }
         }
 
         public virtual void ResumeAllActions()
@@ -139,16 +139,6 @@ namespace Neatoo
                 IsPaused = false;
                 ResetMetaState();
             }
-        }
-
-        IDisposable IDataMapperTarget.PauseAllActions()
-        {
-            return PauseAllActions();
-        }
-
-        void IDataMapperTarget.ResumeAllActions()
-        {
-            ResumeAllActions();
         }
 
         public virtual Task PostPortalConstruct()
@@ -205,6 +195,27 @@ namespace Neatoo
         IValidateProperty IValidateBase.GetProperty(string propertyName)
         {
             return GetProperty(propertyName);
+        }
+
+        public void OnDeserializing()
+        {
+            PauseAllActions();
+        }
+
+        override public void OnDeserialized()
+        {
+            base.OnDeserialized();
+            ResumeAllActions();
+        }
+
+        public virtual void FactoryStart(FactoryOperation factoryOperation)
+        {
+            PauseAllActions();
+        }
+
+        public virtual void FactoryComplete(FactoryOperation factoryOperation)
+        {
+            ResumeAllActions();
         }
     }
 }

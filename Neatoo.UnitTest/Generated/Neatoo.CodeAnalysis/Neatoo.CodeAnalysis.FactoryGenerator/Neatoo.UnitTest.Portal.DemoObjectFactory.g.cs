@@ -1,16 +1,16 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory.Internal;
 using Neatoo;
-using Neatoo.Portal;
-using static Neatoo.UnitTest.Portal.AuthorizationClassTests;
+using Neatoo.RemoteFactory;
+using static Neatoo.UnitTest.RemoteFactory.AuthorizationClassTests;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neatoo.AuthorizationRules;
 using Neatoo.Internal;
-using Neatoo.Portal.Internal;
-using Neatoo.UnitTest.ObjectPortal;
+using Neatoo.RemoteFactory.Internal;
+using Neatoo.UnitTest.RemoteFactory;
 using Neatoo.UnitTest.Objects;
 using System;
 using System.Collections.Generic;
@@ -26,7 +26,7 @@ using System.Threading.Tasks;
 No MethodDeclarationSyntax for GetType
 No MethodDeclarationSyntax for MemberwiseClone
                     */
-namespace Neatoo.UnitTest.Portal
+namespace Neatoo.UnitTest.RemoteFactory
 {
     public interface IDemoObjectFactory
     {

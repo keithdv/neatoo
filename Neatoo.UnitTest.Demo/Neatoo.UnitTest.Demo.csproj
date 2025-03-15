@@ -7,12 +7,17 @@
 
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="MSTest" Version="3.6.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-	  <ProjectReference Include="..\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	  <ProjectReference Include="..\Neato.BaseGenerator\Neato.BaseGenerator.csproj" OutputItemType="Analyzer" />
 	  <ProjectReference Include="..\Neatoo\Neatoo.csproj" />
   </ItemGroup>
 
@@ -21,7 +26,10 @@
 		<None Include="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
 	</ItemGroup>
   <ItemGroup>
-    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Generated\Neato.BaseGenerator\**\*" />
   </ItemGroup>
 
 </Project>

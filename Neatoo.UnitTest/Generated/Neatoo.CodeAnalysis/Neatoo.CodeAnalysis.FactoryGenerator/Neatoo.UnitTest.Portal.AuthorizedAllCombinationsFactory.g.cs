@@ -1,14 +1,14 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory.Internal;
 using Neatoo;
-using Neatoo.Portal;
-using static Neatoo.UnitTest.Portal.AuthorizationAllCombinationTests;
+using Neatoo.RemoteFactory;
+using static Neatoo.UnitTest.RemoteFactory.AuthorizationAllCombinationTests;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neatoo.AuthorizationRules;
 using Neatoo.Internal;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory.Internal;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
@@ -34,7 +34,7 @@ No MethodDeclarationSyntax for MemberwiseClone
 No MethodDeclarationSyntax for ReferenceEquals
 No MethodDeclarationSyntax for ToString
                     */
-namespace Neatoo.UnitTest.Portal
+namespace Neatoo.UnitTest.RemoteFactory
 {
     public interface IAuthorizedAllCombinationsFactory
     {

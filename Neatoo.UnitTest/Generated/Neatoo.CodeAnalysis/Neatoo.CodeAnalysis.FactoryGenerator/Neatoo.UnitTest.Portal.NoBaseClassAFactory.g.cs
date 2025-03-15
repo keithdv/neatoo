@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory.Internal;
 using Neatoo;
-using Neatoo.Portal;
+using Neatoo.RemoteFactory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.AuthorizationRules;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +20,7 @@ No MethodDeclarationSyntax for GetType
 No MethodDeclarationSyntax for MemberwiseClone
 No AuthorizeAttribute
                     */
-namespace Neatoo.UnitTest.Portal
+namespace Neatoo.UnitTest.RemoteFactory
 {
     public interface INoBaseClassAFactory
     {

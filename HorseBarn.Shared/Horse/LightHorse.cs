@@ -1,5 +1,5 @@
 ﻿using Neatoo;
-using Neatoo.Portal;
+using Neatoo.RemoteFactory;
 
 namespace HorseBarn.lib.Horse;
 

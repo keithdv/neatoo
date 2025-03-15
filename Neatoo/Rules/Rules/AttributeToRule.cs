@@ -1,8 +1,6 @@
 ﻿using Neatoo.Core;
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace Neatoo.Rules.Rules;
 

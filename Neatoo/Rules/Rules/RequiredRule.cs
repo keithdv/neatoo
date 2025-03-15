@@ -1,9 +1,4 @@
-﻿using Neatoo.Core;
-using System;
-using System.Linq;
-using System.Linq.Expressions;
-
-namespace Neatoo.Rules.Rules;
+﻿namespace Neatoo.Rules.Rules;
 
 public interface IRequiredRule : IRule
 {

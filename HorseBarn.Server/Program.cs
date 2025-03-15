@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddNeatooServices(NeatooHost.Local, Assembly.GetExecutingAssembly(), Assembly.GetAssembly(typeof(IHorseBarn)));
+builder.Services.AddNeatooServices( Neatoo.RemoteFactory.NeatooFactory.Local, Assembly.GetExecutingAssembly(), Assembly.GetAssembly(typeof(IHorseBarn)));
 
 
 builder.Services.AddScoped<IHorseBarnContext, HorseBarnContext>();

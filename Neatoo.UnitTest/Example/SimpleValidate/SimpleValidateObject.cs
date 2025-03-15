@@ -1,5 +1,4 @@
 ﻿using Neatoo.Core;
-using System;
 
 namespace Neatoo.UnitTest.Example.SimpleValidate;
 

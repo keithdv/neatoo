@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Neatoo.Portal.Internal;
+using Neatoo.RemoteFactory.Internal;
 using Neatoo;
-using Neatoo.Portal;
+using Neatoo.RemoteFactory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.UnitTest.Objects;
 using System;
@@ -16,8 +16,8 @@ No MethodDeclarationSyntax for add_NeatooPropertyChanged
 No MethodDeclarationSyntax for remove_NeatooPropertyChanged
 No MethodDeclarationSyntax for Neatoo.Core.ISetParent.SetParent
 No MethodDeclarationSyntax for InsertItem
-No MethodDeclarationSyntax for Neatoo.Portal.Internal.IDataMapperTarget.PauseAllActions
-No MethodDeclarationSyntax for Neatoo.Portal.Internal.IDataMapperTarget.PostPortalConstruct
+No MethodDeclarationSyntax for Neatoo.RemoteFactory.Internal.IDataMapperTarget.PauseAllActions
+No MethodDeclarationSyntax for Neatoo.RemoteFactory.Internal.IDataMapperTarget.PostPortalConstruct
 No MethodDeclarationSyntax for PostPortalConstruct
 No MethodDeclarationSyntax for RaiseNeatooPropertyChanged
 No MethodDeclarationSyntax for HandleNeatooPropertyChanged
@@ -34,7 +34,7 @@ No MethodDeclarationSyntax for GetType
 No MethodDeclarationSyntax for MemberwiseClone
 No AuthorizeAttribute
                     */
-namespace Neatoo.UnitTest.ObjectPortal
+namespace Neatoo.UnitTest.RemoteFactory
 {
     public interface IBaseObjectListFactory
     {

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Neatoo.UnitTest.PersonObjects;
+﻿namespace Neatoo.UnitTest.PersonObjects;
 
 public class PersonDto
 {

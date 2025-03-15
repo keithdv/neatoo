@@ -1,9 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neatoo.Portal;
-using Neatoo.Portal.Internal;
-using System;
-using System.Linq;
+using Neatoo.RemoteFactory.Internal;
 
 namespace Neatoo.UnitTest.SystemTextJson.EditTests;
 

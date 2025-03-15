@@ -2,8 +2,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.UnitTest.Objects;
 using Neatoo.UnitTest.PersonObjects;
-using System;
-using System.Linq;
 
 namespace Neatoo.UnitTest.ValidateBaseTests;
 

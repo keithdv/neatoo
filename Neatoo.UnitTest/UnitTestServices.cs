@@ -1,10 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using Neatoo.UnitTest.Portal;
 using System.Reflection;
 using Neatoo.UnitTest.Objects;
-using Neatoo.Portal;
+using Neatoo.RemoteFactory;
 using Neatoo.UnitTest.ValidateBaseTests;
 
 namespace Neatoo.UnitTest;
@@ -24,11 +21,11 @@ public static class UnitTestServices
             if (Container == null)
             {
 
-                IServiceProvider CreateContainer(NeatooHost? portal)
+                IServiceProvider CreateContainer(NeatooFactory? portal)
                 {
                     var services = new ServiceCollection();
 
-                    services.AddNeatooServices(NeatooHost.Local, Assembly.GetExecutingAssembly());
+                    services.AddNeatooServices(NeatooFactory.Local, Assembly.GetExecutingAssembly());
 
                     // Unit Test Library
                     //services.AddScoped<BaseTests.Authorization.IAuthorizationGrantedRule, BaseTests.Authorization.AuthorizationGrantedRule>();
@@ -43,11 +40,13 @@ public static class UnitTestServices
 
                     services.AddSingleton<IReadOnlyList<PersonObjects.PersonDto>>(cc => PersonObjects.PersonDto.Data());
 
+                    services.AutoRegisterAssemblyTypes(Assembly.GetExecutingAssembly());
+
                     return services.BuildServiceProvider();
                 }
 
                 Container = CreateContainer(null);
-                LocalPortalContainer = CreateContainer(NeatooHost.Local);
+                LocalPortalContainer = CreateContainer(NeatooFactory.Local);
 
             }
 

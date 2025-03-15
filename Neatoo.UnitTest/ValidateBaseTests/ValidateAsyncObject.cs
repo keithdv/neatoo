@@ -1,9 +1,6 @@
 ﻿using Neatoo.Core;
-using Neatoo.Portal;
+using Neatoo.RemoteFactory;
 using Neatoo.UnitTest.PersonObjects;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ValidateBaseTests;
 
@@ -66,7 +63,7 @@ public interface IValidateAsyncObjectList : IValidateListBase<IValidateAsyncObje
     void Add(IValidateAsyncObject o);
 }
 
-public class ValidateAsyncObjectList : ValidateListBase<ValidateAsyncObjectList, IValidateAsyncObject>, IValidateAsyncObjectList
+public class ValidateAsyncObjectList : ValidateListBase<IValidateAsyncObject>, IValidateAsyncObjectList
 {
 
     public ValidateAsyncObjectList() : base()

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Neatoo.UnitTest.PersonObjects;
+﻿namespace Neatoo.UnitTest.PersonObjects;
 
 public interface IPersonEdit : IPersonBase, IEditBase
 {

@@ -4,7 +4,7 @@ using HorseBarn.Dal.Ef;
 
 using HorseBarn.lib.Cart;
 using Neatoo;
-using Neatoo.Portal;
+using Neatoo.RemoteFactory;
 using System.Collections.Specialized;
 
 namespace HorseBarn.lib.Horse;
@@ -16,7 +16,7 @@ public interface IHorseList : IEditListBase<IHorse>, INotifyCollectionChanged
 }
 
 [Factory]
-internal class HorseList : EditListBase<HorseList, IHorse>, IHorseList
+internal class HorseList : EditListBase<IHorse>, IHorseList
 {
     public HorseList() : base()
     {

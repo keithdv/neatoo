@@ -1,7 +1,5 @@
-﻿using Neatoo.Portal;
+﻿using Neatoo.RemoteFactory;
 using Neatoo.Rules;
-using System;
-using System.Collections.Generic;
 
 namespace Neatoo.UnitTest.SystemTextJson;
 
@@ -56,7 +54,7 @@ public interface IValidateObjectList : IValidateListBase<IValidateObject>
 
 }
 
-public class ValidateObjectList : ValidateListBase<ValidateObjectList, IValidateObject>, IValidateObjectList
+public class ValidateObjectList : ValidateListBase<IValidateObject>, IValidateObjectList
 {
     public ValidateObjectList() : base()
     {

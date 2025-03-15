@@ -1,7 +1,8 @@
 ﻿using HorseBarn.lib.Horse;
 using Neatoo;
-using Neatoo.Portal;
 using System.Diagnostics;
+using Neatoo.RemoteFactory;
+
 
 #if !CLIENT
 using HorseBarn.Dal.Ef;

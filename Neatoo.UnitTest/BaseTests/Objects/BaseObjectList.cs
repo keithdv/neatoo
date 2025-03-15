@@ -1,13 +1,11 @@
-﻿using System;
-
-namespace Neatoo.UnitTest.BaseTests.Objects;
+﻿namespace Neatoo.UnitTest.BaseTests.Objects;
 
 
 public interface IBaseObjectList : IListBase<IBaseObject>
 { 
 
 }
-public class BaseObjectList : ListBase<BaseObjectList, IBaseObject>, IBaseObjectList
+public class BaseObjectList : ListBase<IBaseObject>, IBaseObjectList
 {
 
     public BaseObjectList() : base() { }

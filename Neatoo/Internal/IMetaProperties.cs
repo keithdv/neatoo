@@ -1,11 +1,10 @@
-﻿using System.Threading.Tasks;
-using System.Threading;
-
-/* Unmerged change from project 'Neatoo (net7.0)'
+﻿/* Unmerged change from project 'Neatoo (net7.0)'
 Added:
 using Neatoo;
 using Neatoo.Internal;
 */
+
+using Neatoo.RemoteFactory;
 
 namespace Neatoo.Internal;
 
@@ -30,13 +29,7 @@ public interface IValidateMetaProperties : IBaseMetaProperties
     void ClearSelfErrors();
 }
 
-public interface  IEditMetaSaveProperties
-{
-    bool IsDeleted { get; }
-    bool IsNew { get; }
-}
-
-public interface IEditMetaProperties : IEditMetaSaveProperties
+public interface IEditMetaProperties : IFactorySaveMeta
 {
     bool IsChild { get; }
     bool IsModified { get; }

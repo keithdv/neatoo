@@ -1,11 +1,6 @@
 ﻿using Neatoo.Internal;
-using Neatoo.Portal;
-using Neatoo.Portal.Internal;
-using System;
-using System.Collections.Generic;
+using Neatoo.RemoteFactory;
 using System.ComponentModel;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Neatoo;
 
@@ -21,8 +16,7 @@ public interface IEditListBase<I> : IEditListBase, IValidateListBase<I>, IEditMe
 }
 
 [Factory]
-public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject, IEditListBase<I>, IEditListBase
-    where T : EditListBase<T, I>
+public abstract class EditListBase<I> : ValidateListBase<I>, INeatooObject, IEditListBase<I>, IEditListBase
     where I : IEditBase
 {
 
@@ -79,7 +73,7 @@ public abstract class EditListBase<T, I> : ValidateListBase<T, I>, INeatooObject
 
             if (!item.IsNew)
             {
-                ((IDataMapperEditTarget)item).MarkModified();
+                //((IDataMapperEditTarget)item).MarkModified(); // TODO Add back
             }
         }
 

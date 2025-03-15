@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Neatoo.UnitTest.BaseTests.Objects;
+﻿namespace Neatoo.UnitTest.BaseTests.Objects;
 
 public interface IA { }
 
@@ -29,11 +27,7 @@ public class BaseObject : Base<BaseObject>, IBaseObject
         set { Setter(value); }
     }
 
-    public string? StringProperty
-    {
-        get { return Getter<string>(); }
-        set { Setter(value); }
-    }
+    public string? StringProperty { get => Getter<string>(); set => Setter(value); }
 
     public string? PrivateProperty
     {

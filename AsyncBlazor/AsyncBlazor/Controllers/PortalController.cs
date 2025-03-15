@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Neatoo;
-using Neatoo.Portal;
+using Neatoo.RemoteFactory;
 
 namespace HorseBarn.Server.Controllers;
 
@@ -9,9 +9,9 @@ namespace HorseBarn.Server.Controllers;
 public class PortalController : ControllerBase
 {
     private readonly ILogger<PortalController> _logger;
-    private readonly ServerHandlePortalRequest handlePortalRequestDelegate;
+    private readonly Neatoo.RemoteFactory.HandleRemoteDelegateRequest handlePortalRequestDelegate;
 
-    public PortalController(ILogger<PortalController> logger, ServerHandlePortalRequest handlePortalRequestDelegate)
+    public PortalController(ILogger<PortalController> logger, HandleRemoteDelegateRequest handlePortalRequestDelegate)
     {
         _logger = logger;
         this.handlePortalRequestDelegate = handlePortalRequestDelegate;

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace Neatoo.Core;
 
@@ -43,7 +38,7 @@ public class PropertyInfoList<T> : IPropertyInfoList<T>
     }
 
 
-    private static Type[] neatooTypes = new Type[] { typeof(Base<>), typeof(ListBase<,>), typeof(ValidateBase<>), typeof(ValidateListBase<,>), typeof(EditBase<>), typeof(EditListBase<,>) };
+    private static Type[] neatooTypes = new Type[] { typeof(Base<>), typeof(ListBase<>), typeof(ValidateBase<>), typeof(ValidateListBase<>), typeof(EditBase<>), typeof(EditListBase<>) };
 
     protected void RegisterProperties()
     {

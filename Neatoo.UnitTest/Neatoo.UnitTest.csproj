@@ -19,23 +19,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.7.0" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.7.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Neatoo\Neatoo.csproj" />
-    <ProjectReference Include="..\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Generated\Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.FactoryGenerator\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Portal\AuthorizationConcreteTests.cs" />
   </ItemGroup>
 
 </Project>

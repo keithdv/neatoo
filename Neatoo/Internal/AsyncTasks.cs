@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace Neatoo.Core;
+﻿namespace Neatoo.Core;
 
 /// <summary>
 /// When all tasks have completed set a TaskCompletionsSource

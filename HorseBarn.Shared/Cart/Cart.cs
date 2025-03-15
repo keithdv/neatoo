@@ -1,6 +1,6 @@
 ﻿using HorseBarn.lib.Horse;
 using Neatoo;
-using Neatoo.Portal;
+using Neatoo.RemoteFactory;
 using Neatoo.Rules;
 using Neatoo.Rules.Rules;
 using System.Collections.Specialized;

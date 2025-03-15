@@ -1,8 +1,5 @@
-﻿using Neatoo.Portal;
+﻿using Neatoo.RemoteFactory;
 using Neatoo.UnitTest.PersonObjects;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ValidateBaseTests;
 
@@ -61,7 +58,7 @@ public interface IValidateObjectList : IValidateListBase<IValidateObject>
 
 }
 
-public class ValidateObjectList : ValidateListBase<ValidateObjectList, IValidateObject>, IValidateObjectList
+public class ValidateObjectList : ValidateListBase<IValidateObject>, IValidateObjectList
 {
 
     public ValidateObjectList() : base()

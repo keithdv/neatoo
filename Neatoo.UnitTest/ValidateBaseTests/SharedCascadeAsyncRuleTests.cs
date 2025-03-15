@@ -2,10 +2,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neatoo.Rules;
 using Neatoo.UnitTest.PersonObjects;
-using System;
-using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.ValidateBaseTests;
 

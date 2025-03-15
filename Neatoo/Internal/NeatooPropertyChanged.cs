@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace Neatoo.Core;
+﻿namespace Neatoo.Core;
 
 public interface INotifyNeatooPropertyChanged
 {

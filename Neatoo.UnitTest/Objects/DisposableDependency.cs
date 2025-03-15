@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Neatoo.UnitTest.Objects;
+﻿namespace Neatoo.UnitTest.Objects;
 
 
 public class DisposableDependencyList : List<DisposableDependency> { }

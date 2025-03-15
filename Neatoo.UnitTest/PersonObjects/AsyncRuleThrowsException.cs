@@ -1,8 +1,5 @@
 ﻿using Neatoo.Rules;
 using Neatoo.UnitTest.ValidateBaseTests;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Neatoo.UnitTest.PersonObjects;
 

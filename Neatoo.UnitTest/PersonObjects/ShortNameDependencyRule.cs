@@ -1,7 +1,6 @@
 ﻿
 using Neatoo.Rules;
 using Neatoo.UnitTest.Objects;
-using System;
 
 namespace Neatoo.UnitTest.PersonObjects;
 

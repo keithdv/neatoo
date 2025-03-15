@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Net.Http;
 using Neatoo;
 using HorseBarn.lib.Horse;
-using Neatoo.Portal;
 
 namespace HorseBarn.WPF;
 
@@ -121,7 +120,7 @@ public class HorseBarnBootstrapper : BootstrapperBase
 
         services.AddTransient<IsHorseNameUnique>(cc =>
         {
-            return async (name) => (await cc.GetRequiredService<IDoRemoteRequest>().ForDelegate<bool>(typeof(IsHorseNameUnique), [name]));
+            return (name) => cc.GetRequiredService<Neatoo.RemoteFactory.Internal.IMakeRemoteDelegateRequest>().ForDelegate<bool>(typeof(IsHorseNameUnique), [name]);
         });
 
         services.AddTransient<CreateHorseViewModel.Factory>(cc =>
@@ -129,6 +128,6 @@ public class HorseBarnBootstrapper : BootstrapperBase
             return (horseNames) => new CreateHorseViewModel(cc.GetRequiredService<IHorseCriteriaFactory>(), cc.GetRequiredService<IEventAggregator>(), horseNames);
         });
 
-        services.AddNeatooServices(NeatooHost.Remote, Assembly.GetAssembly(typeof(IHorseBarn)));
+        services.AddNeatooServices( Neatoo.RemoteFactory.NeatooFactory.Remote, Assembly.GetAssembly(typeof(IHorseBarn)));
     }
 }

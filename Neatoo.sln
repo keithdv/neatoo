@@ -35,13 +35,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncBlazor", "AsyncBlazor\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncBlazor.Client", "AsyncBlazor\AsyncBlazor.Client\AsyncBlazor.Client.csproj", "{4A5F952A-C4E1-49F9-96C6-CA38265E0A08}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neatoo.CodeAnalysis", "Neatoo.CodeAnalysis\Neatoo.CodeAnalysis.csproj", "{6689BC29-3B3B-4E07-8083-AB99A0003940}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neatoo.CodeAnalysis.Test", "Neatoo.CodeAnalysis.Test\Neatoo.CodeAnalysis.Test.csproj", "{6100A6A1-D24C-4DD8-982A-FF3AFFFFC74E}"
-EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "HorseBarn.Shared", "HorseBarn.Shared\HorseBarn.Shared.shproj", "{FBD72F31-7672-4E0D-B3CC-F6E7C93E7A73}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neatoo.UnitTest.Demo", "Neatoo.UnitTest.Demo\Neatoo.UnitTest.Demo.csproj", "{E5E2F45A-602E-43D0-9D5A-D33367E54E52}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neato.BaseGenerator", "Neato.BaseGenerator\Neato.BaseGenerator.csproj", "{4FEC2093-4CC6-42CD-8AA8-72C871F4058C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -97,18 +95,14 @@ Global
 		{4A5F952A-C4E1-49F9-96C6-CA38265E0A08}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A5F952A-C4E1-49F9-96C6-CA38265E0A08}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A5F952A-C4E1-49F9-96C6-CA38265E0A08}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6689BC29-3B3B-4E07-8083-AB99A0003940}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6689BC29-3B3B-4E07-8083-AB99A0003940}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6689BC29-3B3B-4E07-8083-AB99A0003940}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6689BC29-3B3B-4E07-8083-AB99A0003940}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6100A6A1-D24C-4DD8-982A-FF3AFFFFC74E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6100A6A1-D24C-4DD8-982A-FF3AFFFFC74E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6100A6A1-D24C-4DD8-982A-FF3AFFFFC74E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6100A6A1-D24C-4DD8-982A-FF3AFFFFC74E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E5E2F45A-602E-43D0-9D5A-D33367E54E52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E5E2F45A-602E-43D0-9D5A-D33367E54E52}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E5E2F45A-602E-43D0-9D5A-D33367E54E52}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E5E2F45A-602E-43D0-9D5A-D33367E54E52}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FEC2093-4CC6-42CD-8AA8-72C871F4058C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FEC2093-4CC6-42CD-8AA8-72C871F4058C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FEC2093-4CC6-42CD-8AA8-72C871F4058C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FEC2093-4CC6-42CD-8AA8-72C871F4058C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

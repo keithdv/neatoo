@@ -18,11 +18,11 @@ internal class UnitTestContainer
         if (Container == null)
         {
 
-            IServiceProvider CreateContainer(Neatoo.NeatooHost portal)
+            IServiceProvider CreateContainer()
             {
                 var builder = new ServiceCollection();
 
-                builder.AddNeatooServices(portal, Assembly.GetExecutingAssembly(), Assembly.GetAssembly(typeof(IHorseBarn)));
+                builder.AddNeatooServices( Neatoo.RemoteFactory.NeatooFactory.Local, Assembly.GetExecutingAssembly(), Assembly.GetAssembly(typeof(IHorseBarn)));
 
                 builder.AddScopedSelf<IHorseBarnContext, HorseBarnContext>();
 
@@ -42,7 +42,7 @@ internal class UnitTestContainer
             }
 
             // 2-Tier tests
-            Container = CreateContainer(NeatooHost.Local);
+            Container = CreateContainer();
 
         }
 
