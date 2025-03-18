@@ -6,12 +6,10 @@ using Neatoo.UnitTest.Demo;
 
 namespace Neatoo.UnitTest.Portal;
 
-
 public partial interface IPersonObject : IEditBase
 {
-
+    public string FirstName { get; }
 }
-
 
 [Factory]
 internal partial class PersonObject : EditBase<PersonObject>, IPersonObject
@@ -21,11 +19,7 @@ internal partial class PersonObject : EditBase<PersonObject>, IPersonObject
         FirstName = "John";
     }
 
-    public bool IsDeleted { get; set; } = false;
-
-    public bool IsNew { get; set; } = true;
-
-    public partial string FirstName { get; private set; }
+    public partial string FirstName { get; set; }
     public partial string LastName { get; set; }
 
 }

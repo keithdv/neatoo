@@ -1,8 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-	  <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
 
@@ -21,15 +19,9 @@
 	  <ProjectReference Include="..\Neatoo\Neatoo.csproj" />
   </ItemGroup>
 
-	<ItemGroup>
-		<Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
-		<None Include="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
-	</ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Generated\Neato.BaseGenerator\**\*" />
-  </ItemGroup>
+
 
 </Project>

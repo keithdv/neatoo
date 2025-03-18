@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis;
 using System.Text;
+using static Neato.BaseGenerator.PartialBaseGenerator;
 
 namespace Neato.BaseGenerator
 {
@@ -65,7 +66,14 @@ namespace Neato.BaseGenerator
 
         internal class PartialBaseText
         {
+
+            public ClassDeclarationSyntax ClassDeclarationSyntax { get; set; } = null!;
+            public INamedTypeSymbol ClassNamedSymbol { get; set; } = null!;
+            public SemanticModel SemanticModel { get; set; } = null!;
+            public InterfaceDeclarationSyntax? InterfaceDeclarationSyntax { get; set; }
+            public string AccessModifier { get; set; } = "public";
             public StringBuilder PropertyDeclarations { get; set; } = new();
+            public StringBuilder? InterfacePropertyDeclarations { get; set; }
         }
 
         private static void Execute(SourceProductionContext context, ClassDeclarationSyntax classDeclarationSyntax, SemanticModel semanticModel)
@@ -78,59 +86,31 @@ namespace Neato.BaseGenerator
                 var classNamedSymbol = semanticModel.GetDeclaredSymbol(classDeclarationSyntax) ?? throw new Exception($"Cannot get named symbol for {classDeclarationSyntax}");
 
                 var usingDirectives = new List<string>() { "using Neatoo;", "using Microsoft.Extensions.DependencyInjection;" };
-                var partialText = new PartialBaseText();
-                PartialBaseText? interfacePartialText = null;
+
+                var partialText = new PartialBaseText()
+                {
+                    ClassDeclarationSyntax = classDeclarationSyntax,
+                    ClassNamedSymbol = classNamedSymbol,
+                    SemanticModel = semanticModel
+                };
+
                 var targetClassName = classNamedSymbol.Name;
                 // Generate the source code for the found method
                 var namespaceName = FindNamespace(classDeclarationSyntax);
 
-                var accessModifier = classNamedSymbol.DeclaredAccessibility.ToString();
+                var accessModifier = partialText.AccessModifier = classNamedSymbol.DeclaredAccessibility.ToString();
 
-                var interfaceSyntax = classNamedSymbol.Interfaces.FirstOrDefault(i => i.Name == $"I{classNamedSymbol.Name}");
-
-                if (interfaceSyntax != null)
-                    //&& 
-                    //                    i.DeclaringSyntaxReferences
-                    //                    .OfType<InterfaceDeclarationSyntax>()
-                    //                    .Any(ids => ids.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))))
-                {
-                    var interfaceDeclarationSyntax = classNamedSymbol.Interfaces.First(i => i.Name == $"I{classNamedSymbol.Name}").DeclaringSyntaxReferences.First().GetSyntax() as InterfaceDeclarationSyntax;
-
-                    if (interfaceDeclarationSyntax != null && interfaceDeclarationSyntax.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
-                    {
-                        interfacePartialText = new PartialBaseText();
-                    }
-                }
-
-                foreach (var property in classDeclarationSyntax.Members.OfType<PropertyDeclarationSyntax>())
-                {
-                    if(property.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
-                    {
-                        var accessibility = property.Modifiers.First().ToString();
-                        var propertyType = property.Type.ToString();
-                        var propertyName = property.Identifier.Text;
-                        
-                        var propertySymbol = semanticModel.GetDeclaredSymbol(property) ?? throw new Exception($"Cannot get named symbol for {property}");
-
-
-                        partialText.PropertyDeclarations.AppendLine($"{accessibility} partial {propertyType} {propertyName} {{ get => Getter<{propertyType}>();  set=>Setter(value); }}");
-                        if(interfacePartialText != null)
-                        {
-                            interfacePartialText.PropertyDeclarations.AppendLine($"{propertyType} {propertyName} {{ get; set; }}");
-                        }
-
-                    }
-                }
+                AddPartialProperties(partialText);
 
                 try
                 {
                     var interfaceSource = "";
 
-                    if (interfacePartialText != null)
+                    if (partialText.InterfaceDeclarationSyntax != null)
                     {
                         interfaceSource = $@"
                         public partial interface I{targetClassName} {{
-                            {interfacePartialText.PropertyDeclarations}
+                            {partialText.InterfacePropertyDeclarations}
                         }}";
                     }
 
@@ -140,8 +120,9 @@ namespace Neato.BaseGenerator
                     {WithStringBuilder(usingDirectives)}
                     /*
                     Debugging Messages:
-                    Yay!
                     {WithStringBuilder(messages)}
+                    */
+                    
                     namespace {namespaceName}
                     {{
                         {interfaceSource}
@@ -149,7 +130,9 @@ namespace Neato.BaseGenerator
                             {partialText.PropertyDeclarations}
                         }}
 
-                    }}";
+                    }}
+                    
+                    ";
                     source = source.Replace("[, ", "[");
                     source = source.Replace("(, ", "(");
                     source = source.Replace(", )", ")");
@@ -168,7 +151,47 @@ namespace Neato.BaseGenerator
             }
         }
 
+        internal static void AddPartialProperties(PartialBaseText partialBaseText)
+        {
 
+            var interfaceSyntax = partialBaseText.ClassNamedSymbol.Interfaces.FirstOrDefault(i => i.Name == $"I{partialBaseText.ClassNamedSymbol.Name}");
+            List<string> interfaceProperties = [];
+
+            if (interfaceSyntax != null)
+            //&& 
+            //                    i.DeclaringSyntaxReferences
+            //                    .OfType<InterfaceDeclarationSyntax>()
+            //                    .Any(ids => ids.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))))
+            {
+                var interfaceDeclarationSyntax = partialBaseText.InterfaceDeclarationSyntax = partialBaseText.ClassNamedSymbol.Interfaces.First(i => i.Name == $"I{partialBaseText.ClassNamedSymbol.Name}").DeclaringSyntaxReferences.First().GetSyntax() as InterfaceDeclarationSyntax;
+
+                if (interfaceDeclarationSyntax != null && interfaceDeclarationSyntax.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
+                {
+                    partialBaseText.InterfacePropertyDeclarations = new StringBuilder();
+                    interfaceProperties = interfaceDeclarationSyntax.Members.OfType<PropertyDeclarationSyntax>().Select(p => p.Identifier.Text).ToList();
+
+                }
+            }
+
+            foreach (var property in partialBaseText.ClassDeclarationSyntax.Members.OfType<PropertyDeclarationSyntax>())
+            {
+                if (property.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
+                {
+                    var accessibility = property.Modifiers.First().ToString();
+                    var propertyType = property.Type.ToString();
+                    var propertyName = property.Identifier.Text;
+
+                    var propertySymbol = partialBaseText.SemanticModel.GetDeclaredSymbol(property) ?? throw new Exception($"Cannot get named symbol for {property}");
+
+                    partialBaseText.PropertyDeclarations.AppendLine($"{accessibility} partial {propertyType} {propertyName} {{ get => Getter<{propertyType}>();  set=>Setter(value); }}");
+                    if (partialBaseText.InterfacePropertyDeclarations != null &&
+                            !interfaceProperties.Contains(propertyName))
+                    {
+                        partialBaseText.InterfacePropertyDeclarations.AppendLine($"{propertyType} {propertyName} {{ get; set; }}");
+                    }
+                }
+            }
+        }
 
         public static string? FindNamespace(SyntaxNode syntaxNode)
         {
